@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Hoy | User</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="noise"></div>
+    <div class="stars"></div>
+    <header class="hero page-hero">
+      <nav class="nav">
+        <div class="logo">DISCIPLINA</div>
+        <div class="nav-actions">
+          <a class="ghost" href="index.html">Inicio</a>
+          <a class="ghost" href="user-hoy.html">Hoy</a>
+          <a class="ghost" href="user-rutinas.html">Rutinas</a>
+          <a class="ghost" href="user-progreso.html">Progreso</a>
+          <a class="ghost" href="user-dieta.html">Dieta</a>
+          <a class="ghost" href="user-checkin.html">Foto</a>
+          <a class="ghost" href="admin.html" data-role-only="admin">Admin</a>
+        </div>
+      </nav>
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Modulo User</p>
+          <h1>Pantalla de hoy</h1>
+          <p class="subhead">Check-in diario con limite de 10 minutos, estado y castigo acumulado.</p>
+        </div>
+      </div>
+    </header>
+    <main>
+      <section class="section today-loop">
+        <article class="card" id="user-plan-panel"></article>
+        <article class="card">
+          <h3>Notificaciones</h3>
+          <div id="user-notifications" class="admin-list"></div>
+        </article>
+        <div class="today-grid">
+          <article class="card today-main">
+            <h3 id="today-question">Check-in del dia. Cumpliste?</h3>
+            <p class="today-date" id="today-date">Hoy</p>
+            <p class="today-timer">Tiempo restante: <strong id="today-countdown">10:00</strong></p>
+            <p class="today-status-line" id="today-status">Estado: Pendiente</p>
+            <p class="today-pressure" id="today-pressure"></p>
+            <p class="today-note" id="user-next-checkin">Proximo check-in: -</p>
+            <div class="today-actions">
+              <button class="primary" id="today-yes" type="button">Si</button>
+              <button class="ghost" id="today-no" type="button">No</button>
+              <button class="ghost" id="today-reset-window" type="button">Reiniciar ventana</button>
+            </div>
+          </article>
+          <article class="card today-stats">
+            <h3>Estado de disciplina</h3>
+            <ul class="stat-list">
+              <li><span>Racha</span><strong id="today-streak">-</strong></li>
+              <li><span>Mejor racha</span><strong id="today-best-streak">-</strong></li>
+              <li><span>Nivel</span><strong id="today-level">-</strong></li>
+              <li><span>XP total</span><strong id="today-xp">-</strong></li>
+              <li><span>Ascent Index</span><strong id="today-ascent-index">-</strong></li>
+              <li><span>Cumplimiento</span><strong id="today-compliance">-</strong></li>
+              <li><span>Promedio respuesta</span><strong id="today-response">-</strong></li>
+              <li><span>Castigo pendiente</span><strong id="today-penalty">-</strong></li>
+            </ul>
+            <label>Modo coach
+              <select id="coach-mode">
+                <option value="normal">Normal</option>
+                <option value="disciplina">Disciplina</option>
+                <option value="castigo">Castigo</option>
+                <option value="adaptive">AI Adaptive</option>
+              </select>
+            </label>
+            <label class="agree-row"><input type="checkbox" id="mode-contract" /><span>Modo contrato (3 fallos reinician racha)</span></label>
+            <p id="today-unstoppable" class="today-note"></p>
+            <ul class="stat-list">
+              <li><span>Cumplimiento 7 dias</span><strong id="weekly-rate">-</strong></li>
+              <li><span>Dia critico</span><strong id="weekly-critical">-</strong></li>
+              <li><span>Hora fuerte</span><strong id="weekly-hour">-</strong></li>
+            </ul>
+            <p id="reengage-message" class="today-note"></p>
+            <p id="mirror-message" class="today-note"></p>
+            <div id="smart-reminders" class="admin-list"></div>
+          </article>
+        </div>
+        <div class="mission-grid">
+          <article class="card" id="today-card-missions">
+            <h3>Misiones diarias</h3>
+            <div id="daily-missions" class="mission-list"></div>
+          </article>
+          <article class="card" id="today-card-squad">
+            <h3>Reto Squad (14 dias)</h3>
+            <p class="today-note">Ranking privado de 5 personas. Si alguien falla, el grupo se entera.</p>
+            <div id="squad-ranking" class="admin-list"></div>
+          </article>
+          <article class="card" id="today-card-mindset">
+            <h3>Mentalidad</h3>
+            <p id="mindset-phrase" class="today-note">Frase del dia</p>
+            <div class="role-actions">
+              <button class="ghost" type="button" id="mindset-audio">Reproducir audio</button>
+              <button class="ghost" type="button" id="mindset-challenge">Completar mini reto</button>
+            </div>
+            <p id="mindset-status" class="reg-hint"></p>
+          </article>
+          <article class="card" id="today-card-ranking">
+            <h3>Top 10 semanal (anonimo)</h3>
+            <div id="weekly-anon-ranking" class="admin-list"></div>
+          </article>
+        </div>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

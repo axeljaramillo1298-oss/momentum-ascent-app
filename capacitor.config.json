@@ -1,0 +1,6 @@
+{
+  "appId": "com.fitnespag.app",
+  "appName": "Momentum Ascent",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}

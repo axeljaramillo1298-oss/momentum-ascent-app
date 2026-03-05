@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Check-in Foto | User</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="noise"></div>
+    <div class="stars"></div>
+    <header class="hero page-hero">
+      <nav class="nav">
+        <div class="logo">DISCIPLINA</div>
+        <div class="nav-actions">
+          <a class="ghost" href="index.html">Inicio</a>
+          <a class="ghost" href="user-hoy.html">Hoy</a>
+          <a class="ghost" href="user-rutinas.html">Rutinas</a>
+          <a class="ghost" href="user-progreso.html">Progreso</a>
+          <a class="ghost" href="user-dieta.html">Dieta</a>
+          <a class="ghost" href="user-checkin.html">Foto</a>
+          <a class="ghost" href="admin.html" data-role-only="admin">Admin</a>
+        </div>
+      </nav>
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Modulo User</p>
+          <h1>Subir foto de check-in</h1>
+          <p class="subhead">Comparte evidencia de entrenamiento o habito cumplido.</p>
+        </div>
+      </div>
+    </header>
+    <main>
+      <section class="section admin-grid">
+        <article class="card">
+          <h3>Nuevo check-in</h3>
+          <form id="user-checkin-form" class="admin-form">
+            <label>Foto<input id="user-checkin-file" type="file" accept="image/*" required /></label>
+            <label>Nota<input id="user-checkin-note" type="text" placeholder="Ej. Full body 30 min" required /></label>
+            <img id="user-checkin-preview" class="photo-preview" alt="preview" />
+            <button class="primary" type="submit">Guardar check-in</button>
+            <p class="reg-feedback" id="user-checkin-feedback" aria-live="polite"></p>
+          </form>
+        </article>
+        <article class="card">
+          <h3>Historial reciente</h3>
+          <div id="user-checkin-list" class="admin-list"></div>
+        </article>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

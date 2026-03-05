@@ -1,0 +1,200 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Registro y Login | Disciplina</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="noise"></div>
+    <div class="stars"></div>
+    <header class="hero page-hero">
+      <nav class="nav">
+        <div class="logo">DISCIPLINA</div>
+        <div class="nav-actions">
+          <a class="ghost" href="index.html">Inicio</a>
+          <a class="ghost" href="onboarding-1.html">Guia</a>
+          <a class="ghost" href="demo.html">Demo</a><a class="ghost" href="sistema.html">Sistema</a><a class="ghost" href="planes.html">Planes</a><a class="ghost" href="nutricion.html">Nutricion</a><a class="ghost" href="admin.html" data-role-only="admin">Admin</a><a class="primary" href="onboarding-1.html">Empezar</a>
+        </div>
+      </nav>
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Cuenta personal</p>
+          <h1>Registro y login</h1>
+          <p class="subhead">Crea tu cuenta y define tu sistema de disciplina en un flujo claro.</p>
+        </div>
+        <div class="reg-hero-media" aria-hidden="true">
+          <img src="assets/extras/extra-02.jpeg" alt="" loading="lazy" />
+          <img src="assets/extras/extra-07.jpeg" alt="" loading="lazy" />
+          <img src="assets/extras/extra-14.jpeg" alt="" loading="lazy" />
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="section auth" id="login">
+        <div class="section-title">
+          <h2>Login rapido</h2>
+          <p>Si ya tienes cuenta, entra y continua con tu racha.</p>
+        </div>
+        <div class="role-switch card">
+          <h3>Modo de acceso</h3>
+          <p>Selecciona si vas como usuario o como staff humano (entrenador/nutricionista).</p>
+          <div class="role-actions">
+            <button class="ghost" type="button" data-role-set="user">Entrar como user</button>
+            <button class="ghost" type="button" data-role-set="admin">Entrar como admin</button>
+          </div>
+          <p class="role-state">Modo actual: <strong data-role-label>user</strong></p>
+        </div>
+        <div class="auth-grid">
+          <form class="card" id="login-form">
+            <h3>Entrar</h3>
+            <div class="reg-step-media compact">
+              <img src="assets/extras/extra-22.jpeg" alt="Acceso al sistema" loading="lazy" />
+            </div>
+            <div class="form-grid">
+              <label>Email<input id="login-email" type="email" placeholder="tu@email.com" /></label>
+              <label>WhatsApp<input id="login-whatsapp" type="tel" placeholder="+52..." /></label>
+              <label>PIN de acceso<input type="password" placeholder="****" /></label>
+            </div>
+            <button class="primary" type="submit">Iniciar sesion</button>
+            <p class="reg-feedback" id="login-feedback" aria-live="polite"></p>
+          </form>
+          <div class="card">
+            <h3>Primera vez</h3>
+            <p>Completa el onboarding para activar tus reglas de disciplina, horario y modo de presion.</p>
+            <a class="ghost" href="onboarding-1.html">Ir a la guia</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section waitlist" id="registro">
+        <div class="section-title">
+          <h2>Registro centralizado</h2>
+          <p>El registro completo vive en la guia para que no repitas formularios.</p>
+        </div>
+        <div class="reg-shell">
+          <div class="reg-progress">
+            <small class="reg-hint">Guardado automatico activo: si cierras, recuperas el avance.</small>
+            <span id="reg-step-label">Paso 1 de 4</span>
+            <div class="reg-progress-bar"><div id="reg-progress-fill"></div></div>
+            <div class="reg-dots" id="reg-dots" aria-hidden="true"></div>
+          </div>
+          <form class="registration-form" id="registration-form">
+            <div class="reg-step active" data-reg-step="1">
+              <h3>Datos base</h3>
+              <div class="reg-step-media">
+                <img src="assets/extras/extra-01.jpeg" alt="Inicio de registro" loading="lazy" />
+              </div>
+              <div class="form-grid">
+                <label>Nombre completo<input name="nombre" type="text" required /></label>
+                <label>Email<input name="email" type="email" required /></label>
+                <label>WhatsApp con lada<input name="whatsapp" type="tel" required /></label>
+                <label>Horario de check-in
+                  <select name="horario" required>
+                    <option value="">Selecciona</option><option>06:00 - 08:00</option><option>12:00 - 14:00</option><option>19:00 - 21:00</option><option>21:00 - 23:00</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div class="reg-step" data-reg-step="2">
+              <h3>Rutina y contexto</h3>
+              <div class="reg-step-media">
+                <img src="assets/extras/extra-04.jpeg" alt="Rutina y objetivos" loading="lazy" />
+              </div>
+              <div class="form-grid">
+                <label>Objetivo principal<select name="objetivo" required><option value="">Selecciona</option><option>Bajar peso</option><option>Ganar musculo</option><option>Resistencia</option><option>Mentalidad</option><option>Constancia</option><option>Ambos</option></select></label>
+                <label>Tiempo diario<select name="tiempo" required><option value="">Selecciona</option><option>20 min</option><option>30 min</option><option>40 min</option></select></label>
+                <label>Lugar de entrenamiento<select name="lugar" required><option value="">Selecciona</option><option>Casa</option><option>Gym</option><option>Mixto</option></select></label>
+                <label>Tono del coach<select name="tono" required><option value="">Selecciona</option><option>Estricto</option><option>Neutral</option><option>Rudo</option></select></label>
+                <label>Nivel actual<select name="nivel" required><option value="">Selecciona</option><option>Bajo</option><option>Medio</option><option>Alto</option></select></label>
+                <label>Lesiones o restricciones<select name="lesiones" required><option value="">Selecciona</option><option>No</option><option>Si</option></select></label>
+                <label>Deporte principal
+  <select name="deporte" id="deporte" required>
+    <option value="">Selecciona</option>
+    <option>Ninguno</option>
+    <option>Running</option>
+    <option>Ciclismo</option>
+    <option>Natacion</option>
+    <option>Futbol</option>
+    <option>Basquetbol</option>
+    <option>Tenis</option>
+    <option>Padel</option>
+    <option>Volleyball</option>
+    <option>Box</option>
+    <option>MMA</option>
+    <option>Muay Thai</option>
+    <option>BJJ</option>
+    <option>CrossFit</option>
+    <option>Hyrox</option>
+    <option>Calistenia</option>
+    <option>Yoga</option>
+    <option>Pilates</option>
+    <option>Baile</option>
+    <option>Senderismo</option>
+    <option>Triatlon</option>
+    <option>Otro</option>
+  </select>
+</label>
+<label id="deporte-otro-field" class="hidden-field">¿Cual deporte practicas?
+  <input name="deporte_otro" id="deporte-otro" type="text" placeholder="Ej. Escalada" />
+</label>
+                <label>Trigger dominante<select name="trigger" required><option value="">Selecciona</option><option>Ansiedad</option><option>Estres</option><option>Falta de tiempo</option></select></label>
+                <label>Entrenas en casa?<select name="entreno_casa" id="entreno-casa" required><option value="">Selecciona</option><option>Si</option><option>No</option><option>Mixto</option></select></label><label id="equipo-field" class="hidden-field">Equipo disponible en casa<select name="equipo_casa" id="equipo-casa"><option value="">Selecciona</option><option>Nada (solo peso corporal)</option><option>Ligas / bandas</option><option>Mancuernas</option><option>Barra y discos</option><option>Kettlebell</option><option>Banco</option><option>Caminadora</option><option>Escaladora</option><option>Bicicleta estatica</option><option>Eliptica</option><option>Set completo</option></select></label><label>Estilo de alimentacion<select name="alimentacion" required><option value="">Selecciona</option><option>Simple</option><option>Flexible</option><option>Guiado</option></select></label>
+              </div>
+            </div>
+            <div class="reg-step" data-reg-step="3">
+              <h3>Personalidad y modos</h3>
+              <div class="reg-step-media">
+                <img src="assets/extras/extra-12.jpeg" alt="Perfil personalizado" loading="lazy" />
+              </div>
+              <div class="form-grid">
+                <label>Perfil de usuario<select name="perfil" required><option value="">Selecciona</option><option>Guerrero</option><option>Constante</option><option>Explosivo</option><option>Estrategico</option></select></label>
+                <label>Modulo principal<select name="modulo" required><option value="">Selecciona</option><option>Fitness</option><option>Estudio diario</option><option>Programacion diaria</option><option>Idiomas</option><option>Finanzas personales</option><option>Meditacion</option></select></label>
+                <label>Voz para mensajes<select name="voz" required><option value="">Selecciona</option><option>Masculina seria</option><option>Femenina estricta</option><option>Robotica neutral</option></select></label>
+                <label>Nombre preferido del sistema<select name="branding" required><option value="">Selecciona</option><option>Disciplina Brutal</option><option>El Sistema</option><option>No Falles</option><option>Codigo 10</option><option>Coach Frio</option><option>Imparable</option></select></label>
+                <label>Modo especial<select name="modo_especial" required><option value="">Selecciona</option><option>Contrato</option><option>Apuesta</option><option>Competencia</option></select></label>
+                <label>Monto de apuesta (si aplica)<input name="apuesta" type="number" min="0" step="1" placeholder="Ej. 20" /></label>
+              </div>
+            </div>
+            <div class="reg-step" data-reg-step="4">
+              <h3>Compromiso final</h3>
+              <div class="reg-step-media">
+                <img src="assets/extras/extra-17.jpeg" alt="Compromiso final" loading="lazy" />
+              </div>
+              <div class="form-grid">
+                <label>Plan<select name="plan" required><option value="">Selecciona</option><option>Free</option><option>Coach IA</option><option>Coach + Humano</option><option>Retos</option></select></label>
+                <label>Check-in con foto<select name="foto_checkin" required><option value="">Selecciona</option><option>Si</option><option>No</option></select></label>
+              </div>
+              <label class="agree-row"><input name="compromiso" type="checkbox" required /><span>Acepto 10 minutos maximos para responder y castigo automatico si fallo.</span></label>
+              <label class="agree-row"><input name="aviso" type="checkbox" required /><span>Entiendo que esto es un sistema de disciplina y no reemplaza asesoria medica.</span></label>
+            </div>
+            <div class="reg-actions">
+              <button class="ghost" type="button" id="reg-back">Anterior</button>
+              <button class="primary" type="button" id="reg-next">Siguiente</button>
+              <button class="primary" type="submit" id="reg-submit">Activar sistema</button>
+            </div>
+            <div class="reg-feedback" id="reg-feedback" aria-live="polite"></div>
+          </form>
+          <div class="reg-summary" id="reg-summary"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer"><div>Disciplina WhatsApp Coach</div></footer>
+    <div class="scroll-progress" aria-hidden="true"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+

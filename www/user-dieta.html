@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Dieta | User</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="noise"></div>
+    <div class="stars"></div>
+    <header class="hero page-hero">
+      <nav class="nav">
+        <div class="logo">DISCIPLINA</div>
+        <div class="nav-actions">
+          <a class="ghost" href="index.html">Inicio</a>
+          <a class="ghost" href="user-hoy.html">Hoy</a>
+          <a class="ghost" href="user-rutinas.html">Rutinas</a>
+          <a class="ghost" href="user-progreso.html">Progreso</a>
+          <a class="ghost" href="user-dieta.html">Dieta</a>
+          <a class="ghost" href="user-checkin.html">Foto</a>
+          <a class="ghost" href="admin.html" data-role-only="admin">Admin</a>
+        </div>
+      </nav>
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Modulo User</p>
+          <h1>Nutricion diaria</h1>
+          <p class="subhead">Plan del staff + seguimiento de agua, calorias y adherencia.</p>
+        </div>
+      </div>
+    </header>
+    <main>
+      <section class="section admin-grid">
+        <article class="card" id="user-plan-diet-panel"></article>
+        <article class="card">
+          <h3>Plan recomendado</h3>
+          <div id="user-diet-plan" class="admin-list"></div>
+        </article>
+        <article class="card">
+          <h3>Estado del dia</h3>
+          <ul class="stat-list">
+            <li><span>Agua</span><strong id="user-diet-water">-</strong></li>
+            <li><span>Calorias</span><strong id="user-diet-calories">-</strong></li>
+            <li><span>Dieta</span><strong id="user-diet-status">-</strong></li>
+            <li><span>Score</span><strong id="user-diet-score">-</strong></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Acciones rapidas</h3>
+          <div class="role-actions">
+            <button class="ghost" type="button" id="diet-quick-water">+1 vaso</button>
+            <button class="ghost" type="button" id="diet-quick-300">+300 kcal</button>
+            <button class="ghost" type="button" id="diet-quick-done">Marcar dieta</button>
+          </div>
+        </article>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
