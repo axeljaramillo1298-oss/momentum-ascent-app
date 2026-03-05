@@ -576,6 +576,14 @@ const saveJsonObject = (key, value) => {
   localStorage.setItem(key, JSON.stringify(value));
 };
 
+const normalizeWhatsapp = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const digits = raw.replace(/[^\d]/g, "");
+  if (!digits) return "";
+  return `+${digits}`;
+};
+
 const ensureUser = (payload) => {
   const users = readJsonArray(USERS_KEY);
   const email = String(payload.email || "").trim().toLowerCase();
@@ -592,7 +600,7 @@ const ensureUser = (payload) => {
     id,
     name: String(payload.name || existing?.name || "").trim() || "User",
     email,
-    whatsapp: String(payload.whatsapp || existing?.whatsapp || "").trim(),
+    whatsapp: normalizeWhatsapp(payload.whatsapp || existing?.whatsapp || ""),
     role: String(payload.role || existing?.role || "user").trim() || "user",
     plan: normalizedPlan.label,
     planId: normalizedPlan.id,
@@ -650,7 +658,7 @@ const syncUserWithBackend = async (payload) => {
   const response = await apiPost("/auth/login", {
     name: payload.name || "User",
     email,
-    whatsapp: payload.whatsapp || "",
+    whatsapp: normalizeWhatsapp(payload.whatsapp || ""),
     role: payload.role || "user",
     plan: payload.plan || "Free",
     goal: payload.goal || payload.objetivo || "",
@@ -1565,12 +1573,38 @@ const initAdminPanel = () => {
     return { routineText, dietText, messageText, mode };
   };
 
+  const buildAiPlanRemote = async () => {
+    const users = readJsonArray(USERS_KEY).filter((u) => selectedUsers.has(u.id));
+    const prompt = aiPrompt?.value?.trim() || "";
+    const context = aiContext?.value?.trim() || "";
+    const mode = modeSelect?.value || "admin_ai";
+    const remote = await apiPost("/admin/ai-plan", {
+      userIds: users.map((u) => u.id),
+      prompt,
+      context,
+      fileText,
+      mode,
+    });
+    return remote?.plan || null;
+  };
+
   if (aiGenerate) {
-    aiGenerate.addEventListener("click", () => {
-      const plan = buildAiPlan();
-      if (aiOutput) {
-        aiOutput.innerHTML = `<strong>Respuesta IA</strong><p>${plan.routineText}</p><p>${plan.dietText}</p>`;
+    aiGenerate.addEventListener("click", async () => {
+      let plan = buildAiPlan();
+      if (aiOutput) aiOutput.innerHTML = `<strong>Generando...</strong><p>Consultando IA...</p>`;
+      try {
+        const remotePlan = await buildAiPlanRemote();
+        if (remotePlan?.routineText || remotePlan?.dietText) {
+          plan = {
+            routineText: remotePlan.routineText || plan.routineText,
+            dietText: remotePlan.dietText || plan.dietText,
+            messageText: remotePlan.messageText || plan.messageText,
+          };
+        }
+      } catch {
+        // fallback local
       }
+      if (aiOutput) aiOutput.innerHTML = `<strong>Respuesta IA</strong><p>${plan.routineText}</p><p>${plan.dietText}</p>`;
       if (finalRoutine) finalRoutine.value = plan.routineText;
       if (finalDiet) finalDiet.value = plan.dietText;
       if (finalMessage) finalMessage.value = plan.messageText;
@@ -1604,18 +1638,24 @@ const initAdminPanel = () => {
       });
       saveJsonObject(USER_ASSIGNMENTS_KEY, assignments);
       try {
-        await apiPost("/admin/assignments", {
+        const remote = await apiPost("/admin/assignments", {
           userIds: Array.from(selectedUsers),
           mode,
           routine: routine || "",
           diet: diet || "",
           message: message || "",
+          sendWhatsapp: true,
           createdBy: "admin",
         });
+        const sent = Array.isArray(remote?.whatsapp) ? remote.whatsapp.filter((w) => w.ok).length : 0;
+        if (assignFeedback) {
+          assignFeedback.textContent = `Plan asignado correctamente. WhatsApp enviados: ${sent}.`;
+        }
       } catch {
-        // fallback local
+        if (assignFeedback) {
+          assignFeedback.textContent = "Plan asignado localmente. No se pudo confirmar envio de WhatsApp.";
+        }
       }
-      if (assignFeedback) assignFeedback.textContent = "Plan asignado correctamente a usuarios seleccionados.";
       renderUserRoutineFeed();
       renderUserRoutinesPage();
       renderUserDietPage();
@@ -2714,7 +2754,7 @@ if (regSportSelect) {
 if (regForm) {
   regForm.addEventListener("input", saveRegistrationDraft);
 
-  regForm.addEventListener("submit", (event) => {
+  regForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!validateCurrentStep()) {
       return;
@@ -2784,7 +2824,7 @@ if (regForm) {
     ensureUser({
       name: data.get("nombre"),
       email: data.get("email"),
-      whatsapp: data.get("whatsapp"),
+      whatsapp: normalizeWhatsapp(data.get("whatsapp")),
       plan: data.get("plan") || "Free",
       horario: data.get("horario"),
       objetivo: data.get("objetivo"),
@@ -2797,6 +2837,21 @@ if (regForm) {
         diet_plus: false,
       },
     });
+
+    try {
+      const remote = await syncUserWithBackend({
+        name: data.get("nombre") || "User",
+        email: data.get("email"),
+        whatsapp: normalizeWhatsapp(data.get("whatsapp")),
+        role: "user",
+        plan: data.get("plan") || "Free",
+        goal: data.get("objetivo") || "",
+        checkinSchedule: data.get("horario") || "",
+      });
+      hydrateUserCacheFromApi(remote?.user);
+    } catch {
+      // fallback local
+    }
 
     regForm.reset();
     localStorage.removeItem(REG_DRAFT_KEY);
@@ -2824,14 +2879,14 @@ if (loginForm) {
     const localUser = ensureUser({
       name: email.split("@")[0] || "User",
       email,
-      whatsapp: loginWhatsapp?.value || "",
+      whatsapp: normalizeWhatsapp(loginWhatsapp?.value || ""),
       plan: getPlanSelection().label,
     });
     try {
       const remote = await syncUserWithBackend({
         name: localUser?.name || email.split("@")[0] || "User",
         email,
-        whatsapp: loginWhatsapp?.value || "",
+        whatsapp: normalizeWhatsapp(loginWhatsapp?.value || ""),
         role: getRoleMode(),
         plan: localUser?.plan || getPlanSelection().label,
       });

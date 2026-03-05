@@ -2,16 +2,23 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const { generateAiPlan, buildFallbackPlan } = require("./ai");
+const { sendWhatsAppText } = require("./whatsapp");
+const { startCoachOnboardingForUser, handleIncomingCoachMessage } = require("./coach-whatsapp");
 const {
   DB_META,
   initDb,
   ensureUser,
+  getUserByEmail,
   getFeed,
   getMetrics,
   getWeeklyRanking,
   getAdminDashboard,
   getAdminTimeline,
   getAdminCsvReport,
+  upsertCoachFlow,
+  getCoachFlowByPhone,
+  getCoachFlowByUser,
   getSubscription,
   getUserPayments,
   saveAssignments,
@@ -27,6 +34,7 @@ const {
 
 const app = express();
 const PORT = Number(process.env.PORT || 8787);
+const WHATSAPP_VERIFY_TOKEN = String(process.env.WHATSAPP_VERIFY_TOKEN || "").trim();
 
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
@@ -42,10 +50,26 @@ app.get("/health", (req, res) => {
 
 app.post("/auth/login", async (req, res) => {
   try {
-    const user = await ensureUser(req.body || {});
+    const payload = req.body || {};
+    const email = String(payload.email || "").trim().toLowerCase();
+    const previous = email ? await getUserByEmail(email) : null;
+    const user = await ensureUser(payload);
+    const isNew = !previous;
+    const hasNewWhatsapp = !String(previous?.whatsapp || "").trim() && String(user?.whatsapp || "").trim();
+    if ((isNew || hasNewWhatsapp) && user?.whatsapp) {
+      try {
+        await startCoachOnboardingForUser(user, {
+          getCoachFlowByUser,
+          upsertCoachFlow,
+        });
+      } catch (err) {
+        console.warn("[backend] whatsapp onboarding skipped:", String(err.message || err));
+      }
+    }
     const metrics = await getMetrics(user.id);
     res.json({
       ok: true,
+      isNew,
       user: {
         id: user.id,
         name: user.name,
@@ -60,6 +84,40 @@ app.post("/auth/login", async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({ ok: false, error: String(error.message || "login_failed") });
+  }
+});
+
+app.get("/whatsapp/webhook", (req, res) => {
+  const mode = String(req.query["hub.mode"] || "");
+  const token = String(req.query["hub.verify_token"] || "");
+  const challenge = String(req.query["hub.challenge"] || "");
+  if (mode === "subscribe" && token && token === WHATSAPP_VERIFY_TOKEN) {
+    return res.status(200).send(challenge);
+  }
+  return res.status(403).send("forbidden");
+});
+
+app.post("/whatsapp/webhook", async (req, res) => {
+  try {
+    const entries = Array.isArray(req.body?.entry) ? req.body.entry : [];
+    for (const entry of entries) {
+      const changes = Array.isArray(entry?.changes) ? entry.changes : [];
+      for (const change of changes) {
+        const value = change?.value || {};
+        const messages = Array.isArray(value?.messages) ? value.messages : [];
+        for (const msg of messages) {
+          if (msg?.type === "text") {
+            await handleIncomingCoachMessage(msg, {
+              getCoachFlowByPhone,
+              upsertCoachFlow,
+            });
+          }
+        }
+      }
+    }
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "whatsapp_webhook_failed") });
   }
 });
 
@@ -123,10 +181,87 @@ app.post("/admin/nutrition", async (req, res) => {
 
 app.post("/admin/assignments", async (req, res) => {
   try {
-    const assignments = await saveAssignments(req.body || {});
-    res.status(201).json({ ok: true, assignments });
+    const payload = req.body || {};
+    const assignments = await saveAssignments(payload);
+    const sendWhatsapp = Boolean(payload.sendWhatsapp);
+    const message = String(payload.message || "").trim();
+    const userIds = Array.isArray(payload.userIds)
+      ? payload.userIds.map((id) => String(id || "").trim().toLowerCase()).filter(Boolean)
+      : [];
+
+    const whatsapp = [];
+    if (sendWhatsapp && message && userIds.length) {
+      for (const userId of userIds) {
+        try {
+          const candidates = await searchUsers(userId);
+          const user = candidates.find((u) => String(u.id || u.email || "").trim().toLowerCase() === userId);
+          const to = String(user?.whatsapp || "").trim();
+          const result = await sendWhatsAppText({ to, body: message });
+          whatsapp.push({ userId, to, ...result });
+        } catch (error) {
+          whatsapp.push({ userId, ok: false, skipped: false, reason: String(error.message || "unknown_error") });
+        }
+      }
+    }
+
+    res.status(201).json({ ok: true, assignments, whatsapp });
   } catch (error) {
     res.status(400).json({ ok: false, error: String(error.message || "assignments_failed") });
+  }
+});
+
+app.post("/admin/ai-plan", async (req, res) => {
+  try {
+    const payload = req.body || {};
+    const userIds = Array.isArray(payload.userIds)
+      ? payload.userIds.map((id) => String(id || "").trim().toLowerCase()).filter(Boolean)
+      : [];
+
+    const users = [];
+    for (const userId of userIds.slice(0, 10)) {
+      const found = await searchUsers(userId);
+      const user = found.find((u) => String(u.id || u.email || "").trim().toLowerCase() === userId);
+      if (user) users.push(user);
+    }
+
+    let plan;
+    try {
+      plan = await generateAiPlan({
+        ...payload,
+        users,
+      });
+    } catch (err) {
+      console.warn("[backend] ai-plan fallback:", String(err.message || err));
+      plan = buildFallbackPlan({
+        users,
+        prompt: payload.prompt,
+        context: payload.context || payload.fileText,
+        mode: payload.mode,
+      });
+    }
+
+    res.json({ ok: true, plan });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: String(error.message || "ai_plan_failed") });
+  }
+});
+
+app.post("/admin/coach/nudge", async (req, res) => {
+  try {
+    const userId = String(req.body?.userId || "").trim().toLowerCase();
+    const message = String(req.body?.message || "").trim();
+    if (!userId) throw new Error("user_id_required");
+    if (!message) throw new Error("message_required");
+
+    const candidates = await searchUsers(userId);
+    const user = candidates.find((u) => String(u.id || u.email || "").trim().toLowerCase() === userId);
+    if (!user) throw new Error("user_not_found");
+
+    const to = String(user.whatsapp || "").trim();
+    const result = await sendWhatsAppText({ to, body: message });
+    res.json({ ok: true, userId, to, result });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: String(error.message || "coach_nudge_failed") });
   }
 });
 

@@ -93,3 +93,12 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   end_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS coach_whatsapp_flows (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  phone TEXT NOT NULL UNIQUE,
+  step INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'active',
+  answers_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL
+);

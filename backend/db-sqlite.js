@@ -109,6 +109,15 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   end_at TEXT,
   updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS coach_whatsapp_flows (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  phone TEXT NOT NULL UNIQUE,
+  step INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'active',
+  answers_json TEXT DEFAULT '{}',
+  updated_at TEXT NOT NULL
+);
 `);
 
 const nowIso = () => new Date().toISOString();
@@ -477,6 +486,31 @@ FROM checkins c
 WHERE c.user_id = ?
 ORDER BY c.created_at DESC
 LIMIT 50
+`);
+
+const upsertCoachFlowStmt = db.prepare(`
+INSERT INTO coach_whatsapp_flows (user_id, phone, step, status, answers_json, updated_at)
+VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT(user_id) DO UPDATE SET
+  phone = excluded.phone,
+  step = excluded.step,
+  status = excluded.status,
+  answers_json = excluded.answers_json,
+  updated_at = excluded.updated_at
+`);
+
+const getCoachFlowByPhoneStmt = db.prepare(`
+SELECT user_id AS userId, phone, step, status, answers_json AS answersJson, updated_at AS updatedAt
+FROM coach_whatsapp_flows
+WHERE phone = ?
+LIMIT 1
+`);
+
+const getCoachFlowByUserStmt = db.prepare(`
+SELECT user_id AS userId, phone, step, status, answers_json AS answersJson, updated_at AS updatedAt
+FROM coach_whatsapp_flows
+WHERE user_id = ?
+LIMIT 1
 `);
 
 function ensureUser(payload) {
@@ -937,6 +971,55 @@ function getAdminCsvReport(scope, userId) {
   };
 }
 
+function getUserByEmail(email) {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return null;
+  return getUserStmt.get(normalized) || null;
+}
+
+function upsertCoachFlow(payload) {
+  const userId = normalizeEmail(payload.userId);
+  const phone = safeStr(payload.phone);
+  if (!userId) throw new Error("user_id_required");
+  if (!phone) throw new Error("phone_required");
+  const step = Math.max(0, Number(payload.step || 0));
+  const status = safeStr(payload.status) || "active";
+  const answers = payload.answers && typeof payload.answers === "object" ? payload.answers : {};
+  const now = nowIso();
+  upsertCoachFlowStmt.run(userId, phone, step, status, JSON.stringify(answers), now);
+  return getCoachFlowByUser(userId);
+}
+
+function getCoachFlowByPhone(phone) {
+  const key = safeStr(phone);
+  if (!key) return null;
+  const row = getCoachFlowByPhoneStmt.get(key);
+  if (!row) return null;
+  return {
+    userId: row.userId,
+    phone: row.phone,
+    step: Number(row.step || 0),
+    status: row.status || "active",
+    answers: parseJsonSafe(row.answersJson, {}),
+    updatedAt: row.updatedAt || null,
+  };
+}
+
+function getCoachFlowByUser(userId) {
+  const normalized = normalizeEmail(userId);
+  if (!normalized) return null;
+  const row = getCoachFlowByUserStmt.get(normalized);
+  if (!row) return null;
+  return {
+    userId: row.userId,
+    phone: row.phone,
+    step: Number(row.step || 0),
+    status: row.status || "active",
+    answers: parseJsonSafe(row.answersJson, {}),
+    updatedAt: row.updatedAt || null,
+  };
+}
+
 const DB_META = {
   client: "sqlite",
   path: DB_PATH,
@@ -964,7 +1047,11 @@ module.exports = {
   reviewPaymentRequest: async (payload) => reviewPaymentRequest(payload),
   getSubscription: async (userId) => getSubscription(userId),
   getUserPayments: async (userId) => getUserPayments(userId),
+  getUserByEmail: async (email) => getUserByEmail(email),
   searchUsers: async (search) => searchUsers(search),
+  upsertCoachFlow: async (payload) => upsertCoachFlow(payload),
+  getCoachFlowByPhone: async (phone) => getCoachFlowByPhone(phone),
+  getCoachFlowByUser: async (userId) => getCoachFlowByUser(userId),
   getAdminDashboard: async (dateKey) => getAdminDashboard(dateKey),
   getAdminTimeline: async (userId, limit) => getAdminTimeline(userId, limit),
   getAdminCsvReport: async (scope, userId) => getAdminCsvReport(scope, userId),

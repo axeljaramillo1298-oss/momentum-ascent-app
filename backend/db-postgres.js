@@ -115,6 +115,15 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   end_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS coach_whatsapp_flows (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  phone TEXT NOT NULL UNIQUE,
+  step INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'active',
+  answers_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL
+);
 `;
 
 async function initDb() {
@@ -927,6 +936,86 @@ async function getAdminCsvReport(scope, userId) {
   };
 }
 
+async function getUserByEmail(email) {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return null;
+  const result = await pool.query("SELECT * FROM users WHERE id = $1 LIMIT 1", [normalized]);
+  return result.rows[0] || null;
+}
+
+async function upsertCoachFlow(payload) {
+  const userId = normalizeEmail(payload.userId);
+  const phone = safeStr(payload.phone);
+  if (!userId) throw new Error("user_id_required");
+  if (!phone) throw new Error("phone_required");
+  const step = Math.max(0, Number(payload.step || 0));
+  const status = safeStr(payload.status) || "active";
+  const answers = payload.answers && typeof payload.answers === "object" ? payload.answers : {};
+  const now = nowIso();
+  await pool.query(
+    `
+    INSERT INTO coach_whatsapp_flows (user_id, phone, step, status, answers_json, updated_at)
+    VALUES ($1,$2,$3,$4,$5,$6)
+    ON CONFLICT (user_id) DO UPDATE SET
+      phone = EXCLUDED.phone,
+      step = EXCLUDED.step,
+      status = EXCLUDED.status,
+      answers_json = EXCLUDED.answers_json,
+      updated_at = EXCLUDED.updated_at
+    `,
+    [userId, phone, step, status, answers, now]
+  );
+  return getCoachFlowByUser(userId);
+}
+
+async function getCoachFlowByPhone(phone) {
+  const key = safeStr(phone);
+  if (!key) return null;
+  const result = await pool.query(
+    `
+    SELECT user_id AS "userId", phone, step, status, answers_json AS answers, updated_at AS "updatedAt"
+    FROM coach_whatsapp_flows
+    WHERE phone = $1
+    LIMIT 1
+    `,
+    [key]
+  );
+  const row = result.rows[0];
+  if (!row) return null;
+  return {
+    userId: row.userId,
+    phone: row.phone,
+    step: Number(row.step || 0),
+    status: row.status || "active",
+    answers: row.answers || {},
+    updatedAt: row.updatedAt || null,
+  };
+}
+
+async function getCoachFlowByUser(userId) {
+  const normalized = normalizeEmail(userId);
+  if (!normalized) return null;
+  const result = await pool.query(
+    `
+    SELECT user_id AS "userId", phone, step, status, answers_json AS answers, updated_at AS "updatedAt"
+    FROM coach_whatsapp_flows
+    WHERE user_id = $1
+    LIMIT 1
+    `,
+    [normalized]
+  );
+  const row = result.rows[0];
+  if (!row) return null;
+  return {
+    userId: row.userId,
+    phone: row.phone,
+    step: Number(row.step || 0),
+    status: row.status || "active",
+    answers: row.answers || {},
+    updatedAt: row.updatedAt || null,
+  };
+}
+
 module.exports = {
   DB_META,
   initDb,
@@ -944,7 +1033,11 @@ module.exports = {
   reviewPaymentRequest,
   getSubscription,
   getUserPayments,
+  getUserByEmail,
   searchUsers,
+  upsertCoachFlow,
+  getCoachFlowByPhone,
+  getCoachFlowByUser,
   getAdminDashboard,
   getAdminTimeline,
   getAdminCsvReport,
