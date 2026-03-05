@@ -422,7 +422,7 @@ const resolveApiBase = () => {
     return forced.replace(/\/+$/, "");
   }
   if (window.location.protocol === "file:") {
-    return "http://10.0.2.2:8787";
+    return "https://api.momentumascent.com";
   }
   const host = (window.location.hostname || "").toLowerCase();
   if (host === "localhost" || host === "127.0.0.1") {
