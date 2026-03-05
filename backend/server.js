@@ -35,6 +35,12 @@ const {
 const app = express();
 const PORT = Number(process.env.PORT || 8787);
 const WHATSAPP_VERIFY_TOKEN = String(process.env.WHATSAPP_VERIFY_TOKEN || "").trim();
+const ADMIN_EMAILS = new Set(
+  String(process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((v) => String(v || "").trim().toLowerCase())
+    .filter(Boolean)
+);
 
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
@@ -52,17 +58,23 @@ app.post("/auth/login", async (req, res) => {
   try {
     const payload = req.body || {};
     const email = String(payload.email || "").trim().toLowerCase();
+    const enforcedRole = ADMIN_EMAILS.has(email) ? "admin" : "user";
     const previous = email ? await getUserByEmail(email) : null;
-    const user = await ensureUser(payload);
+    const user = await ensureUser({
+      ...payload,
+      role: enforcedRole,
+    });
     const isNew = !previous;
     const hasNewWhatsapp = !String(previous?.whatsapp || "").trim() && String(user?.whatsapp || "").trim();
+    let onboarding = null;
     if ((isNew || hasNewWhatsapp) && user?.whatsapp) {
       try {
-        await startCoachOnboardingForUser(user, {
+        onboarding = await startCoachOnboardingForUser(user, {
           getCoachFlowByUser,
           upsertCoachFlow,
         });
       } catch (err) {
+        onboarding = { ok: false, error: String(err.message || err) };
         console.warn("[backend] whatsapp onboarding skipped:", String(err.message || err));
       }
     }
@@ -70,6 +82,7 @@ app.post("/auth/login", async (req, res) => {
     res.json({
       ok: true,
       isNew,
+      onboarding,
       user: {
         id: user.id,
         name: user.name,
@@ -84,6 +97,23 @@ app.post("/auth/login", async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({ ok: false, error: String(error.message || "login_failed") });
+  }
+});
+
+app.post("/coach/onboarding/start", async (req, res) => {
+  try {
+    const email = String(req.body?.email || req.body?.userId || "").trim().toLowerCase();
+    if (!email) throw new Error("email_required");
+    const user = await getUserByEmail(email);
+    if (!user) throw new Error("user_not_found");
+    if (!String(user.whatsapp || "").trim()) throw new Error("whatsapp_required");
+    const result = await startCoachOnboardingForUser(user, {
+      getCoachFlowByUser,
+      upsertCoachFlow,
+    });
+    res.json({ ok: true, result });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: String(error.message || "coach_onboarding_start_failed") });
   }
 });
 

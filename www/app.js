@@ -2849,6 +2849,9 @@ if (regForm) {
         checkinSchedule: data.get("horario") || "",
       });
       hydrateUserCacheFromApi(remote?.user);
+      await apiPost("/coach/onboarding/start", {
+        email: String(data.get("email") || "").trim().toLowerCase(),
+      }).catch(() => null);
     } catch {
       // fallback local
     }
