@@ -428,7 +428,10 @@ const resolveApiBase = () => {
   if (host === "localhost" || host === "127.0.0.1") {
     return "http://localhost:8787";
   }
-  return "http://localhost:8787";
+  if (host.endsWith("momentumascent.com")) {
+    return "https://api.momentumascent.com";
+  }
+  return `${window.location.protocol}//${window.location.host}`;
 };
 
 const apiUrl = (path) => `${resolveApiBase()}${path}`;
