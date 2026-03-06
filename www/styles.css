@@ -3660,10 +3660,18 @@ body.theme-female .today-pressure {
   min-height: 100dvh;
   max-width: 408px;
   margin: 0 auto;
-  padding: calc(6px + env(safe-area-inset-top)) 9px calc(10px + env(safe-area-inset-bottom));
+  padding: calc(6px + env(safe-area-inset-top)) 9px calc(16px + env(safe-area-inset-bottom));
   display: grid;
   grid-template-rows: auto 1fr;
   gap: 6px;
+}
+
+/* Allow full vertical flow in onboarding step 1 (avoid clipping below fold). */
+body.onb1-body {
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .onb1v2-top {
