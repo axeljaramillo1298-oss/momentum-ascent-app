@@ -4112,32 +4112,34 @@ body.onb1-body {
   position: relative;
   z-index: 1;
   height: 100%;
-  padding: calc(46px + env(safe-area-inset-top)) 18px 14px;
+  padding: calc(74px + env(safe-area-inset-top)) 18px 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .onb2v2-mantra {
   margin: 0;
   color: #f2ecf5;
-  font-size: 11px;
-  letter-spacing: 3.2px;
-  line-height: 1.52;
-  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 5px;
+  line-height: 1.42;
+  font-weight: 700;
   text-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }
 
 .onb2v2-title {
   margin: 0;
   font-family: "Bebas Neue", sans-serif;
-  font-size: clamp(58px, 14.1vw, 68px);
-  line-height: 0.86;
+  font-size: clamp(78px, 18.5vw, 94px);
+  line-height: 0.84;
   color: #f8f8ff;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.2px;
   text-transform: uppercase;
   text-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
-  max-width: 68%;
+  max-width: 66%;
+  margin-top: 30px;
+  margin-left: 2px;
 }
 
 .onb2v2-title span {
@@ -4147,21 +4149,24 @@ body.onb1-body {
 .onb2v2-copy {
   margin: 0;
   color: #e7deec;
-  font-size: 14px;
-  line-height: 1.34;
-  max-width: 66%;
+  font-size: 14.5px;
+  line-height: 1.28;
+  max-width: 60%;
+  margin-top: 20px;
+  font-weight: 500;
 }
 
 .onb2v2-list {
-  margin: 2px 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
   color: #f2e6ef;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 4px;
 }
 
 .onb2v2-list li {
@@ -4195,7 +4200,7 @@ body.onb1-body {
 .onb2v2-btn {
   width: min(268px, 100%);
   align-self: center;
-  margin-top: auto;
+  margin-top: 12px !important;
   display: block;
   border-radius: 11px;
   text-align: center;
@@ -4229,7 +4234,7 @@ body.onb1-body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding-top: 5px;
+  padding-top: 4px;
 }
 
 .onb2v2-mini-dots span {
@@ -4246,22 +4251,24 @@ body.onb1-body {
 
 @media (max-width: 390px) {
   .onb2v2-content {
-    padding: calc(44px + env(safe-area-inset-top)) 14px 12px;
-    gap: 8px;
+    padding: calc(58px + env(safe-area-inset-top)) 14px 12px;
+    gap: 6px;
   }
 
   .onb2v2-title {
-    font-size: clamp(50px, 13.6vw, 60px);
+    font-size: clamp(66px, 16.8vw, 80px);
+    margin-top: 24px;
   }
 
   .onb2v2-copy {
-    font-size: 13px;
-    max-width: 66%;
+    font-size: 14px;
+    max-width: 61%;
+    margin-top: 14px;
   }
 
   .onb2v2-list {
-    font-size: 12px;
-    gap: 6px;
+    font-size: 13px;
+    gap: 7px;
   }
 
   .onb2v2-btn strong {
@@ -4271,20 +4278,23 @@ body.onb1-body {
 
 @media (max-height: 820px) {
   .onb2v2-content {
-    padding: calc(42px + env(safe-area-inset-top)) 14px 10px;
+    padding: calc(54px + env(safe-area-inset-top)) 14px 10px;
     gap: 7px;
   }
 
   .onb2v2-title {
-    font-size: clamp(46px, 12.4vw, 54px);
+    font-size: clamp(58px, 15vw, 72px);
+    margin-top: 18px;
   }
 
   .onb2v2-copy {
-    font-size: 12px;
+    font-size: 14px;
+    max-width: 62%;
+    margin-top: 10px;
   }
 
   .onb2v2-list {
-    font-size: 11px;
+    font-size: 13px;
     gap: 6px;
   }
 
