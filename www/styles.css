@@ -3657,21 +3657,20 @@ body.theme-female .today-pressure {
 
 /* Onboarding 1 v2 - cinematic compact layout */
 .onb1v2-shell {
+  height: 100dvh;
   min-height: 100dvh;
   max-width: 408px;
   margin: 0 auto;
-  padding: calc(4px + env(safe-area-inset-top)) 9px calc(10px + env(safe-area-inset-bottom));
+  padding: calc(4px + env(safe-area-inset-top)) 9px calc(6px + env(safe-area-inset-bottom));
   display: grid;
   grid-template-rows: auto 1fr;
   gap: 4px;
+  overflow: hidden;
 }
 
-/* Allow full vertical flow in onboarding step 1 (avoid clipping below fold). */
 body.onb1-body {
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior-y: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 .onb1v2-top {
@@ -3688,7 +3687,10 @@ body.onb1-body {
   box-shadow: 0 22px 52px rgba(0, 0, 0, 0.58);
   padding: 8px;
   display: grid;
+  grid-template-rows: auto auto auto auto auto auto auto;
   gap: 5px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .onb1v2-hero {
@@ -3696,7 +3698,7 @@ body.onb1-body {
   border-radius: 14px 14px 12px 12px;
   overflow: hidden;
   border: 1px solid rgba(96, 143, 227, 0.26);
-  min-height: clamp(218px, 41vh, 252px);
+  min-height: clamp(172px, 34svh, 214px);
   background: #060e1a;
 }
 
@@ -3737,7 +3739,7 @@ body.onb1-body {
   position: absolute;
   top: 13px;
   right: 14px;
-  width: min(47%, 176px);
+  width: min(47%, 168px);
   z-index: 3;
   text-shadow: 0 8px 20px rgba(0, 0, 0, 0.72);
 }
@@ -3745,7 +3747,7 @@ body.onb1-body {
 .onb1v2-overlay h1 {
   margin: 0;
   font-family: "Bebas Neue", sans-serif;
-  font-size: clamp(58px, 14.2vw, 70px);
+  font-size: clamp(50px, 12.6vw, 60px);
   line-height: 0.83;
   color: #f2f6ff;
   letter-spacing: 0.3px;
@@ -3754,7 +3756,7 @@ body.onb1-body {
 .onb1v2-overlay p {
   margin: 7px 0 0;
   color: #dce7ff;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.1;
 }
@@ -3768,7 +3770,7 @@ body.onb1-body {
 }
 
 .onb1v2-rachacard {
-  min-height: 80px;
+  min-height: 74px;
   padding: 8px 11px 7px;
   background:
     linear-gradient(180deg, rgba(8, 18, 36, 0.88), rgba(5, 12, 26, 0.92)),
@@ -3791,14 +3793,14 @@ body.onb1-body {
   display: block;
   margin-top: 1px;
   font-family: "Bebas Neue", sans-serif;
-  font-size: 54px;
+  font-size: 48px;
   line-height: 0.8;
 }
 
 .onb1v2-rachacard p {
   margin: 0;
   color: #d3e1f8;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .onb1v2-mid {
@@ -3808,7 +3810,7 @@ body.onb1-body {
 }
 
 .onb1v2-level-left {
-  min-height: 68px;
+  min-height: 62px;
   padding: 7px 8px 6px;
   display: flex;
   align-items: flex-end;
@@ -3820,28 +3822,28 @@ body.onb1-body {
 
 .onb1v2-level-left span {
   font-family: "Bebas Neue", sans-serif;
-  font-size: 26px;
+  font-size: 24px;
   line-height: 0.86;
   letter-spacing: 0.4px;
 }
 
 .onb1v2-level-left b {
   font-family: "Bebas Neue", sans-serif;
-  font-size: 52px;
+  font-size: 46px;
   line-height: 0.8;
   color: #5ea9ff;
   text-shadow: 0 0 24px rgba(68, 132, 235, 0.5);
 }
 
 .onb1v2-level-right {
-  min-height: 68px;
+  min-height: 62px;
   padding: 7px;
 }
 
 .onb1v2-level-dots {
   display: flex;
   gap: 4px;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
 .onb1v2-level-dots span {
@@ -3856,7 +3858,7 @@ body.onb1-body {
 }
 
 .onb1v2-level-right strong {
-  font-size: 13px;
+  font-size: 11px;
   display: block;
   line-height: 1.02;
 }
@@ -3864,7 +3866,7 @@ body.onb1-body {
 .onb1v2-level-right p {
   margin: 2px 0 0;
   color: #ceddf6;
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .onb1v2-global {
@@ -3891,8 +3893,8 @@ body.onb1-body {
   color: #fff;
   text-decoration: none;
   text-align: center;
-  padding: 6px 10px 5px;
-  width: 74%;
+  padding: 5px 10px 4px;
+  width: 72%;
   margin: 0 auto;
   box-shadow: 0 12px 24px rgba(9, 44, 101, 0.4);
 }
@@ -3900,7 +3902,7 @@ body.onb1-body {
 .onb1v2-start strong {
   display: block;
   font-family: "Bebas Neue", sans-serif;
-  font-size: 34px;
+  font-size: 30px;
   line-height: 0.82;
   letter-spacing: 1px;
 }
@@ -3918,7 +3920,7 @@ body.onb1-body {
   align-items: center;
   gap: 6px;
   justify-content: center;
-  padding: 1px 0 0;
+  padding: 0;
 }
 
 .onb1v2-avatars {
@@ -3926,8 +3928,8 @@ body.onb1-body {
 }
 
 .onb1v2-avatars img {
-  width: 17px;
-  height: 17px;
+  width: 15px;
+  height: 15px;
   border-radius: 999px;
   object-fit: cover;
   border: 1px solid rgba(142, 182, 248, 0.5);
@@ -3941,7 +3943,7 @@ body.onb1-body {
 .onb1v2-social p {
   margin: 0;
   color: #afc5eb;
-  font-size: 10px;
+  font-size: 9px;
 }
 
 .onb1v2-login {
@@ -3949,8 +3951,8 @@ body.onb1-body {
   text-decoration: none;
   color: #d9e7ff;
   font-weight: 600;
-  font-size: 11px;
-  padding: 1px 0 0;
+  font-size: 10px;
+  padding: 0;
 }
 
 @media (max-width: 390px) {
@@ -3964,19 +3966,318 @@ body.onb1-body {
   }
 
   .onb1v2-overlay h1 {
-    font-size: 52px;
+    font-size: 46px;
   }
 
   .onb1v2-level-left span {
-    font-size: 24px;
+    font-size: 20px;
   }
 
   .onb1v2-level-left b {
-    font-size: 50px;
+    font-size: 40px;
   }
 
   .onb1v2-start strong {
+    font-size: 26px;
+  }
+}
+
+@media (max-height: 860px) {
+  .onb1v2-hero {
+    min-height: clamp(162px, 31svh, 194px);
+  }
+}
+
+@media (max-height: 760px) {
+  .onb1v2-shell {
+    padding-bottom: calc(4px + env(safe-area-inset-bottom));
+    gap: 3px;
+  }
+
+  .onb1v2-card {
+    gap: 4px;
+  }
+
+  .onb1v2-hero {
+    min-height: clamp(148px, 28svh, 176px);
+  }
+
+  .onb1v2-rachacard {
+    min-height: 66px;
+  }
+
+  .onb1v2-mid {
+    gap: 4px;
+  }
+
+  .onb1v2-level-left,
+  .onb1v2-level-right {
+    min-height: 56px;
+  }
+}
+
+/* Onboarding 2 - pink fitness cinematic card */
+.onb2v2-body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.onb2v2-shell {
+  height: 100dvh;
+  min-height: 100dvh;
+  max-width: 414px;
+  margin: 0 auto;
+  padding: calc(8px + env(safe-area-inset-top)) 10px calc(8px + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.onb2v2-top {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+}
+
+.onb2v2-top .onb-dots {
+  justify-self: center;
+}
+
+.onb2v2-top .onb-dot.active {
+  background: #ff5f97;
+  box-shadow: 0 0 0 3px rgba(255, 95, 151, 0.24);
+}
+
+.onb2v2-back {
+  width: 42px;
+  height: 42px;
+  border-color: rgba(255, 178, 211, 0.28);
+  background: linear-gradient(180deg, rgba(18, 24, 41, 0.82), rgba(12, 16, 28, 0.82));
+}
+
+.onb2v2-spacer {
+  width: 42px;
+  height: 42px;
+}
+
+.onb2v2-stage {
+  min-height: 0;
+  height: 100%;
+}
+
+.onb2v2-card {
+  position: relative;
+  height: 100%;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 157, 206, 0.24);
+  overflow: hidden;
+  box-shadow: 0 26px 56px rgba(0, 0, 0, 0.52);
+  background: #0a0f1e;
+}
+
+.onb2v2-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 44%;
+  filter: saturate(1.12) contrast(1.08) brightness(0.54);
+  transform: scale(1.04);
+}
+
+.onb2v2-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 68% at 12% 84%, rgba(255, 47, 128, 0.5), transparent 64%),
+    radial-gradient(92% 56% at 82% 20%, rgba(255, 71, 153, 0.34), transparent 68%),
+    linear-gradient(180deg, rgba(7, 10, 17, 0.28) 0%, rgba(6, 9, 15, 0.86) 58%, rgba(5, 8, 14, 0.95) 100%);
+}
+
+.onb2v2-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  padding: 18px 20px 16px;
+  display: grid;
+  grid-template-rows: auto auto auto 1fr auto auto auto;
+  gap: 10px;
+}
+
+.onb2v2-mantra {
+  margin: 0;
+  color: #f2ecf5;
+  font-size: 11px;
+  letter-spacing: 2.4px;
+  line-height: 1.62;
+  font-weight: 600;
+}
+
+.onb2v2-title {
+  margin: 0;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(60px, 15vw, 72px);
+  line-height: 0.84;
+  color: #f8f8ff;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  text-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+}
+
+.onb2v2-title span {
+  color: #ff4f8e;
+}
+
+.onb2v2-copy {
+  margin: 0;
+  color: #e7deec;
+  font-size: 17px;
+  line-height: 1.27;
+  max-width: 86%;
+}
+
+.onb2v2-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  color: #f2e6ef;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.onb2v2-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.onb2v2-list li::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex: 0 0 10px;
+  box-shadow: 0 0 10px rgba(255, 120, 172, 0.52);
+}
+
+.onb2v2-list li.fire::before {
+  background: linear-gradient(180deg, #ff9d4d, #ff5f4f);
+}
+
+.onb2v2-list li.apple::before {
+  background: linear-gradient(180deg, #ff6e9f, #ff3f81);
+}
+
+.onb2v2-list li.bolt::before {
+  background: linear-gradient(180deg, #ffd2eb, #ff86be);
+}
+
+.onb2v2-btn {
+  width: min(270px, 100%);
+  justify-self: center;
+  border-radius: 12px;
+  text-align: center;
+  text-decoration: none;
+  color: #fff;
+  border: 1px solid rgba(255, 170, 208, 0.56);
+  background: linear-gradient(180deg, #ff5b98 0%, #e63779 100%);
+  box-shadow: 0 14px 28px rgba(167, 24, 88, 0.46);
+  padding: 9px 10px 7px;
+}
+
+.onb2v2-btn strong {
+  display: block;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 40px;
+  line-height: 0.84;
+  letter-spacing: 0.6px;
+}
+
+.onb2v2-btn span {
+  display: block;
+  margin-top: 1px;
+  color: #ffd9e9;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.onb2v2-mini-dots {
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 1px;
+}
+
+.onb2v2-mini-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(248, 199, 223, 0.38);
+}
+
+.onb2v2-mini-dots span.active {
+  background: #ff5b98;
+  box-shadow: 0 0 0 2px rgba(255, 91, 152, 0.3);
+}
+
+@media (max-width: 390px) {
+  .onb2v2-content {
+    padding: 16px 16px 14px;
+    gap: 8px;
+  }
+
+  .onb2v2-title {
+    font-size: clamp(54px, 14vw, 62px);
+  }
+
+  .onb2v2-copy {
+    font-size: 15px;
+    max-width: 92%;
+  }
+
+  .onb2v2-list {
+    font-size: 14px;
+  }
+
+  .onb2v2-btn strong {
+    font-size: 34px;
+  }
+}
+
+@media (max-height: 820px) {
+  .onb2v2-shell {
+    gap: 6px;
+    padding-top: calc(6px + env(safe-area-inset-top));
+  }
+
+  .onb2v2-content {
+    padding: 14px 16px 12px;
+  }
+
+  .onb2v2-title {
+    font-size: clamp(48px, 12.4vw, 56px);
+  }
+
+  .onb2v2-copy {
+    font-size: 14px;
+  }
+
+  .onb2v2-list {
+    font-size: 13px;
+    gap: 5px;
+  }
+
+  .onb2v2-btn strong {
     font-size: 30px;
+  }
+
+  .onb2v2-btn {
+    padding-top: 7px;
   }
 }
 
