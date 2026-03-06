@@ -3660,10 +3660,10 @@ body.theme-female .today-pressure {
   min-height: 100dvh;
   max-width: 408px;
   margin: 0 auto;
-  padding: calc(6px + env(safe-area-inset-top)) 9px calc(16px + env(safe-area-inset-bottom));
+  padding: calc(4px + env(safe-area-inset-top)) 9px calc(10px + env(safe-area-inset-bottom));
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: 6px;
+  gap: 4px;
 }
 
 /* Allow full vertical flow in onboarding step 1 (avoid clipping below fold). */
@@ -3686,9 +3686,9 @@ body.onb1-body {
     radial-gradient(560px 240px at 50% -6%, rgba(42, 103, 203, 0.2), transparent 62%),
     linear-gradient(180deg, rgba(5, 11, 22, 0.98), rgba(4, 9, 18, 0.98));
   box-shadow: 0 22px 52px rgba(0, 0, 0, 0.58);
-  padding: 9px;
+  padding: 8px;
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .onb1v2-hero {
@@ -3696,7 +3696,7 @@ body.onb1-body {
   border-radius: 14px 14px 12px 12px;
   overflow: hidden;
   border: 1px solid rgba(96, 143, 227, 0.26);
-  min-height: 262px;
+  min-height: clamp(218px, 41vh, 252px);
   background: #060e1a;
 }
 
@@ -3768,8 +3768,8 @@ body.onb1-body {
 }
 
 .onb1v2-rachacard {
-  min-height: 88px;
-  padding: 9px 12px 8px;
+  min-height: 80px;
+  padding: 8px 11px 7px;
   background:
     linear-gradient(180deg, rgba(8, 18, 36, 0.88), rgba(5, 12, 26, 0.92)),
     url("assets/extras/extra-20.jpeg") center/cover no-repeat;
@@ -3791,7 +3791,7 @@ body.onb1-body {
   display: block;
   margin-top: 1px;
   font-family: "Bebas Neue", sans-serif;
-  font-size: 60px;
+  font-size: 54px;
   line-height: 0.8;
 }
 
@@ -3804,12 +3804,12 @@ body.onb1-body {
 .onb1v2-mid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 5px;
 }
 
 .onb1v2-level-left {
-  min-height: 72px;
-  padding: 8px 9px 7px;
+  min-height: 68px;
+  padding: 7px 8px 6px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -3820,22 +3820,22 @@ body.onb1-body {
 
 .onb1v2-level-left span {
   font-family: "Bebas Neue", sans-serif;
-  font-size: 30px;
+  font-size: 26px;
   line-height: 0.86;
   letter-spacing: 0.4px;
 }
 
 .onb1v2-level-left b {
   font-family: "Bebas Neue", sans-serif;
-  font-size: 60px;
+  font-size: 52px;
   line-height: 0.8;
   color: #5ea9ff;
   text-shadow: 0 0 24px rgba(68, 132, 235, 0.5);
 }
 
 .onb1v2-level-right {
-  min-height: 72px;
-  padding: 8px;
+  min-height: 68px;
+  padding: 7px;
 }
 
 .onb1v2-level-dots {
@@ -3891,7 +3891,7 @@ body.onb1-body {
   color: #fff;
   text-decoration: none;
   text-align: center;
-  padding: 8px 10px 7px;
+  padding: 6px 10px 5px;
   width: 74%;
   margin: 0 auto;
   box-shadow: 0 12px 24px rgba(9, 44, 101, 0.4);
@@ -3900,7 +3900,7 @@ body.onb1-body {
 .onb1v2-start strong {
   display: block;
   font-family: "Bebas Neue", sans-serif;
-  font-size: 40px;
+  font-size: 34px;
   line-height: 0.82;
   letter-spacing: 1px;
 }
@@ -3909,7 +3909,7 @@ body.onb1-body {
   display: block;
   margin-top: -1px;
   color: #d9e7ff;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
 }
 
@@ -3941,7 +3941,7 @@ body.onb1-body {
 .onb1v2-social p {
   margin: 0;
   color: #afc5eb;
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .onb1v2-login {
@@ -3949,7 +3949,7 @@ body.onb1-body {
   text-decoration: none;
   color: #d9e7ff;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
   padding: 1px 0 0;
 }
 
@@ -3976,17 +3976,7 @@ body.onb1-body {
   }
 
   .onb1v2-start strong {
-    font-size: 34px;
-  }
-}
-
-@media (max-height: 860px) {
-  .onb1v2-hero {
-    min-height: 238px;
-  }
-
-  .onb1v2-rachacard {
-    min-height: 82px;
+    font-size: 30px;
   }
 }
 
