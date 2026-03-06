@@ -4138,7 +4138,7 @@ body.onb1-body {
   text-transform: uppercase;
   text-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
   max-width: 66%;
-  margin-top: 30px;
+  margin-top: 88px;
   margin-left: 2px;
 }
 
@@ -4253,7 +4253,7 @@ body.onb1-body {
 
   .onb2v2-title {
     font-size: clamp(66px, 16.8vw, 80px);
-    margin-top: 24px;
+    margin-top: 70px;
   }
 
   .onb2v2-copy {
@@ -4280,7 +4280,7 @@ body.onb1-body {
 
   .onb2v2-title {
     font-size: clamp(58px, 15vw, 72px);
-    margin-top: 18px;
+    margin-top: 56px;
   }
 
   .onb2v2-copy {
