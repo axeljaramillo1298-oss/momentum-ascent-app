@@ -4152,7 +4152,7 @@ body.onb1-body {
   font-size: 14.5px;
   line-height: 1.28;
   max-width: 60%;
-  margin-top: 38px;
+  margin-top: auto;
   font-weight: 500;
 }
 
@@ -4200,7 +4200,7 @@ body.onb1-body {
 .onb2v2-btn {
   width: min(268px, 100%);
   align-self: center;
-  margin-top: 18px !important;
+  margin-top: 12px !important;
   display: block;
   border-radius: 11px;
   text-align: center;
@@ -4259,7 +4259,7 @@ body.onb1-body {
   .onb2v2-copy {
     font-size: 14px;
     max-width: 61%;
-    margin-top: 28px;
+    margin-top: auto;
   }
 
   .onb2v2-list {
@@ -4286,7 +4286,7 @@ body.onb1-body {
   .onb2v2-copy {
     font-size: 14px;
     max-width: 62%;
-    margin-top: 22px;
+    margin-top: auto;
   }
 
   .onb2v2-list {
