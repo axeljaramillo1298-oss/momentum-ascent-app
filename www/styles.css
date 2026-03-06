@@ -4152,7 +4152,7 @@ body.onb1-body {
   font-size: 14.5px;
   line-height: 1.28;
   max-width: 60%;
-  margin-top: 20px;
+  margin-top: 38px;
   font-weight: 500;
 }
 
@@ -4200,7 +4200,7 @@ body.onb1-body {
 .onb2v2-btn {
   width: min(268px, 100%);
   align-self: center;
-  margin-top: 12px !important;
+  margin-top: 18px !important;
   display: block;
   border-radius: 11px;
   text-align: center;
@@ -4230,11 +4230,7 @@ body.onb1-body {
 }
 
 .onb2v2-mini-dots {
-  align-self: center;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding-top: 4px;
+  display: none;
 }
 
 .onb2v2-mini-dots span {
@@ -4263,7 +4259,7 @@ body.onb1-body {
   .onb2v2-copy {
     font-size: 14px;
     max-width: 61%;
-    margin-top: 14px;
+    margin-top: 28px;
   }
 
   .onb2v2-list {
@@ -4290,7 +4286,7 @@ body.onb1-body {
   .onb2v2-copy {
     font-size: 14px;
     max-width: 62%;
-    margin-top: 10px;
+    margin-top: 22px;
   }
 
   .onb2v2-list {
