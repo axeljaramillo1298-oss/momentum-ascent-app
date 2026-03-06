@@ -4423,6 +4423,9 @@ body.onb1-body {
 
 .onb3v2-lower {
   margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .onb3v2-head {
@@ -4438,21 +4441,21 @@ body.onb1-body {
   letter-spacing: 0;
   color: #72dcff;
   text-shadow: 0 8px 18px rgba(0, 0, 0, 0.44);
-  max-width: 78%;
+  max-width: 100%;
 }
 
 .onb3v2-title span {
   color: #49c9ff;
 }
 
-.onb3v2-meta {
-  margin-top: 10px;
-  margin-bottom: 0;
+.onb3v2-line {
+  display: block;
+}
+
+.onb3v2-line-tu {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  max-width: 100%;
+  align-items: flex-start;
+  gap: 10px;
 }
 
 .onb3v2-drops {
@@ -4471,11 +4474,20 @@ body.onb1-body {
   filter: drop-shadow(0 0 6px rgba(88, 208, 255, 0.56));
 }
 
-.onb3v2-meta p {
-  margin: 0;
+.onb3v2-meta-inline {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  transform: translateY(6px);
+}
+
+.onb3v2-meta-inline-label {
+  font-family: "Space Grotesk", system-ui, sans-serif;
   font-size: 13px;
   line-height: 1.1;
   color: rgba(224, 241, 255, 0.92);
+  text-transform: none;
+  letter-spacing: 0;
   white-space: nowrap;
 }
 
@@ -4492,7 +4504,7 @@ body.onb1-body {
 .onb3v2-btn {
   display: block;
   width: min(262px, 100%);
-  margin: 16px auto 0;
+  margin: auto auto 0;
   text-align: center;
   text-decoration: none;
   color: #ecf8ff;
@@ -4521,10 +4533,7 @@ body.onb1-body {
 }
 
 .onb3v2-mini-dots {
-  margin: 12px auto 0;
-  display: inline-flex;
-  gap: 6px;
-  align-self: center;
+  display: none;
 }
 
 .onb3v2-mini-dots span {
@@ -4561,6 +4570,18 @@ body.onb1-body {
     max-width: 76%;
   }
 
+  .onb3v2-line-tu {
+    gap: 8px;
+  }
+
+  .onb3v2-meta-inline {
+    transform: translateY(4px);
+  }
+
+  .onb3v2-meta-inline-label {
+    font-size: 12px;
+  }
+
   .onb3v2-btn strong {
     font-size: 38px;
   }
@@ -4590,6 +4611,18 @@ body.onb1-body {
   .onb3v2-copy {
     margin-top: 8px;
     font-size: 15px;
+  }
+
+  .onb3v2-line-tu {
+    gap: 8px;
+  }
+
+  .onb3v2-meta-inline {
+    transform: translateY(3px);
+  }
+
+  .onb3v2-meta-inline-label {
+    font-size: 12px;
   }
 
   .onb3v2-btn {
