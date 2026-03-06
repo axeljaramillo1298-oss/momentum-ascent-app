@@ -440,10 +440,12 @@ const apiRequest = async (path, options = {}) => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   try {
+    const activeUserEmail = String(localStorage.getItem(CURRENT_USER_KEY) || "").trim().toLowerCase();
     const response = await fetch(apiUrl(path), {
       method: options.method || "GET",
       headers: {
         "Content-Type": "application/json",
+        ...(activeUserEmail ? { "x-user-email": activeUserEmail } : {}),
         ...(options.headers || {}),
       },
       body: options.body ? JSON.stringify(options.body) : undefined,
@@ -480,12 +482,14 @@ const syncCurrentSubscriptionFromApi = async () => {
   }
 };
 
-const getRoleMode = () => (localStorage.getItem(ROLE_KEY) === "admin" ? "admin" : "user");
+const getRoleMode = () => {
+  const current = getCurrentUser();
+  return current?.role === "admin" ? "admin" : "user";
+};
 
 const applyRoleMode = (role) => {
   const normalized = role === "admin" ? "admin" : "user";
   document.body.dataset.role = normalized;
-  localStorage.setItem(ROLE_KEY, normalized);
 
   document.querySelectorAll("[data-role-label]").forEach((el) => {
     el.textContent = normalized;
@@ -508,36 +512,47 @@ const lockAdminIfNeeded = () => {
   if (!isAdminPage || getRoleMode() === "admin") {
     return;
   }
-
-  const lock = document.createElement("div");
-  lock.className = "admin-lock";
-  lock.innerHTML = `
-    <div class="admin-lock-card">
-      <h3>Acceso restringido</h3>
-      <p>Este panel es solo para entrenadores o nutricionistas en modo admin.</p>
-      <div class="admin-lock-actions">
-        <a class="ghost" href="registro.html#login">Ir a login</a>
-        <button class="primary" type="button" data-role-set="admin">Entrar como admin</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(lock);
+  window.location.replace("user-hoy.html");
 };
 
 const initRoleMode = () => {
   applyRoleMode(getRoleMode());
-
-  document.querySelectorAll("[data-role-set]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const role = btn.dataset.roleSet === "admin" ? "admin" : "user";
-      applyRoleMode(role);
-      if (role === "admin" && document.querySelector(".admin-lock")) {
-        document.querySelector(".admin-lock").remove();
-      }
-    });
-  });
-
   lockAdminIfNeeded();
+};
+
+const initAppEntryScreen = () => {
+  if (getPageFile() !== "app-inicio.html") {
+    return;
+  }
+  const current = getCurrentUser();
+  if (!current) {
+    window.location.replace("registro.html#login");
+    return;
+  }
+  const target = getRoleMode() === "admin" ? "admin.html" : "user-hoy.html";
+  const copy = document.getElementById("app-entry-copy");
+  const countdownEl = document.getElementById("app-entry-countdown");
+  const link = document.getElementById("app-entry-link");
+  if (copy) {
+    copy.textContent = `${current.name || "Usuario"}, estamos preparando tu home.`;
+  }
+  if (link) {
+    link.href = target;
+  }
+  let remaining = 3;
+  if (countdownEl) {
+    countdownEl.textContent = String(remaining).padStart(2, "0");
+  }
+  const timer = setInterval(() => {
+    remaining -= 1;
+    if (countdownEl) {
+      countdownEl.textContent = String(Math.max(remaining, 0)).padStart(2, "0");
+    }
+    if (remaining <= 0) {
+      clearInterval(timer);
+      window.location.replace(target);
+    }
+  }, 1000);
 };
 
 const readJsonArray = (key) => {
@@ -582,6 +597,38 @@ const normalizeWhatsapp = (value) => {
   const digits = raw.replace(/[^\d]/g, "");
   if (!digits) return "";
   return `+${digits}`;
+};
+
+const normalizeSportName = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+
+const getRegisteredSportCatalog = () => {
+  const select = document.getElementById("deporte");
+  if (!select) {
+    return [];
+  }
+  return Array.from(select.options)
+    .map((opt) => String(opt.value || opt.textContent || "").trim())
+    .filter((name) => name && name !== "Otro" && name !== "Selecciona");
+};
+
+const getOnboardingSportCatalog = () =>
+  Array.from(document.querySelectorAll('[data-onb-key="deporte"] [data-onb-value]'))
+    .map((btn) => String(btn.dataset.onbValue || "").trim())
+    .filter((name) => name && name !== "Otro");
+
+const isDuplicateSportName = (candidate, catalog) => {
+  const normalizedCandidate = normalizeSportName(candidate);
+  if (!normalizedCandidate) {
+    return false;
+  }
+  const normalizedSet = new Set(catalog.map((item) => normalizeSportName(item)));
+  return normalizedSet.has(normalizedCandidate);
 };
 
 const ensureUser = (payload) => {
@@ -1072,6 +1119,16 @@ const initUserCheckinPage = () => {
     feedback.textContent = text;
   };
 
+  let selectedImageData = "";
+
+  const readFileAsDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("file_read_failed"));
+      reader.readAsDataURL(file);
+    });
+
   const compressImage = (src) =>
     new Promise((resolve) => {
       const img = new Image();
@@ -1098,6 +1155,7 @@ const initUserCheckinPage = () => {
   fileInput.addEventListener("change", () => {
     const file = fileInput.files?.[0];
     if (!file) {
+      selectedImageData = "";
       preview.removeAttribute("src");
       setFeedback("");
       return;
@@ -1105,13 +1163,15 @@ const initUserCheckinPage = () => {
     const maxSizeMb = 8;
     if (file.size > maxSizeMb * 1024 * 1024) {
       fileInput.value = "";
+      selectedImageData = "";
       preview.removeAttribute("src");
       setFeedback(`Archivo muy pesado. Maximo ${maxSizeMb}MB.`, "error");
       return;
     }
     const reader = new FileReader();
     reader.onload = () => {
-      preview.src = String(reader.result || "");
+      selectedImageData = String(reader.result || "");
+      preview.src = selectedImageData;
       preview.style.display = "block";
       setFeedback("Foto lista para subir.", "success");
     };
@@ -1120,11 +1180,27 @@ const initUserCheckinPage = () => {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (!preview.src || !noteInput.value.trim()) {
+    if (!noteInput.value.trim()) {
       setFeedback("Falta foto o nota del check-in.", "error");
       return;
     }
-    const image = await compressImage(preview.src);
+    try {
+      if (!selectedImageData) {
+        const file = fileInput.files?.[0];
+        if (file) {
+          selectedImageData = await readFileAsDataUrl(file);
+          preview.src = selectedImageData;
+          preview.style.display = "block";
+        }
+      }
+    } catch {
+      selectedImageData = "";
+    }
+    if (!selectedImageData) {
+      setFeedback("No se pudo leer la foto. Seleccionala de nuevo.", "error");
+      return;
+    }
+    const image = await compressImage(selectedImageData);
     const items = readJsonArray(CHECKIN_PHOTOS_KEY);
     items.push({
       note: noteInput.value.trim(),
@@ -1133,6 +1209,7 @@ const initUserCheckinPage = () => {
     });
     saveJsonArray(CHECKIN_PHOTOS_KEY, items);
     form.reset();
+    selectedImageData = "";
     preview.removeAttribute("src");
     preview.style.display = "none";
     renderUserCheckinList();
@@ -2002,6 +2079,7 @@ function applyPlanNavVisibility() {
 }
 
 initRoleMode();
+initAppEntryScreen();
 hideGuestOnlyLinksIfLogged();
 guardAuthScreensForLoggedUser();
 initAdminPanel();
@@ -2359,16 +2437,16 @@ const demoCountdown = document.getElementById("demo-countdown");
 let demoCompleted = false;
 
 const demoFlow = [
-  { label: "Objetivo", question: "Objetivo principal?", options: ["Bajar peso", "Constancia", "Ambos"] },
-  { label: "Tiempo", question: "Tiempo diario disponible?", options: ["20 min", "30 min", "40 min"] },
-  { label: "Lugar", question: "Donde entrenas?", options: ["Casa", "Gym", "Mixto"] },
-  { label: "Deporte", question: "Que deporte practicas?", options: ["Running", "Ciclismo", "Natacion", "CrossFit", "MMA", "Yoga"] },
-  { label: "Tono", question: "Elige tono del coach", options: ["Estricto", "Neutral", "Rudo"] },
-  { label: "Perfil", question: "Perfil dominante?", options: ["Guerrero", "Constante", "Explosivo", "Estrategico"] },
-  { label: "Trigger", question: "Que te frena mas?", options: ["Ansiedad", "Estres", "Falta de tiempo"] },
-  { label: "Modo", question: "Modo especial?", options: ["Contrato", "Apuesta", "Competencia"] },
-  { label: "Voz", question: "Tipo de voz?", options: ["Masculina", "Femenina", "Robotica"] },
-  { label: "Plan", question: "Plan inicial?", options: ["Free", "Coach IA", "Coach + Humano", "Retos"] },
+  { label: "Objetivo fisico", question: "Cual es tu objetivo principal?", options: ["Bajar peso", "Constancia", "Ambos"] },
+  { label: "Tiempo diario", question: "Cuanto tiempo real tienes por dia?", options: ["20 min", "30 min", "40 min"] },
+  { label: "Lugar de entrenamiento", question: "Donde entrenas normalmente?", options: ["Casa", "Gym", "Mixto"] },
+  { label: "Deporte base", question: "Que deporte practicas con mas frecuencia?", options: ["Running", "Ciclismo", "Natacion", "CrossFit", "MMA", "Yoga"] },
+  { label: "Tono del coach", question: "Como quieres que te hable el coach?", options: ["Estricto", "Neutral", "Rudo"] },
+  { label: "Perfil mental", question: "Que perfil te describe mejor?", options: ["Guerrero", "Constante", "Explosivo", "Estrategico"] },
+  { label: "Principal bloqueo", question: "Que te frena mas para cumplir?", options: ["Ansiedad", "Estres", "Falta de tiempo"] },
+  { label: "Modo especial (presion)", question: "Como quieres que se aplique la exigencia?", options: ["Contrato", "Apuesta", "Competencia"] },
+  { label: "Voz del sistema", question: "Con que tipo de voz prefieres los mensajes?", options: ["Masculina", "Femenina", "Robotica"] },
+  { label: "Plan inicial (alcance)", question: "Que plan quieres activar al inicio?", options: ["Free", "Coach IA", "Coach + Humano", "Retos"] },
 ];
 
 let demoIndex = 0;
@@ -2720,6 +2798,25 @@ const validateCurrentStep = () => {
       return false;
     }
   }
+  if (regSportSelect?.value === "Otro") {
+    const sportOther = String(regSportOtherInput?.value || "").trim();
+    if (!sportOther) {
+      if (regFeedback) {
+        regFeedback.className = "reg-feedback error";
+        regFeedback.textContent = "Especifica tu deporte en la opcion Otro.";
+      }
+      regSportOtherInput?.focus();
+      return false;
+    }
+    if (isDuplicateSportName(sportOther, getRegisteredSportCatalog())) {
+      if (regFeedback) {
+        regFeedback.className = "reg-feedback error";
+        regFeedback.textContent = "Ese deporte ya existe en la lista. Seleccionalo directamente.";
+      }
+      regSportOtherInput?.focus();
+      return false;
+    }
+  }
   return true;
 };
 
@@ -2728,18 +2825,32 @@ if (regNext) {
     if (!validateCurrentStep()) {
       return;
     }
+    if (document.activeElement && typeof document.activeElement.blur === "function") {
+      document.activeElement.blur();
+    }
     if (regIndex < regSteps.length - 1) {
       regIndex += 1;
       renderRegState();
+      const firstField = regSteps[regIndex]?.querySelector("input, select, textarea");
+      if (firstField && typeof firstField.focus === "function") {
+        firstField.focus({ preventScroll: true });
+      }
     }
   });
 }
 
 if (regBack) {
   regBack.addEventListener("click", () => {
+    if (document.activeElement && typeof document.activeElement.blur === "function") {
+      document.activeElement.blur();
+    }
     if (regIndex > 0) {
       regIndex -= 1;
       renderRegState();
+      const firstField = regSteps[regIndex]?.querySelector("input, select, textarea");
+      if (firstField && typeof firstField.focus === "function") {
+        firstField.focus({ preventScroll: true });
+      }
     }
   });
 }
@@ -2788,7 +2899,6 @@ if (regForm) {
       perfil: "Perfil",
       modulo: "Modulo",
       voz: "Voz",
-      branding: "Nombre sistema",
       modo_especial: "Modo especial",
       apuesta: "Apuesta",
       plan: "Plan",
@@ -2890,10 +3000,11 @@ if (loginForm) {
         name: localUser?.name || email.split("@")[0] || "User",
         email,
         whatsapp: normalizeWhatsapp(loginWhatsapp?.value || ""),
-        role: getRoleMode(),
+        role: "user",
         plan: localUser?.plan || getPlanSelection().label,
       });
       hydrateUserCacheFromApi(remote?.user);
+      applyRoleMode(remote?.user?.role === "admin" ? "admin" : "user");
       await syncCurrentSubscriptionFromApi();
       renderUserPlanPanel();
       renderUserRoutinesPage();
@@ -2908,8 +3019,19 @@ if (loginForm) {
     if (loginFeedback) {
       loginFeedback.textContent = localUser ? `Sesion iniciada como ${localUser.name}.` : "No fue posible iniciar sesion.";
     }
+    if (localUser) {
+      window.location.href = "app-inicio.html";
+    }
   });
 }
+
+document.querySelectorAll('input[type="tel"]').forEach((input) => {
+  input.setAttribute("maxlength", "16");
+  input.addEventListener("input", () => {
+    const digits = String(input.value || "").replace(/[^\d]/g, "").slice(0, 15);
+    input.value = digits ? `+${digits}` : "";
+  });
+});
 
 const progress = document.querySelector(".scroll-progress");
 if (progress) {
@@ -4135,7 +4257,7 @@ const renderMobileBack = () => {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "mobile-back-btn";
-  btn.textContent = "?";
+  btn.textContent = "←";
   btn.setAttribute("aria-label", "Volver");
   btn.addEventListener("click", () => {
     if (window.history.length > 1) {
@@ -4175,7 +4297,7 @@ const saveOnbpState = (state) => {
 
 const initDynamicOnboarding = () => {
   const page = getPageFile();
-  if (!["onboarding-5.html", "onboarding-6.html", "onboarding-7.html"].includes(page)) {
+  if (!["onboarding-5.html", "onboarding-6.html", "onboarding-7.html", "onboarding-8.html", "onboarding-9.html"].includes(page)) {
     return;
   }
   const state = readOnbpState();
@@ -4212,19 +4334,38 @@ const initDynamicOnboarding = () => {
         const val = opt.dataset.onbValue;
         if (conf.type === "multi") {
           const current = Array.isArray(state[key]) ? [...state[key]] : [];
-          const idx = current.indexOf(val);
-          if (idx >= 0) {
-            current.splice(idx, 1);
+          if (key === "equipo_casa") {
+            const noneValue = "Ninguno";
+            if (val === noneValue) {
+              state[key] = [noneValue];
+            } else {
+              const withoutNone = current.filter((item) => item !== noneValue);
+              const idx = withoutNone.indexOf(val);
+              if (idx >= 0) {
+                withoutNone.splice(idx, 1);
+              } else {
+                withoutNone.push(val);
+              }
+              state[key] = withoutNone;
+            }
           } else {
-            current.push(val);
+            const idx = current.indexOf(val);
+            if (idx >= 0) {
+              current.splice(idx, 1);
+            } else {
+              current.push(val);
+            }
+            state[key] = current;
           }
-          state[key] = current;
         } else {
           state[key] = val;
         }
         saveOnbpState(state);
         paintGroup(key);
         syncOnbpConditionalFields();
+        if (typeof opt.blur === "function") {
+          opt.blur();
+        }
       });
     });
     paintGroup(key);
@@ -4301,6 +4442,15 @@ const initDynamicOnboarding = () => {
     if (state.deporte === "Otro" && !String(state.deporte_otro || "").trim()) {
       return false;
     }
+    if (state.deporte === "Otro" && isDuplicateSportName(state.deporte_otro, getOnboardingSportCatalog())) {
+      const sportInput = document.getElementById("onbp-deporte-otro");
+      if (sportInput) {
+        sportInput.setCustomValidity("Ese deporte ya existe en la lista. Seleccionalo directamente.");
+        sportInput.reportValidity();
+        sportInput.setCustomValidity("");
+      }
+      return false;
+    }
     if (state.modo_especial === "Apuesta" && !String(state.apuesta || "").trim()) {
       return false;
     }
@@ -4313,7 +4463,11 @@ const initDynamicOnboarding = () => {
   };
 
   const feedback =
-    document.getElementById("onbp-feedback-5") || document.getElementById("onbp-feedback-6") || document.getElementById("onbp-feedback-7");
+    document.getElementById("onbp-feedback-5") ||
+    document.getElementById("onbp-feedback-6") ||
+    document.getElementById("onbp-feedback-7") ||
+    document.getElementById("onbp-feedback-8") ||
+    document.getElementById("onbp-feedback-9");
   const showFeedback = (text) => {
     if (!feedback) {
       return;
@@ -4396,12 +4550,11 @@ const initDynamicOnboarding = () => {
         deporte_otro: state.deporte_otro || "",
         trigger: state.trigger || "",
         entreno_casa: state.entreno_casa || "",
-        equipo_casa: state.equipo_casa || "",
+        equipo_casa: Array.isArray(state.equipo_casa) ? state.equipo_casa.join(" | ") : state.equipo_casa || "",
         alimentacion: state.alimentacion || "",
         perfil: state.perfil || "",
         modulo: state.modulo || "",
         voz: state.voz || "",
-        branding: state.branding || "",
         modo_especial: state.modo_especial || "",
         apuesta: state.apuesta || "",
         plan: state.plan || "",

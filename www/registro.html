@@ -38,15 +38,6 @@
           <h2>Login rapido</h2>
           <p>Si ya tienes cuenta, entra y continua con tu racha.</p>
         </div>
-        <div class="role-switch card">
-          <h3>Modo de acceso</h3>
-          <p>Selecciona si vas como usuario o como staff humano (entrenador/nutricionista).</p>
-          <div class="role-actions">
-            <button class="ghost" type="button" data-role-set="user">Entrar como user</button>
-            <button class="ghost" type="button" data-role-set="admin">Entrar como admin</button>
-          </div>
-          <p class="role-state">Modo actual: <strong data-role-label>user</strong></p>
-        </div>
         <div class="auth-grid">
           <form class="card" id="login-form">
             <h3>Entrar</h3>
@@ -55,7 +46,7 @@
             </div>
             <div class="form-grid">
               <label>Email<input id="login-email" type="email" placeholder="tu@email.com" /></label>
-              <label>WhatsApp<input id="login-whatsapp" type="tel" placeholder="+52..." /></label>
+              <label>WhatsApp<input id="login-whatsapp" type="tel" maxlength="16" placeholder="+52..." /></label>
               <label>PIN de acceso<input type="password" placeholder="****" /></label>
             </div>
             <button class="primary" type="submit">Iniciar sesion</button>
@@ -90,7 +81,7 @@
               <div class="form-grid">
                 <label>Nombre completo<input name="nombre" type="text" required /></label>
                 <label>Email<input name="email" type="email" required /></label>
-                <label>WhatsApp con lada<input name="whatsapp" type="tel" required /></label>
+                <label>WhatsApp con lada<input name="whatsapp" type="tel" maxlength="16" required /></label>
                 <label>Horario de check-in
                   <select name="horario" required>
                     <option value="">Selecciona</option><option>06:00 - 08:00</option><option>12:00 - 14:00</option><option>19:00 - 21:00</option><option>21:00 - 23:00</option>
@@ -115,13 +106,17 @@
     <option value="">Selecciona</option>
     <option>Ninguno</option>
     <option>Running</option>
+    <option>Gym</option>
     <option>Ciclismo</option>
     <option>Natacion</option>
     <option>Futbol</option>
+    <option>Futbol Americano</option>
     <option>Basquetbol</option>
     <option>Tenis</option>
     <option>Padel</option>
     <option>Volleyball</option>
+    <option>Beisbol</option>
+    <option>Softbol</option>
     <option>Box</option>
     <option>MMA</option>
     <option>Muay Thai</option>
@@ -129,11 +124,20 @@
     <option>CrossFit</option>
     <option>Hyrox</option>
     <option>Calistenia</option>
+    <option>Halterofilia</option>
+    <option>Powerlifting</option>
+    <option>Entrenamiento funcional</option>
+    <option>Spinning</option>
+    <option>Remo</option>
+    <option>Escalada</option>
+    <option>Senderismo</option>
+    <option>Trail running</option>
+    <option>Triatlon</option>
     <option>Yoga</option>
     <option>Pilates</option>
     <option>Baile</option>
-    <option>Senderismo</option>
-    <option>Triatlon</option>
+    <option>Patinaje</option>
+    <option>Surf</option>
     <option>Otro</option>
   </select>
 </label>
@@ -153,7 +157,6 @@
                 <label>Perfil de usuario<select name="perfil" required><option value="">Selecciona</option><option>Guerrero</option><option>Constante</option><option>Explosivo</option><option>Estrategico</option></select></label>
                 <label>Modulo principal<select name="modulo" required><option value="">Selecciona</option><option>Fitness</option><option>Estudio diario</option><option>Programacion diaria</option><option>Idiomas</option><option>Finanzas personales</option><option>Meditacion</option></select></label>
                 <label>Voz para mensajes<select name="voz" required><option value="">Selecciona</option><option>Masculina seria</option><option>Femenina estricta</option><option>Robotica neutral</option></select></label>
-                <label>Nombre preferido del sistema<select name="branding" required><option value="">Selecciona</option><option>Disciplina Brutal</option><option>El Sistema</option><option>No Falles</option><option>Codigo 10</option><option>Coach Frio</option><option>Imparable</option></select></label>
                 <label>Modo especial<select name="modo_especial" required><option value="">Selecciona</option><option>Contrato</option><option>Apuesta</option><option>Competencia</option></select></label>
                 <label>Monto de apuesta (si aplica)<input name="apuesta" type="number" min="0" step="1" placeholder="Ej. 20" /></label>
               </div>

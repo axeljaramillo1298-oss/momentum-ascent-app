@@ -11,71 +11,37 @@
     <main class="onbp-shell">
       <header class="onbp-top">
         <a class="onb-back" href="onboarding-5.html" aria-label="Atras">&lt;</a>
-        <div class="onb-dots"><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot active"></span><span class="onb-dot"></span></div>
+        <div class="onb-dots"><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot active"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span></div>
       </header>
       <section class="onbp-screen">
         <article class="onbp-card">
-          <h2 class="onbp-q-title">Perfil y preferencias</h2>
+          <h2 class="onbp-q-title">Estado actual</h2>
           <div class="onbp-photo-grid">
             <img class="onbp-photo" src="assets/extras/extra-09.jpeg" alt="Entrenamiento funcional" loading="lazy" />
             <img class="onbp-photo" src="assets/extras/extra-11.jpeg" alt="Rutina personal" loading="lazy" />
           </div>
-          <h3 class="onbp-subtitle">Deporte principal</h3>
-          <div class="onbp-options" data-onb-key="deporte" data-onb-type="single" data-onb-required="true">
-            <button class="onbp-option" type="button" data-onb-value="Running">Running</button>
-            <button class="onbp-option" type="button" data-onb-value="Gym">Gym</button>
-            <button class="onbp-option" type="button" data-onb-value="CrossFit">CrossFit</button>
-            <button class="onbp-option" type="button" data-onb-value="Calistenia">Calistenia</button>
-            <button class="onbp-option" type="button" data-onb-value="Otro">Otro</button>
+          <h3 class="onbp-subtitle">Nivel actual</h3>
+          <div class="onbp-options" data-onb-key="nivel" data-onb-type="single" data-onb-required="true">
+            <button class="onbp-option" type="button" data-onb-value="Bajo">Bajo</button>
+            <button class="onbp-option" type="button" data-onb-value="Medio">Medio</button>
+            <button class="onbp-option" type="button" data-onb-value="Alto">Alto</button>
           </div>
-          <label class="onbp-input-wrap hidden-field" id="onbp-deporte-otro-wrap">Especifica deporte
-            <input class="onbp-input" id="onbp-deporte-otro" type="text" placeholder="Ej. Natacion" data-onb-input="deporte_otro" />
-          </label>
-
-          <h3 class="onbp-subtitle">Entrenamiento en casa</h3>
-          <div class="onbp-options" data-onb-key="entreno_casa" data-onb-type="single" data-onb-required="true">
-            <button class="onbp-option" type="button" data-onb-value="Si">Si</button>
+          <h3 class="onbp-subtitle">Lesiones o restricciones</h3>
+          <div class="onbp-options" data-onb-key="lesiones" data-onb-type="single" data-onb-required="true">
             <button class="onbp-option" type="button" data-onb-value="No">No</button>
-            <button class="onbp-option" type="button" data-onb-value="Mixto">Mixto</button>
+            <button class="onbp-option" type="button" data-onb-value="Si">Si</button>
           </div>
-
-          <h3 class="onbp-subtitle">Equipo disponible</h3>
-          <div class="onbp-options" data-onb-key="equipo_casa" data-onb-type="single" data-onb-required="true">
-            <button class="onbp-option" type="button" data-onb-value="Ninguno">Ninguno</button>
-            <button class="onbp-option" type="button" data-onb-value="Ligas / bandas">Ligas</button>
-            <button class="onbp-option" type="button" data-onb-value="Mancuernas">Mancuernas</button>
-            <button class="onbp-option" type="button" data-onb-value="Caminadora">Caminadora</button>
-            <button class="onbp-option" type="button" data-onb-value="Set completo">Set completo</button>
+          <h3 class="onbp-subtitle">Trigger dominante</h3>
+          <div class="onbp-options" data-onb-key="trigger" data-onb-type="single" data-onb-required="true">
+            <button class="onbp-option" type="button" data-onb-value="Ansiedad">Ansiedad</button>
+            <button class="onbp-option" type="button" data-onb-value="Estres">Estres</button>
+            <button class="onbp-option" type="button" data-onb-value="Falta de tiempo">Falta de tiempo</button>
           </div>
-          <h3 class="onbp-subtitle">Perfil de usuario</h3>
-          <div class="onbp-options" data-onb-key="perfil" data-onb-type="single" data-onb-required="true">
-            <button class="onbp-option" type="button" data-onb-value="Guerrero">Guerrero</button>
-            <button class="onbp-option" type="button" data-onb-value="Constante">Constante</button>
-            <button class="onbp-option" type="button" data-onb-value="Explosivo">Explosivo</button>
-            <button class="onbp-option" type="button" data-onb-value="Estrategico">Estrategico</button>
-          </div>
-          <h3 class="onbp-subtitle">Modulo principal</h3>
-          <div class="onbp-options" data-onb-key="modulo" data-onb-type="single" data-onb-required="true">
-            <button class="onbp-option" type="button" data-onb-value="Fitness">Fitness</button>
-            <button class="onbp-option" type="button" data-onb-value="Estudio diario">Estudio</button>
-            <button class="onbp-option" type="button" data-onb-value="Programacion diaria">Programacion</button>
-            <button class="onbp-option" type="button" data-onb-value="Idiomas">Idiomas</button>
-            <button class="onbp-option" type="button" data-onb-value="Finanzas personales">Finanzas</button>
-            <button class="onbp-option" type="button" data-onb-value="Meditacion">Meditacion</button>
-          </div>
-          <h3 class="onbp-subtitle">Voz para mensajes</h3>
-          <div class="onbp-options" data-onb-key="voz" data-onb-type="single" data-onb-required="true">
-            <button class="onbp-option" type="button" data-onb-value="Masculina seria">Masculina seria</button>
-            <button class="onbp-option" type="button" data-onb-value="Femenina estricta">Femenina estricta</button>
-            <button class="onbp-option" type="button" data-onb-value="Robotica neutral">Robotica neutral</button>
-          </div>
-          <h3 class="onbp-subtitle">Nombre del sistema</h3>
-          <div class="onbp-options" data-onb-key="branding" data-onb-type="single" data-onb-required="true">
-            <button class="onbp-option" type="button" data-onb-value="Disciplina Brutal">Disciplina Brutal</button>
-            <button class="onbp-option" type="button" data-onb-value="El Sistema">El Sistema</button>
-            <button class="onbp-option" type="button" data-onb-value="No Falles">No Falles</button>
-            <button class="onbp-option" type="button" data-onb-value="Codigo 10">Codigo 10</button>
-            <button class="onbp-option" type="button" data-onb-value="Coach Frio">Coach Frio</button>
+          <h3 class="onbp-subtitle">Estilo de alimentacion</h3>
+          <div class="onbp-options" data-onb-key="alimentacion" data-onb-type="single" data-onb-required="true">
+            <button class="onbp-option" type="button" data-onb-value="Simple">Simple</button>
+            <button class="onbp-option" type="button" data-onb-value="Flexible">Flexible</button>
+            <button class="onbp-option" type="button" data-onb-value="Guiado">Guiado</button>
           </div>
           <p class="reg-feedback" id="onbp-feedback-6" aria-live="polite"></p>
         </article>
@@ -85,3 +51,4 @@
     <script src="app.js"></script>
   </body>
 </html>
+

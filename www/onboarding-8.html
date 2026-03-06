@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Onboarding 8 | Disciplina</title>
+    <meta name="theme-color" content="#eef3ff" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="onb-body">
+    <main class="onbp-shell">
+      <header class="onbp-top">
+        <a class="onb-back" href="onboarding-7.html" aria-label="Atras">&lt;</a>
+        <div class="onb-dots"><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot active"></span><span class="onb-dot"></span></div>
+      </header>
+      <section class="onbp-screen">
+        <article class="onbp-card">
+          <h2 class="onbp-q-title">Personaliza tu coach</h2>
+          <div class="onbp-photo-grid">
+            <img class="onbp-photo" src="assets/extras/extra-12.jpeg" alt="Perfil de usuario" loading="lazy" />
+            <img class="onbp-photo" src="assets/extras/extra-17.jpeg" alt="Coach personalizado" loading="lazy" />
+          </div>
+
+          <h3 class="onbp-subtitle">Perfil de usuario</h3>
+          <div class="onbp-options" data-onb-key="perfil" data-onb-type="single" data-onb-required="true">
+            <button class="onbp-option" type="button" data-onb-value="Guerrero">Guerrero</button>
+            <button class="onbp-option" type="button" data-onb-value="Constante">Constante</button>
+            <button class="onbp-option" type="button" data-onb-value="Explosivo">Explosivo</button>
+            <button class="onbp-option" type="button" data-onb-value="Estrategico">Estrategico</button>
+          </div>
+
+          <h3 class="onbp-subtitle">Modulo principal</h3>
+          <div class="onbp-options" data-onb-key="modulo" data-onb-type="single" data-onb-required="true">
+            <button class="onbp-option" type="button" data-onb-value="Fitness">Fitness</button>
+            <button class="onbp-option" type="button" data-onb-value="Estudio diario">Estudio</button>
+            <button class="onbp-option" type="button" data-onb-value="Programacion diaria">Programacion</button>
+            <button class="onbp-option" type="button" data-onb-value="Idiomas">Idiomas</button>
+            <button class="onbp-option" type="button" data-onb-value="Finanzas personales">Finanzas</button>
+            <button class="onbp-option" type="button" data-onb-value="Meditacion">Meditacion</button>
+          </div>
+
+          <h3 class="onbp-subtitle">Voz para mensajes</h3>
+          <div class="onbp-options" data-onb-key="voz" data-onb-type="single" data-onb-required="true">
+            <button class="onbp-option" type="button" data-onb-value="Masculina seria">Masculina seria</button>
+            <button class="onbp-option" type="button" data-onb-value="Femenina estricta">Femenina estricta</button>
+            <button class="onbp-option" type="button" data-onb-value="Robotica neutral">Robotica neutral</button>
+          </div>
+
+          <h3 class="onbp-subtitle">Modo especial</h3>
+          <div class="onbp-options" data-onb-key="modo_especial" data-onb-type="single" data-onb-required="true">
+            <button class="onbp-option" type="button" data-onb-value="Contrato">Contrato</button>
+            <button class="onbp-option" type="button" data-onb-value="Apuesta">Apuesta</button>
+            <button class="onbp-option" type="button" data-onb-value="Competencia">Competencia</button>
+          </div>
+          <label class="onbp-input-wrap hidden-field" id="onbp-apuesta-wrap">Monto de apuesta (si aplica)
+            <input class="onbp-input" id="onbp-apuesta" type="number" min="0" step="1" placeholder="Ej. 20" data-onb-input="apuesta" />
+          </label>
+          <p class="reg-feedback" id="onbp-feedback-8" aria-live="polite"></p>
+        </article>
+        <div class="onb-actions"><a class="primary onb-go" data-onb-next href="onboarding-9.html">Siguiente</a></div>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
+

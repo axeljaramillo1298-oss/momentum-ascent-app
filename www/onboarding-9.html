@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Onboarding 9 | Disciplina</title>
+    <meta name="theme-color" content="#e8f7e5" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="onb-body">
+    <main class="onbp-shell">
+      <header class="onbp-top">
+        <a class="onb-back" href="onboarding-8.html" aria-label="Atras">&lt;</a>
+        <div class="onb-dots"><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot active"></span></div>
+      </header>
+      <section class="onbp-screen">
+        <article class="onbp-card">
+          <h2 class="onbp-q-title">Activa tu cuenta</h2>
+          <div class="onbp-form">
+            <label class="onbp-input-wrap">Nombre completo
+              <input class="onbp-input" id="onbp-nombre" type="text" placeholder="Tu nombre" data-onb-input="nombre" required />
+            </label>
+            <label class="onbp-input-wrap">Correo
+              <input class="onbp-input" id="onbp-email" type="email" placeholder="tu@email.com" data-onb-input="email" required />
+            </label>
+            <label class="onbp-input-wrap">WhatsApp
+              <input class="onbp-input" id="onbp-whatsapp" type="tel" maxlength="16" placeholder="+52..." data-onb-input="whatsapp" required />
+            </label>
+
+            <h3 class="onbp-subtitle">Horario de check-in</h3>
+            <div class="onbp-options" data-onb-key="horario" data-onb-type="single" data-onb-required="true">
+              <button class="onbp-option" type="button" data-onb-value="06:00 - 08:00">06:00 - 08:00</button>
+              <button class="onbp-option" type="button" data-onb-value="12:00 - 14:00">12:00 - 14:00</button>
+              <button class="onbp-option" type="button" data-onb-value="19:00 - 21:00">19:00 - 21:00</button>
+              <button class="onbp-option" type="button" data-onb-value="21:00 - 23:00">21:00 - 23:00</button>
+            </div>
+
+            <h3 class="onbp-subtitle">Plan</h3>
+            <div class="onbp-options" data-onb-key="plan" data-onb-type="single" data-onb-required="true">
+              <button class="onbp-option" type="button" data-onb-value="Free">Free</button>
+              <button class="onbp-option" type="button" data-onb-value="Coach IA">Coach IA</button>
+              <button class="onbp-option" type="button" data-onb-value="Coach + Humano">Coach + Humano</button>
+              <button class="onbp-option" type="button" data-onb-value="Retos">Retos</button>
+            </div>
+
+            <h3 class="onbp-subtitle">Check-in con foto</h3>
+            <div class="onbp-options" data-onb-key="foto_checkin" data-onb-type="single" data-onb-required="true">
+              <button class="onbp-option" type="button" data-onb-value="Si">Si</button>
+              <button class="onbp-option" type="button" data-onb-value="No">No</button>
+            </div>
+
+            <label class="onbp-check">
+              <input type="checkbox" data-onb-check="compromiso" required />
+              <span>Acepto responder en 10 minutos y castigo automatico si fallo.</span>
+            </label>
+            <label class="onbp-check">
+              <input type="checkbox" data-onb-check="aviso" required />
+              <span>Entiendo que esto no reemplaza asesoria medica.</span>
+            </label>
+            <p class="reg-feedback" id="onbp-feedback-9" aria-live="polite"></p>
+          </div>
+          <p class="onbp-copy">Tu sistema combina rutina, nutricion y seguimiento diario para resultados sostenibles.</p>
+        </article>
+        <div class="onb-actions">
+          <button class="primary onb-go" type="button" id="onbp-finish">Activar y continuar</button>
+          <a class="onb-login" href="registro.html#login">Ya tengo una cuenta</a>
+        </div>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
+

@@ -35,7 +35,7 @@
         <article class="card">
           <h3>Nuevo check-in</h3>
           <form id="user-checkin-form" class="admin-form">
-            <label>Foto<input id="user-checkin-file" type="file" accept="image/*" required /></label>
+            <label>Foto<input id="user-checkin-file" type="file" accept="image/*" capture="environment" required /></label>
             <label>Nota<input id="user-checkin-note" type="text" placeholder="Ej. Full body 30 min" required /></label>
             <img id="user-checkin-preview" class="photo-preview" alt="preview" />
             <button class="primary" type="submit">Guardar check-in</button>

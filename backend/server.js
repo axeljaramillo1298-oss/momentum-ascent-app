@@ -45,6 +45,15 @@ const ADMIN_EMAILS = new Set(
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 
+const getRequestEmail = (req) => String(req.headers["x-user-email"] || "").trim().toLowerCase();
+const requireAdmin = (req, res, next) => {
+  const email = getRequestEmail(req);
+  if (email && ADMIN_EMAILS.has(email)) {
+    return next();
+  }
+  return res.status(403).json({ ok: false, error: "admin_only" });
+};
+
 app.get("/health", (req, res) => {
   res.json({
     ok: true,
@@ -151,7 +160,7 @@ app.post("/whatsapp/webhook", async (req, res) => {
   }
 });
 
-app.get("/users", async (req, res) => {
+app.get("/users", requireAdmin, async (req, res) => {
   try {
     const users = await searchUsers(req.query.search || "");
     res.json({ ok: true, users });
@@ -191,7 +200,7 @@ app.get("/metrics/:userId", async (req, res) => {
   }
 });
 
-app.post("/admin/routines", async (req, res) => {
+app.post("/admin/routines", requireAdmin, async (req, res) => {
   try {
     const routine = await saveRoutine(req.body || {});
     res.status(201).json({ ok: true, routine });
@@ -200,7 +209,7 @@ app.post("/admin/routines", async (req, res) => {
   }
 });
 
-app.post("/admin/nutrition", async (req, res) => {
+app.post("/admin/nutrition", requireAdmin, async (req, res) => {
   try {
     const plan = await saveNutritionPlan(req.body || {});
     res.status(201).json({ ok: true, plan });
@@ -209,7 +218,7 @@ app.post("/admin/nutrition", async (req, res) => {
   }
 });
 
-app.post("/admin/assignments", async (req, res) => {
+app.post("/admin/assignments", requireAdmin, async (req, res) => {
   try {
     const payload = req.body || {};
     const assignments = await saveAssignments(payload);
@@ -240,7 +249,7 @@ app.post("/admin/assignments", async (req, res) => {
   }
 });
 
-app.post("/admin/ai-plan", async (req, res) => {
+app.post("/admin/ai-plan", requireAdmin, async (req, res) => {
   try {
     const payload = req.body || {};
     const userIds = Array.isArray(payload.userIds)
@@ -276,7 +285,7 @@ app.post("/admin/ai-plan", async (req, res) => {
   }
 });
 
-app.post("/admin/coach/nudge", async (req, res) => {
+app.post("/admin/coach/nudge", requireAdmin, async (req, res) => {
   try {
     const userId = String(req.body?.userId || "").trim().toLowerCase();
     const message = String(req.body?.message || "").trim();
@@ -322,7 +331,7 @@ app.post("/payments/request", async (req, res) => {
   }
 });
 
-app.get("/payments/pending", async (req, res) => {
+app.get("/payments/pending", requireAdmin, async (req, res) => {
   try {
     const items = await listPendingPaymentRequests();
     res.json({ ok: true, items });
@@ -331,7 +340,7 @@ app.get("/payments/pending", async (req, res) => {
   }
 });
 
-app.post("/payments/:id/review", async (req, res) => {
+app.post("/payments/:id/review", requireAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id || 0);
     const result = await reviewPaymentRequest({ id, ...(req.body || {}) });
@@ -381,7 +390,7 @@ app.get("/ranking/weekly", async (req, res) => {
   }
 });
 
-app.get("/admin/dashboard", async (req, res) => {
+app.get("/admin/dashboard", requireAdmin, async (req, res) => {
   try {
     const dateKey = String(req.query.dateKey || "").trim();
     const dashboard = await getAdminDashboard(dateKey);
@@ -391,7 +400,7 @@ app.get("/admin/dashboard", async (req, res) => {
   }
 });
 
-app.get("/admin/timeline", async (req, res) => {
+app.get("/admin/timeline", requireAdmin, async (req, res) => {
   try {
     const userId = String(req.query.userId || "").trim().toLowerCase();
     const limit = Number(req.query.limit || 30);
@@ -410,7 +419,7 @@ const csvEscape = (value) => {
   return text;
 };
 
-app.get("/admin/report.csv", async (req, res) => {
+app.get("/admin/report.csv", requireAdmin, async (req, res) => {
   try {
     const scope = String(req.query.scope || "week").trim().toLowerCase();
     const userId = String(req.query.userId || "").trim().toLowerCase();
