@@ -4407,14 +4407,17 @@ body.onb1-body {
 
 .onb3v2-mantra {
   margin: 0;
-  text-align: center;
+  text-align: left;
   font-family: "Bebas Neue", sans-serif;
-  font-size: clamp(48px, 10.8vw, 60px);
-  line-height: 0.82;
+  font-size: clamp(38px, 9.2vw, 50px);
+  line-height: 0.84;
   text-transform: uppercase;
   letter-spacing: 0;
   color: #e8f4ff;
   text-shadow: 0 7px 16px rgba(0, 0, 0, 0.46);
+  width: fit-content;
+  max-width: 72%;
+  align-self: center;
 }
 
 .onb3v2-mantra span {
@@ -4554,7 +4557,8 @@ body.onb1-body {
   }
 
   .onb3v2-mantra {
-    font-size: clamp(50px, 11.4vw, 60px);
+    font-size: clamp(34px, 8.8vw, 44px);
+    max-width: 76%;
   }
 
   .onb3v2-lower {
@@ -4597,7 +4601,7 @@ body.onb1-body {
   }
 
   .onb3v2-mantra {
-    font-size: clamp(46px, 11vw, 56px);
+    font-size: clamp(34px, 8.6vw, 44px);
   }
 
   .onb3v2-lower {
