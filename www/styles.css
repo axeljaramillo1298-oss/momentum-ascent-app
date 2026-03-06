@@ -4368,7 +4368,7 @@ body.onb1-body {
   position: relative;
   height: 100%;
   width: 100%;
-  border-radius: 18px;
+  border-radius: 20px;
   border: 1px solid rgba(103, 168, 255, 0.18);
   overflow: hidden;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
@@ -4381,24 +4381,25 @@ body.onb1-body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 49% 37%;
-  filter: saturate(1.1) contrast(1.03) brightness(0.86);
+  object-position: 56% 24%;
+  filter: saturate(1.14) contrast(1.06) brightness(1);
+  transform: scale(1.015);
 }
 
 .onb3v2-shade {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(100% 58% at 50% 4%, rgba(91, 188, 255, 0.2), transparent 68%),
-    radial-gradient(120% 84% at 50% 104%, rgba(6, 21, 51, 0.78), rgba(4, 12, 30, 0.94) 64%),
-    linear-gradient(180deg, rgba(4, 12, 30, 0.12) 0%, rgba(4, 12, 30, 0.58) 56%, rgba(3, 9, 24, 0.88) 100%);
+    radial-gradient(76% 38% at 52% 8%, rgba(103, 198, 255, 0.16), transparent 72%),
+    radial-gradient(120% 96% at 50% 106%, rgba(4, 16, 44, 0.32), rgba(4, 12, 30, 0.56) 72%),
+    linear-gradient(180deg, rgba(4, 12, 30, 0.02) 0%, rgba(4, 12, 30, 0.12) 54%, rgba(3, 9, 24, 0.5) 100%);
 }
 
 .onb3v2-content {
   position: relative;
   z-index: 1;
   height: 100%;
-  padding: calc(84px + env(safe-area-inset-top)) 24px 14px;
+  padding: calc(220px + env(safe-area-inset-top)) 34px 18px;
   display: flex;
   flex-direction: column;
   color: #e9f5ff;
@@ -4408,11 +4409,12 @@ body.onb1-body {
   margin: 0;
   font-family: "Bebas Neue", sans-serif;
   color: #eef7ff;
-  font-size: clamp(54px, 14vw, 68px);
-  line-height: 0.86;
+  font-size: clamp(62px, 12.5vw, 72px);
+  line-height: 0.82;
   text-transform: uppercase;
-  text-shadow: 0 10px 22px rgba(0, 0, 0, 0.56);
-  letter-spacing: 0.3px;
+  text-shadow: 0 7px 16px rgba(0, 0, 0, 0.44);
+  letter-spacing: 0;
+  max-width: 73%;
 }
 
 .onb3v2-mantra span {
@@ -4421,93 +4423,100 @@ body.onb1-body {
 
 .onb3v2-title {
   margin: 0;
-  margin-top: 18px;
+  margin-top: 28px;
   font-family: "Bebas Neue", sans-serif;
-  font-size: clamp(58px, 15vw, 70px);
+  font-size: clamp(68px, 13.5vw, 80px);
   line-height: 0.84;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
-  color: #7ee0ff;
-  text-shadow: 0 9px 21px rgba(0, 0, 0, 0.52);
+  letter-spacing: 0;
+  color: #78ddff;
+  text-shadow: 0 8px 18px rgba(0, 0, 0, 0.42);
 }
 
 .onb3v2-title span {
-  color: #5ecfff;
+  color: #48c8ff;
 }
 
 .onb3v2-meta {
-  margin-top: 8px;
+  margin-top: 12px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .onb3v2-drops {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 10px;
 }
 
 .onb3v2-drops span {
-  font-size: 28px;
-  line-height: 1;
-  filter: drop-shadow(0 2px 6px rgba(61, 182, 255, 0.6));
+  width: 22px;
+  height: 28px;
+  background: radial-gradient(circle at 36% 30%, #c2f5ff 0%, #87e7ff 30%, #46beff 62%, #2a8df4 100%);
+  border-radius: 60% 60% 60% 60% / 74% 74% 46% 46%;
+  transform: rotate(45deg);
+  filter: drop-shadow(0 0 8px rgba(88, 208, 255, 0.62));
 }
 
 .onb3v2-meta p {
   margin: 0;
-  font-size: 21px;
+  font-size: 16px;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  line-height: 1.1;
   color: rgba(227, 240, 255, 0.9);
 }
 
 .onb3v2-copy {
   margin: 0;
-  margin-top: 14px;
+  margin-top: 16px;
   color: rgba(221, 239, 255, 0.92);
-  font-size: 34px;
-  line-height: 0.96;
+  font-size: 17px;
+  line-height: 1.24;
+  max-width: 82%;
 }
 
 .onb3v2-btn {
-  width: min(264px, 100%);
+  width: min(266px, 100%);
   align-self: center;
   margin-top: auto;
   text-align: center;
   text-decoration: none;
   color: #eaf7ff;
   border: 1px solid rgba(136, 212, 255, 0.75);
-  border-radius: 16px;
+  border-radius: 14px;
   background: linear-gradient(90deg, #2f7fff 0%, #3ad5ff 100%);
   box-shadow: 0 15px 32px rgba(30, 132, 255, 0.4);
-  padding: 10px 14px 8px;
+  padding: 10px 14px 9px;
 }
 
 .onb3v2-btn strong {
   display: block;
   font-family: "Bebas Neue", sans-serif;
-  font-size: 40px;
-  line-height: 0.85;
+  font-size: 48px;
+  line-height: 0.8;
   letter-spacing: 0.4px;
 }
 
 .onb3v2-btn span {
   display: block;
-  margin-top: 1px;
+  margin-top: 0;
   color: #d9f3ff;
-  font-size: 24px;
-  line-height: 1;
+  font-size: 16px;
+  line-height: 1.05;
+  font-weight: 500;
 }
 
 .onb3v2-mini-dots {
-  margin: 10px auto 0;
+  margin: 12px auto 0;
   display: inline-flex;
-  gap: 8px;
+  gap: 6px;
   align-self: center;
 }
 
 .onb3v2-mini-dots span {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
   background: rgba(190, 220, 255, 0.36);
 }
@@ -4519,71 +4528,74 @@ body.onb1-body {
 
 @media (max-width: 390px) {
   .onb3v2-content {
-    padding: calc(72px + env(safe-area-inset-top)) 18px 12px;
+    padding: calc(182px + env(safe-area-inset-top)) 30px 14px;
   }
 
   .onb3v2-mantra {
-    font-size: clamp(48px, 13vw, 58px);
+    font-size: clamp(56px, 12.5vw, 64px);
   }
 
   .onb3v2-title {
-    font-size: clamp(52px, 14vw, 62px);
+    margin-top: 22px;
+    font-size: clamp(60px, 13.5vw, 70px);
   }
 
   .onb3v2-drops span {
-    font-size: 24px;
+    width: 19px;
+    height: 24px;
   }
 
   .onb3v2-meta p {
-    font-size: 19px;
+    font-size: 15px;
   }
 
   .onb3v2-copy {
-    font-size: 30px;
+    font-size: 16px;
   }
 
   .onb3v2-btn strong {
-    font-size: 34px;
+    font-size: 42px;
   }
 
   .onb3v2-btn span {
-    font-size: 20px;
+    font-size: 15px;
   }
 }
 
 @media (max-height: 830px) {
   .onb3v2-content {
-    padding-top: calc(66px + env(safe-area-inset-top));
+    padding-top: calc(168px + env(safe-area-inset-top));
   }
 
   .onb3v2-mantra {
-    font-size: clamp(44px, 12vw, 54px);
+    font-size: clamp(49px, 12.5vw, 58px);
   }
 
   .onb3v2-title {
-    margin-top: 12px;
-    font-size: clamp(46px, 12.5vw, 58px);
+    margin-top: 20px;
+    font-size: clamp(56px, 13vw, 66px);
   }
 
   .onb3v2-drops span {
-    font-size: 21px;
+    width: 17px;
+    height: 22px;
   }
 
   .onb3v2-meta p {
-    font-size: 17px;
+    font-size: 14px;
   }
 
   .onb3v2-copy {
-    margin-top: 10px;
-    font-size: 26px;
+    margin-top: 12px;
+    font-size: 15px;
   }
 
   .onb3v2-btn strong {
-    font-size: 30px;
+    font-size: 36px;
   }
 
   .onb3v2-btn span {
-    font-size: 17px;
+    font-size: 14px;
   }
 }
 
