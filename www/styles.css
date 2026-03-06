@@ -4409,7 +4409,7 @@ body.onb1-body {
   margin: 0;
   text-align: center;
   font-family: "Bebas Neue", sans-serif;
-  font-size: clamp(56px, 11.7vw, 68px);
+  font-size: clamp(48px, 10.8vw, 60px);
   line-height: 0.82;
   text-transform: uppercase;
   letter-spacing: 0;
@@ -4422,25 +4422,23 @@ body.onb1-body {
 }
 
 .onb3v2-lower {
-  margin-top: 22px;
+  margin-top: 18px;
 }
 
 .onb3v2-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 10px;
+  display: block;
 }
 
 .onb3v2-title {
   margin: 0;
   font-family: "Bebas Neue", sans-serif;
-  font-size: clamp(64px, 13.2vw, 78px);
+  font-size: clamp(52px, 11.8vw, 66px);
   line-height: 0.84;
   text-transform: uppercase;
   letter-spacing: 0;
   color: #72dcff;
   text-shadow: 0 8px 18px rgba(0, 0, 0, 0.44);
+  max-width: 78%;
 }
 
 .onb3v2-title span {
@@ -4448,17 +4446,20 @@ body.onb1-body {
 }
 
 .onb3v2-meta {
-  margin-bottom: 8px;
+  margin-top: 10px;
+  margin-bottom: 0;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
 }
 
 .onb3v2-drops {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-wrap: nowrap;
 }
 
 .onb3v2-drops span {
@@ -4472,14 +4473,15 @@ body.onb1-body {
 
 .onb3v2-meta p {
   margin: 0;
-  font-size: 15px;
+  font-size: 13px;
   line-height: 1.1;
   color: rgba(224, 241, 255, 0.92);
+  white-space: nowrap;
 }
 
 .onb3v2-copy {
   margin: 10px 0 0;
-  max-width: 62%;
+  max-width: 74%;
   color: rgba(224, 240, 255, 0.94);
   font-size: 17px;
   line-height: 1.24;
@@ -4488,6 +4490,7 @@ body.onb1-body {
 }
 
 .onb3v2-btn {
+  display: block;
   width: min(262px, 100%);
   margin: 16px auto 0;
   text-align: center;
@@ -4550,16 +4553,16 @@ body.onb1-body {
   }
 
   .onb3v2-title {
-    font-size: clamp(58px, 13vw, 70px);
+    font-size: clamp(48px, 11.5vw, 58px);
   }
 
   .onb3v2-copy {
-    font-size: 16px;
-    max-width: 65%;
+    font-size: 15px;
+    max-width: 76%;
   }
 
   .onb3v2-btn strong {
-    font-size: 42px;
+    font-size: 38px;
   }
 
   .onb3v2-btn span {
@@ -4581,7 +4584,7 @@ body.onb1-body {
   }
 
   .onb3v2-title {
-    font-size: clamp(52px, 12.5vw, 64px);
+    font-size: clamp(46px, 11.4vw, 56px);
   }
 
   .onb3v2-copy {
