@@ -4027,15 +4027,20 @@ body.onb1-body {
   min-height: 100dvh;
   max-width: 414px;
   margin: 0 auto;
-  padding: calc(6px + env(safe-area-inset-top)) 8px calc(8px + env(safe-area-inset-bottom));
+  padding: calc(6px + env(safe-area-inset-top)) 8px calc(10px + env(safe-area-inset-bottom));
   display: grid;
-  grid-template-rows: auto auto 1fr;
-  gap: 6px;
-  align-content: start;
+  grid-template-rows: 1fr;
+  gap: 0;
   overflow: hidden;
+  position: relative;
 }
 
 .onb2v2-top {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 22px;
+  right: 22px;
+  z-index: 5;
   display: grid;
   grid-template-columns: 44px 1fr 44px;
   align-items: center;
@@ -4067,14 +4072,17 @@ body.onb1-body {
   height: 100%;
   display: flex;
   justify-content: center;
+  align-items: stretch;
+  padding-top: 10px;
+  padding-bottom: 8px;
 }
 
 .onb2v2-card {
   position: relative;
-  height: min(84svh, 760px);
+  height: 100%;
   width: 100%;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 155, 203, 0.2);
+  border-radius: 22px;
+  border: 1px solid rgba(255, 155, 203, 0.14);
   overflow: hidden;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.56);
   background: #0a0f1e;
@@ -4086,37 +4094,36 @@ body.onb1-body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 60% 25%;
-  filter: saturate(1.14) contrast(1.05) brightness(0.65);
-  transform: scale(1.01);
+  object-position: 63% 23%;
+  filter: saturate(1.08) contrast(1.01) brightness(0.84);
+  transform: scale(1);
 }
 
 .onb2v2-shade {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(118% 66% at 16% 86%, rgba(255, 46, 126, 0.52), transparent 60%),
-    radial-gradient(88% 52% at 86% 18%, rgba(255, 82, 155, 0.32), transparent 68%),
-    linear-gradient(180deg, rgba(5, 8, 14, 0.3) 0%, rgba(5, 8, 14, 0.76) 56%, rgba(5, 8, 14, 0.95) 100%);
+    radial-gradient(112% 64% at 14% 88%, rgba(255, 46, 126, 0.34), transparent 62%),
+    radial-gradient(86% 50% at 84% 16%, rgba(255, 82, 155, 0.2), transparent 70%),
+    linear-gradient(180deg, rgba(5, 8, 14, 0.18) 0%, rgba(5, 8, 14, 0.52) 56%, rgba(5, 8, 14, 0.88) 100%);
 }
 
 .onb2v2-content {
   position: relative;
   z-index: 1;
   height: 100%;
-  padding: 16px 18px 14px;
+  padding: calc(46px + env(safe-area-inset-top)) 18px 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  justify-content: flex-start;
 }
 
 .onb2v2-mantra {
   margin: 0;
   color: #f2ecf5;
-  font-size: 9px;
-  letter-spacing: 2.8px;
-  line-height: 1.62;
+  font-size: 11px;
+  letter-spacing: 3.2px;
+  line-height: 1.52;
   font-weight: 600;
   text-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }
@@ -4124,13 +4131,13 @@ body.onb1-body {
 .onb2v2-title {
   margin: 0;
   font-family: "Bebas Neue", sans-serif;
-  font-size: clamp(56px, 13.8vw, 66px);
+  font-size: clamp(58px, 14.1vw, 68px);
   line-height: 0.86;
   color: #f8f8ff;
   letter-spacing: 0.4px;
   text-transform: uppercase;
   text-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
-  max-width: 72%;
+  max-width: 68%;
 }
 
 .onb2v2-title span {
@@ -4141,22 +4148,20 @@ body.onb1-body {
   margin: 0;
   color: #e7deec;
   font-size: 14px;
-  line-height: 1.32;
-  max-width: 70%;
-  text-wrap: balance;
+  line-height: 1.34;
+  max-width: 66%;
 }
 
 .onb2v2-list {
-  margin: 0;
+  margin: 2px 0 0;
   padding: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
   color: #f2e6ef;
   font-size: 13px;
   font-weight: 500;
-  margin-top: 2px;
 }
 
 .onb2v2-list li {
@@ -4171,7 +4176,7 @@ body.onb1-body {
   flex: 0 0 auto;
   background: none;
   box-shadow: none;
-  font-size: 15px;
+  font-size: 18px;
   line-height: 1;
 }
 
@@ -4188,10 +4193,9 @@ body.onb1-body {
 }
 
 .onb2v2-btn {
-  width: min(244px, 100%);
-  justify-self: center;
+  width: min(268px, 100%);
   align-self: center;
-  margin-top: 12px;
+  margin-top: auto;
   display: block;
   border-radius: 11px;
   text-align: center;
@@ -4200,37 +4204,37 @@ body.onb1-body {
   border: 1px solid rgba(255, 170, 208, 0.56);
   background: linear-gradient(180deg, #ff5b98 0%, #e63779 100%);
   box-shadow: 0 14px 28px rgba(167, 24, 88, 0.46);
-  padding: 7px 10px 6px;
+  padding: 10px 10px 8px;
 }
 
 .onb2v2-btn strong {
   display: block;
-  font-family: "Bebas Neue", sans-serif;
-  font-size: 34px;
+  font-family: inherit;
+  font-size: 35px;
   line-height: 0.84;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.4px;
+  font-weight: 800;
 }
 
 .onb2v2-btn span {
   display: block;
   margin-top: 1px;
   color: #ffd9e9;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
 }
 
 .onb2v2-mini-dots {
-  justify-self: center;
   align-self: center;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding-top: 2px;
+  padding-top: 5px;
 }
 
 .onb2v2-mini-dots span {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 999px;
   background: rgba(248, 199, 223, 0.38);
 }
@@ -4242,12 +4246,8 @@ body.onb1-body {
 
 @media (max-width: 390px) {
   .onb2v2-content {
-    padding: 14px 14px 12px;
+    padding: calc(44px + env(safe-area-inset-top)) 14px 12px;
     gap: 8px;
-  }
-
-  .onb2v2-card {
-    height: min(84svh, 720px);
   }
 
   .onb2v2-title {
@@ -4256,35 +4256,27 @@ body.onb1-body {
 
   .onb2v2-copy {
     font-size: 13px;
-    max-width: 72%;
+    max-width: 66%;
   }
 
   .onb2v2-list {
     font-size: 12px;
+    gap: 6px;
   }
 
   .onb2v2-btn strong {
-    font-size: 30px;
+    font-size: 31px;
   }
 }
 
 @media (max-height: 820px) {
-  .onb2v2-shell {
-    gap: 6px;
-    padding-top: calc(6px + env(safe-area-inset-top));
-  }
-
-  .onb2v2-card {
-    height: min(84svh, 690px);
-  }
-
-.onb2v2-content {
-    padding: 12px 14px 10px;
-    gap: 8px;
+  .onb2v2-content {
+    padding: calc(42px + env(safe-area-inset-top)) 14px 10px;
+    gap: 7px;
   }
 
   .onb2v2-title {
-    font-size: clamp(46px, 12.2vw, 54px);
+    font-size: clamp(46px, 12.4vw, 54px);
   }
 
   .onb2v2-copy {
@@ -4304,7 +4296,6 @@ body.onb1-body {
     padding-top: 7px;
   }
 }
-
 .bottom-tabs a.active {
   color: #ffffff;
   background: var(--accent);
@@ -4506,3 +4497,4 @@ select {
     min-height: -webkit-fill-available;
   }
 }
+
