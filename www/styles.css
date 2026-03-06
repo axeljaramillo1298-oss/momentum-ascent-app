@@ -3658,9 +3658,9 @@ body.theme-female .today-pressure {
 /* Onboarding 1 v2 - cinematic compact layout */
 .onb1v2-shell {
   min-height: 100dvh;
-  max-width: 420px;
+  max-width: 408px;
   margin: 0 auto;
-  padding: calc(9px + env(safe-area-inset-top)) 8px calc(12px + env(safe-area-inset-bottom));
+  padding: calc(6px + env(safe-area-inset-top)) 9px calc(10px + env(safe-area-inset-bottom));
   display: grid;
   grid-template-rows: auto 1fr;
   gap: 6px;
@@ -3678,9 +3678,9 @@ body.theme-female .today-pressure {
     radial-gradient(560px 240px at 50% -6%, rgba(42, 103, 203, 0.2), transparent 62%),
     linear-gradient(180deg, rgba(5, 11, 22, 0.98), rgba(4, 9, 18, 0.98));
   box-shadow: 0 22px 52px rgba(0, 0, 0, 0.58);
-  padding: 10px 10px 9px;
+  padding: 9px;
   display: grid;
-  gap: 7px;
+  gap: 6px;
 }
 
 .onb1v2-hero {
@@ -3688,7 +3688,7 @@ body.theme-female .today-pressure {
   border-radius: 14px 14px 12px 12px;
   overflow: hidden;
   border: 1px solid rgba(96, 143, 227, 0.26);
-  min-height: 292px;
+  min-height: 262px;
   background: #060e1a;
 }
 
@@ -3699,8 +3699,8 @@ body.theme-female .today-pressure {
   z-index: 1;
   pointer-events: none;
   background:
-    radial-gradient(130% 58% at 50% 100%, rgba(5, 9, 17, 0) 30%, rgba(5, 9, 17, 0.76) 100%),
-    linear-gradient(180deg, rgba(6, 12, 22, 0.16) 0%, rgba(3, 7, 13, 0.5) 100%);
+    radial-gradient(130% 62% at 50% 100%, rgba(5, 9, 17, 0) 34%, rgba(5, 9, 17, 0.7) 100%),
+    linear-gradient(180deg, rgba(6, 12, 22, 0.14) 0%, rgba(3, 7, 13, 0.44) 100%);
 }
 
 .onb1v2-hero::after {
@@ -3721,15 +3721,15 @@ body.theme-female .today-pressure {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 44% center;
-  filter: grayscale(0.9) contrast(1.1) brightness(0.64) saturate(1.22);
+  object-position: 50% 56%;
+  filter: grayscale(0.9) contrast(1.1) brightness(0.68) saturate(1.2);
 }
 
 .onb1v2-overlay {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  width: min(46%, 180px);
+  top: 13px;
+  right: 14px;
+  width: min(47%, 176px);
   z-index: 3;
   text-shadow: 0 8px 20px rgba(0, 0, 0, 0.72);
 }
@@ -3737,18 +3737,18 @@ body.theme-female .today-pressure {
 .onb1v2-overlay h1 {
   margin: 0;
   font-family: "Bebas Neue", sans-serif;
-  font-size: clamp(62px, 15vw, 76px);
-  line-height: 0.84;
+  font-size: clamp(58px, 14.2vw, 70px);
+  line-height: 0.83;
   color: #f2f6ff;
   letter-spacing: 0.3px;
 }
 
 .onb1v2-overlay p {
-  margin: 8px 0 0;
+  margin: 7px 0 0;
   color: #dce7ff;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
-  line-height: 1.15;
+  line-height: 1.1;
 }
 
 .onb1v2-rachacard,
@@ -3760,8 +3760,8 @@ body.theme-female .today-pressure {
 }
 
 .onb1v2-rachacard {
-  min-height: 102px;
-  padding: 12px 14px;
+  min-height: 88px;
+  padding: 9px 12px 8px;
   background:
     linear-gradient(180deg, rgba(8, 18, 36, 0.88), rgba(5, 12, 26, 0.92)),
     url("assets/extras/extra-20.jpeg") center/cover no-repeat;
@@ -3781,27 +3781,27 @@ body.theme-female .today-pressure {
 
 .onb1v2-rachacard strong {
   display: block;
-  margin-top: 2px;
+  margin-top: 1px;
   font-family: "Bebas Neue", sans-serif;
-  font-size: 68px;
-  line-height: 0.82;
+  font-size: 60px;
+  line-height: 0.8;
 }
 
 .onb1v2-rachacard p {
-  margin: 2px 0 0;
+  margin: 0;
   color: #d3e1f8;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .onb1v2-mid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 7px;
+  gap: 6px;
 }
 
 .onb1v2-level-left {
-  min-height: 84px;
-  padding: 10px 10px 9px;
+  min-height: 72px;
+  padding: 8px 9px 7px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -3812,33 +3812,33 @@ body.theme-female .today-pressure {
 
 .onb1v2-level-left span {
   font-family: "Bebas Neue", sans-serif;
-  font-size: 34px;
+  font-size: 30px;
   line-height: 0.86;
   letter-spacing: 0.4px;
 }
 
 .onb1v2-level-left b {
   font-family: "Bebas Neue", sans-serif;
-  font-size: 74px;
+  font-size: 60px;
   line-height: 0.8;
   color: #5ea9ff;
   text-shadow: 0 0 24px rgba(68, 132, 235, 0.5);
 }
 
 .onb1v2-level-right {
-  min-height: 84px;
-  padding: 10px;
+  min-height: 72px;
+  padding: 8px;
 }
 
 .onb1v2-level-dots {
   display: flex;
   gap: 4px;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 
 .onb1v2-level-dots span {
-  width: 6px;
-  height: 10px;
+  width: 5px;
+  height: 8px;
   border-radius: 999px;
   background: rgba(176, 197, 232, 0.48);
 }
@@ -3848,31 +3848,32 @@ body.theme-female .today-pressure {
 }
 
 .onb1v2-level-right strong {
-  font-size: 15px;
+  font-size: 13px;
   display: block;
   line-height: 1.02;
 }
 
 .onb1v2-level-right p {
-  margin: 5px 0 0;
+  margin: 2px 0 0;
   color: #ceddf6;
-  font-size: 13px;
+  font-size: 11px;
 }
 
 .onb1v2-global {
   text-align: center;
   color: #8fb5f4;
   font-weight: 700;
-  font-size: 28px;
-  font-family: "Bebas Neue", sans-serif;
-  line-height: 1;
-  letter-spacing: 0.2px;
+  font-size: 13px;
+  line-height: 1.1;
+  letter-spacing: 0;
   padding: 0;
+  font-family: inherit;
 }
 
 .onb1v2-global::before {
   content: "🔥 ";
-  font-size: 20px;
+  font-size: 12px;
+  font-family: inherit;
 }
 
 .onb1v2-start {
@@ -3882,30 +3883,32 @@ body.theme-female .today-pressure {
   color: #fff;
   text-decoration: none;
   text-align: center;
-  padding: 8px 12px;
+  padding: 8px 10px 7px;
+  width: 74%;
+  margin: 0 auto;
   box-shadow: 0 12px 24px rgba(9, 44, 101, 0.4);
 }
 
 .onb1v2-start strong {
   display: block;
   font-family: "Bebas Neue", sans-serif;
-  font-size: 44px;
+  font-size: 40px;
   line-height: 0.82;
   letter-spacing: 1px;
 }
 
 .onb1v2-start span {
   display: block;
-  margin-top: 2px;
+  margin-top: -1px;
   color: #d9e7ff;
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 600;
 }
 
 .onb1v2-social {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   justify-content: center;
   padding: 1px 0 0;
 }
@@ -3915,8 +3918,8 @@ body.theme-female .today-pressure {
 }
 
 .onb1v2-avatars img {
-  width: 20px;
-  height: 20px;
+  width: 17px;
+  height: 17px;
   border-radius: 999px;
   object-fit: cover;
   border: 1px solid rgba(142, 182, 248, 0.5);
@@ -3930,7 +3933,7 @@ body.theme-female .today-pressure {
 .onb1v2-social p {
   margin: 0;
   color: #afc5eb;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .onb1v2-login {
@@ -3938,7 +3941,7 @@ body.theme-female .today-pressure {
   text-decoration: none;
   color: #d9e7ff;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 12px;
   padding: 1px 0 0;
 }
 
@@ -3953,19 +3956,29 @@ body.theme-female .today-pressure {
   }
 
   .onb1v2-overlay h1 {
-    font-size: 58px;
+    font-size: 52px;
   }
 
   .onb1v2-level-left span {
-    font-size: 30px;
+    font-size: 24px;
   }
 
   .onb1v2-level-left b {
-    font-size: 64px;
+    font-size: 50px;
   }
 
   .onb1v2-start strong {
-    font-size: 40px;
+    font-size: 34px;
+  }
+}
+
+@media (max-height: 860px) {
+  .onb1v2-hero {
+    min-height: 238px;
+  }
+
+  .onb1v2-rachacard {
+    min-height: 82px;
   }
 }
 
