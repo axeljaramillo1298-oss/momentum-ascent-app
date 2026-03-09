@@ -5176,6 +5176,368 @@ body.onb1-body {
   }
 }
 
+/* Onboarding 6 - status evaluation cinematic card */
+.onb6v2-body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.onb6v2-shell {
+  height: 100dvh;
+  min-height: 100dvh;
+  max-width: 414px;
+  margin: 0 auto;
+  padding: calc(6px + env(safe-area-inset-top)) 8px calc(10px + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-rows: 1fr;
+  overflow: hidden;
+  position: relative;
+}
+
+.onb6v2-top {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 22px;
+  right: 22px;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+}
+
+.onb6v2-top .onb-dots {
+  justify-self: center;
+}
+
+.onb6v2-top .onb-dot.active {
+  background: #66a7ff;
+  box-shadow: 0 0 0 3px rgba(102, 167, 255, 0.24);
+}
+
+.onb6v2-back {
+  width: 42px;
+  height: 42px;
+  border-color: rgba(143, 186, 255, 0.32);
+  background: linear-gradient(180deg, rgba(10, 22, 47, 0.78), rgba(7, 17, 35, 0.86));
+}
+
+.onb6v2-spacer {
+  width: 42px;
+  height: 42px;
+}
+
+.onb6v2-stage {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding-top: 10px;
+  padding-bottom: 8px;
+}
+
+.onb6v2-card {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(104, 161, 255, 0.16);
+  overflow: hidden;
+  box-shadow: 0 24px 52px rgba(0, 0, 0, 0.56);
+  background: #071227;
+}
+
+.onb6v2-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 49% 44%;
+  filter: saturate(0.92) contrast(1.03) brightness(0.68);
+}
+
+.onb6v2-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(84% 34% at 50% 8%, rgba(121, 182, 255, 0.16), transparent 72%),
+    radial-gradient(120% 86% at 50% 106%, rgba(8, 18, 39, 0.42), rgba(5, 12, 26, 0.72) 74%),
+    linear-gradient(180deg, rgba(5, 12, 26, 0.2) 0%, rgba(5, 12, 26, 0.44) 56%, rgba(5, 11, 23, 0.82) 100%);
+}
+
+.onb6v2-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  padding: calc(66px + env(safe-area-inset-top)) 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.onb6v2-title {
+  margin: 0;
+  text-align: center;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(54px, 11.8vw, 64px);
+  line-height: 0.88;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: #eaf4ff;
+  text-shadow: 0 8px 18px rgba(0, 0, 0, 0.44);
+}
+
+.onb6v2-title span {
+  color: #89beff;
+}
+
+.onb6v2-subtitle {
+  margin: 0;
+  text-align: center;
+  color: rgba(216, 232, 255, 0.92);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.onb6v2-label {
+  margin: 4px 2px 0;
+  color: rgba(204, 223, 250, 0.86);
+  font-size: 12px;
+  letter-spacing: 0.6px;
+  font-weight: 700;
+}
+
+.onb6v2-grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.onb6v2-grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.onb6v2-cardbtn.onbp-option {
+  min-height: 64px;
+  border-radius: 12px;
+  border: 1px solid rgba(115, 173, 255, 0.52);
+  background: linear-gradient(180deg, rgba(10, 23, 46, 0.94), rgba(8, 19, 38, 0.92));
+  box-shadow: inset 0 1px 0 rgba(181, 220, 255, 0.12);
+  padding: 7px 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.onb6v2-cardbtn .icon {
+  font-size: 20px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 6px rgba(86, 166, 255, 0.4));
+}
+
+.onb6v2-cardbtn > span:last-child {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+  text-align: left;
+}
+
+.onb6v2-cardbtn strong {
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 30px;
+  line-height: 0.9;
+  color: #edf5ff;
+  letter-spacing: 0.2px;
+}
+
+.onb6v2-cardbtn small {
+  color: #c5d9fb;
+  font-size: 10px;
+  line-height: 1.05;
+}
+
+.onb6v2-midbtn.onbp-option {
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(111, 169, 255, 0.52);
+  background: linear-gradient(180deg, rgba(10, 23, 46, 0.94), rgba(8, 19, 38, 0.92));
+  padding: 7px 10px;
+  text-align: left;
+  color: #e9f4ff;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 29px;
+  line-height: 0.9;
+  letter-spacing: 0.2px;
+}
+
+.onb6v2-pill.onbp-option {
+  min-height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(111, 169, 255, 0.56);
+  background: linear-gradient(180deg, rgba(12, 24, 48, 0.94), rgba(9, 19, 38, 0.92));
+  padding: 6px 7px;
+  color: #d8e8ff;
+  text-align: center;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.15px;
+  min-width: 0;
+}
+
+.onb6v2-foodbtn.onbp-option {
+  min-height: 68px;
+  border-radius: 12px;
+  border: 1px solid rgba(111, 169, 255, 0.5);
+  background: linear-gradient(180deg, rgba(10, 23, 46, 0.94), rgba(8, 19, 38, 0.92));
+  box-shadow: inset 0 1px 0 rgba(181, 220, 255, 0.12);
+  padding: 7px 8px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.onb6v2-foodbtn .icon {
+  font-size: 25px;
+  line-height: 1;
+}
+
+.onb6v2-foodbtn strong {
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 31px;
+  line-height: 0.9;
+  color: #edf5ff;
+  letter-spacing: 0.2px;
+}
+
+.onb6v2-foodbtn small {
+  font-size: 10px;
+  color: #c3d8fb;
+  line-height: 1.05;
+}
+
+.onb6v2-content .onbp-option.selected {
+  border-color: #7dc1ff;
+  background: linear-gradient(160deg, rgba(28, 63, 121, 0.92), rgba(12, 34, 74, 0.92));
+  box-shadow: 0 0 0 1px rgba(96, 188, 255, 0.44), 0 8px 20px rgba(38, 114, 227, 0.3), inset 0 0 16px rgba(91, 177, 255, 0.2);
+}
+
+.onb6v2-feedback {
+  min-height: 16px;
+  margin: 0;
+  color: #ffd5d5;
+  font-size: 12px;
+  text-align: center;
+}
+
+.onb6v2-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: min(258px, 100%);
+  min-height: 72px;
+  margin: auto auto 0;
+  text-align: center;
+  text-decoration: none;
+  color: #ebf7ff;
+  border: 1px solid rgba(132, 207, 255, 0.76);
+  border-radius: 14px;
+  background: linear-gradient(90deg, #2f7fff 0%, #3ad0ff 100%);
+  box-shadow: 0 11px 26px rgba(32, 133, 255, 0.35), 0 0 0 2px rgba(123, 208, 255, 0.1) inset;
+  padding: 9px 12px 8px;
+}
+
+.onb6v2-btn strong {
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 39px;
+  line-height: 0.82;
+  letter-spacing: 0.35px;
+}
+
+.onb6v2-btn span {
+  font-size: 14px;
+  color: #d7f0ff;
+  line-height: 1.1;
+}
+
+@media (max-width: 390px) {
+  .onb6v2-content {
+    padding-inline: 9px;
+    gap: 6px;
+  }
+
+  .onb6v2-title {
+    font-size: clamp(48px, 11.2vw, 56px);
+  }
+
+  .onb6v2-cardbtn strong {
+    font-size: 25px;
+  }
+
+  .onb6v2-midbtn.onbp-option {
+    font-size: 24px;
+  }
+
+  .onb6v2-foodbtn strong {
+    font-size: 26px;
+  }
+
+  .onb6v2-pill.onbp-option {
+    font-size: 10px;
+  }
+
+  .onb6v2-btn strong {
+    font-size: 35px;
+  }
+}
+
+@media (max-height: 840px) {
+  .onb6v2-content {
+    padding-top: calc(58px + env(safe-area-inset-top));
+    gap: 5px;
+  }
+
+  .onb6v2-title {
+    font-size: clamp(44px, 10.5vw, 52px);
+  }
+
+  .onb6v2-cardbtn.onbp-option {
+    min-height: 58px;
+  }
+
+  .onb6v2-cardbtn strong {
+    font-size: 24px;
+  }
+
+  .onb6v2-midbtn.onbp-option {
+    min-height: 38px;
+    font-size: 22px;
+  }
+
+  .onb6v2-foodbtn.onbp-option {
+    min-height: 60px;
+  }
+
+  .onb6v2-foodbtn strong {
+    font-size: 24px;
+  }
+
+  .onb6v2-btn {
+    min-height: 66px;
+  }
+
+  .onb6v2-btn strong {
+    font-size: 32px;
+  }
+}
+
 .bottom-tabs a.active {
   color: #ffffff;
   background: var(--accent);
