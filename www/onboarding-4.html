@@ -4,27 +4,45 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Onboarding 4 | Disciplina</title>
-    <meta name="theme-color" content="#e9f4ec" />
+    <meta name="theme-color" content="#dff8de" />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="onb-body">
-    <main class="onbp-shell">
-      <header class="onbp-top">
-        <a class="onb-back" href="onboarding-3.html" aria-label="Atras">&lt;</a>
-        <div class="onb-dots"><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot active"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span></div>
+  <body class="onb-body onb4v2-body">
+    <main class="onb4v2-shell">
+      <header class="onb4v2-top">
+        <a class="onb-back onb4v2-back" href="onboarding-3.html" aria-label="Atras">&lt;</a>
+        <div class="onb-dots onb4v2-dots">
+          <span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot active"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span>
+        </div>
+        <span class="onb4v2-spacer" aria-hidden="true"></span>
       </header>
-      <section class="onbp-screen">
-        <article class="onbp-card">
-          <div class="onbp-visual onbp-v-result">
-            <img class="onbp-visual-media" src="assets/extras/extra-18.jpeg" alt="Progreso y resultados" loading="lazy" />
-            <div class="onbp-chart">
-              <span class="onbp-line"></span>
+
+      <section class="onb4v2-stage">
+        <article class="onb4v2-card">
+          <img class="onb4v2-bg" src="assets/extras/onb4-results.png" alt="Ve resultados reales" loading="lazy" />
+          <div class="onb4v2-shade" aria-hidden="true"></div>
+
+          <div class="onb4v2-content">
+            <h1 class="onb4v2-title">
+              VE RESULTADOS<br />
+              <span>REALES</span>
+            </h1>
+
+            <p class="onb4v2-copy">
+              Mide tu progreso basado en respuestas, rachas y
+              porcentaje de cumplimiento
+            </p>
+
+            <a class="onb4v2-btn" href="onboarding-5.html">
+              <strong>SIGUIENTE</strong>
+              <span>Confirma tu progreso</span>
+            </a>
+
+            <div class="onb4v2-mini-dots" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span><span class="active"></span><span></span><span></span>
             </div>
           </div>
-          <h2 class="onbp-title">Ve resultados reales</h2>
-          <p class="onbp-copy">Tu progreso se mide por respuesta, racha y porcentaje de cumplimiento.</p>
         </article>
-        <div class="onb-actions"><a class="primary onb-go" href="onboarding-5.html">Siguiente</a></div>
       </section>
     </main>
     <script src="app.js"></script>
