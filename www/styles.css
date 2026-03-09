@@ -4473,30 +4473,32 @@ body.onb1-body {
 .onb3v2-drops {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   flex-wrap: nowrap;
 }
 
 .onb3v2-drops span {
-  width: 13px;
-  height: 18px;
-  background: radial-gradient(circle at 36% 30%, #cbf8ff 0%, #9cecff 28%, #4cc5ff 64%, #2a8df4 100%);
+  width: 14px;
+  height: 20px;
+  background:
+    radial-gradient(circle at 36% 28%, #e6fcff 0%, #c0f6ff 20%, transparent 36%),
+    radial-gradient(circle at 50% 58%, #8be8ff 0%, #42c2ff 58%, #257fe9 100%);
   border-radius: 60% 60% 60% 60% / 74% 74% 46% 46%;
   transform: rotate(45deg);
-  filter: drop-shadow(0 0 6px rgba(88, 208, 255, 0.56));
+  box-shadow: 0 0 10px rgba(88, 208, 255, 0.4);
 }
 
 .onb3v2-meta-inline {
   display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-  transform: translateY(1px);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  transform: translateY(0);
 }
 
 .onb3v2-meta-inline-label {
   font-family: "Space Grotesk", system-ui, sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.1;
   color: rgba(224, 241, 255, 0.92);
   text-transform: none;
@@ -4589,11 +4591,11 @@ body.onb1-body {
   }
 
   .onb3v2-meta-inline {
-    transform: translateY(0);
+    gap: 2px;
   }
 
   .onb3v2-meta-inline-label {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .onb3v2-btn strong {
@@ -4632,11 +4634,11 @@ body.onb1-body {
   }
 
   .onb3v2-meta-inline {
-    transform: translateY(0);
+    gap: 2px;
   }
 
   .onb3v2-meta-inline-label {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .onb3v2-btn {
