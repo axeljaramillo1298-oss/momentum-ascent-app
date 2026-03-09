@@ -4425,7 +4425,7 @@ body.onb1-body {
 }
 
 .onb3v2-lower {
-  margin-top: 18px;
+  margin-top: 42px;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -4459,7 +4459,7 @@ body.onb1-body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 14px;
 }
 
 .onb3v2-activa {
@@ -4491,9 +4491,10 @@ body.onb1-body {
 .onb3v2-meta-inline {
   display: inline-flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 3px;
   transform: translateY(0);
+  margin-right: 6px;
 }
 
 .onb3v2-meta-inline-label {
@@ -4504,6 +4505,7 @@ body.onb1-body {
   text-transform: none;
   letter-spacing: 0;
   white-space: nowrap;
+  text-align: center;
 }
 
 .onb3v2-copy {
@@ -4574,7 +4576,7 @@ body.onb1-body {
   }
 
   .onb3v2-lower {
-    margin-top: 18px;
+    margin-top: 34px;
   }
 
   .onb3v2-title {
@@ -4617,7 +4619,7 @@ body.onb1-body {
   }
 
   .onb3v2-lower {
-    margin-top: 14px;
+    margin-top: 24px;
   }
 
   .onb3v2-title {
