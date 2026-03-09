@@ -5648,6 +5648,14 @@ body.onb1-body {
   display: flex;
   flex-direction: column;
   gap: 7px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.onb7v2-content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .onb7v2-title {
@@ -5717,6 +5725,30 @@ body.onb1-body {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
+}
+
+#onb7v2-sports {
+  max-height: 96px;
+  overflow: hidden;
+  transition: max-height 0.22s ease;
+}
+
+#onb7v2-sports.expanded {
+  max-height: 226px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  padding-right: 2px;
+}
+
+#onb7v2-sports.expanded::-webkit-scrollbar {
+  width: 5px;
+}
+
+#onb7v2-sports.expanded::-webkit-scrollbar-thumb {
+  background: rgba(120, 182, 255, 0.5);
+  border-radius: 999px;
 }
 
 .onb7v2-grid3 {
@@ -5834,6 +5866,10 @@ body.onb1-body {
     padding-inline: 8px;
   }
 
+  #onb7v2-sports.expanded {
+    max-height: 206px;
+  }
+
   .onb7v2-pill.onbp-option {
     font-size: 10px;
   }
@@ -5861,6 +5897,10 @@ body.onb1-body {
 
   .onb7v2-hero-title {
     font-size: 38px;
+  }
+
+  #onb7v2-sports.expanded {
+    max-height: 178px;
   }
 
   .onb7v2-btn {

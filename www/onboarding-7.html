@@ -32,7 +32,7 @@
             </div>
 
             <h3 class="onb7v2-label">DEPORTE PRINCIPAL</h3>
-            <div class="onbp-options onb7v2-grid2" data-onb-key="deporte" data-onb-type="single" data-onb-required="true">
+            <div class="onbp-options onb7v2-grid2" id="onb7v2-sports" data-onb-key="deporte" data-onb-type="single" data-onb-required="true">
               <button class="onbp-option onb7v2-sport" type="button" data-onb-value="Running">🏃 Running</button>
               <button class="onbp-option onb7v2-sport" type="button" data-onb-value="Gym">🏋️ Gym</button>
               <button class="onbp-option onb7v2-sport" type="button" data-onb-value="Ciclismo">🚴 Ciclismo</button>
@@ -109,12 +109,19 @@
     <script>
       (function () {
         var btn = document.getElementById("onb7v2-more");
+        var sports = document.getElementById("onb7v2-sports");
         if (!btn) return;
         btn.addEventListener("click", function () {
           document.querySelectorAll(".onb7v2-extra").forEach(function (el) {
             el.classList.toggle("hidden-field");
           });
           btn.classList.toggle("expanded");
+          if (sports) {
+            sports.classList.toggle("expanded", btn.classList.contains("expanded"));
+            if (!btn.classList.contains("expanded")) {
+              sports.scrollTop = 0;
+            }
+          }
           btn.textContent = btn.classList.contains("expanded") ? "VER MENOS DEPORTES" : "VER MAS DEPORTES";
         });
       })();
