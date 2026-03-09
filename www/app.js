@@ -4300,7 +4300,32 @@ const initDynamicOnboarding = () => {
   if (!["onboarding-5.html", "onboarding-6.html", "onboarding-7.html", "onboarding-8.html", "onboarding-9.html"].includes(page)) {
     return;
   }
+  const ONBP_SESSION_KEY = "discipline_onbp_session_started";
+  const ONBP_TOUCHED_PREFIX = "discipline_onbp_touched_";
+  const onboardingPages = ["onboarding-5.html", "onboarding-6.html", "onboarding-7.html", "onboarding-8.html", "onboarding-9.html"];
+  if (page === "onboarding-5.html" && !sessionStorage.getItem(ONBP_SESSION_KEY)) {
+    localStorage.removeItem(ONBP_DYNAMIC_KEY);
+    onboardingPages.forEach((p) => sessionStorage.removeItem(`${ONBP_TOUCHED_PREFIX}${p}`));
+    sessionStorage.setItem(ONBP_SESSION_KEY, "1");
+  }
   const state = readOnbpState();
+  const touchedStorageKey = `${ONBP_TOUCHED_PREFIX}${page}`;
+  const touched = new Set();
+  try {
+    const rawTouched = JSON.parse(sessionStorage.getItem(touchedStorageKey) || "[]");
+    if (Array.isArray(rawTouched)) {
+      rawTouched.forEach((key) => {
+        if (typeof key === "string" && key) {
+          touched.add(key);
+        }
+      });
+    }
+  } catch {
+    // ignore parse errors
+  }
+  const saveTouched = () => {
+    sessionStorage.setItem(touchedStorageKey, JSON.stringify(Array.from(touched)));
+  };
 
   const groups = Array.from(document.querySelectorAll("[data-onb-key]"));
   const optionsByKey = new Map();
@@ -4360,6 +4385,8 @@ const initDynamicOnboarding = () => {
         } else {
           state[key] = val;
         }
+        touched.add(key);
+        saveTouched();
         saveOnbpState(state);
         paintGroup(key);
         syncOnbpConditionalFields();
@@ -4422,7 +4449,8 @@ const initDynamicOnboarding = () => {
       }
       const value = state[key];
       const valid = Array.isArray(value) ? value.length > 0 : Boolean(value);
-      if (!valid) {
+      const interacted = touched.has(key);
+      if (!valid || !interacted) {
         return false;
       }
     }
@@ -4563,6 +4591,14 @@ const initDynamicOnboarding = () => {
         aviso: state.aviso ? "on" : "",
       };
       localStorage.setItem(REG_DRAFT_KEY, JSON.stringify(draft));
+      try {
+        await apiPost("/onboarding/profile", {
+          email,
+          answers: draft,
+        });
+      } catch {
+        // fallback local
+      }
       persistPlanSelection({
         id: state.plan || "Free",
         extras: {
@@ -4572,6 +4608,8 @@ const initDynamicOnboarding = () => {
       });
       localStorage.setItem(ONBOARDING_DONE_KEY, "1");
       localStorage.removeItem(ONBP_DYNAMIC_KEY);
+      sessionStorage.removeItem(ONBP_SESSION_KEY);
+      onboardingPages.forEach((p) => sessionStorage.removeItem(`${ONBP_TOUCHED_PREFIX}${p}`));
       window.location.href = "user-hoy.html";
     });
   }

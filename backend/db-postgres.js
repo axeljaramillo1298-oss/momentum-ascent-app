@@ -124,6 +124,12 @@ CREATE TABLE IF NOT EXISTS coach_whatsapp_flows (
   answers_json JSONB NOT NULL DEFAULT '{}'::jsonb,
   updated_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS onboarding_profiles (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  answers_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL
+);
 `;
 
 async function initDb() {
@@ -1016,6 +1022,31 @@ async function getCoachFlowByUser(userId) {
   };
 }
 
+async function saveOnboardingProfile(payload) {
+  const userId = normalizeEmail(payload?.email || payload?.userId);
+  if (!userId) throw new Error("email_required");
+  const answers = payload?.answers && typeof payload.answers === "object" ? payload.answers : {};
+  const now = nowIso();
+  await ensureUserRecord(userId, {
+    name: safeStr(answers.nombre) || "User",
+    role: "user",
+    goal: safeStr(answers.objetivo),
+    checkinSchedule: safeStr(answers.horario),
+    plan: safeStr(answers.plan) || "Free",
+  });
+  await pool.query(
+    `
+    INSERT INTO onboarding_profiles (user_id, answers_json, updated_at)
+    VALUES ($1,$2,$3)
+    ON CONFLICT (user_id) DO UPDATE SET
+      answers_json = EXCLUDED.answers_json,
+      updated_at = EXCLUDED.updated_at
+    `,
+    [userId, answers, now]
+  );
+  return { userId, updatedAt: now };
+}
+
 module.exports = {
   DB_META,
   initDb,
@@ -1038,6 +1069,7 @@ module.exports = {
   upsertCoachFlow,
   getCoachFlowByPhone,
   getCoachFlowByUser,
+  saveOnboardingProfile,
   getAdminDashboard,
   getAdminTimeline,
   getAdminCsvReport,

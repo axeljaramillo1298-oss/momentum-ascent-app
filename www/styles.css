@@ -4988,6 +4988,14 @@ body.onb1-body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.onb5v2-content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .onb5v2-title {
@@ -5297,6 +5305,14 @@ body.onb1-body {
   display: flex;
   flex-direction: column;
   gap: 7px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.onb6v2-content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .onb6v2-title {

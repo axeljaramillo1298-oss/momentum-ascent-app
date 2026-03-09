@@ -118,6 +118,12 @@ CREATE TABLE IF NOT EXISTS coach_whatsapp_flows (
   answers_json TEXT DEFAULT '{}',
   updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS onboarding_profiles (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  answers_json TEXT NOT NULL DEFAULT '{}',
+  updated_at TEXT NOT NULL
+);
 `);
 
 const nowIso = () => new Date().toISOString();
@@ -495,6 +501,14 @@ ON CONFLICT(user_id) DO UPDATE SET
   phone = excluded.phone,
   step = excluded.step,
   status = excluded.status,
+  answers_json = excluded.answers_json,
+  updated_at = excluded.updated_at
+`);
+
+const upsertOnboardingProfileStmt = db.prepare(`
+INSERT INTO onboarding_profiles (user_id, answers_json, updated_at)
+VALUES (?, ?, ?)
+ON CONFLICT(user_id) DO UPDATE SET
   answers_json = excluded.answers_json,
   updated_at = excluded.updated_at
 `);
@@ -1020,6 +1034,16 @@ function getCoachFlowByUser(userId) {
   };
 }
 
+function saveOnboardingProfile(payload) {
+  const userId = normalizeEmail(payload?.email || payload?.userId);
+  if (!userId) throw new Error("email_required");
+  const answers = payload?.answers && typeof payload.answers === "object" ? payload.answers : {};
+  const now = nowIso();
+  ensureUser({ email: userId, name: safeStr(answers.nombre) || "User", role: "user" });
+  upsertOnboardingProfileStmt.run(userId, JSON.stringify(answers), now);
+  return { userId, updatedAt: now };
+}
+
 const DB_META = {
   client: "sqlite",
   path: DB_PATH,
@@ -1052,6 +1076,7 @@ module.exports = {
   upsertCoachFlow: async (payload) => upsertCoachFlow(payload),
   getCoachFlowByPhone: async (phone) => getCoachFlowByPhone(phone),
   getCoachFlowByUser: async (userId) => getCoachFlowByUser(userId),
+  saveOnboardingProfile: async (payload) => saveOnboardingProfile(payload),
   getAdminDashboard: async (dateKey) => getAdminDashboard(dateKey),
   getAdminTimeline: async (userId, limit) => getAdminTimeline(userId, limit),
   getAdminCsvReport: async (scope, userId) => getAdminCsvReport(scope, userId),

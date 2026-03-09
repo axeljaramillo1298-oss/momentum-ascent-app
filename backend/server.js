@@ -28,6 +28,7 @@ const {
   reviewPaymentRequest,
   saveNutritionPlan,
   saveRoutine,
+  saveOnboardingProfile,
   saveSupportAlert,
   searchUsers,
 } = require("./db");
@@ -123,6 +124,18 @@ app.post("/coach/onboarding/start", async (req, res) => {
     res.json({ ok: true, result });
   } catch (error) {
     res.status(400).json({ ok: false, error: String(error.message || "coach_onboarding_start_failed") });
+  }
+});
+
+app.post("/onboarding/profile", async (req, res) => {
+  try {
+    const email = String(req.body?.email || req.body?.userId || "").trim().toLowerCase();
+    if (!email) throw new Error("email_required");
+    const answers = req.body?.answers && typeof req.body.answers === "object" ? req.body.answers : {};
+    const result = await saveOnboardingProfile({ email, answers });
+    res.json({ ok: true, result });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: String(error.message || "onboarding_profile_failed") });
   }
 });
 
