@@ -5080,7 +5080,13 @@ body.onb1-body {
 }
 
 .onb5v2-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
   width: min(262px, 100%);
+  min-height: 78px;
   margin: auto auto 0;
   text-align: center;
   text-decoration: none;
@@ -5095,19 +5101,20 @@ body.onb1-body {
 .onb5v2-btn strong {
   display: block;
   font-family: "Bebas Neue", sans-serif;
-  font-size: 42px;
-  line-height: 0.82;
+  font-size: 40px;
+  line-height: 0.8;
   letter-spacing: 0.4px;
+  margin: 0;
 }
 
 .onb5v2-btn span {
   display: block;
-  margin-top: 1px;
+  margin: 0;
   font-size: 12px;
   line-height: 1.1;
   color: #d8f1ff;
   font-weight: 500;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 @media (max-width: 390px) {
@@ -5133,10 +5140,11 @@ body.onb1-body {
 
   .onb5v2-btn {
     width: min(252px, 100%);
+    min-height: 74px;
   }
 
   .onb5v2-btn strong {
-    font-size: 36px;
+    font-size: 34px;
   }
 
   .onb5v2-btn span {
