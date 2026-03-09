@@ -4867,6 +4867,285 @@ body.onb1-body {
   }
 }
 
+/* Onboarding 5 - goals selection cinematic card */
+.onb5v2-body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.onb5v2-shell {
+  height: 100dvh;
+  min-height: 100dvh;
+  max-width: 414px;
+  margin: 0 auto;
+  padding: calc(6px + env(safe-area-inset-top)) 8px calc(10px + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-rows: 1fr;
+  overflow: hidden;
+  position: relative;
+}
+
+.onb5v2-top {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 22px;
+  right: 22px;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+}
+
+.onb5v2-top .onb-dots {
+  justify-self: center;
+}
+
+.onb5v2-top .onb-dot.active {
+  background: #64a6ff;
+  box-shadow: 0 0 0 3px rgba(100, 166, 255, 0.24);
+}
+
+.onb5v2-back {
+  width: 42px;
+  height: 42px;
+  border-color: rgba(146, 189, 255, 0.3);
+  background: linear-gradient(180deg, rgba(10, 22, 47, 0.78), rgba(7, 17, 35, 0.86));
+}
+
+.onb5v2-spacer {
+  width: 42px;
+  height: 42px;
+}
+
+.onb5v2-stage {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding-top: 10px;
+  padding-bottom: 8px;
+}
+
+.onb5v2-card {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(109, 162, 249, 0.16);
+  overflow: hidden;
+  box-shadow: 0 24px 52px rgba(0, 0, 0, 0.56);
+  background: #081227;
+}
+
+.onb5v2-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 34%;
+  filter: saturate(0.66) contrast(1.04) brightness(0.62);
+}
+
+.onb5v2-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(84% 36% at 50% 8%, rgba(109, 170, 255, 0.2), transparent 72%),
+    radial-gradient(120% 84% at 50% 106%, rgba(8, 19, 41, 0.5), rgba(5, 12, 26, 0.78) 74%),
+    linear-gradient(180deg, rgba(5, 12, 26, 0.24) 0%, rgba(5, 12, 26, 0.54) 56%, rgba(5, 11, 23, 0.84) 100%);
+}
+
+.onb5v2-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  padding: calc(68px + env(safe-area-inset-top)) 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.onb5v2-title {
+  margin: 0;
+  text-align: center;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(56px, 12.4vw, 68px);
+  line-height: 0.88;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: #f1f7ff;
+  text-shadow: 0 8px 18px rgba(0, 0, 0, 0.44);
+}
+
+.onb5v2-title span {
+  color: #5dc2ff;
+}
+
+.onb5v2-subtitle {
+  margin: 0;
+  text-align: center;
+  color: rgba(221, 234, 255, 0.92);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.onb5v2-goals {
+  margin-top: 6px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.onb5v2-goal.onbp-option {
+  border-radius: 13px;
+  border: 1px solid rgba(114, 170, 255, 0.48);
+  background: linear-gradient(180deg, rgba(11, 23, 46, 0.94), rgba(8, 19, 38, 0.92));
+  box-shadow: inset 0 1px 0 rgba(180, 218, 255, 0.12);
+  min-height: 58px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 33px;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: #eaf3ff;
+  font-family: "Bebas Neue", sans-serif;
+  letter-spacing: 0.2px;
+}
+
+.onb5v2-goal .icon {
+  font-size: 31px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 6px rgba(85, 165, 255, 0.35));
+}
+
+.onb5v2-goal.onbp-option.selected {
+  border-color: #79c3ff;
+  background: linear-gradient(160deg, rgba(30, 64, 121, 0.92), rgba(13, 35, 74, 0.92));
+  box-shadow: 0 0 0 1px rgba(86, 179, 255, 0.44), 0 8px 20px rgba(41, 120, 234, 0.34), inset 0 0 16px rgba(89, 175, 255, 0.18);
+}
+
+.onb5v2-label {
+  margin: 5px 2px 0;
+  font-size: 11.5px;
+  letter-spacing: 0.6px;
+  color: rgba(203, 221, 248, 0.82);
+  font-weight: 700;
+}
+
+.onb5v2-chips {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.onb5v2-chip.onbp-option {
+  min-height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(109, 163, 255, 0.56);
+  background: linear-gradient(180deg, rgba(12, 24, 48, 0.94), rgba(9, 19, 38, 0.92));
+  padding: 6px 8px;
+  color: #d9e8ff;
+  font-size: 12px;
+  line-height: 1;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.onb5v2-chip.onbp-option.selected {
+  color: #f2f8ff;
+  border-color: #79beff;
+  background: linear-gradient(180deg, rgba(37, 97, 186, 0.92), rgba(20, 63, 132, 0.92));
+  box-shadow: 0 6px 16px rgba(42, 120, 232, 0.3), inset 0 0 14px rgba(106, 188, 255, 0.24);
+}
+
+.onb5v2-feedback {
+  min-height: 18px;
+  margin: 0;
+  color: #ffd3d3;
+  font-size: 12px;
+  text-align: center;
+}
+
+.onb5v2-btn {
+  width: min(262px, 100%);
+  margin: auto auto 0;
+  text-align: center;
+  text-decoration: none;
+  color: #ebf7ff;
+  border: 1px solid rgba(134, 210, 255, 0.78);
+  border-radius: 14px;
+  background: linear-gradient(90deg, #2f7fff 0%, #3ad2ff 100%);
+  box-shadow: 0 11px 26px rgba(32, 133, 255, 0.36), 0 0 0 2px rgba(123, 208, 255, 0.1) inset;
+  padding: 10px 12px 8px;
+}
+
+.onb5v2-btn strong {
+  display: block;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 42px;
+  line-height: 0.82;
+  letter-spacing: 0.4px;
+}
+
+.onb5v2-btn span {
+  display: block;
+  margin-top: 1px;
+  font-size: 13px;
+  line-height: 1.1;
+  color: #d8f1ff;
+  font-weight: 500;
+}
+
+@media (max-width: 390px) {
+  .onb5v2-content {
+    padding-inline: 10px;
+  }
+
+  .onb5v2-goal.onbp-option {
+    font-size: 28px;
+    min-height: 54px;
+    gap: 8px;
+  }
+
+  .onb5v2-goal .icon {
+    font-size: 27px;
+  }
+
+  .onb5v2-chip.onbp-option {
+    font-size: 11px;
+    min-height: 34px;
+  }
+}
+
+@media (max-height: 840px) {
+  .onb5v2-content {
+    padding-top: calc(58px + env(safe-area-inset-top));
+    gap: 7px;
+  }
+
+  .onb5v2-title {
+    font-size: clamp(50px, 11.8vw, 62px);
+  }
+
+  .onb5v2-goal.onbp-option {
+    min-height: 50px;
+    font-size: 25px;
+  }
+
+  .onb5v2-goal .icon {
+    font-size: 24px;
+  }
+
+  .onb5v2-btn strong {
+    font-size: 36px;
+  }
+}
+
 .bottom-tabs a.active {
   color: #ffffff;
   background: var(--accent);
