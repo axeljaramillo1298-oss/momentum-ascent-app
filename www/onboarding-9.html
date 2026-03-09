@@ -4,70 +4,82 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Onboarding 9 | Disciplina</title>
-    <meta name="theme-color" content="#e8f7e5" />
+    <meta name="theme-color" content="#e9f2ff" />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="onb-body">
-    <main class="onbp-shell">
-      <header class="onbp-top">
-        <a class="onb-back" href="onboarding-8.html" aria-label="Atras">&lt;</a>
-        <div class="onb-dots"><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot active"></span></div>
-      </header>
-      <section class="onbp-screen">
-        <article class="onbp-card">
-          <h2 class="onbp-q-title">Activa tu cuenta</h2>
-          <div class="onbp-form">
-            <label class="onbp-input-wrap">Nombre completo
-              <input class="onbp-input" id="onbp-nombre" type="text" placeholder="Tu nombre" data-onb-input="nombre" required />
-            </label>
-            <label class="onbp-input-wrap">Correo
-              <input class="onbp-input" id="onbp-email" type="email" placeholder="tu@email.com" data-onb-input="email" required />
-            </label>
-            <label class="onbp-input-wrap">WhatsApp
-              <input class="onbp-input" id="onbp-whatsapp" type="tel" maxlength="16" placeholder="+52..." data-onb-input="whatsapp" required />
-            </label>
-
-            <h3 class="onbp-subtitle">Horario de check-in</h3>
-            <div class="onbp-options" data-onb-key="horario" data-onb-type="single" data-onb-required="true">
-              <button class="onbp-option" type="button" data-onb-value="06:00 - 08:00">06:00 - 08:00</button>
-              <button class="onbp-option" type="button" data-onb-value="12:00 - 14:00">12:00 - 14:00</button>
-              <button class="onbp-option" type="button" data-onb-value="19:00 - 21:00">19:00 - 21:00</button>
-              <button class="onbp-option" type="button" data-onb-value="21:00 - 23:00">21:00 - 23:00</button>
-            </div>
-
-            <h3 class="onbp-subtitle">Plan</h3>
-            <div class="onbp-options" data-onb-key="plan" data-onb-type="single" data-onb-required="true">
-              <button class="onbp-option" type="button" data-onb-value="Free">Free</button>
-              <button class="onbp-option" type="button" data-onb-value="Coach IA">Coach IA</button>
-              <button class="onbp-option" type="button" data-onb-value="Coach + Humano">Coach + Humano</button>
-              <button class="onbp-option" type="button" data-onb-value="Retos">Retos</button>
-            </div>
-
-            <h3 class="onbp-subtitle">Check-in con foto</h3>
-            <div class="onbp-options" data-onb-key="foto_checkin" data-onb-type="single" data-onb-required="true">
-              <button class="onbp-option" type="button" data-onb-value="Si">Si</button>
-              <button class="onbp-option" type="button" data-onb-value="No">No</button>
-            </div>
-
-            <label class="onbp-check">
-              <input type="checkbox" data-onb-check="compromiso" required />
-              <span>Acepto responder en 10 minutos y castigo automatico si fallo.</span>
-            </label>
-            <label class="onbp-check">
-              <input type="checkbox" data-onb-check="aviso" required />
-              <span>Entiendo que esto no reemplaza asesoria medica.</span>
-            </label>
-            <p class="reg-feedback" id="onbp-feedback-9" aria-live="polite"></p>
-          </div>
-          <p class="onbp-copy">Tu sistema combina rutina, nutricion y seguimiento diario para resultados sostenibles.</p>
-        </article>
-        <div class="onb-actions">
-          <button class="primary onb-go" type="button" id="onbp-finish">Activar y continuar</button>
-          <a class="onb-login" href="registro.html#login">Ya tengo una cuenta</a>
+  <body class="onb-body onb9v2-body">
+    <main class="onb9v2-shell">
+      <header class="onb9v2-top">
+        <a class="onb-back onb9v2-back" href="onboarding-8.html" aria-label="Atras">&lt;</a>
+        <div class="onb-dots onb9v2-dots">
+          <span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot active"></span>
         </div>
+        <span class="onb9v2-spacer" aria-hidden="true"></span>
+      </header>
+
+      <section class="onb9v2-stage">
+        <article class="onb9v2-card">
+          <img class="onb9v2-bg" src="assets/extras/onb6-status.png" alt="Activa tu cuenta" loading="lazy" />
+          <div class="onb9v2-shade" aria-hidden="true"></div>
+
+          <div class="onb9v2-content">
+            <h1 class="onb9v2-title">ACTIVA TU<br /><span>CUENTA</span></h1>
+            <p class="onb9v2-subtitle">Completa los campos para activar tu cuenta y comenzar tu transformacion.</p>
+
+            <div class="onb9v2-form">
+              <label class="onbp-input-wrap onb9v2-input-wrap">NOMBRE COMPLETO
+                <input class="onbp-input onb9v2-input" id="onbp-nombre" type="text" placeholder="Tu nombre" data-onb-input="nombre" required />
+              </label>
+              <label class="onbp-input-wrap onb9v2-input-wrap">CORREO
+                <input class="onbp-input onb9v2-input" id="onbp-email" type="email" placeholder="tu@email.com" data-onb-input="email" required />
+              </label>
+              <label class="onbp-input-wrap onb9v2-input-wrap">WHATSAPP
+                <input class="onbp-input onb9v2-input" id="onbp-whatsapp" type="tel" maxlength="16" placeholder="+52..." data-onb-input="whatsapp" required />
+              </label>
+
+              <h3 class="onb9v2-label">Horario de check-in</h3>
+              <div class="onbp-options onb9v2-grid2" data-onb-key="horario" data-onb-type="single" data-onb-required="true">
+                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="06:00 - 08:00">06:00 - 08:00</button>
+                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="12:00 - 14:00">12:00 - 14:00</button>
+                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="19:00 - 21:00">19:00 - 21:00</button>
+                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="21:00 - 23:00">21:00 - 23:00</button>
+              </div>
+
+              <h3 class="onb9v2-label">Plan</h3>
+              <div class="onbp-options onb9v2-grid3" data-onb-key="plan" data-onb-type="single" data-onb-required="true">
+                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Free">📶 Free</button>
+                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Coach IA">🤖 Coach IA</button>
+                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Coach + Humano">🧑 Coach + Humano</button>
+                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Idiomas">📚 Idiomas</button>
+                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Finanzas personales">💳 Finanzas</button>
+                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Meditacion">🧘 Meditacion</button>
+              </div>
+
+              <h3 class="onb9v2-label">Check-in con foto</h3>
+              <div class="onbp-options onb9v2-grid2" data-onb-key="foto_checkin" data-onb-type="single" data-onb-required="true">
+                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Si">📸 Si</button>
+                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="No">🚫 No</button>
+              </div>
+
+              <label class="onbp-check onb9v2-check">
+                <input type="checkbox" data-onb-check="compromiso" required />
+                <span>Acepto responder en 10 minutos y castigo automatico si fallo.</span>
+              </label>
+              <label class="onbp-check onb9v2-check">
+                <input type="checkbox" data-onb-check="aviso" required />
+                <span>Entiendo que esto no reemplaza asesoria medica.</span>
+              </label>
+              <p class="reg-feedback onb9v2-feedback" id="onbp-feedback-9" aria-live="polite"></p>
+            </div>
+
+            <button class="onb-go onb9v2-btn" type="button" id="onbp-finish">
+              <strong>ACTIVAR CUENTA</strong>
+            </button>
+            <a class="onb-login onb9v2-login" href="registro.html#login">Ya tengo una cuenta</a>
+          </div>
+        </article>
       </section>
     </main>
     <script src="app.js"></script>
   </body>
 </html>
-

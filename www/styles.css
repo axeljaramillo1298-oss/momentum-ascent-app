@@ -3003,6 +3003,29 @@ body.theme-female .today-pressure {
   border-color: #5ea2ff;
   background: linear-gradient(160deg, #193f76, #11305b);
   box-shadow: 0 10px 24px rgba(34, 99, 196, 0.44);
+  transform: translateY(-1px);
+  animation: onbSelectedPulse 0.32s ease-out;
+  position: relative;
+}
+
+.onbp-option.selected::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(142, 204, 255, 0.44), 0 0 18px rgba(88, 168, 255, 0.28);
+}
+
+@keyframes onbSelectedPulse {
+  0% {
+    transform: scale(0.985);
+    filter: brightness(0.94);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
 }
 
 .onbp-subtitle {
@@ -6205,6 +6228,289 @@ body.onb1-body {
 
   .onb8v2-btn strong {
     font-size: 32px;
+  }
+}
+
+/* Onboarding 9 - account activation cinematic card */
+.onb9v2-body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.onb9v2-shell {
+  height: 100dvh;
+  min-height: 100dvh;
+  max-width: 414px;
+  margin: 0 auto;
+  padding: calc(6px + env(safe-area-inset-top)) 8px calc(10px + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-rows: 1fr;
+  overflow: hidden;
+  position: relative;
+}
+
+.onb9v2-top {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 22px;
+  right: 22px;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+}
+
+.onb9v2-top .onb-dots {
+  justify-self: center;
+}
+
+.onb9v2-top .onb-dot.active {
+  background: #66a7ff;
+  box-shadow: 0 0 0 3px rgba(102, 167, 255, 0.24);
+}
+
+.onb9v2-back {
+  width: 42px;
+  height: 42px;
+  border-color: rgba(143, 186, 255, 0.32);
+  background: linear-gradient(180deg, rgba(10, 22, 47, 0.78), rgba(7, 17, 35, 0.86));
+}
+
+.onb9v2-spacer {
+  width: 42px;
+  height: 42px;
+}
+
+.onb9v2-stage {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding-top: 10px;
+  padding-bottom: 8px;
+}
+
+.onb9v2-card {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(104, 161, 255, 0.16);
+  overflow: hidden;
+  box-shadow: 0 24px 52px rgba(0, 0, 0, 0.56);
+  background: #071227;
+}
+
+.onb9v2-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  filter: saturate(0.98) contrast(1.03) brightness(0.75);
+}
+
+.onb9v2-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(84% 34% at 50% 8%, rgba(121, 182, 255, 0.14), transparent 72%),
+    radial-gradient(120% 86% at 50% 106%, rgba(8, 18, 39, 0.38), rgba(5, 12, 26, 0.68) 74%),
+    linear-gradient(180deg, rgba(5, 12, 26, 0.2) 0%, rgba(5, 12, 26, 0.42) 56%, rgba(5, 11, 23, 0.78) 100%);
+}
+
+.onb9v2-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  padding: calc(66px + env(safe-area-inset-top)) 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.onb9v2-content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.onb9v2-title {
+  margin: 0;
+  text-align: center;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(54px, 11.8vw, 64px);
+  line-height: 0.88;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: #eaf4ff;
+  text-shadow: 0 8px 18px rgba(0, 0, 0, 0.44);
+}
+
+.onb9v2-title span {
+  color: #89beff;
+}
+
+.onb9v2-subtitle {
+  margin: 0;
+  text-align: center;
+  color: rgba(216, 232, 255, 0.92);
+  font-size: 14px;
+  line-height: 1.22;
+}
+
+.onb9v2-form {
+  margin-top: 4px;
+  border-radius: 14px;
+  border: 1px solid rgba(116, 174, 255, 0.5);
+  background: linear-gradient(180deg, rgba(11, 23, 45, 0.7), rgba(8, 18, 35, 0.58));
+  box-shadow: 0 0 0 1px rgba(97, 186, 255, 0.22), inset 0 0 20px rgba(72, 156, 255, 0.1);
+  padding: 10px 10px 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.onb9v2-input-wrap {
+  gap: 4px;
+  font-size: 11.5px;
+  letter-spacing: 0.5px;
+  color: rgba(200, 222, 250, 0.92);
+}
+
+.onb9v2-input {
+  min-height: 36px;
+  border-radius: 11px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.onb9v2-label {
+  margin: 2px 1px 0;
+  color: rgba(204, 223, 250, 0.86);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+}
+
+.onb9v2-grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.onb9v2-grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.onb9v2-pill.onbp-option {
+  min-height: 33px;
+  border-radius: 999px;
+  border: 1px solid rgba(111, 169, 255, 0.56);
+  background: linear-gradient(180deg, rgba(12, 24, 48, 0.94), rgba(9, 19, 38, 0.92));
+  padding: 6px 8px;
+  color: #d8e8ff;
+  text-align: center;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.1px;
+  min-width: 0;
+}
+
+.onb9v2-content .onbp-option.selected {
+  border-color: #7dc1ff;
+  background: linear-gradient(160deg, rgba(28, 63, 121, 0.92), rgba(12, 34, 74, 0.92));
+  box-shadow: 0 0 0 1px rgba(96, 188, 255, 0.44), 0 8px 20px rgba(38, 114, 227, 0.3), inset 0 0 16px rgba(91, 177, 255, 0.2);
+}
+
+.onb9v2-check {
+  gap: 8px;
+  font-size: 12px;
+  color: #cde0ff;
+}
+
+.onb9v2-check input {
+  margin-top: 1px;
+}
+
+.onb9v2-feedback {
+  min-height: 16px;
+  margin: 0;
+  color: #ffd5d5;
+  font-size: 12px;
+  text-align: center;
+}
+
+.onb9v2-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(258px, 100%);
+  min-height: 62px;
+  margin: auto auto 0;
+  text-align: center;
+  text-decoration: none;
+  color: #ebf7ff;
+  border: 1px solid rgba(132, 207, 255, 0.76);
+  border-radius: 14px;
+  background: linear-gradient(90deg, #2f7fff 0%, #3ad0ff 100%);
+  box-shadow: 0 11px 26px rgba(32, 133, 255, 0.35), 0 0 0 2px rgba(123, 208, 255, 0.1) inset;
+  padding: 9px 12px 8px;
+}
+
+.onb9v2-btn strong {
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 38px;
+  line-height: 0.82;
+  letter-spacing: 0.35px;
+}
+
+.onb9v2-login {
+  margin: 2px auto 0;
+  font-size: 14px;
+  color: #bcd7ff;
+}
+
+@media (max-width: 390px) {
+  .onb9v2-content {
+    padding-inline: 9px;
+    gap: 6px;
+  }
+
+  .onb9v2-title {
+    font-size: clamp(48px, 11.2vw, 56px);
+  }
+
+  .onb9v2-pill.onbp-option {
+    font-size: 10px;
+  }
+
+  .onb9v2-btn strong {
+    font-size: 34px;
+  }
+}
+
+@media (max-height: 840px) {
+  .onb9v2-content {
+    padding-top: calc(58px + env(safe-area-inset-top));
+    gap: 5px;
+  }
+
+  .onb9v2-title {
+    font-size: clamp(44px, 10.5vw, 52px);
+  }
+
+  .onb9v2-btn {
+    min-height: 58px;
+  }
+
+  .onb9v2-btn strong {
+    font-size: 31px;
   }
 }
 
