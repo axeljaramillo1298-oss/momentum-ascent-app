@@ -1758,6 +1758,14 @@ body.theme-gated {
   color: #9fb0cb;
 }
 
+.admin-user-item .admin-user-meta {
+  display: block;
+  margin-top: 4px;
+  color: #7fc2ff;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .admin-user-item strong {
   color: #f4f7ff;
 }
@@ -1826,6 +1834,12 @@ body.theme-gated {
   margin: 4px 0 0;
   color: #9eb0cd;
   font-size: 13px;
+}
+
+.admin-onboarding-hint {
+  color: #80c7ff !important;
+  font-size: 12px !important;
+  line-height: 1.35;
 }
 
 .admin-status-pill {

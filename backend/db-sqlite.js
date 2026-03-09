@@ -199,10 +199,20 @@ WHERE user_id = ?
 `);
 
 const searchUsersStmt = db.prepare(`
-SELECT id, name, email, whatsapp, role, plan, goal, checkin_schedule AS checkinSchedule
-FROM users
-WHERE name LIKE ? OR email LIKE ?
-ORDER BY updated_at DESC
+SELECT
+  u.id,
+  u.name,
+  u.email,
+  u.whatsapp,
+  u.role,
+  u.plan,
+  u.goal,
+  u.checkin_schedule AS checkinSchedule,
+  op.answers_json AS onboardingAnswers
+FROM users u
+LEFT JOIN onboarding_profiles op ON op.user_id = u.id
+WHERE u.name LIKE ? OR u.email LIKE ?
+ORDER BY u.updated_at DESC
 LIMIT 50
 `);
 
@@ -220,6 +230,7 @@ SELECT
   u.name,
   u.email,
   u.checkin_schedule AS checkinSchedule,
+  op.answers_json AS onboardingAnswers,
   COALESCE(m.streak, 0) AS streak,
   COALESCE(m.total_days, 0) AS totalDays,
   COALESCE(m.completed_days, 0) AS completedDays,
@@ -248,6 +259,7 @@ SELECT
   ) AS lastCheckinStatus,
   a.updated_at AS assignmentUpdatedAt
 FROM users u
+LEFT JOIN onboarding_profiles op ON op.user_id = u.id
 LEFT JOIN metrics m ON m.user_id = u.id
 LEFT JOIN assignments a ON a.user_id = u.id
 WHERE LOWER(COALESCE(u.role, 'user')) <> 'admin'
@@ -725,11 +737,18 @@ function getAdminDashboard(dateKey) {
   const users = adminDashboardStmt.all().map((row) => {
     const compliance = Number(row.compliance || 0);
     const status = getStatusByCompliance(compliance);
+    let onboardingAnswers = {};
+    try {
+      onboardingAnswers = row.onboardingAnswers ? JSON.parse(row.onboardingAnswers) : {};
+    } catch {
+      onboardingAnswers = {};
+    }
     return {
       id: row.id,
       name: row.name || "User",
       email: row.email || row.id,
       checkinSchedule: row.checkinSchedule || "",
+      onboardingAnswers,
       streak: Number(row.streak || 0),
       totalDays: Number(row.totalDays || 0),
       completedDays: Number(row.completedDays || 0),

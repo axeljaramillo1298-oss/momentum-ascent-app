@@ -346,10 +346,20 @@ async function searchUsers(rawSearch) {
   const needle = `%${term}%`;
   const result = await pool.query(
     `
-    SELECT id, name, email, whatsapp, role, plan, goal, checkin_schedule AS "checkinSchedule"
-    FROM users
-    WHERE name ILIKE $1 OR email ILIKE $1
-    ORDER BY updated_at DESC
+    SELECT
+      u.id,
+      u.name,
+      u.email,
+      u.whatsapp,
+      u.role,
+      u.plan,
+      u.goal,
+      u.checkin_schedule AS "checkinSchedule",
+      op.answers_json AS "onboardingAnswers"
+    FROM users u
+    LEFT JOIN onboarding_profiles op ON op.user_id = u.id
+    WHERE u.name ILIKE $1 OR u.email ILIKE $1
+    ORDER BY u.updated_at DESC
     LIMIT 50
     `,
     [needle]
@@ -481,6 +491,7 @@ async function getAdminDashboard(dateKey) {
       u.name,
       u.email,
       u.checkin_schedule AS "checkinSchedule",
+      op.answers_json AS "onboardingAnswers",
       COALESCE(m.streak, 0) AS streak,
       COALESCE(m.total_days, 0) AS "totalDays",
       COALESCE(m.completed_days, 0) AS "completedDays",
@@ -494,6 +505,7 @@ async function getAdminDashboard(dateKey) {
       lc.status AS "lastCheckinStatus",
       a.updated_at AS "assignmentUpdatedAt"
     FROM users u
+    LEFT JOIN onboarding_profiles op ON op.user_id = u.id
     LEFT JOIN metrics m ON m.user_id = u.id
     LEFT JOIN assignments a ON a.user_id = u.id
     LEFT JOIN LATERAL (
@@ -516,6 +528,8 @@ async function getAdminDashboard(dateKey) {
       name: row.name || "User",
       email: row.email || row.id,
       checkinSchedule: row.checkinSchedule || "",
+      onboardingAnswers:
+        row.onboardingAnswers && typeof row.onboardingAnswers === "object" ? row.onboardingAnswers : {},
       streak: Number(row.streak || 0),
       totalDays: Number(row.totalDays || 0),
       completedDays: Number(row.completedDays || 0),

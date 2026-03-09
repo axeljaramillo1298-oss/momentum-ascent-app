@@ -1294,6 +1294,45 @@ const renderAdminLists = async () => {
   }
 };
 
+const readOnboardingAnswers = (value) => {
+  if (!value) {
+    return {};
+  }
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return value;
+  }
+  try {
+    const parsed = JSON.parse(String(value));
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const buildRoutineContextSummary = (user) => {
+  const answers = readOnboardingAnswers(user?.onboardingAnswers);
+  const goal = String(answers.objetivo || user?.objetivo || user?.goal || "").trim();
+  const level = String(answers.nivel || "").trim();
+  const place = String(answers.lugar || "").trim();
+  const time = String(answers.tiempo || "").trim();
+  const sportRaw = String(answers.deporte || "").trim();
+  const sport = sportRaw === "Otro" ? String(answers.deporte_otro || "Otro").trim() : sportRaw;
+  const tone = String(answers.tono || "").trim();
+  const equipment = String(answers.equipo_casa || "")
+    .split("|")
+    .map((item) => item.trim())
+    .filter((item) => item && item.toLowerCase() !== "ninguno");
+  const parts = [];
+  if (goal) parts.push(`Meta: ${goal}`);
+  if (level) parts.push(`Nivel: ${level}`);
+  if (sport) parts.push(`Deporte: ${sport}`);
+  if (place) parts.push(`Lugar: ${place}`);
+  if (time) parts.push(`Tiempo: ${time}`);
+  if (tone) parts.push(`Tono: ${tone}`);
+  if (equipment.length) parts.push(`Equipo: ${equipment.slice(0, 2).join(", ")}`);
+  return parts.join(" • ");
+};
+
 const renderAdminInsights = async () => {
   const semaforoEl = document.getElementById("admin-semaphore-list");
   const pendingEl = document.getElementById("admin-pending-list");
@@ -1321,6 +1360,7 @@ const renderAdminInsights = async () => {
         name: u.name || "User",
         email: u.email || u.id,
         checkinSchedule: u.horario || "",
+        onboardingAnswers: {},
         compliance: 0,
         status: "red",
         streak: 0,
@@ -1357,11 +1397,13 @@ const renderAdminInsights = async () => {
             const status = u.status || "red";
             const compliance = Number(u.compliance || 0);
             const schedule = u.checkinSchedule ? ` • ${u.checkinSchedule}` : "";
+            const summary = buildRoutineContextSummary(u);
             return `
               <article class="admin-status-item ${status}">
                 <div>
                   <strong>${u.name || "User"}</strong>
                   <p>${u.email || ""}${schedule}</p>
+                  ${summary ? `<p class="admin-onboarding-hint">${summary}</p>` : ""}
                 </div>
                 <span class="admin-status-pill ${status}">${status.toUpperCase()} ${compliance}%</span>
               </article>
@@ -1377,7 +1419,8 @@ const renderAdminInsights = async () => {
           .slice(0, 20)
           .map((u) => {
             const schedule = u.checkinSchedule ? `Horario: ${u.checkinSchedule}` : "Horario sin definir";
-            return `<div class="admin-item"><strong>${u.name || "User"}</strong><p>${u.email || ""}</p><p>${schedule}</p></div>`;
+            const summary = buildRoutineContextSummary(u);
+            return `<div class="admin-item"><strong>${u.name || "User"}</strong><p>${u.email || ""}</p><p>${schedule}</p>${summary ? `<p class="admin-onboarding-hint">${summary}</p>` : ""}</div>`;
           })
           .join("")
       : `<div class="admin-item"><p>Excelente: no hay pendientes hoy.</p></div>`;
@@ -1552,9 +1595,11 @@ const initAdminPanel = () => {
           name: u.name,
           email: u.email,
           whatsapp: u.whatsapp || "",
-          horario: "",
-          objetivo: "",
+          horario: u.checkinSchedule || "",
+          objetivo: u.goal || "",
           perfil: "",
+          goal: u.goal || "",
+          onboardingAnswers: u.onboardingAnswers || {},
         }));
         saveJsonArray(USERS_KEY, users);
       }
@@ -1572,17 +1617,19 @@ const initAdminPanel = () => {
     }
 
     userResults.innerHTML = filtered
-      .map(
-        (u) => `
+      .map((u) => {
+        const summary = buildRoutineContextSummary(u);
+        return `
         <label class="admin-user-item">
           <span>
             <strong>${u.name}</strong><br />
             <small>${u.email}</small>
+            ${summary ? `<small class="admin-user-meta">${summary}</small>` : ""}
           </span>
           <input type="checkbox" data-admin-user="${u.id}" ${selectedUsers.has(u.id) ? "checked" : ""} />
         </label>
-      `
-      )
+      `;
+      })
       .join("");
 
     renderTimelineUserOptions(users);
