@@ -2991,6 +2991,7 @@ body.theme-female .today-pressure {
   color: #e6efff;
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
 }
 
 .onbp-option:hover {
@@ -3000,12 +3001,29 @@ body.theme-female .today-pressure {
 }
 
 .onbp-option.selected {
-  border-color: #5ea2ff;
+  border-color: #8dd0ff;
   background: linear-gradient(160deg, #193f76, #11305b);
-  box-shadow: 0 10px 24px rgba(34, 99, 196, 0.44);
+  box-shadow: 0 10px 24px rgba(34, 99, 196, 0.44), 0 0 0 2px rgba(118, 210, 255, 0.34);
   transform: translateY(-1px);
-  animation: onbSelectedPulse 0.32s ease-out;
-  position: relative;
+  animation: onbSelectedPulse 0.32s ease-out, onbSelectedGlow 1.6s ease-in-out infinite;
+}
+
+.onbp-option.selected::before {
+  content: "✓";
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 900;
+  color: #0b2b54;
+  background: linear-gradient(180deg, #c7f3ff, #86d5ff);
+  box-shadow: 0 0 0 1px rgba(214, 247, 255, 0.82), 0 4px 8px rgba(18, 90, 169, 0.42);
+  animation: onbSelectedBadge 0.22s ease-out;
 }
 
 .onbp-option.selected::after {
@@ -3025,6 +3043,29 @@ body.theme-female .today-pressure {
   100% {
     transform: scale(1);
     filter: brightness(1);
+  }
+}
+
+@keyframes onbSelectedGlow {
+  0% {
+    box-shadow: 0 10px 24px rgba(34, 99, 196, 0.4), 0 0 0 2px rgba(118, 210, 255, 0.25);
+  }
+  50% {
+    box-shadow: 0 12px 26px rgba(47, 132, 238, 0.5), 0 0 0 2px rgba(150, 226, 255, 0.42);
+  }
+  100% {
+    box-shadow: 0 10px 24px rgba(34, 99, 196, 0.4), 0 0 0 2px rgba(118, 210, 255, 0.25);
+  }
+}
+
+@keyframes onbSelectedBadge {
+  from {
+    transform: scale(0.7);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 
