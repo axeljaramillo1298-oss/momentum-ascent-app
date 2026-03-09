@@ -1,5 +1,6 @@
 ﻿const THEME_KEY = "discipline_theme";
 const BRAND_NAME = "Momentum Ascent";
+const ONBOARDING_DONE_STORAGE_KEY = "discipline_onboarding_done";
 
 const applyBranding = () => {
   document.querySelectorAll(".logo").forEach((el) => {
@@ -512,7 +513,19 @@ const lockAdminIfNeeded = () => {
   if (!isAdminPage || getRoleMode() === "admin") {
     return;
   }
-  window.location.replace("user-hoy.html");
+  window.location.replace("app-inicio.html");
+};
+
+const hasCompletedOnboarding = () => {
+  const done = String(localStorage.getItem(ONBOARDING_DONE_STORAGE_KEY) || "").toLowerCase();
+  return done === "1" || done === "true";
+};
+
+const getUserEntryTarget = () => {
+  if (getRoleMode() === "admin") {
+    return "admin.html";
+  }
+  return hasCompletedOnboarding() ? "user-hoy.html" : "onboarding-1.html";
 };
 
 const initRoleMode = () => {
@@ -521,7 +534,8 @@ const initRoleMode = () => {
 };
 
 const initAppEntryScreen = () => {
-  if (getPageFile() !== "app-inicio.html") {
+  const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
+  if (page !== "app-inicio.html") {
     return;
   }
   const current = getCurrentUser();
@@ -529,7 +543,7 @@ const initAppEntryScreen = () => {
     window.location.replace("registro.html#login");
     return;
   }
-  const target = getRoleMode() === "admin" ? "admin.html" : "user-hoy.html";
+  const target = getUserEntryTarget();
   const copy = document.getElementById("app-entry-copy");
   const countdownEl = document.getElementById("app-entry-countdown");
   const link = document.getElementById("app-entry-link");
@@ -693,7 +707,19 @@ const guardAuthScreensForLoggedUser = () => {
   }
   const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
   if (page === "registro.html") {
-    window.location.href = getRoleMode() === "admin" ? "admin.html" : "user-hoy.html";
+    window.location.href = getRoleMode() === "admin" ? "admin.html" : "app-inicio.html";
+  }
+};
+
+const enforceOnboardingBeforeHome = () => {
+  const current = getCurrentUser();
+  if (!current || current.role === "admin") {
+    return;
+  }
+  const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
+  const appPages = new Set(["user-hoy.html", "user-rutinas.html", "user-progreso.html", "user-dieta.html", "user-checkin.html"]);
+  if (appPages.has(page) && !hasCompletedOnboarding()) {
+    window.location.replace("app-inicio.html");
   }
 };
 
@@ -2129,6 +2155,7 @@ initRoleMode();
 initAppEntryScreen();
 hideGuestOnlyLinksIfLogged();
 guardAuthScreensForLoggedUser();
+enforceOnboardingBeforeHome();
 initAdminPanel();
 initAdminPaymentsPanel();
 initQaChecklist();
@@ -2179,7 +2206,7 @@ const bootApiSession = async () => {
 bootApiSession();
 
 const ONBOARDING_KEY = "discipline_onboarding_v1";
-const ONBOARDING_DONE_KEY = "discipline_onboarding_done";
+const ONBOARDING_DONE_KEY = ONBOARDING_DONE_STORAGE_KEY;
 
 const onbShell = document.getElementById("onb-shell");
 const onbSteps = Array.from(document.querySelectorAll(".onb-step"));
@@ -2708,7 +2735,7 @@ const lockRegistrationIfGuidedDone = () => {
       <h3>Registro ya completado en la guia</h3>
       <p>Tu cuenta ya esta activada${current ? ` como <strong>${current.name}</strong>` : ""}. No necesitas repetir el formulario.</p>
       <div class="role-actions">
-        <a class="primary" href="user-hoy.html">Entrar a la app</a>
+        <a class="primary" href="app-inicio.html">Entrar a la app</a>
         <a class="ghost" href="registro.html#login">Ir a login</a>
       </div>
     `;
