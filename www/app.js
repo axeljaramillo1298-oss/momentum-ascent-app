@@ -14,6 +14,22 @@ const applyBranding = () => {
   }
 };
 
+const applyAppIcon = () => {
+  const iconHref = "assets/app-icon.png";
+  const ensureLink = (rel) => {
+    let link = document.querySelector(`link[rel="${rel}"]`);
+    if (!link) {
+      link = document.createElement("link");
+      link.setAttribute("rel", rel);
+      document.head.appendChild(link);
+    }
+    link.setAttribute("href", iconHref);
+  };
+  ensureLink("icon");
+  ensureLink("shortcut icon");
+  ensureLink("apple-touch-icon");
+};
+
 const showBrandSplash = () => {
   const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
   const isLoginPage = page === "registro.html" && (!window.location.hash || window.location.hash === "#login");
@@ -37,6 +53,7 @@ const showBrandSplash = () => {
 };
 
 applyBranding();
+applyAppIcon();
 showBrandSplash();
 
 const applyTheme = (theme) => {
