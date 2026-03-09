@@ -4,86 +4,119 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Onboarding 7 | Disciplina</title>
-    <meta name="theme-color" content="#f1f1f6" />
+    <meta name="theme-color" content="#e9f2ff" />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="onb-body">
-    <main class="onbp-shell">
-      <header class="onbp-top">
-        <a class="onb-back" href="onboarding-6.html" aria-label="Atras">&lt;</a>
-        <div class="onb-dots"><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot active"></span><span class="onb-dot"></span><span class="onb-dot"></span></div>
+  <body class="onb-body onb7v2-body">
+    <main class="onb7v2-shell">
+      <header class="onb7v2-top">
+        <a class="onb-back onb7v2-back" href="onboarding-6.html" aria-label="Atras">&lt;</a>
+        <div class="onb-dots onb7v2-dots">
+          <span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot active"></span><span class="onb-dot"></span><span class="onb-dot"></span>
+        </div>
+        <span class="onb7v2-spacer" aria-hidden="true"></span>
       </header>
-      <section class="onbp-screen">
-        <article class="onbp-card">
-          <h2 class="onbp-q-title">Deporte y equipo</h2>
-          <div class="onbp-photo-grid">
-            <img class="onbp-photo" src="assets/extras/extra-16.jpeg" alt="Deporte principal" loading="lazy" />
-            <img class="onbp-photo" src="assets/extras/extra-20.jpeg" alt="Entrenamiento en casa" loading="lazy" />
-          </div>
-          <h3 class="onbp-subtitle">Deporte principal</h3>
-          <div class="onbp-options" data-onb-key="deporte" data-onb-type="single" data-onb-required="true">
-            <button class="onbp-option" type="button" data-onb-value="Ninguno">Ninguno</button>
-            <button class="onbp-option" type="button" data-onb-value="Running">Running</button>
-            <button class="onbp-option" type="button" data-onb-value="Gym">Gym</button>
-            <button class="onbp-option" type="button" data-onb-value="Ciclismo">Ciclismo</button>
-            <button class="onbp-option" type="button" data-onb-value="Natacion">Natacion</button>
-            <button class="onbp-option" type="button" data-onb-value="Futbol">Futbol</button>
-            <button class="onbp-option" type="button" data-onb-value="Futbol Americano">Futbol Americano</button>
-            <button class="onbp-option" type="button" data-onb-value="Basquetbol">Basquetbol</button>
-            <button class="onbp-option" type="button" data-onb-value="Tenis">Tenis</button>
-            <button class="onbp-option" type="button" data-onb-value="Padel">Padel</button>
-            <button class="onbp-option" type="button" data-onb-value="Volleyball">Volleyball</button>
-            <button class="onbp-option" type="button" data-onb-value="Beisbol">Beisbol</button>
-            <button class="onbp-option" type="button" data-onb-value="Softbol">Softbol</button>
-            <button class="onbp-option" type="button" data-onb-value="Box">Box</button>
-            <button class="onbp-option" type="button" data-onb-value="MMA">MMA</button>
-            <button class="onbp-option" type="button" data-onb-value="Muay Thai">Muay Thai</button>
-            <button class="onbp-option" type="button" data-onb-value="BJJ">BJJ</button>
-            <button class="onbp-option" type="button" data-onb-value="CrossFit">CrossFit</button>
-            <button class="onbp-option" type="button" data-onb-value="Hyrox">Hyrox</button>
-            <button class="onbp-option" type="button" data-onb-value="Calistenia">Calistenia</button>
-            <button class="onbp-option" type="button" data-onb-value="Halterofilia">Halterofilia</button>
-            <button class="onbp-option" type="button" data-onb-value="Powerlifting">Powerlifting</button>
-            <button class="onbp-option" type="button" data-onb-value="Entrenamiento funcional">Funcional</button>
-            <button class="onbp-option" type="button" data-onb-value="Spinning">Spinning</button>
-            <button class="onbp-option" type="button" data-onb-value="Remo">Remo</button>
-            <button class="onbp-option" type="button" data-onb-value="Escalada">Escalada</button>
-            <button class="onbp-option" type="button" data-onb-value="Senderismo">Senderismo</button>
-            <button class="onbp-option" type="button" data-onb-value="Trail running">Trail running</button>
-            <button class="onbp-option" type="button" data-onb-value="Triatlon">Triatlon</button>
-            <button class="onbp-option" type="button" data-onb-value="Yoga">Yoga</button>
-            <button class="onbp-option" type="button" data-onb-value="Pilates">Pilates</button>
-            <button class="onbp-option" type="button" data-onb-value="Baile">Baile</button>
-            <button class="onbp-option" type="button" data-onb-value="Patinaje">Patinaje</button>
-            <button class="onbp-option" type="button" data-onb-value="Surf">Surf</button>
-            <button class="onbp-option" type="button" data-onb-value="Otro">Otro</button>
-          </div>
-          <label class="onbp-input-wrap hidden-field" id="onbp-deporte-otro-wrap">Especifica deporte
-            <input class="onbp-input" id="onbp-deporte-otro" type="text" placeholder="Ej. Natacion" data-onb-input="deporte_otro" />
-          </label>
 
-          <h3 class="onbp-subtitle">Entrenamiento en casa</h3>
-          <div class="onbp-options" data-onb-key="entreno_casa" data-onb-type="single" data-onb-required="true">
-            <button class="onbp-option" type="button" data-onb-value="Si">Si</button>
-            <button class="onbp-option" type="button" data-onb-value="No">No</button>
-            <button class="onbp-option" type="button" data-onb-value="Mixto">Mixto</button>
-          </div>
+      <section class="onb7v2-stage">
+        <article class="onb7v2-card">
+          <img class="onb7v2-bg" src="assets/extras/onb6-status.png" alt="Deporte y equipo" loading="lazy" />
+          <div class="onb7v2-shade" aria-hidden="true"></div>
 
-          <h3 class="onbp-subtitle">Equipo disponible</h3>
-          <p class="onbp-helper">Puedes marcar mas de una opcion. Si eliges "Ninguno", se limpia el resto.</p>
-          <div class="onbp-options" data-onb-key="equipo_casa" data-onb-type="multi" data-onb-required="true">
-            <button class="onbp-option" type="button" data-onb-value="Ninguno">Ninguno</button>
-            <button class="onbp-option" type="button" data-onb-value="Ligas / bandas">Ligas</button>
-            <button class="onbp-option" type="button" data-onb-value="Mancuernas">Mancuernas</button>
-            <button class="onbp-option" type="button" data-onb-value="Caminadora">Caminadora</button>
-            <button class="onbp-option" type="button" data-onb-value="Set completo">Set completo</button>
+          <div class="onb7v2-content">
+            <h1 class="onb7v2-title">DEPORTE Y<br /><span>EQUIPO</span></h1>
+            <p class="onb7v2-subtitle">Elige tu actividad principal y el equipo disponible.</p>
+
+            <div class="onb7v2-hero">
+              <div class="onb7v2-hero-title">GYM</div>
+              <div class="onb7v2-hero-tag">+ EN CASA</div>
+            </div>
+
+            <h3 class="onb7v2-label">DEPORTE PRINCIPAL</h3>
+            <div class="onbp-options onb7v2-grid2" data-onb-key="deporte" data-onb-type="single" data-onb-required="true">
+              <button class="onbp-option onb7v2-sport" type="button" data-onb-value="Running">🏃 Running</button>
+              <button class="onbp-option onb7v2-sport" type="button" data-onb-value="Gym">🏋️ Gym</button>
+              <button class="onbp-option onb7v2-sport" type="button" data-onb-value="Ciclismo">🚴 Ciclismo</button>
+              <button class="onbp-option onb7v2-sport" type="button" data-onb-value="Natacion">🏊 Natacion</button>
+
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Futbol">⚽ Futbol</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Futbol Americano">🏈 Futbol Americano</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Basquetbol">🏀 Basquetbol</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Tenis">🎾 Tenis</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Padel">🥎 Padel</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Volleyball">🏐 Volleyball</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Beisbol">⚾ Beisbol</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Softbol">🥎 Softbol</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Box">🥊 Box</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="MMA">🛡️ MMA</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Muay Thai">🦵 Muay Thai</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="BJJ">🥋 BJJ</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="CrossFit">🏋️ CrossFit</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Hyrox">🏁 Hyrox</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Calistenia">🤸 Calistenia</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Halterofilia">🏋️ Halterofilia</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Powerlifting">🏋️ Powerlifting</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Entrenamiento funcional">🏃 Funcional</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Spinning">🚲 Spinning</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Remo">🚣 Remo</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Escalada">🧗 Escalada</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Senderismo">🥾 Senderismo</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Trail running">🏔️ Trail running</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Triatlon">🏊 Triatlon</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Yoga">🧘 Yoga</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Pilates">🧘 Pilates</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Baile">💃 Baile</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Patinaje">⛸️ Patinaje</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Surf">🏄 Surf</button>
+              <button class="onbp-option onb7v2-sport onb7v2-extra hidden-field" type="button" data-onb-value="Otro">➕ Otro</button>
+            </div>
+
+            <button class="onb7v2-more" id="onb7v2-more" type="button">VER MAS DEPORTES</button>
+
+            <label class="onbp-input-wrap hidden-field" id="onbp-deporte-otro-wrap">
+              Especifica deporte
+              <input class="onbp-input" id="onbp-deporte-otro" type="text" placeholder="Ej. Natacion" data-onb-input="deporte_otro" />
+            </label>
+
+            <h3 class="onb7v2-label">ENTRENAMIENTO EN CASA</h3>
+            <div class="onbp-options onb7v2-grid3" data-onb-key="entreno_casa" data-onb-type="single" data-onb-required="true">
+              <button class="onbp-option onb7v2-pill" type="button" data-onb-value="No">🚫 Ninguno</button>
+              <button class="onbp-option onb7v2-pill" type="button" data-onb-value="Si">💪 Ligas</button>
+              <button class="onbp-option onb7v2-pill" type="button" data-onb-value="Mixto">⚡ Mixto</button>
+            </div>
+
+            <div class="onbp-options onb7v2-grid3" data-onb-key="equipo_casa" data-onb-type="multi" data-onb-required="true">
+              <button class="onbp-option onb7v2-pill" type="button" data-onb-value="Ninguno">🚫 Ninguno</button>
+              <button class="onbp-option onb7v2-pill" type="button" data-onb-value="Set completo">🏋️ Set completo</button>
+              <button class="onbp-option onb7v2-pill" type="button" data-onb-value="Mancuernas">🏋️ Barra</button>
+              <button class="onbp-option onb7v2-pill" type="button" data-onb-value="Discos">🥏 Discos</button>
+              <button class="onbp-option onb7v2-pill" type="button" data-onb-value="Banco">🪑 Banco</button>
+              <button class="onbp-option onb7v2-pill" type="button" data-onb-value="Ligas / bandas">🪢 Cuerda</button>
+              <button class="onbp-option onb7v2-pill" type="button" data-onb-value="Caminadora">🚴 Bicicleta</button>
+            </div>
+
+            <p class="reg-feedback onb7v2-feedback" id="onbp-feedback-7" aria-live="polite"></p>
+
+            <a class="onb-go onb7v2-btn" data-onb-next href="onboarding-8.html">
+              <strong>CONTINUAR</strong>
+              <span>Personalizar rutina</span>
+            </a>
           </div>
-          <p class="reg-feedback" id="onbp-feedback-7" aria-live="polite"></p>
         </article>
-        <div class="onb-actions"><a class="primary onb-go" data-onb-next href="onboarding-8.html">Siguiente</a></div>
       </section>
     </main>
     <script src="app.js"></script>
+    <script>
+      (function () {
+        var btn = document.getElementById("onb7v2-more");
+        if (!btn) return;
+        btn.addEventListener("click", function () {
+          document.querySelectorAll(".onb7v2-extra").forEach(function (el) {
+            el.classList.toggle("hidden-field");
+          });
+          btn.classList.toggle("expanded");
+          btn.textContent = btn.classList.contains("expanded") ? "VER MENOS DEPORTES" : "VER MAS DEPORTES";
+        });
+      })();
+    </script>
   </body>
 </html>
-

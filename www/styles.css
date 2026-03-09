@@ -5550,6 +5550,328 @@ body.onb1-body {
   }
 }
 
+/* Onboarding 7 - sport and equipment cinematic card */
+.onb7v2-body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.onb7v2-shell {
+  height: 100dvh;
+  min-height: 100dvh;
+  max-width: 414px;
+  margin: 0 auto;
+  padding: calc(6px + env(safe-area-inset-top)) 8px calc(10px + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-rows: 1fr;
+  overflow: hidden;
+  position: relative;
+}
+
+.onb7v2-top {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 22px;
+  right: 22px;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+}
+
+.onb7v2-top .onb-dots {
+  justify-self: center;
+}
+
+.onb7v2-top .onb-dot.active {
+  background: #66a7ff;
+  box-shadow: 0 0 0 3px rgba(102, 167, 255, 0.24);
+}
+
+.onb7v2-back {
+  width: 42px;
+  height: 42px;
+  border-color: rgba(143, 186, 255, 0.32);
+  background: linear-gradient(180deg, rgba(10, 22, 47, 0.78), rgba(7, 17, 35, 0.86));
+}
+
+.onb7v2-spacer {
+  width: 42px;
+  height: 42px;
+}
+
+.onb7v2-stage {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding-top: 10px;
+  padding-bottom: 8px;
+}
+
+.onb7v2-card {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(104, 161, 255, 0.16);
+  overflow: hidden;
+  box-shadow: 0 24px 52px rgba(0, 0, 0, 0.56);
+  background: #071227;
+}
+
+.onb7v2-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  filter: saturate(0.98) contrast(1.03) brightness(0.76);
+}
+
+.onb7v2-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(84% 34% at 50% 8%, rgba(121, 182, 255, 0.14), transparent 72%),
+    radial-gradient(120% 86% at 50% 106%, rgba(8, 18, 39, 0.38), rgba(5, 12, 26, 0.68) 74%),
+    linear-gradient(180deg, rgba(5, 12, 26, 0.2) 0%, rgba(5, 12, 26, 0.42) 56%, rgba(5, 11, 23, 0.78) 100%);
+}
+
+.onb7v2-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  padding: calc(66px + env(safe-area-inset-top)) 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.onb7v2-title {
+  margin: 0;
+  text-align: center;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(54px, 11.8vw, 64px);
+  line-height: 0.88;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: #eaf4ff;
+  text-shadow: 0 8px 18px rgba(0, 0, 0, 0.44);
+}
+
+.onb7v2-title span {
+  color: #89beff;
+}
+
+.onb7v2-subtitle {
+  margin: 0;
+  text-align: center;
+  color: rgba(216, 232, 255, 0.92);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.onb7v2-hero {
+  margin-top: 5px;
+  border-radius: 14px;
+  border: 1px solid rgba(122, 182, 255, 0.6);
+  box-shadow: 0 0 0 1px rgba(97, 186, 255, 0.35), 0 0 22px rgba(63, 163, 255, 0.38), inset 0 0 24px rgba(72, 156, 255, 0.18);
+  background: linear-gradient(180deg, rgba(12, 26, 52, 0.74), rgba(9, 19, 40, 0.6));
+  min-height: 78px;
+  padding: 12px 14px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+}
+
+.onb7v2-hero-title {
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 44px;
+  line-height: 0.85;
+  color: #dff0ff;
+}
+
+.onb7v2-hero-tag {
+  width: fit-content;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(113, 180, 255, 0.6);
+  color: #cfe7ff;
+  background: rgba(9, 26, 56, 0.56);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.onb7v2-label {
+  margin: 4px 2px 0;
+  color: rgba(204, 223, 250, 0.86);
+  font-size: 12px;
+  letter-spacing: 0.6px;
+  font-weight: 700;
+}
+
+.onb7v2-grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.onb7v2-grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.onb7v2-sport.onbp-option {
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1px solid rgba(111, 169, 255, 0.56);
+  background: linear-gradient(180deg, rgba(12, 24, 48, 0.94), rgba(9, 19, 38, 0.92));
+  padding: 7px 10px;
+  color: #d8e8ff;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  min-width: 0;
+}
+
+.onb7v2-more {
+  margin: 2px auto 0;
+  width: min(192px, 100%);
+  min-height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(111, 169, 255, 0.56);
+  color: #d7e8ff;
+  background: linear-gradient(180deg, rgba(12, 24, 48, 0.94), rgba(9, 19, 38, 0.92));
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.onb7v2-more.expanded {
+  border-color: #79beff;
+  color: #f1f7ff;
+  box-shadow: 0 0 0 1px rgba(96, 188, 255, 0.44), 0 8px 20px rgba(38, 114, 227, 0.3);
+}
+
+.onb7v2-pill.onbp-option {
+  min-height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(111, 169, 255, 0.56);
+  background: linear-gradient(180deg, rgba(12, 24, 48, 0.94), rgba(9, 19, 38, 0.92));
+  padding: 6px 7px;
+  color: #d8e8ff;
+  text-align: center;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.15px;
+  min-width: 0;
+}
+
+.onb7v2-content .onbp-option.selected {
+  border-color: #7dc1ff;
+  background: linear-gradient(160deg, rgba(28, 63, 121, 0.92), rgba(12, 34, 74, 0.92));
+  box-shadow: 0 0 0 1px rgba(96, 188, 255, 0.44), 0 8px 20px rgba(38, 114, 227, 0.3), inset 0 0 16px rgba(91, 177, 255, 0.2);
+}
+
+.onb7v2-feedback {
+  min-height: 16px;
+  margin: 0;
+  color: #ffd5d5;
+  font-size: 12px;
+  text-align: center;
+}
+
+.onb7v2-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: min(258px, 100%);
+  min-height: 72px;
+  margin: auto auto 0;
+  text-align: center;
+  text-decoration: none;
+  color: #ebf7ff;
+  border: 1px solid rgba(132, 207, 255, 0.76);
+  border-radius: 14px;
+  background: linear-gradient(90deg, #2f7fff 0%, #3ad0ff 100%);
+  box-shadow: 0 11px 26px rgba(32, 133, 255, 0.35), 0 0 0 2px rgba(123, 208, 255, 0.1) inset;
+  padding: 9px 12px 8px;
+}
+
+.onb7v2-btn strong {
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 39px;
+  line-height: 0.82;
+  letter-spacing: 0.35px;
+}
+
+.onb7v2-btn span {
+  font-size: 14px;
+  color: #d7f0ff;
+  line-height: 1.1;
+}
+
+@media (max-width: 390px) {
+  .onb7v2-content {
+    padding-inline: 9px;
+    gap: 6px;
+  }
+
+  .onb7v2-title {
+    font-size: clamp(48px, 11.2vw, 56px);
+  }
+
+  .onb7v2-sport.onbp-option {
+    font-size: 13px;
+    min-height: 36px;
+    padding-inline: 8px;
+  }
+
+  .onb7v2-pill.onbp-option {
+    font-size: 10px;
+  }
+
+  .onb7v2-btn strong {
+    font-size: 35px;
+  }
+}
+
+@media (max-height: 840px) {
+  .onb7v2-content {
+    padding-top: calc(58px + env(safe-area-inset-top));
+    gap: 5px;
+  }
+
+  .onb7v2-title {
+    font-size: clamp(44px, 10.5vw, 52px);
+  }
+
+  .onb7v2-hero {
+    min-height: 70px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .onb7v2-hero-title {
+    font-size: 38px;
+  }
+
+  .onb7v2-btn {
+    min-height: 66px;
+  }
+
+  .onb7v2-btn strong {
+    font-size: 32px;
+  }
+}
+
 .bottom-tabs a.active {
   color: #ffffff;
   background: var(--accent);
