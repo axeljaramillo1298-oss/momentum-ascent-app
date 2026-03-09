@@ -4425,10 +4425,11 @@ body.onb1-body {
 }
 
 .onb3v2-lower {
-  margin-top: 42px;
+  margin-top: auto;
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 0 0 auto;
+  gap: 8px;
 }
 
 .onb3v2-head {
@@ -4509,7 +4510,7 @@ body.onb1-body {
 }
 
 .onb3v2-copy {
-  margin: 10px 0 0;
+  margin: 6px 0 0;
   max-width: 74%;
   color: rgba(224, 240, 255, 0.94);
   font-size: 17px;
@@ -4521,7 +4522,7 @@ body.onb1-body {
 .onb3v2-btn {
   display: block;
   width: min(262px, 100%);
-  margin: auto auto 0;
+  margin: 6px auto 0;
   text-align: center;
   text-decoration: none;
   color: #ecf8ff;
@@ -4576,7 +4577,7 @@ body.onb1-body {
   }
 
   .onb3v2-lower {
-    margin-top: 34px;
+    margin-top: auto;
   }
 
   .onb3v2-title {
@@ -4619,7 +4620,7 @@ body.onb1-body {
   }
 
   .onb3v2-lower {
-    margin-top: 24px;
+    margin-top: auto;
   }
 
   .onb3v2-title {
