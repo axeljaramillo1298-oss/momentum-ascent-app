@@ -4945,16 +4945,16 @@ body.onb1-body {
   height: 100%;
   object-fit: cover;
   object-position: 50% 34%;
-  filter: saturate(0.66) contrast(1.04) brightness(0.62);
+  filter: saturate(0.9) contrast(1.02) brightness(0.82);
 }
 
 .onb5v2-shade {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(84% 36% at 50% 8%, rgba(109, 170, 255, 0.2), transparent 72%),
-    radial-gradient(120% 84% at 50% 106%, rgba(8, 19, 41, 0.5), rgba(5, 12, 26, 0.78) 74%),
-    linear-gradient(180deg, rgba(5, 12, 26, 0.24) 0%, rgba(5, 12, 26, 0.54) 56%, rgba(5, 11, 23, 0.84) 100%);
+    radial-gradient(84% 36% at 50% 8%, rgba(109, 170, 255, 0.1), transparent 72%),
+    radial-gradient(120% 84% at 50% 106%, rgba(8, 19, 41, 0.24), rgba(5, 12, 26, 0.52) 74%),
+    linear-gradient(180deg, rgba(5, 12, 26, 0.14) 0%, rgba(5, 12, 26, 0.32) 56%, rgba(5, 11, 23, 0.6) 100%);
 }
 
 .onb5v2-content {
