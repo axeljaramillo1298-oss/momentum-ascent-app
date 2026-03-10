@@ -3464,13 +3464,13 @@ function buildPlanStatusHtml(caps) {
       cls: caps.challengeCore ? "green" : "red",
     },
     {
-      title: "Modo contrato",
+      title: "Contrato",
       detail: "Reglas de cumplimiento estricto y penalizacion por fallos.",
       status: "Disponible",
       cls: "yellow",
     },
     {
-      title: "Modo competencia",
+      title: "Competencia",
       detail: hasExtra("Competencia")
         ? activeNow
           ? "Activo"
@@ -3480,7 +3480,7 @@ function buildPlanStatusHtml(caps) {
       cls: hasExtra("Competencia") ? (activeNow ? "green" : "pending") : "yellow",
     },
     {
-      title: "Modo apuesta",
+      title: "Apuesta",
       detail: hasExtra("Apuesta")
         ? activeNow
           ? "Activo segun condiciones y validacion"
@@ -3490,7 +3490,7 @@ function buildPlanStatusHtml(caps) {
       cls: hasExtra("Apuesta") ? (activeNow ? "green" : "pending") : "yellow",
     },
     {
-      title: "Seguimiento personalizado",
+      title: "Seguimiento",
       detail: hasExtra("Seguimiento personalizado")
         ? activeNow
           ? "Activo"
@@ -3540,24 +3540,39 @@ function buildPlanStatusHtml(caps) {
     { label: "Check-in foto", value: draft.foto_checkin || "-" },
   ];
 
+  const enabledCount = accessRows.filter((r) => r.cls === "green").length;
+  const pendingCount = accessRows.filter((r) => r.cls === "pending").length;
+  const blockedCount = accessRows.filter((r) => r.cls === "red").length;
+  const planLevel = caps.plan.id === "coach_humano" ? "MAXIMO" : caps.plan.id === "ai_coach" ? "PRO" : "BASE";
+
   return {
     header: `
-      <h3>Tu plan: ${caps.plan.label}</h3>
-      <p class="today-note">${caps.plan.price} • Suscripcion: ${statusLabel}</p>
-      <p class="reg-hint">Plan solicitado: ${requested.label} (${requested.price})</p>
+      <div class="today-plan-head">
+        <div>
+          <h3>Tu plan: ${caps.plan.label}</h3>
+          <p class="today-note">${caps.plan.price} • Suscripcion: ${statusLabel}</p>
+          <p class="reg-hint">Plan solicitado: ${requested.label} (${requested.price})</p>
+        </div>
+        <div class="today-plan-kpis">
+          <span class="admin-chip ${activeNow ? "green" : "pending"}">Pago ${activeNow ? "validado" : "pendiente"}</span>
+          <span class="admin-chip ${caps.plan.id === "coach_humano" ? "green" : "yellow"}">Nivel ${planLevel}</span>
+          <span class="admin-chip ${blockedCount > 0 ? "red" : "green"}">${enabledCount} activos</span>
+        </div>
+      </div>
       <p class="reg-hint">${requestHint}</p>
-      <div class="admin-summary-chips">
-        ${onboardingSummary.map((s) => `<span class="admin-chip">${s.label}: ${s.value}</span>`).join("")}
+      <div class="today-onboarding-grid">
+        ${onboardingSummary.map((s) => `<div class="today-onboarding-item"><span>${s.label}</span><strong>${s.value}</strong></div>`).join("")}
       </div>
-      <div class="admin-summary-chips">
-        <span class="admin-chip ${activeNow ? "green" : "pending"}">Pago: ${activeNow ? "Validado" : "Pendiente"}</span>
-        <span class="admin-chip ${caps.plan.id === "coach_humano" ? "green" : "yellow"}">Nivel plan: ${caps.plan.id === "coach_humano" ? "MAXIMO" : "BASE"}</span>
+      <div class="today-access-summary">
+        <span class="admin-chip green">Activos: ${enabledCount}</span>
+        <span class="admin-chip pending">Pendientes: ${pendingCount}</span>
+        <span class="admin-chip red">Bloqueados: ${blockedCount}</span>
       </div>
-      <div class="admin-status-grid today-plan-status">
+      <div class="today-feature-grid">
         ${accessRows
           .map(
             (item) => `
-              <article class="admin-status-item">
+              <article class="admin-status-item today-feature-item">
                 <div>
                   <strong>${item.title}</strong>
                   <p>${item.detail}</p>
@@ -3568,8 +3583,10 @@ function buildPlanStatusHtml(caps) {
           )
           .join("")}
       </div>
-      <p class="reg-hint">Extras solicitados: ${requestedExtras.length ? requestedExtras.join(", ") : "Ninguno"}</p>
-      <p class="reg-hint">Extras activos: ${currentExtras.length ? currentExtras.join(", ") : "Ninguno"}</p>
+      <div class="today-extra-line">
+        <p class="reg-hint">Extras solicitados: ${requestedExtras.length ? requestedExtras.join(", ") : "Ninguno"}</p>
+        <p class="reg-hint">Extras activos: ${currentExtras.length ? currentExtras.join(", ") : "Ninguno"}</p>
+      </div>
       <div class="today-plan-compare">
         ${planCompare
           .map(
@@ -3613,18 +3630,22 @@ function renderUserPlanPanel() {
   const planHistory = readJsonArray(PLAN_HISTORY_KEY).slice(-4).reverse();
   host.innerHTML = `
     ${planStatus.header}
-    <div class="admin-list">
-      ${
-        planHistory.length
-          ? planHistory
-              .map(
-                (h) =>
-                  `<div class="admin-item"><strong>${h.planLabel || h.planId}</strong><p>${new Date(h.at).toLocaleString("es-MX")}</p></div>`
-              )
-              .join("")
-          : `<div class="admin-item"><p>Sin historial de cambios de plan.</p></div>`
-      }
-    </div>
+    <details class="today-history">
+      <summary>Historial de cambios de plan</summary>
+      <div class="admin-list">
+        ${
+          planHistory.length
+            ? planHistory
+                .slice(0, 5)
+                .map(
+                  (h) =>
+                    `<div class="admin-item"><strong>${h.planLabel || h.planId}</strong><p>${new Date(h.at).toLocaleString("es-MX")}</p></div>`
+                )
+                .join("")
+            : `<div class="admin-item"><p>Sin historial de cambios de plan.</p></div>`
+        }
+      </div>
+    </details>
     ${
       caps.canRequestCoachAlert
         ? `<div class="role-actions">
