@@ -2397,6 +2397,46 @@ body.theme-female .tag {
   gap: 10px;
 }
 
+.today-plan-status .admin-status-item {
+  align-items: flex-start;
+}
+
+.today-plan-status .admin-status-item strong {
+  color: var(--text);
+}
+
+.today-plan-compare {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.today-plan-tier {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 6px;
+}
+
+.today-plan-tier.active {
+  border-color: rgba(95, 201, 145, 0.55);
+  box-shadow: 0 0 0 1px rgba(95, 201, 145, 0.25);
+}
+
+.today-plan-tier strong {
+  font-size: 14px;
+}
+
+.today-plan-tier p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.25;
+}
+
 .today-date {
   margin: 0;
   color: var(--muted);
@@ -2441,8 +2481,21 @@ body.theme-female .today-pressure {
   color: #8e4f71;
 }
 
+body.theme-female .today-plan-tier {
+  background: rgba(255, 255, 255, 0.42);
+}
+
+body.theme-female .today-plan-tier.active {
+  border-color: rgba(80, 186, 128, 0.55);
+  box-shadow: 0 0 0 1px rgba(80, 186, 128, 0.2);
+}
+
 @media (max-width: 980px) {
   .today-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .today-plan-compare {
     grid-template-columns: 1fr;
   }
 }

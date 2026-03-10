@@ -3414,9 +3414,18 @@ function applyTodayPlanVisibility(caps) {
 
 function buildPlanStatusHtml(caps) {
   const requested = getPlanSelection();
+  const draft = getRegDraft();
   const subscription = getCurrentSubscription();
   const subscriptionStatus = String(subscription?.status || "inactive").toLowerCase();
   const expired = subscriptionStatus === "active" && !isSubscriptionActive(subscription);
+  const planRequestedPaid = requested.id !== "free";
+  const rawExtras = String(draft.extras_plan || "");
+  const requestedExtras = rawExtras
+    .split("|")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .filter((item) => item !== "Ninguno");
+  const hasExtra = (name) => requestedExtras.includes(name);
   const statusLabel =
     expired
       ? "Vencida"
@@ -3427,22 +3436,153 @@ function buildPlanStatusHtml(caps) {
           : subscriptionStatus === "inactive"
             ? "Inactiva"
             : subscriptionStatus;
-  const extras = [];
-  if (caps.plan.extras?.diet_basic) extras.push("Dieta Basica");
-  if (caps.plan.extras?.diet_plus) extras.push("Dieta Pro");
-  const modules = [
-    caps.aiAdaptive ? "IA adaptativa activa" : "IA adaptativa bloqueada",
-    caps.humanSupport ? "Coach humano habilitado" : "Sin coach humano",
-    caps.dietAccess ? "Modulo dieta activo" : "Modulo dieta bloqueado",
-    caps.challengeCore ? "Retos y ranking activos" : "Retos bloqueados",
+  const activeNow = isSubscriptionActive(subscription);
+
+  const accessRows = [
+    {
+      title: "IA adaptativa",
+      detail: "Ajustes automaticos semanales de rutina segun tu cumplimiento.",
+      status: caps.aiAdaptive ? "Activo" : "Bloqueado",
+      cls: caps.aiAdaptive ? "green" : "red",
+    },
+    {
+      title: "Coach humano 1:1",
+      detail: "Revision directa y ajustes personalizados por staff.",
+      status: caps.humanSupport ? "Activo" : "Bloqueado",
+      cls: caps.humanSupport ? "green" : "red",
+    },
+    {
+      title: "Dieta y nutricion",
+      detail: caps.dietPersonalized ? "Dieta personalizada activa." : caps.dietAccess ? "Dieta base activa." : "Modulo de dieta bloqueado.",
+      status: caps.dietPersonalized ? "Pro" : caps.dietAccess ? "Basico" : "Bloqueado",
+      cls: caps.dietAccess ? "green" : "red",
+    },
+    {
+      title: "Retos + ranking",
+      detail: "Misiones competitivas, tabla y seguimiento por resultados.",
+      status: caps.challengeCore ? "Activo" : "Bloqueado",
+      cls: caps.challengeCore ? "green" : "red",
+    },
+    {
+      title: "Modo contrato",
+      detail: "Reglas de cumplimiento estricto y penalizacion por fallos.",
+      status: "Disponible",
+      cls: "yellow",
+    },
+    {
+      title: "Modo competencia",
+      detail: hasExtra("Competencia")
+        ? activeNow
+          ? "Activo"
+          : "Solicitado, pendiente de validacion"
+        : "No solicitado",
+      status: hasExtra("Competencia") ? (activeNow ? "Activo" : "Pendiente") : "Opcional",
+      cls: hasExtra("Competencia") ? (activeNow ? "green" : "pending") : "yellow",
+    },
+    {
+      title: "Modo apuesta",
+      detail: hasExtra("Apuesta")
+        ? activeNow
+          ? "Activo segun condiciones y validacion"
+          : "Solicitado, pendiente de validacion"
+        : "No solicitado",
+      status: hasExtra("Apuesta") ? (activeNow ? "Activo" : "Pendiente") : "Opcional",
+      cls: hasExtra("Apuesta") ? (activeNow ? "green" : "pending") : "yellow",
+    },
+    {
+      title: "Seguimiento personalizado",
+      detail: hasExtra("Seguimiento personalizado")
+        ? activeNow
+          ? "Activo"
+          : "Solicitado, pendiente de validacion"
+        : "No solicitado",
+      status: hasExtra("Seguimiento personalizado") ? (activeNow ? "Activo" : "Pendiente") : "Opcional",
+      cls: hasExtra("Seguimiento personalizado") ? (activeNow ? "green" : "pending") : "yellow",
+    },
   ];
+
+  const planCompare = [
+    {
+      title: "Free",
+      price: "$0 / mes",
+      notes: "Check-in diario, rutina base y seguimiento esencial.",
+      active: caps.plan.id === "free",
+    },
+    {
+      title: "Coach IA",
+      price: "$19 / mes",
+      notes: "IA adaptativa + rutina inteligente + mejor progresion.",
+      active: caps.plan.id === "ai_coach",
+    },
+    {
+      title: "Coach + Humano (Maximo)",
+      price: "$59 / mes",
+      notes: "Todo desbloqueado: IA + coach humano + ajustes premium y prioridad.",
+      active: caps.plan.id === "coach_humano",
+    },
+  ];
+
+  const currentExtras = [];
+  if (caps.plan.extras?.diet_basic) currentExtras.push("Dieta Basica");
+  if (caps.plan.extras?.diet_plus) currentExtras.push("Dieta Pro");
+
+  const requestHint =
+    !planRequestedPaid
+      ? "Plan gratuito activo."
+      : activeNow
+        ? "Pago validado. Accesos premium activos segun tu plan."
+        : "Pago pendiente de validacion. Los modulos premium se activaran al confirmar transferencia.";
+  const onboardingSummary = [
+    { label: "Objetivo", value: draft.objetivo || "-" },
+    { label: "Modulo", value: draft.modulo || "-" },
+    { label: "Modo especial", value: draft.modo_especial || "Ninguno" },
+    { label: "Horario", value: draft.horario || "-" },
+    { label: "Check-in foto", value: draft.foto_checkin || "-" },
+  ];
+
   return {
     header: `
       <h3>Tu plan: ${caps.plan.label}</h3>
       <p class="today-note">${caps.plan.price} • Suscripcion: ${statusLabel}</p>
       <p class="reg-hint">Plan solicitado: ${requested.label} (${requested.price})</p>
-      <div class="admin-list">${modules.map((m) => `<div class="admin-item"><p>${m}</p></div>`).join("")}</div>
-      <p class="reg-hint">Extras: ${extras.length ? extras.join(", ") : "Sin extras"}</p>
+      <p class="reg-hint">${requestHint}</p>
+      <div class="admin-summary-chips">
+        ${onboardingSummary.map((s) => `<span class="admin-chip">${s.label}: ${s.value}</span>`).join("")}
+      </div>
+      <div class="admin-summary-chips">
+        <span class="admin-chip ${activeNow ? "green" : "pending"}">Pago: ${activeNow ? "Validado" : "Pendiente"}</span>
+        <span class="admin-chip ${caps.plan.id === "coach_humano" ? "green" : "yellow"}">Nivel plan: ${caps.plan.id === "coach_humano" ? "MAXIMO" : "BASE"}</span>
+      </div>
+      <div class="admin-status-grid today-plan-status">
+        ${accessRows
+          .map(
+            (item) => `
+              <article class="admin-status-item">
+                <div>
+                  <strong>${item.title}</strong>
+                  <p>${item.detail}</p>
+                </div>
+                <span class="admin-status-pill ${item.cls}">${item.status}</span>
+              </article>
+            `
+          )
+          .join("")}
+      </div>
+      <p class="reg-hint">Extras solicitados: ${requestedExtras.length ? requestedExtras.join(", ") : "Ninguno"}</p>
+      <p class="reg-hint">Extras activos: ${currentExtras.length ? currentExtras.join(", ") : "Ninguno"}</p>
+      <div class="today-plan-compare">
+        ${planCompare
+          .map(
+            (plan) => `
+            <article class="today-plan-tier ${plan.active ? "active" : ""}">
+              <strong>${plan.title}</strong>
+              <p class="today-note">${plan.price}</p>
+              <p>${plan.notes}</p>
+            </article>
+          `
+          )
+          .join("")}
+      </div>
       <div class="role-actions">
         <a class="ghost" href="planes.html">Cambiar plan (upgrade/downgrade)</a>
       </div>
