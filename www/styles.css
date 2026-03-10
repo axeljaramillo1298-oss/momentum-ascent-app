@@ -3200,6 +3200,106 @@ body.user-panel-premium.theme-female .admin-status-pill.green {
   background: rgba(226, 255, 241, 0.72);
 }
 
+/* Male palette alignment (dark navy + red accent like home) */
+body.user-panel-premium:not(.theme-female) {
+  --up-text: #d7deef;
+  --up-muted: #9ca8c2;
+  --up-strong: #f2f6ff;
+  --up-chip-bg: rgba(13, 20, 39, 0.78);
+  --up-chip-border: rgba(255, 90, 76, 0.35);
+  --up-card-bg: linear-gradient(180deg, rgba(7, 12, 30, 0.86), rgba(5, 9, 22, 0.78));
+  --up-card-border: rgba(255, 88, 74, 0.32);
+  --up-accent: #ff4b3e;
+  background:
+    radial-gradient(90% 60% at 82% 8%, rgba(255, 83, 70, 0.16), transparent 62%),
+    radial-gradient(92% 80% at 18% -12%, rgba(16, 62, 158, 0.25), transparent 72%),
+    linear-gradient(180deg, #030815 0%, #020611 100%);
+}
+
+body.user-panel-premium:not(.theme-female) .user-panel-shell::before {
+  background: url("assets/extras/home-bg.png") center/cover no-repeat;
+  opacity: 0.42;
+}
+
+body.user-panel-premium:not(.theme-female) .user-panel-shell::after {
+  background:
+    radial-gradient(72% 44% at 86% 8%, rgba(255, 89, 75, 0.2), transparent 70%),
+    linear-gradient(180deg, rgba(5, 11, 26, 0.38) 0%, rgba(3, 8, 18, 0.78) 100%);
+}
+
+body.user-panel-premium:not(.theme-female) .user-panel-nav {
+  background: linear-gradient(180deg, rgba(12, 19, 39, 0.75), rgba(8, 13, 28, 0.72));
+  border-color: rgba(255, 90, 76, 0.28);
+}
+
+body.user-panel-premium:not(.theme-female) .nav-actions .ghost {
+  border-color: rgba(255, 92, 77, 0.35);
+  background: rgba(10, 16, 31, 0.86);
+  color: #dce5f8;
+}
+
+body.user-panel-premium:not(.theme-female) .nav-actions .ghost[href*="user-hoy"] {
+  background: linear-gradient(90deg, rgba(255, 79, 66, 0.25), rgba(255, 109, 84, 0.22));
+  border-color: rgba(255, 100, 84, 0.72);
+  color: #fff2ef;
+}
+
+body.user-panel-premium:not(.theme-female) .today-actions .primary,
+body.user-panel-premium:not(.theme-female) .role-actions .primary,
+body.user-panel-premium:not(.theme-female) .today-sales-banner .primary {
+  border-color: rgba(255, 122, 108, 0.78);
+  background: linear-gradient(90deg, #d63329, #f04f3a);
+  color: #fff4f2;
+  box-shadow: 0 10px 22px rgba(181, 44, 30, 0.35);
+}
+
+body.user-panel-premium:not(.theme-female) .today-actions .ghost,
+body.user-panel-premium:not(.theme-female) .role-actions .ghost,
+body.user-panel-premium:not(.theme-female) .today-sales-banner .ghost {
+  border-color: rgba(255, 92, 77, 0.34);
+  background: rgba(9, 15, 30, 0.9);
+  color: #d6deef;
+}
+
+body.user-panel-premium:not(.theme-female) .admin-item,
+body.user-panel-premium:not(.theme-female) .admin-status-item,
+body.user-panel-premium:not(.theme-female) .today-feature-item,
+body.user-panel-premium:not(.theme-female) .today-plan-tier {
+  background: rgba(10, 16, 34, 0.78);
+  border-color: rgba(255, 91, 77, 0.28);
+}
+
+body.user-panel-premium:not(.theme-female) .admin-chip {
+  background: rgba(11, 18, 36, 0.84);
+  border-color: rgba(255, 91, 77, 0.36);
+}
+
+body.user-panel-premium:not(.theme-female) .admin-status-pill.red,
+body.user-panel-premium:not(.theme-female) .admin-status-pill.pending {
+  background: rgba(186, 47, 35, 0.22);
+  border-color: rgba(248, 94, 79, 0.6);
+  color: #ffbeb7;
+}
+
+body.user-panel-premium:not(.theme-female) .admin-status-pill.yellow {
+  background: rgba(226, 150, 56, 0.18);
+  border-color: rgba(252, 170, 75, 0.56);
+  color: #ffd9a0;
+}
+
+body.user-panel-premium:not(.theme-female) .admin-status-pill.green {
+  background: rgba(58, 168, 112, 0.18);
+  border-color: rgba(92, 202, 143, 0.56);
+  color: #b7f1d0;
+}
+
+body.user-panel-premium:not(.theme-female) .today-sales-banner {
+  background:
+    radial-gradient(120% 130% at 100% 0%, rgba(255, 91, 77, 0.18), transparent 65%),
+    linear-gradient(180deg, rgba(12, 20, 41, 0.88), rgba(8, 14, 30, 0.82));
+  border-color: rgba(255, 90, 76, 0.36);
+}
+
 /* Female UX hard-fix: full width + unified premium buttons */
 body.user-panel-premium .user-panel-shell {
   width: 100%;
