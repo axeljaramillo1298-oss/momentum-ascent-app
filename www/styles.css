@@ -2836,6 +2836,10 @@ body.user-panel-premium .nav-actions {
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0;
 }
 
 body.user-panel-premium .nav-actions .ghost {

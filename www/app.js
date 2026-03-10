@@ -1050,11 +1050,11 @@ const renderUserProgressPage = async () => {
     const goalPlan =
       goal === "Bajar peso"
         ? "Deficit moderado + cardio inteligente 3x."
-        : goal === "Ambos"
+        : goal === "Ambos" || goal === "Rendimiento total"
           ? "Fuerza + cardio alternado con control de calorias."
-          : goal === "Constancia"
-            ? "Bloques de 20-30 min para adherencia diaria."
-            : "Plan base de disciplina progresiva.";
+        : goal === "Constancia"
+          ? "Bloques de 20-30 min para adherencia diaria."
+          : "Plan base de disciplina progresiva.";
     goalPanel.innerHTML = `<div class="admin-item"><strong>Meta: ${goal}</strong><p>${goalPlan}</p></div>`;
   }
 
@@ -2592,7 +2592,7 @@ const demoCountdown = document.getElementById("demo-countdown");
 let demoCompleted = false;
 
 const demoFlow = [
-  { label: "Objetivo fisico", question: "Cual es tu objetivo principal?", options: ["Bajar peso", "Constancia", "Ambos"] },
+  { label: "Objetivo fisico", question: "Cual es tu objetivo principal?", options: ["Bajar peso", "Constancia", "Rendimiento total"] },
   { label: "Tiempo diario", question: "Cuanto tiempo real tienes por dia?", options: ["20 min", "30 min", "40 min"] },
   { label: "Lugar de entrenamiento", question: "Donde entrenas normalmente?", options: ["Casa", "Gym", "Mixto"] },
   { label: "Deporte base", question: "Que deporte practicas con mas frecuencia?", options: ["Running", "Ciclismo", "Natacion", "CrossFit", "MMA", "Yoga"] },
