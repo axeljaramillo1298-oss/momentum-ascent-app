@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Hoy | User</title>
     <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.59/build/spline-viewer.js"></script>
   </head>
   <body class="user-panel-premium">
     <main class="user-panel-shell">
@@ -19,10 +20,15 @@
             <button class="ghost" type="button" data-action="theme">Cambiar vista</button>
           </div>
         </nav>
-        <div class="user-panel-hero">
-          <p class="eyebrow">MOMENTUM INDEX</p>
-          <h1>CONTROL DE HOY</h1>
-          <p class="subhead">Check-in diario con limite de 10 minutos. El silencio tambien cuenta como respuesta.</p>
+        <div class="user-panel-hero-layout">
+          <div class="user-panel-hero">
+            <p class="eyebrow">MOMENTUM INDEX</p>
+            <h1>CONTROL DE HOY</h1>
+            <p class="subhead">Check-in diario con limite de 10 minutos. El silencio tambien cuenta como respuesta.</p>
+          </div>
+          <aside class="user-panel-3d" aria-label="Visual 3D fitness">
+            <spline-viewer class="user-panel-3d-view" loading-anim-type="spinner-small-dark" url="assets/extras/fitness.spline"></spline-viewer>
+          </aside>
         </div>
       </header>
 
