@@ -4283,6 +4283,10 @@ const initQaTools = () => {
 };
 
 const renderSessionBar = () => {
+  const page = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
+  if (page === "index.html" || page === "") {
+    return;
+  }
   const nav = document.querySelector(".nav");
   if (!nav || document.querySelector(".session-bar")) {
     return;
