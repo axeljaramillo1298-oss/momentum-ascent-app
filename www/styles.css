@@ -7096,6 +7096,48 @@ select {
   .home-v2-footer-banner {
     padding: 26px 14px 20px;
   }
+
+  .home-v2-nav {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .home-v2-nav .menu-toggle {
+    display: none !important;
+  }
+
+  .home-v2-nav .nav-actions {
+    display: flex !important;
+    position: static;
+    left: auto;
+    right: auto;
+    top: auto;
+    z-index: auto;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .home-v2-nav .nav-actions::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  .home-v2-nav .nav-actions a,
+  .home-v2-nav .nav-actions button {
+    width: auto;
+    flex: 0 0 auto;
+    justify-content: center;
+  }
 }
 
 body.theme-female.home-v2-page {
