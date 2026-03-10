@@ -7084,3 +7084,76 @@ select {
     padding: 26px 14px 20px;
   }
 }
+
+body.theme-female.home-v2-page {
+  background: #190d1f;
+}
+
+body.theme-female .home-v2-frame {
+  background:
+    radial-gradient(900px 460px at 78% 12%, rgba(255, 174, 218, 0.48), transparent 66%),
+    linear-gradient(180deg, rgba(66, 30, 62, 0.38), rgba(43, 20, 45, 0.56)),
+    url("assets/extras/home-bg-female.png") center/cover no-repeat;
+}
+
+body.theme-female .home-v2-frame::before {
+  background: linear-gradient(180deg, rgba(93, 50, 83, 0.28) 0%, rgba(53, 28, 55, 0.44) 45%, rgba(31, 18, 34, 0.62) 100%);
+}
+
+body.theme-female .home-v2-nav .nav-actions a {
+  border-color: rgba(255, 214, 241, 0.26);
+  background: rgba(89, 53, 89, 0.28);
+}
+
+body.theme-female .home-v2-copy h1,
+body.theme-female .home-v2-how h2,
+body.theme-female .home-v2-footer-banner h2 {
+  text-shadow: 0 10px 24px rgba(78, 31, 74, 0.34);
+}
+
+body.theme-female .home-v2-copy p,
+body.theme-female .home-v2-eyebrow {
+  color: rgba(255, 236, 249, 0.9);
+}
+
+body.theme-female .home-v2-device {
+  border-color: rgba(255, 204, 234, 0.58);
+  background:
+    linear-gradient(180deg, rgba(88, 53, 90, 0.44), rgba(43, 27, 49, 0.72)),
+    radial-gradient(240px 140px at 50% -10%, rgba(255, 196, 234, 0.32), transparent 72%);
+  box-shadow: 0 20px 42px rgba(34, 18, 39, 0.6), 0 0 32px rgba(255, 193, 231, 0.26);
+}
+
+body.theme-female .home-v2-device-notch {
+  background: rgba(255, 229, 244, 0.72);
+}
+
+body.theme-female .home-v2-status-list li {
+  border-color: rgba(255, 209, 236, 0.42);
+  background: rgba(84, 49, 83, 0.34);
+}
+
+body.theme-female .home-v2-status-list b {
+  color: rgba(255, 232, 246, 0.95);
+}
+
+body.theme-female .home-v2-device-btn {
+  border-color: rgba(255, 207, 236, 0.72);
+  background: linear-gradient(90deg, rgba(224, 105, 174, 0.94), rgba(255, 166, 217, 0.92));
+  box-shadow: 0 0 22px rgba(245, 148, 213, 0.32);
+}
+
+body.theme-female .home-v2-step {
+  border-color: rgba(255, 214, 239, 0.5);
+  background: linear-gradient(180deg, rgba(94, 56, 94, 0.36), rgba(63, 35, 62, 0.54));
+}
+
+body.theme-female .home-v2-step.is-active {
+  border-color: rgba(255, 220, 242, 0.84);
+  box-shadow: 0 0 24px rgba(255, 192, 231, 0.34), inset 0 0 0 1px rgba(255, 224, 244, 0.44);
+}
+
+body.theme-female .home-v2-step-n {
+  border-color: rgba(255, 220, 243, 0.84);
+  background: rgba(132, 78, 128, 0.78);
+}

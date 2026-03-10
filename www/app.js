@@ -60,6 +60,7 @@ const applyTheme = (theme) => {
   const normalized = theme === "female" ? "female" : "male";
   document.body.classList.remove("theme-male", "theme-female");
   document.body.classList.add(`theme-${normalized}`);
+  document.dispatchEvent(new CustomEvent("theme:changed", { detail: { theme: normalized } }));
 };
 
 const removeThemeGate = () => {
@@ -116,6 +117,48 @@ const ensureThemePicker = () => {
 };
 
 ensureThemePicker();
+
+const renderHomeV2ThemeContent = () => {
+  const page = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
+  if (page !== "index.html" && page !== "") {
+    return;
+  }
+  const title = document.getElementById("home-v2-title");
+  if (!title) {
+    return;
+  }
+  const female = document.body.classList.contains("theme-female");
+  const setText = (id, value) => {
+    const node = document.getElementById(id);
+    if (node) node.textContent = value;
+  };
+  if (female) {
+    title.innerHTML = "DISCIPLINA CON<br />ESTILO.";
+    setText("home-v2-sub", "Tu coach inteligente te guia todos los dias. Rutina, nutricion y check-ins.");
+    setText("home-v2-cta-main", "Empezar guia");
+    setText("home-v2-cta-alt", "Ver demo");
+    setText("home-v2-dash-title", "Momentum Dashboard");
+    setText("home-v2-item-1", "💗 Racha: 10 dias");
+    setText("home-v2-item-2", "✔ Check-in enviado");
+    setText("home-v2-item-3", "✓ Nutricion OK");
+    setText("home-v2-item-4", "✓ Rutina 30 min");
+    setText("home-v2-device-btn", "Enviar progreso");
+    return;
+  }
+  title.innerHTML = "NO TE MOTIVAMOS.<br />TE PRESIONAMOS<br />PARA QUE CUMPLAS.";
+  setText("home-v2-sub", "Sistema de disciplina diaria con check-ins, nutricion y seguimiento.");
+  setText("home-v2-cta-main", "Empezar onboarding");
+  setText("home-v2-cta-alt", "Ver demo");
+  setText("home-v2-dash-title", "Momentum Dashboard");
+  setText("home-v2-item-1", "🔥 Racha: 14 dias");
+  setText("home-v2-item-2", "⏰ Check-in pendiente");
+  setText("home-v2-item-3", "🥗 Nutricion OK");
+  setText("home-v2-item-4", "✅ Entrenamiento 30m");
+  setText("home-v2-device-btn", "Enviar check-in");
+};
+
+document.addEventListener("theme:changed", renderHomeV2ThemeContent);
+renderHomeV2ThemeContent();
 
 const closeAllMobileMenus = () => {
   document.querySelectorAll(".nav.mobile-open").forEach((nav) => {
