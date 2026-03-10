@@ -7091,18 +7091,30 @@ body.theme-female.home-v2-page {
 
 body.theme-female .home-v2-frame {
   background:
-    radial-gradient(900px 460px at 78% 12%, rgba(255, 174, 218, 0.48), transparent 66%),
-    linear-gradient(180deg, rgba(66, 30, 62, 0.38), rgba(43, 20, 45, 0.56)),
+    radial-gradient(920px 460px at 78% 12%, rgba(255, 167, 214, 0.32), transparent 66%),
+    linear-gradient(180deg, rgba(44, 16, 42, 0.56), rgba(24, 11, 30, 0.72)),
     url("assets/extras/home-bg-female.png") center/cover no-repeat;
 }
 
 body.theme-female .home-v2-frame::before {
-  background: linear-gradient(180deg, rgba(93, 50, 83, 0.28) 0%, rgba(53, 28, 55, 0.44) 45%, rgba(31, 18, 34, 0.62) 100%);
+  background:
+    radial-gradient(760px 440px at 24% 28%, rgba(20, 8, 26, 0.42), transparent 68%),
+    linear-gradient(180deg, rgba(33, 12, 39, 0.44) 0%, rgba(25, 10, 31, 0.62) 45%, rgba(15, 7, 20, 0.76) 100%);
 }
 
 body.theme-female .home-v2-nav .nav-actions a {
   border-color: rgba(255, 214, 241, 0.26);
   background: rgba(89, 53, 89, 0.28);
+  color: rgba(255, 239, 249, 0.95);
+}
+
+body.theme-female .home-v2-nav .logo,
+body.theme-female .home-v2-copy h1,
+body.theme-female .home-v2-how h2,
+body.theme-female .home-v2-footer-banner h2,
+body.theme-female .home-v2-dashboard-title,
+body.theme-female .home-v2-step h3 {
+  color: #fff6fc !important;
 }
 
 body.theme-female .home-v2-copy h1,
@@ -7113,15 +7125,20 @@ body.theme-female .home-v2-footer-banner h2 {
 
 body.theme-female .home-v2-copy p,
 body.theme-female .home-v2-eyebrow {
-  color: rgba(255, 236, 249, 0.9);
+  color: rgba(255, 237, 250, 0.95) !important;
+}
+
+body.theme-female .home-v2-device-header,
+body.theme-female .home-v2-step p {
+  color: rgba(255, 232, 247, 0.95) !important;
 }
 
 body.theme-female .home-v2-device {
   border-color: rgba(255, 204, 234, 0.58);
   background:
-    linear-gradient(180deg, rgba(88, 53, 90, 0.44), rgba(43, 27, 49, 0.72)),
-    radial-gradient(240px 140px at 50% -10%, rgba(255, 196, 234, 0.32), transparent 72%);
-  box-shadow: 0 20px 42px rgba(34, 18, 39, 0.6), 0 0 32px rgba(255, 193, 231, 0.26);
+    linear-gradient(180deg, rgba(70, 34, 69, 0.62), rgba(35, 19, 43, 0.82)),
+    radial-gradient(240px 140px at 50% -10%, rgba(255, 196, 234, 0.22), transparent 72%);
+  box-shadow: 0 20px 42px rgba(20, 9, 25, 0.72), 0 0 32px rgba(255, 193, 231, 0.2);
 }
 
 body.theme-female .home-v2-device-notch {
@@ -7130,7 +7147,8 @@ body.theme-female .home-v2-device-notch {
 
 body.theme-female .home-v2-status-list li {
   border-color: rgba(255, 209, 236, 0.42);
-  background: rgba(84, 49, 83, 0.34);
+  background: rgba(63, 31, 66, 0.56);
+  color: rgba(255, 244, 252, 0.98) !important;
 }
 
 body.theme-female .home-v2-status-list b {
@@ -7145,7 +7163,8 @@ body.theme-female .home-v2-device-btn {
 
 body.theme-female .home-v2-step {
   border-color: rgba(255, 214, 239, 0.5);
-  background: linear-gradient(180deg, rgba(94, 56, 94, 0.36), rgba(63, 35, 62, 0.54));
+  background: linear-gradient(180deg, rgba(86, 49, 86, 0.52), rgba(45, 25, 51, 0.66));
+  backdrop-filter: blur(2px);
 }
 
 body.theme-female .home-v2-step.is-active {
@@ -7156,4 +7175,19 @@ body.theme-female .home-v2-step.is-active {
 body.theme-female .home-v2-step-n {
   border-color: rgba(255, 220, 243, 0.84);
   background: rgba(132, 78, 128, 0.78);
+}
+
+body.theme-female.home-v2-page .session-bar {
+  display: none !important;
+}
+
+body.theme-female.home-v2-page .home-v2-nav .nav-actions {
+  background: transparent;
+  border-color: transparent;
+}
+
+body.theme-female .home-v2-copy,
+body.theme-female .home-v2-how,
+body.theme-female .home-v2-footer-banner {
+  text-shadow: 0 8px 20px rgba(19, 7, 24, 0.34);
 }
