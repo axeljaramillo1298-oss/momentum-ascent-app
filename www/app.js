@@ -4723,7 +4723,7 @@ const initDynamicOnboarding = () => {
         lesiones: state.lesiones || "",
         deporte: state.deporte || "",
         deporte_otro: state.deporte_otro || "",
-        trigger: state.trigger || "",
+        trigger: Array.isArray(state.trigger) ? state.trigger.join(" | ") : state.trigger || "",
         entreno_casa: state.entreno_casa || "",
         equipo_casa: Array.isArray(state.equipo_casa) ? state.equipo_casa.join(" | ") : state.equipo_casa || "",
         alimentacion: state.alimentacion || "",

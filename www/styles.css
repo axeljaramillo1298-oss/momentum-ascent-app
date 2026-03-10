@@ -5484,7 +5484,9 @@ body.onb1-body {
 .onb5v2-goal > span:last-child {
   display: block;
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
 }
 
 .onb5v2-goal .icon {
@@ -5846,18 +5848,28 @@ body.onb1-body {
   letter-spacing: 0.2px;
 }
 
+.onb6v2-help {
+  margin: -2px 2px 2px;
+  font-size: 11px;
+  color: rgba(192, 214, 248, 0.88);
+}
+
 .onb6v2-pill.onbp-option {
-  min-height: 34px;
+  min-height: 38px;
   border-radius: 999px;
   border: 1px solid rgba(111, 169, 255, 0.56);
   background: linear-gradient(180deg, rgba(12, 24, 48, 0.94), rgba(9, 19, 38, 0.92));
-  padding: 6px 7px;
+  padding: 6px 8px;
   color: #d8e8ff;
   text-align: center;
   font-weight: 700;
-  font-size: 11px;
+  font-size: 10px;
+  line-height: 1.12;
   letter-spacing: 0.15px;
   min-width: 0;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .onb6v2-foodbtn.onbp-option {
