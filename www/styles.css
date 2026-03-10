@@ -6574,6 +6574,40 @@ body.onb1-body {
   font-weight: 700;
 }
 
+.onb8v2-help {
+  margin: 0 2px;
+  color: rgba(195, 220, 255, 0.9);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.onb8v2-mode-notes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.onb8v2-mode-note {
+  display: grid;
+  gap: 3px;
+  border-radius: 10px;
+  border: 1px solid rgba(111, 169, 255, 0.35);
+  background: linear-gradient(180deg, rgba(11, 24, 48, 0.76), rgba(9, 18, 38, 0.66));
+  padding: 7px 8px;
+}
+
+.onb8v2-mode-note strong {
+  font-size: 11px;
+  color: #e6f2ff;
+  letter-spacing: 0.2px;
+}
+
+.onb8v2-mode-note span {
+  font-size: 10px;
+  line-height: 1.2;
+  color: rgba(188, 215, 255, 0.9);
+}
+
 .onb8v2-grid2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6660,6 +6694,10 @@ body.onb1-body {
     font-size: 10px;
   }
 
+  .onb8v2-mode-note span {
+    font-size: 9px;
+  }
+
   .onb8v2-btn strong {
     font-size: 35px;
   }
@@ -6689,6 +6727,243 @@ body.onb1-body {
 
   .onb8v2-btn strong {
     font-size: 32px;
+  }
+}
+
+/* Onboarding 8B - info modos especiales */
+.onb8m-body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.onb8m-shell {
+  height: 100dvh;
+  min-height: 100dvh;
+  max-width: 414px;
+  margin: 0 auto;
+  padding: calc(6px + env(safe-area-inset-top)) 8px calc(10px + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-rows: 1fr;
+  overflow: hidden;
+  position: relative;
+}
+
+.onb8m-top {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 22px;
+  right: 22px;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+}
+
+.onb8m-top .onb-dots {
+  justify-self: center;
+}
+
+.onb8m-top .onb-dot.active {
+  background: #66a7ff;
+  box-shadow: 0 0 0 3px rgba(102, 167, 255, 0.24);
+}
+
+.onb8m-back {
+  width: 42px;
+  height: 42px;
+  border-color: rgba(143, 186, 255, 0.32);
+  background: linear-gradient(180deg, rgba(10, 22, 47, 0.78), rgba(7, 17, 35, 0.86));
+}
+
+.onb8m-spacer {
+  width: 42px;
+  height: 42px;
+}
+
+.onb8m-stage {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding-top: 10px;
+  padding-bottom: 8px;
+}
+
+.onb8m-card {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(104, 161, 255, 0.16);
+  overflow: hidden;
+  box-shadow: 0 24px 52px rgba(0, 0, 0, 0.56);
+  background: #071227;
+}
+
+.onb8m-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  filter: saturate(0.98) contrast(1.03) brightness(0.75);
+}
+
+.onb8m-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(84% 34% at 50% 8%, rgba(121, 182, 255, 0.14), transparent 72%),
+    radial-gradient(120% 86% at 50% 106%, rgba(8, 18, 39, 0.38), rgba(5, 12, 26, 0.68) 74%),
+    linear-gradient(180deg, rgba(5, 12, 26, 0.2) 0%, rgba(5, 12, 26, 0.42) 56%, rgba(5, 11, 23, 0.78) 100%);
+}
+
+.onb8m-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  padding: calc(66px + env(safe-area-inset-top)) 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.onb8m-content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.onb8m-title {
+  margin: 0;
+  text-align: center;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(52px, 11.6vw, 62px);
+  line-height: 0.88;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: #eaf4ff;
+  text-shadow: 0 8px 18px rgba(0, 0, 0, 0.44);
+}
+
+.onb8m-title span {
+  color: #89beff;
+}
+
+.onb8m-subtitle {
+  margin: 0;
+  text-align: center;
+  color: rgba(216, 232, 255, 0.92);
+  font-size: 14px;
+  line-height: 1.22;
+}
+
+.onb8m-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.onb8m-item {
+  border-radius: 14px;
+  border: 1px solid rgba(111, 169, 255, 0.5);
+  background: linear-gradient(180deg, rgba(11, 23, 45, 0.78), rgba(8, 18, 35, 0.66));
+  box-shadow: 0 0 0 1px rgba(97, 186, 255, 0.2), inset 0 0 16px rgba(72, 156, 255, 0.1);
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.onb8m-item h3 {
+  margin: 0;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 30px;
+  line-height: 0.9;
+  letter-spacing: 0.3px;
+  color: #dff1ff;
+}
+
+.onb8m-item p {
+  margin: 0;
+  color: #d5e8ff;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.onb8m-item ul {
+  margin: 2px 0 0;
+  padding-left: 16px;
+  color: #c9e1ff;
+  font-size: 11px;
+  line-height: 1.28;
+}
+
+.onb8m-check {
+  margin-top: 2px;
+  gap: 8px;
+  font-size: 12px;
+  color: #cde0ff;
+}
+
+.onb8m-feedback {
+  min-height: 16px;
+  margin: 0;
+  color: #ffd5d5;
+  font-size: 12px;
+  text-align: center;
+}
+
+.onb8m-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: min(258px, 100%);
+  min-height: 68px;
+  margin: auto auto 0;
+  text-align: center;
+  text-decoration: none;
+  color: #ebf7ff;
+  border: 1px solid rgba(132, 207, 255, 0.76);
+  border-radius: 14px;
+  background: linear-gradient(90deg, #2f7fff 0%, #3ad0ff 100%);
+  box-shadow: 0 11px 26px rgba(32, 133, 255, 0.35), 0 0 0 2px rgba(123, 208, 255, 0.1) inset;
+  padding: 8px 12px;
+}
+
+.onb8m-btn strong {
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 34px;
+  line-height: 0.82;
+  letter-spacing: 0.35px;
+}
+
+.onb8m-btn span {
+  font-size: 14px;
+  color: #d7f0ff;
+  line-height: 1.1;
+}
+
+@media (max-width: 390px) {
+  .onb8m-content {
+    padding-inline: 9px;
+    gap: 6px;
+  }
+
+  .onb8m-title {
+    font-size: clamp(46px, 10.9vw, 54px);
+  }
+
+  .onb8m-item h3 {
+    font-size: 27px;
+  }
+
+  .onb8m-item p {
+    font-size: 11px;
   }
 }
 
@@ -6849,6 +7124,12 @@ body.onb1-body {
   font-size: 14px;
 }
 
+.onb9v2-phys-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
 .onb9v2-label {
   margin: 2px 1px 0;
   color: rgba(204, 223, 250, 0.86);
@@ -6949,6 +7230,10 @@ body.onb1-body {
 
   .onb9v2-pill.onbp-option {
     font-size: 10px;
+  }
+
+  .onb9v2-phys-grid {
+    grid-template-columns: 1fr;
   }
 
   .onb9v2-btn strong {

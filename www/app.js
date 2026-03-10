@@ -732,6 +732,9 @@ const ensureUser = (payload) => {
     horario: String(payload.horario || existing?.horario || "").trim(),
     objetivo: String(payload.objetivo || existing?.objetivo || "").trim(),
     perfil: String(payload.perfil || existing?.perfil || "").trim(),
+    edad: String(payload.edad || existing?.edad || "").trim(),
+    peso: String(payload.peso || existing?.peso || "").trim(),
+    estatura: String(payload.estatura || existing?.estatura || "").trim(),
     createdAt: existing?.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -799,6 +802,9 @@ const syncUserWithBackend = async (payload) => {
     plan: payload.plan || "Free",
     goal: payload.goal || payload.objetivo || "",
     checkinSchedule: payload.checkinSchedule || payload.horario || "",
+    edad: payload.edad || "",
+    peso: payload.peso || "",
+    estatura: payload.estatura || "",
   });
   return response;
 };
@@ -816,6 +822,9 @@ const hydrateUserCacheFromApi = (apiUser) => {
     horario: apiUser.checkin_schedule || "",
     objetivo: "",
     perfil: "",
+    edad: apiUser.edad || "",
+    peso: apiUser.peso || "",
+    estatura: apiUser.estatura || "",
   });
 };
 
@@ -2579,8 +2588,8 @@ const demoFlow = [
   { label: "Lugar de entrenamiento", question: "Donde entrenas normalmente?", options: ["Casa", "Gym", "Mixto"] },
   { label: "Deporte base", question: "Que deporte practicas con mas frecuencia?", options: ["Running", "Ciclismo", "Natacion", "CrossFit", "MMA", "Yoga"] },
   { label: "Tono del coach", question: "Como quieres que te hable el coach?", options: ["Estricto", "Neutral", "Rudo"] },
-  { label: "Perfil mental", question: "Que perfil te describe mejor?", options: ["Guerrero", "Constante", "Explosivo", "Estrategico"] },
-  { label: "Principal bloqueo", question: "Que te frena mas para cumplir?", options: ["Ansiedad", "Estres", "Falta de tiempo"] },
+  { label: "Perfil mental", question: "Que perfil te describe mejor?", options: ["Guerrera", "Guerrero", "Constante", "Estrategica", "Imparable"] },
+  { label: "Principal bloqueo", question: "Que te frena mas para cumplir?", options: ["Ansiedad", "Estres", "Falta de tiempo", "Falta de energia", "Procrastinacion"] },
   { label: "Modo especial (presion)", question: "Como quieres que se aplique la exigencia?", options: ["Contrato", "Apuesta", "Competencia"] },
   { label: "Voz del sistema", question: "Con que tipo de voz prefieres los mensajes?", options: ["Masculina", "Femenina", "Robotica"] },
   { label: "Plan inicial (alcance)", question: "Que plan quieres activar al inicio?", options: ["Free", "Coach IA", "Coach + Humano", "Retos"] },
@@ -4436,12 +4445,12 @@ const saveOnbpState = (state) => {
 
 const initDynamicOnboarding = () => {
   const page = getPageFile();
-  if (!["onboarding-4-apuesta.html", "onboarding-5.html", "onboarding-6.html", "onboarding-7.html", "onboarding-8.html", "onboarding-9.html"].includes(page)) {
+  if (!["onboarding-4-apuesta.html", "onboarding-5.html", "onboarding-6.html", "onboarding-7.html", "onboarding-8.html", "onboarding-8-modos.html", "onboarding-9.html"].includes(page)) {
     return;
   }
   const ONBP_SESSION_KEY = "discipline_onbp_session_started";
   const ONBP_TOUCHED_PREFIX = "discipline_onbp_touched_";
-  const onboardingPages = ["onboarding-4-apuesta.html", "onboarding-5.html", "onboarding-6.html", "onboarding-7.html", "onboarding-8.html", "onboarding-9.html"];
+  const onboardingPages = ["onboarding-4-apuesta.html", "onboarding-5.html", "onboarding-6.html", "onboarding-7.html", "onboarding-8.html", "onboarding-8-modos.html", "onboarding-9.html"];
   if ((page === "onboarding-4-apuesta.html" || page === "onboarding-5.html") && !sessionStorage.getItem(ONBP_SESSION_KEY)) {
     localStorage.removeItem(ONBP_DYNAMIC_KEY);
     onboardingPages.forEach((p) => sessionStorage.removeItem(`${ONBP_TOUCHED_PREFIX}${p}`));
@@ -4642,6 +4651,7 @@ const initDynamicOnboarding = () => {
     document.getElementById("onbp-feedback-6") ||
     document.getElementById("onbp-feedback-7") ||
     document.getElementById("onbp-feedback-8") ||
+    document.getElementById("onbp-feedback-8m") ||
     document.getElementById("onbp-feedback-9");
   const showFeedback = (text) => {
     if (!feedback) {
@@ -4683,6 +4693,9 @@ const initDynamicOnboarding = () => {
         horario: state.horario || "",
         objetivo: state.objetivo || "",
         perfil: state.perfil || "",
+        edad: state.edad || "",
+        peso: state.peso || "",
+        estatura: state.estatura || "",
       });
       try {
         const remote = await syncUserWithBackend({
@@ -4693,6 +4706,9 @@ const initDynamicOnboarding = () => {
           plan: state.plan || "Free",
           goal: state.objetivo || "",
           checkinSchedule: state.horario || "",
+          edad: state.edad || "",
+          peso: state.peso || "",
+          estatura: state.estatura || "",
         });
         hydrateUserCacheFromApi(remote?.user);
       } catch {
@@ -4705,6 +4721,9 @@ const initDynamicOnboarding = () => {
           nombre: state.nombre || "",
           objetivo: state.objetivo || "",
           perfil: state.perfil || "",
+          edad: state.edad || "",
+          peso: state.peso || "",
+          estatura: state.estatura || "",
           horario: state.horario || "",
           activatedAt: new Date().toISOString(),
         })
@@ -4714,6 +4733,9 @@ const initDynamicOnboarding = () => {
         nombre: state.nombre || "",
         email,
         whatsapp: state.whatsapp || "",
+        edad: state.edad || "",
+        peso: state.peso || "",
+        estatura: state.estatura || "",
         horario: state.horario || "",
         objetivo: state.objetivo || "",
         tiempo: state.tiempo || "",

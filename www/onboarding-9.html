@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="es">
   <head>
     <meta charset="utf-8" />
@@ -11,9 +11,9 @@
   <body class="onb-body onb9v2-body">
     <main class="onb9v2-shell">
       <header class="onb9v2-top">
-        <a class="onb-back onb9v2-back" href="onboarding-8.html" aria-label="Atras">&lt;</a>
+        <a class="onb-back onb9v2-back" href="onboarding-8-modos.html" aria-label="Atras">&lt;</a>
         <div class="onb-dots onb9v2-dots">
-          <span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot active"></span>
+          <span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot active"></span>
         </div>
         <span class="onb9v2-spacer" aria-hidden="true"></span>
       </header>
@@ -38,6 +38,18 @@
                 <input class="onbp-input onb9v2-input" id="onbp-whatsapp" type="tel" maxlength="16" placeholder="+52..." data-onb-input="whatsapp" required />
               </label>
 
+              <div class="onb9v2-phys-grid">
+                <label class="onbp-input-wrap onb9v2-input-wrap">EDAD
+                  <input class="onbp-input onb9v2-input" id="onbp-edad" type="number" min="14" max="90" placeholder="25" data-onb-input="edad" required />
+                </label>
+                <label class="onbp-input-wrap onb9v2-input-wrap">PESO (KG)
+                  <input class="onbp-input onb9v2-input" id="onbp-peso" type="number" min="35" max="350" step="0.1" placeholder="70.0" data-onb-input="peso" required />
+                </label>
+                <label class="onbp-input-wrap onb9v2-input-wrap">ESTATURA (CM)
+                  <input class="onbp-input onb9v2-input" id="onbp-estatura" type="number" min="120" max="230" step="0.1" placeholder="170.0" data-onb-input="estatura" required />
+                </label>
+              </div>
+
               <h3 class="onb9v2-label">Horario de check-in</h3>
               <div class="onbp-options onb9v2-grid2" data-onb-key="horario" data-onb-type="single" data-onb-required="true">
                 <button class="onbp-option onb9v2-pill" type="button" data-onb-value="06:00 - 08:00">06:00 - 08:00</button>
@@ -48,18 +60,15 @@
 
               <h3 class="onb9v2-label">Plan</h3>
               <div class="onbp-options onb9v2-grid3" data-onb-key="plan" data-onb-type="single" data-onb-required="true">
-                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Free">📶 Free</button>
-                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Coach IA">🤖 Coach IA</button>
-                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Coach + Humano">🧑 Coach + Humano</button>
-                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Idiomas">📚 Idiomas</button>
-                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Finanzas personales">💳 Finanzas</button>
-                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Meditacion">🧘 Meditacion</button>
+                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Free">FREE</button>
+                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Coach IA">COACH IA</button>
+                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Coach + Humano">COACH + HUMANO</button>
               </div>
 
               <h3 class="onb9v2-label">Check-in con foto</h3>
               <div class="onbp-options onb9v2-grid2" data-onb-key="foto_checkin" data-onb-type="single" data-onb-required="true">
-                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Si">📸 Si</button>
-                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="No">🚫 No</button>
+                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="Si">SI</button>
+                <button class="onbp-option onb9v2-pill" type="button" data-onb-value="No">NO</button>
               </div>
 
               <label class="onbp-check onb9v2-check">

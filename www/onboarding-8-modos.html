@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Onboarding 8B | Modos especiales</title>
+    <meta name="theme-color" content="#e9f2ff" />
+    <link rel="preload" as="image" href="assets/extras/onb6-status.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="onb-body onb8m-body">
+    <main class="onb8m-shell">
+      <header class="onb8m-top">
+        <a class="onb-back onb8m-back" href="onboarding-8.html" aria-label="Atras">&lt;</a>
+        <div class="onb-dots onb8m-dots">
+          <span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot active"></span><span class="onb-dot"></span>
+        </div>
+        <span class="onb8m-spacer" aria-hidden="true"></span>
+      </header>
+
+      <section class="onb8m-stage">
+        <article class="onb8m-card">
+          <img class="onb8m-bg" src="assets/extras/onb6-status.png" alt="Modos especiales" loading="eager" decoding="async" fetchpriority="high" />
+          <div class="onb8m-shade" aria-hidden="true"></div>
+
+          <div class="onb8m-content">
+            <h1 class="onb8m-title">MODOS<br /><span>ESPECIALES</span></h1>
+            <p class="onb8m-subtitle">Asi funciona cada modo para que sepas cual elegir antes de finalizar.</p>
+
+            <div class="onb8m-grid">
+              <article class="onb8m-item">
+                <h3>CONTRATO</h3>
+                <p>Compromiso formal por 30 dias con reglas claras.</p>
+                <ul>
+                  <li>Objetivo y condiciones fijas.</li>
+                  <li>Penalizacion si no cumples.</li>
+                  <li>Seguimiento diario obligatorio.</li>
+                </ul>
+              </article>
+
+              <article class="onb8m-item">
+                <h3>COMPETENCIA</h3>
+                <p>Modo reto para compararte con otros usuarios.</p>
+                <ul>
+                  <li>Ranking por cumplimiento.</li>
+                  <li>Puntos por check-ins y consistencia.</li>
+                  <li>Retos semanales y progreso visible.</li>
+                </ul>
+              </article>
+
+              <article class="onb8m-item">
+                <h3>EXTRAS</h3>
+                <p>Elementos que se activan segun modo o plan.</p>
+                <ul>
+                  <li>Alertas de disciplina y recordatorios.</li>
+                  <li>Validacion de avance por evidencia.</li>
+                  <li>En Apuesta: monto minimo de $500 MXN.</li>
+                </ul>
+              </article>
+            </div>
+
+            <label class="onbp-check onb8m-check">
+              <input type="checkbox" data-onb-check="modos_entendidos" required />
+              <span>Entiendo las condiciones de Contrato, Competencia y extras.</span>
+            </label>
+
+            <p class="reg-feedback onb8m-feedback" id="onbp-feedback-8m" aria-live="polite"></p>
+
+            <a class="onb-go onb8m-btn" data-onb-next href="onboarding-9.html">
+              <strong>SIGUIENTE</strong>
+              <span>Continuar activacion</span>
+            </a>
+          </div>
+        </article>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
