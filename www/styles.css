@@ -3200,6 +3200,62 @@ body.user-panel-premium.theme-female .admin-status-pill.green {
   background: rgba(226, 255, 241, 0.72);
 }
 
+/* Female UX hard-fix: full width + unified premium buttons */
+body.user-panel-premium .user-panel-shell {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  border-radius: 0;
+  padding: 18px 20px 24px;
+}
+
+body.user-panel-premium.theme-female .nav-actions .ghost,
+body.user-panel-premium.theme-female .today-actions .primary,
+body.user-panel-premium.theme-female .today-actions .ghost,
+body.user-panel-premium.theme-female .role-actions .primary,
+body.user-panel-premium.theme-female .role-actions .ghost,
+body.user-panel-premium.theme-female .today-sales-banner .primary,
+body.user-panel-premium.theme-female .today-sales-banner .ghost {
+  border: 1px solid rgba(244, 186, 221, 0.82) !important;
+  border-radius: 999px !important;
+  background: linear-gradient(90deg, #f19ac4, #f6b4d8) !important;
+  color: #5c2f46 !important;
+  box-shadow: 0 8px 18px rgba(173, 72, 126, 0.2);
+}
+
+body.user-panel-premium.theme-female .nav-actions .ghost[href*="user-hoy"] {
+  background: linear-gradient(90deg, #e886b6, #f19ac4) !important;
+  color: #fff3fa !important;
+}
+
+body.user-panel-premium.theme-female .today-actions .primary {
+  color: #fff5fb !important;
+  background: linear-gradient(90deg, #d56fa6, #e987bb) !important;
+}
+
+body.user-panel-premium.theme-female select,
+body.user-panel-premium.theme-female input[type="text"],
+body.user-panel-premium.theme-female input[type="number"],
+body.user-panel-premium.theme-female textarea {
+  border: 1px solid rgba(232, 174, 210, 0.8);
+  border-radius: 12px;
+  background: rgba(255, 247, 252, 0.9);
+  color: #5c3650;
+}
+
+body.user-panel-premium.theme-female .agree-row {
+  border: 1px solid rgba(232, 174, 210, 0.65);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 248, 253, 0.78);
+}
+
+@media (max-width: 880px) {
+  body.user-panel-premium .user-panel-shell {
+    padding: 12px 12px 16px;
+  }
+}
+
 .onb-body {
   background:
     radial-gradient(1100px 520px at 10% -10%, rgba(21, 82, 179, 0.46), transparent 68%),
