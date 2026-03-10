@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Onboarding 4 | Disciplina</title>
     <meta name="theme-color" content="#dff8de" />
+    <link rel="preload" as="image" href="assets/extras/onb4-results.png" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="onb-body onb4v2-body">
@@ -19,7 +20,7 @@
 
       <section class="onb4v2-stage">
         <article class="onb4v2-card">
-          <img class="onb4v2-bg" src="assets/extras/onb4-results.png" alt="Ve resultados reales" loading="lazy" />
+          <img class="onb4v2-bg" src="assets/extras/onb4-results.png" alt="Ve resultados reales" loading="eager" decoding="async" fetchpriority="high" />
           <div class="onb4v2-shade" aria-hidden="true"></div>
 
           <div class="onb4v2-content">
