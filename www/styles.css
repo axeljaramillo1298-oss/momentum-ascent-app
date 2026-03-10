@@ -2701,17 +2701,6 @@ body.theme-female .today-plan-tier.active {
   }
 }
 
-@media (min-width: 700px) {
-  .user-panel-shell {
-    width: min(100%, 430px);
-    min-height: calc(100dvh - 14px);
-    margin: 7px auto;
-    border-radius: 18px;
-    border: 1px solid rgba(255, 241, 250, 0.42);
-    box-shadow: 0 28px 58px rgba(111, 45, 88, 0.32);
-  }
-}
-
 @media (max-width: 460px) {
   body.user-panel-premium .nav-actions .ghost {
     padding: 4px 8px;
