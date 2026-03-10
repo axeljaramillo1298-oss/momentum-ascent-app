@@ -4436,18 +4436,22 @@ const saveOnbpState = (state) => {
 
 const initDynamicOnboarding = () => {
   const page = getPageFile();
-  if (!["onboarding-5.html", "onboarding-6.html", "onboarding-7.html", "onboarding-8.html", "onboarding-9.html"].includes(page)) {
+  if (!["onboarding-4-apuesta.html", "onboarding-5.html", "onboarding-6.html", "onboarding-7.html", "onboarding-8.html", "onboarding-9.html"].includes(page)) {
     return;
   }
   const ONBP_SESSION_KEY = "discipline_onbp_session_started";
   const ONBP_TOUCHED_PREFIX = "discipline_onbp_touched_";
-  const onboardingPages = ["onboarding-5.html", "onboarding-6.html", "onboarding-7.html", "onboarding-8.html", "onboarding-9.html"];
-  if (page === "onboarding-5.html" && !sessionStorage.getItem(ONBP_SESSION_KEY)) {
+  const onboardingPages = ["onboarding-4-apuesta.html", "onboarding-5.html", "onboarding-6.html", "onboarding-7.html", "onboarding-8.html", "onboarding-9.html"];
+  if ((page === "onboarding-4-apuesta.html" || page === "onboarding-5.html") && !sessionStorage.getItem(ONBP_SESSION_KEY)) {
     localStorage.removeItem(ONBP_DYNAMIC_KEY);
     onboardingPages.forEach((p) => sessionStorage.removeItem(`${ONBP_TOUCHED_PREFIX}${p}`));
     sessionStorage.setItem(ONBP_SESSION_KEY, "1");
   }
   const state = readOnbpState();
+  if (page === "onboarding-4-apuesta.html") {
+    state.modo_especial = "Apuesta";
+    saveOnbpState(state);
+  }
   const touchedStorageKey = `${ONBP_TOUCHED_PREFIX}${page}`;
   const touched = new Set();
   try {
@@ -4597,11 +4601,11 @@ const initDynamicOnboarding = () => {
       if (!input.required) {
         continue;
       }
-      if (!input.value.trim()) {
+      if (!String(input.value || "").trim()) {
         input.reportValidity();
         return false;
       }
-      if (input.type === "email" && !input.checkValidity()) {
+      if (!input.checkValidity()) {
         input.reportValidity();
         return false;
       }
@@ -4630,6 +4634,7 @@ const initDynamicOnboarding = () => {
   };
 
   const feedback =
+    document.getElementById("onbp-feedback-bet") ||
     document.getElementById("onbp-feedback-5") ||
     document.getElementById("onbp-feedback-6") ||
     document.getElementById("onbp-feedback-7") ||

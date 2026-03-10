@@ -4958,6 +4958,211 @@ body.onb1-body {
   }
 }
 
+/* Onboarding 4.5 - modo apuesta */
+.onb4bet-body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.onb4bet-shell {
+  height: 100dvh;
+  min-height: 100dvh;
+  max-width: 414px;
+  margin: 0 auto;
+  padding: calc(6px + env(safe-area-inset-top)) 8px calc(10px + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-rows: 1fr;
+  overflow: hidden;
+  position: relative;
+}
+
+.onb4bet-top {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 22px;
+  right: 22px;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+}
+
+.onb4bet-top .onb-dots {
+  justify-self: center;
+}
+
+.onb4bet-top .onb-dot.active {
+  background: #ffc45d;
+  box-shadow: 0 0 0 3px rgba(255, 196, 93, 0.26);
+}
+
+.onb4bet-back {
+  width: 42px;
+  height: 42px;
+  border-color: rgba(255, 220, 167, 0.4);
+  background: linear-gradient(180deg, rgba(26, 24, 14, 0.78), rgba(18, 16, 10, 0.84));
+}
+
+.onb4bet-spacer {
+  width: 42px;
+  height: 42px;
+}
+
+.onb4bet-stage {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding-top: 10px;
+  padding-bottom: 8px;
+}
+
+.onb4bet-card {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 202, 120, 0.2);
+  overflow: hidden;
+  box-shadow: 0 24px 52px rgba(0, 0, 0, 0.58);
+  background: #1a150b;
+}
+
+.onb4bet-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 52% 33%;
+  filter: saturate(0.86) contrast(1.04) brightness(0.82);
+}
+
+.onb4bet-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(84% 36% at 50% 10%, rgba(255, 197, 116, 0.16), transparent 72%),
+    radial-gradient(120% 90% at 50% 104%, rgba(22, 17, 9, 0.52), rgba(17, 13, 7, 0.76) 72%),
+    linear-gradient(180deg, rgba(14, 11, 5, 0.16) 0%, rgba(14, 11, 5, 0.34) 56%, rgba(12, 10, 4, 0.76) 100%);
+}
+
+.onb4bet-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  padding: calc(210px + env(safe-area-inset-top)) 20px 16px;
+  display: flex;
+  flex-direction: column;
+  color: #fff8ee;
+  text-align: left;
+  gap: 10px;
+}
+
+.onb4bet-title {
+  margin: 0;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(58px, 12.8vw, 72px);
+  line-height: 0.86;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  color: #fff7ea;
+  text-shadow: 0 8px 18px rgba(0, 0, 0, 0.48);
+}
+
+.onb4bet-title span {
+  color: #ffd684;
+}
+
+.onb4bet-copy {
+  margin: 4px 0 0;
+  color: rgba(252, 239, 216, 0.94);
+  font-size: 15px;
+  line-height: 1.28;
+  font-weight: 500;
+}
+
+.onb4bet-input-wrap {
+  display: grid;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.onb4bet-input-wrap label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: rgba(255, 229, 182, 0.96);
+  text-transform: uppercase;
+}
+
+.onb4bet-input-wrap input {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 206, 121, 0.56);
+  background: rgba(24, 19, 11, 0.76);
+  color: #fff4dd;
+  padding: 10px 12px;
+  font-size: 19px;
+  font-weight: 700;
+  outline: none;
+}
+
+.onb4bet-input-wrap input::placeholder {
+  color: rgba(255, 229, 186, 0.58);
+}
+
+.onb4bet-input-wrap input:focus {
+  border-color: rgba(255, 219, 151, 0.9);
+  box-shadow: 0 0 0 2px rgba(255, 209, 118, 0.24);
+}
+
+.onb4bet-btn {
+  width: min(270px, 100%);
+  margin: auto auto 0;
+  text-align: center;
+  text-decoration: none;
+  color: #fff8eb;
+  border: 1px solid rgba(255, 224, 154, 0.86);
+  border-radius: 14px;
+  background: linear-gradient(90deg, rgba(164, 112, 31, 0.9) 0%, rgba(232, 170, 63, 0.92) 58%, rgba(255, 211, 127, 0.9) 100%);
+  box-shadow: 0 10px 24px rgba(190, 132, 30, 0.34), 0 0 0 2px rgba(255, 233, 182, 0.14) inset;
+  padding: 9px 12px 8px;
+}
+
+.onb4bet-btn strong {
+  display: block;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 46px;
+  line-height: 0.84;
+  letter-spacing: 0.3px;
+}
+
+.onb4bet-btn span {
+  display: block;
+  margin-top: 1px;
+  font-size: 15px;
+  line-height: 1.1;
+  color: #fff0d2;
+  font-weight: 600;
+}
+
+@media (max-width: 390px) {
+  .onb4bet-content {
+    padding: calc(188px + env(safe-area-inset-top)) 16px 14px;
+  }
+
+  .onb4bet-title {
+    font-size: clamp(52px, 12.1vw, 64px);
+  }
+
+  .onb4bet-copy {
+    font-size: 14px;
+  }
+}
+
 /* Onboarding 5 - goals selection cinematic card */
 .onb5v2-body {
   overflow: hidden;

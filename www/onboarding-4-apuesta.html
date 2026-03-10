@@ -1,0 +1,55 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Onboarding Apuesta | Disciplina</title>
+    <meta name="theme-color" content="#e7f8df" />
+    <link rel="preload" as="image" href="assets/extras/onb4-results.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="onb-body onb4bet-body">
+    <main class="onb4bet-shell">
+      <header class="onb4bet-top">
+        <a class="onb-back onb4bet-back" href="onboarding-4.html" aria-label="Atras">&lt;</a>
+        <div class="onb-dots onb4bet-dots">
+          <span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot active"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span>
+        </div>
+        <span class="onb4bet-spacer" aria-hidden="true"></span>
+      </header>
+
+      <section class="onb4bet-stage">
+        <article class="onb4bet-card">
+          <img class="onb4bet-bg" src="assets/extras/onb4-results.png" alt="Modo apuesta" loading="eager" decoding="async" fetchpriority="high" />
+          <div class="onb4bet-shade" aria-hidden="true"></div>
+
+          <div class="onb4bet-content">
+            <h1 class="onb4bet-title">
+              ACTIVA MODO<br />
+              <span>APUESTA</span>
+            </h1>
+
+            <p class="onb4bet-copy">
+              Tu eliges cuanto apostar (minimo $500). Tienes 1 mes para cumplir tu objetivo.
+              Si cumples, se te devuelve el dinero y tu asesoria/servicios son gratis.
+              Si no cumples, la app se queda con lo apostado (bajo validacion de cumplimiento).
+            </p>
+
+            <div class="onb4bet-input-wrap">
+              <label for="onbp-apuesta-monto">Monto a apostar (MXN)</label>
+              <input id="onbp-apuesta-monto" data-onb-input="apuesta" type="number" inputmode="numeric" min="500" step="50" required placeholder="Minimo 500" />
+            </div>
+
+            <p class="reg-feedback" id="onbp-feedback-bet"></p>
+
+            <a class="onb4bet-btn" data-onb-next href="onboarding-5.html">
+              <strong>SIGUIENTE</strong>
+              <span>Confirmar apuesta</span>
+            </a>
+          </div>
+        </article>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
