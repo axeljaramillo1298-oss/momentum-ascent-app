@@ -2808,13 +2808,6 @@ body.user-panel-premium .user-panel-top {
   gap: 18px;
 }
 
-body.user-panel-premium .user-panel-hero-layout {
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 14px;
-  align-items: center;
-}
-
 body.user-panel-premium .user-panel-nav {
   padding: 10px 14px;
   border-radius: 16px;
@@ -2830,28 +2823,6 @@ body.user-panel-premium.theme-female .user-panel-nav {
 body.user-panel-premium .today-loop {
   display: grid;
   gap: 14px;
-}
-
-body.user-panel-premium .user-panel-3d {
-  min-height: 220px;
-  border-radius: 14px;
-  border: 1px solid var(--up-card-border);
-  overflow: hidden;
-  background:
-    radial-gradient(120% 100% at 80% 20%, rgba(83, 181, 255, 0.18), transparent 70%),
-    linear-gradient(180deg, rgba(8, 24, 48, 0.82), rgba(5, 16, 34, 0.9));
-  box-shadow: 0 14px 32px rgba(7, 22, 44, 0.36);
-}
-
-body.user-panel-premium .user-panel-3d-view {
-  width: 100%;
-  height: 100%;
-  min-height: 220px;
-  display: block;
-}
-
-body.user-panel-premium.theme-female .user-panel-3d {
-  display: none;
 }
 
 body.user-panel-premium .logo {
@@ -3054,14 +3025,6 @@ body.user-panel-premium .admin-chip {
 
   body.user-panel-premium .today-extra-line {
     grid-template-columns: 1fr;
-  }
-
-  body.user-panel-premium .user-panel-hero-layout {
-    grid-template-columns: 1fr;
-  }
-
-  body.user-panel-premium .user-panel-3d {
-    min-height: 190px;
   }
 
   body.user-panel-premium .logo {
