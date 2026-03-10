@@ -2389,10 +2389,10 @@ body.user-panel-premium {
   min-height: 100dvh;
   margin: 0;
   background:
-    radial-gradient(110% 55% at 50% -4%, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0) 64%),
-    radial-gradient(82% 52% at 84% 14%, rgba(255, 190, 230, 0.22), rgba(255, 180, 226, 0) 72%),
-    linear-gradient(180deg, #e6b6d2 0%, #ce89b0 100%);
-  color: #44243b;
+    radial-gradient(110% 55% at 50% -4%, rgba(123, 188, 255, 0.2), rgba(255, 255, 255, 0) 64%),
+    radial-gradient(82% 52% at 84% 14%, rgba(47, 126, 255, 0.22), rgba(47, 126, 255, 0) 72%),
+    linear-gradient(180deg, #071633 0%, #030c1f 100%);
+  color: #dce8ff;
 }
 
 body.user-panel-premium .noise,
@@ -2409,8 +2409,8 @@ body.user-panel-premium .session-bar {
   border-radius: 0;
   border: 0;
   background:
-    radial-gradient(120% 82% at 50% -12%, rgba(255, 255, 255, 0.18), transparent 70%),
-    linear-gradient(180deg, rgba(255, 219, 239, 0.22), rgba(233, 184, 214, 0.3));
+    radial-gradient(120% 82% at 50% -12%, rgba(124, 192, 255, 0.14), transparent 70%),
+    linear-gradient(180deg, rgba(8, 30, 62, 0.38), rgba(4, 15, 32, 0.56));
   box-shadow: none;
   position: relative;
   overflow: hidden;
@@ -2420,8 +2420,8 @@ body.user-panel-premium .session-bar {
   content: "";
   position: absolute;
   inset: 0;
-  background: url("assets/extras/panel-user-bg.png") center/cover no-repeat;
-  opacity: 0.9;
+  background: url("assets/extras/home-bg.png") center/cover no-repeat;
+  opacity: 0.55;
   z-index: 0;
   pointer-events: none;
 }
@@ -2431,8 +2431,8 @@ body.user-panel-premium .session-bar {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(100% 42% at 50% 0%, rgba(255, 255, 255, 0.18), transparent 75%),
-    linear-gradient(180deg, rgba(65, 24, 51, 0.18) 0%, rgba(73, 30, 57, 0.24) 100%);
+    radial-gradient(100% 42% at 50% 0%, rgba(120, 191, 255, 0.16), transparent 75%),
+    linear-gradient(180deg, rgba(2, 10, 24, 0.14) 0%, rgba(3, 13, 31, 0.44) 100%);
   z-index: 0;
   pointer-events: none;
 }
@@ -2457,7 +2457,7 @@ body.user-panel-premium .session-bar {
 }
 
 body.user-panel-premium .logo {
-  color: rgba(255, 245, 252, 0.95);
+  color: rgba(232, 244, 255, 0.94);
   letter-spacing: 2.2px;
   font-size: 11px;
 }
@@ -2470,17 +2470,17 @@ body.user-panel-premium .nav-actions {
 
 body.user-panel-premium .nav-actions .ghost {
   border-radius: 999px;
-  border: 1px solid rgba(255, 236, 247, 0.62);
-  background: rgba(255, 240, 249, 0.18);
-  color: #ffeafa;
+  border: 1px solid rgba(135, 186, 255, 0.46);
+  background: rgba(14, 35, 70, 0.52);
+  color: #d8ecff;
   min-height: 30px;
   padding: 5px 10px;
   font-size: 12px;
 }
 
 body.user-panel-premium .nav-actions .ghost[href*="user-hoy"] {
-  background: linear-gradient(90deg, rgba(255, 245, 252, 0.36), rgba(255, 234, 248, 0.22));
-  border-color: rgba(255, 247, 253, 0.8);
+  background: linear-gradient(90deg, rgba(69, 129, 236, 0.54), rgba(57, 177, 255, 0.32));
+  border-color: rgba(141, 206, 255, 0.76);
 }
 
 .user-panel-hero {
@@ -2489,7 +2489,7 @@ body.user-panel-premium .nav-actions .ghost[href*="user-hoy"] {
 }
 
 body.user-panel-premium .eyebrow {
-  color: rgba(255, 241, 250, 0.8);
+  color: rgba(198, 225, 255, 0.84);
   letter-spacing: 2.6px;
 }
 
@@ -2498,12 +2498,12 @@ body.user-panel-premium .user-panel-hero h1 {
   font-size: clamp(42px, 12.5vw, 56px);
   line-height: 0.9;
   letter-spacing: -0.4px;
-  color: #7b2f60;
-  text-shadow: 0 6px 22px rgba(113, 38, 88, 0.22);
+  color: #e8f4ff;
+  text-shadow: 0 6px 22px rgba(33, 131, 255, 0.22);
 }
 
 body.user-panel-premium .subhead {
-  color: rgba(95, 50, 82, 0.92);
+  color: rgba(190, 218, 255, 0.92);
   max-width: 390px;
   margin-top: 8px;
 }
@@ -2523,16 +2523,16 @@ body.user-panel-premium .today-loop {
 
 body.user-panel-premium .card {
   border-radius: 16px;
-  border: 1px solid rgba(255, 224, 243, 0.8);
+  border: 1px solid rgba(131, 187, 255, 0.34);
   background:
-    linear-gradient(180deg, rgba(255, 246, 252, 0.58), rgba(255, 237, 248, 0.42));
-  box-shadow: 0 14px 32px rgba(115, 43, 90, 0.22);
+    linear-gradient(180deg, rgba(11, 28, 58, 0.74), rgba(7, 18, 37, 0.62));
+  box-shadow: 0 14px 32px rgba(7, 20, 45, 0.34);
   backdrop-filter: blur(4px);
 }
 
 body.user-panel-premium .card h3,
 body.user-panel-premium .stat-list strong {
-  color: #512940;
+  color: #ecf6ff;
 }
 
 body.user-panel-premium .today-note,
@@ -2543,50 +2543,50 @@ body.user-panel-premium .today-timer,
 body.user-panel-premium .reg-hint,
 body.user-panel-premium .admin-item p,
 body.user-panel-premium .today-plan-tier p {
-  color: #845974;
+  color: #b7d4fb;
 }
 
 body.user-panel-premium .admin-item,
 body.user-panel-premium .admin-status-item,
 body.user-panel-premium .today-plan-tier {
-  background: rgba(255, 247, 252, 0.62);
-  border-color: rgba(240, 176, 215, 0.5);
+  background: rgba(9, 26, 55, 0.58);
+  border-color: rgba(113, 173, 255, 0.34);
 }
 
 body.user-panel-premium .admin-chip {
-  background: rgba(255, 243, 250, 0.68);
-  color: #71425d;
-  border-color: rgba(238, 174, 212, 0.56);
+  background: rgba(10, 29, 60, 0.7);
+  color: #b9d7ff;
+  border-color: rgba(113, 173, 255, 0.46);
 }
 
 body.user-panel-premium .admin-chip.green {
-  color: #29684d;
+  color: #93e2bc;
 }
 
 body.user-panel-premium .admin-chip.yellow {
-  color: #76581a;
+  color: #ffd98d;
 }
 
 body.user-panel-premium .admin-chip.red,
 body.user-panel-premium .admin-chip.pending {
-  color: #833850;
+  color: #ffb7b7;
 }
 
 body.user-panel-premium .today-actions .primary {
   min-width: 100px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 244, 252, 0.82);
-  background: linear-gradient(90deg, #b6e8da, #f58bb8);
-  color: #5b2c47;
-  box-shadow: 0 10px 20px rgba(187, 82, 139, 0.26);
+  border: 1px solid rgba(148, 214, 255, 0.8);
+  background: linear-gradient(90deg, #3b7fff, #46d4ff);
+  color: #eaf7ff;
+  box-shadow: 0 10px 20px rgba(44, 133, 255, 0.32);
 }
 
 body.user-panel-premium .today-actions .ghost {
   min-width: 100px;
   border-radius: 999px;
-  border: 1px solid rgba(240, 170, 210, 0.62);
-  color: #7b3d62;
-  background: rgba(255, 244, 251, 0.48);
+  border: 1px solid rgba(121, 185, 255, 0.62);
+  color: #b9d8ff;
+  background: rgba(8, 25, 52, 0.58);
 }
 
 .today-grid {
@@ -2676,6 +2676,57 @@ body.user-panel-premium .today-actions .ghost {
   gap: 12px;
   border-bottom: 1px solid var(--line);
   padding-bottom: 6px;
+}
+
+body.user-panel-premium .stat-list li {
+  border-bottom-color: rgba(121, 185, 255, 0.2);
+}
+
+body.user-panel-premium .today-actions .ghost:hover,
+body.user-panel-premium .nav-actions .ghost:hover {
+  background: rgba(21, 49, 94, 0.72);
+}
+
+/* Female override */
+body.user-panel-premium.theme-female {
+  background:
+    radial-gradient(110% 55% at 50% -4%, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0) 64%),
+    radial-gradient(82% 52% at 84% 14%, rgba(255, 190, 230, 0.22), rgba(255, 180, 226, 0) 72%),
+    linear-gradient(180deg, #e6b6d2 0%, #ce89b0 100%);
+  color: #44243b;
+}
+
+body.user-panel-premium.theme-female .user-panel-shell::before {
+  background: url("assets/extras/panel-user-bg.png") center/cover no-repeat;
+  opacity: 0.9;
+}
+
+body.user-panel-premium.theme-female .user-panel-shell::after {
+  background:
+    radial-gradient(100% 42% at 50% 0%, rgba(255, 255, 255, 0.18), transparent 75%),
+    linear-gradient(180deg, rgba(65, 24, 51, 0.18) 0%, rgba(73, 30, 57, 0.24) 100%);
+}
+
+body.user-panel-premium.theme-female .card {
+  border-color: rgba(255, 224, 243, 0.8);
+  background: linear-gradient(180deg, rgba(255, 246, 252, 0.58), rgba(255, 237, 248, 0.42));
+  box-shadow: 0 14px 32px rgba(115, 43, 90, 0.22);
+}
+
+body.user-panel-premium.theme-female .card h3,
+body.user-panel-premium.theme-female .stat-list strong {
+  color: #512940;
+}
+
+body.user-panel-premium.theme-female .today-note,
+body.user-panel-premium.theme-female .today-date,
+body.user-panel-premium.theme-female .today-pressure,
+body.user-panel-premium.theme-female .today-status-line,
+body.user-panel-premium.theme-female .today-timer,
+body.user-panel-premium.theme-female .reg-hint,
+body.user-panel-premium.theme-female .admin-item p,
+body.user-panel-premium.theme-female .today-plan-tier p {
+  color: #845974;
 }
 
 body.theme-female .today-loop {
