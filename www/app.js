@@ -4514,7 +4514,7 @@ const initDynamicOnboarding = () => {
         const val = opt.dataset.onbValue;
         if (conf.type === "multi") {
           const current = Array.isArray(state[key]) ? [...state[key]] : [];
-          if (key === "equipo_casa") {
+          if (key === "equipo_casa" || key === "extras_plan") {
             const noneValue = "Ninguno";
             if (val === noneValue) {
               state[key] = [noneValue];
@@ -4729,6 +4729,10 @@ const initDynamicOnboarding = () => {
         })
       );
 
+      const selectedExtras = Array.isArray(state.extras_plan)
+        ? state.extras_plan.filter((item) => item && item !== "Ninguno")
+        : [];
+
       const draft = {
         nombre: state.nombre || "",
         email,
@@ -4755,6 +4759,7 @@ const initDynamicOnboarding = () => {
         modo_especial: state.modo_especial || "",
         apuesta: state.apuesta || "",
         plan: state.plan || "",
+        extras_plan: selectedExtras.join(" | "),
         foto_checkin: state.foto_checkin || "",
         compromiso: state.compromiso ? "on" : "",
         aviso: state.aviso ? "on" : "",
@@ -4771,15 +4776,15 @@ const initDynamicOnboarding = () => {
       persistPlanSelection({
         id: state.plan || "Free",
         extras: {
-          diet_basic: false,
-          diet_plus: false,
+          diet_basic: selectedExtras.includes("Seguimiento personalizado"),
+          diet_plus: selectedExtras.includes("Dieta Pro"),
         },
       });
       localStorage.setItem(ONBOARDING_DONE_KEY, "1");
       localStorage.removeItem(ONBP_DYNAMIC_KEY);
       sessionStorage.removeItem(ONBP_SESSION_KEY);
       onboardingPages.forEach((p) => sessionStorage.removeItem(`${ONBP_TOUCHED_PREFIX}${p}`));
-      window.location.href = "user-hoy.html";
+      window.location.href = "onboarding-resumen.html";
     });
   }
 
@@ -4787,6 +4792,46 @@ const initDynamicOnboarding = () => {
 };
 
 initDynamicOnboarding();
+
+const initOnboardingSummary = () => {
+  const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
+  if (page !== "onboarding-resumen.html") {
+    return;
+  }
+
+  const draft = getRegDraft();
+  const selectedPlan = normalizePlanSelection({
+    id: draft.plan || getPlanSelection().id || "free",
+    extras: getPlanSelection().extras,
+  });
+
+  const extras = String(draft.extras_plan || "")
+    .split("|")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  const planEl = document.getElementById("onb-summary-plan");
+  const extrasEl = document.getElementById("onb-summary-extras");
+  const costEl = document.getElementById("onb-summary-cost");
+  const statusEl = document.getElementById("onb-summary-status");
+  const paymentBox = document.getElementById("onb-summary-payment");
+
+  if (planEl) planEl.textContent = selectedPlan.label || "Free";
+  if (extrasEl) extrasEl.textContent = extras.length ? extras.join(", ") : "Ninguno";
+
+  const isFree = selectedPlan.id === "free";
+  if (costEl) {
+    costEl.textContent = isFree ? "Gratis" : selectedPlan.price || "Costo pendiente";
+  }
+  if (statusEl) {
+    statusEl.textContent = isFree ? "Activo sin pago" : "Pendiente de validacion de pago";
+  }
+  if (paymentBox) {
+    paymentBox.style.display = isFree ? "none" : "";
+  }
+};
+
+initOnboardingSummary();
 
 const SQUAD_KEY = "discipline_squad_v1";
 const MISSIONS_KEY = "discipline_missions_v1";

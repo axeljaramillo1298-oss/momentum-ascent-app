@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Resumen de activacion</title>
+    <meta name="theme-color" content="#e9f2ff" />
+    <link rel="preload" as="image" href="assets/extras/onb6-status.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="onb-body onb10v2-body">
+    <main class="onb10v2-shell">
+      <section class="onb10v2-stage">
+        <article class="onb10v2-card">
+          <img class="onb10v2-bg" src="assets/extras/onb6-status.png" alt="Resumen de cuenta" loading="eager" decoding="async" fetchpriority="high" />
+          <div class="onb10v2-shade" aria-hidden="true"></div>
+
+          <div class="onb10v2-content">
+            <h1 class="onb10v2-title">RESUMEN DE<br /><span>ACTIVACION</span></h1>
+            <p class="onb10v2-subtitle">Verifica tu plan, extras y datos de pago.</p>
+
+            <article class="onb10v2-box">
+              <p class="onb10v2-row"><strong>Plan elegido:</strong> <span id="onb-summary-plan">-</span></p>
+              <p class="onb10v2-row"><strong>Extras:</strong> <span id="onb-summary-extras">-</span></p>
+              <p class="onb10v2-row"><strong>Costo:</strong> <span id="onb-summary-cost">-</span></p>
+              <p class="onb10v2-row"><strong>Estado:</strong> <span id="onb-summary-status">-</span></p>
+            </article>
+
+            <article class="onb10v2-box" id="onb-summary-payment">
+              <h3>DATOS DE PAGO</h3>
+              <p>Banco: BBVA</p>
+              <p>CLABE: 012345678901234567</p>
+              <p>Titular: Momentum Ascent</p>
+              <p>Referencia: tu correo de registro</p>
+              <small>Si ya hiciste la transferencia, sera validada y tu acceso se actualizara pronto.</small>
+            </article>
+
+            <a class="onb-go onb10v2-btn" href="user-hoy.html">
+              <strong>SEGUIR NAVEGANDO</strong>
+            </a>
+          </div>
+        </article>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
