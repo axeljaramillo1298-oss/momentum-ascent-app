@@ -3856,7 +3856,15 @@ body.onb1-body {
 }
 
 .onb1v2-rachacard small::before {
-  content: "?? ";
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, #ffd27a 0%, #ff973d 58%, #c4471e 100%);
+  box-shadow: 0 0 10px rgba(255, 131, 61, 0.38);
+  vertical-align: -1px;
 }
 
 .onb1v2-rachacard small {
@@ -3959,9 +3967,16 @@ body.onb1-body {
 }
 
 .onb1v2-global::before {
-  content: "?? ";
-  font-size: 12px;
-  font-family: inherit;
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 2px;
+  transform: rotate(45deg);
+  background: linear-gradient(180deg, #7fc6ff, #4b8dff);
+  box-shadow: 0 0 10px rgba(80, 142, 255, 0.38);
+  vertical-align: 1px;
 }
 
 .onb1v2-start {
@@ -4254,25 +4269,24 @@ body.onb1-body {
 }
 
 .onb2v2-list li::before {
-  width: auto;
-  height: auto;
+  width: 14px;
+  height: 14px;
   flex: 0 0 auto;
-  background: none;
-  box-shadow: none;
-  font-size: 18px;
-  line-height: 1;
+  border-radius: 999px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.22);
+  content: "";
 }
 
 .onb2v2-list li.fire::before {
-  content: "??";
+  background: radial-gradient(circle at 30% 30%, #ffd57a 0%, #ff9f46 58%, #cb4a22 100%);
 }
 
 .onb2v2-list li.apple::before {
-  content: "??";
+  background: radial-gradient(circle at 30% 30%, #c9ff9d 0%, #67d269 58%, #2d8f43 100%);
 }
 
 .onb2v2-list li.bolt::before {
-  content: "?";
+  background: radial-gradient(circle at 30% 30%, #fff59f 0%, #ffd54a 58%, #d39b1f 100%);
 }
 
 .onb2v2-btn {
