@@ -4450,6 +4450,9 @@ const initDynamicOnboarding = () => {
   const state = readOnbpState();
   if (page === "onboarding-4-apuesta.html") {
     state.modo_especial = "Apuesta";
+    if (!String(state.apuesta || "").trim()) {
+      state.apuesta = "500";
+    }
     saveOnbpState(state);
   }
   const touchedStorageKey = `${ONBP_TOUCHED_PREFIX}${page}`;

@@ -5052,7 +5052,7 @@ body.onb1-body {
   position: relative;
   z-index: 1;
   height: 100%;
-  padding: calc(120px + env(safe-area-inset-top)) 18px 14px;
+  padding: calc(118px + env(safe-area-inset-top)) 16px 12px;
   display: flex;
   flex-direction: column;
   color: #fff8ee;
@@ -5072,12 +5072,13 @@ body.onb1-body {
 
 .onb4bet-title {
   margin: 0;
-  font-family: "Bebas Neue", sans-serif;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-weight: 700;
   text-align: center;
-  font-size: clamp(52px, 11.8vw, 62px);
-  line-height: 0.86;
+  font-size: clamp(52px, 10.8vw, 58px);
+  line-height: 0.9;
   text-transform: uppercase;
-  letter-spacing: 0;
+  letter-spacing: 0.4px;
   color: #fff7ea;
   text-shadow: 0 8px 18px rgba(0, 0, 0, 0.48);
 }
@@ -5090,18 +5091,19 @@ body.onb1-body {
   margin: 0;
   text-align: center;
   color: rgba(252, 239, 216, 0.94);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.34;
   font-weight: 500;
 }
 
 .onb4bet-panel {
-  margin-top: 4px;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 208, 126, 0.58);
+  margin: 4px auto 0;
+  width: min(332px, 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 208, 126, 0.62);
   background: linear-gradient(180deg, rgba(21, 14, 8, 0.72), rgba(15, 10, 6, 0.84));
-  box-shadow: 0 0 0 1px rgba(255, 212, 133, 0.2), 0 14px 28px rgba(0, 0, 0, 0.4), inset 0 0 24px rgba(255, 202, 108, 0.09);
-  padding: 12px 12px 10px;
+  box-shadow: 0 0 0 1px rgba(255, 212, 133, 0.24), 0 14px 28px rgba(0, 0, 0, 0.44), inset 0 0 26px rgba(255, 202, 108, 0.1);
+  padding: 13px 14px 12px;
   position: relative;
 }
 
@@ -5121,21 +5123,41 @@ body.onb1-body {
   box-shadow: 0 0 14px rgba(250, 194, 86, 0.42);
 }
 
+.onb4bet-seal::before,
+.onb4bet-seal::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 74px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 141, 0.76), transparent);
+}
+
+.onb4bet-seal::before {
+  right: calc(100% + 8px);
+}
+
+.onb4bet-seal::after {
+  left: calc(100% + 8px);
+}
+
 .onb4bet-panel h2 {
-  margin: 10px 0 4px;
+  margin: 10px 0 5px;
   text-align: center;
-  font-family: "Bebas Neue", sans-serif;
-  font-size: 38px;
-  line-height: 0.86;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 33px;
+  line-height: 0.94;
   color: #ffe5ae;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
 }
 
 .onb4bet-panel > p {
   margin: 0;
   text-align: center;
   color: rgba(255, 233, 188, 0.9);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .onb4bet-minimo {
@@ -5148,7 +5170,7 @@ body.onb1-body {
 .onb4bet-minimo strong {
   display: block;
   font-family: "Bebas Neue", sans-serif;
-  font-size: 38px;
+  font-size: 42px;
   line-height: 0.86;
   letter-spacing: 0.6px;
   color: #ffd992;
@@ -5191,10 +5213,10 @@ body.onb1-body {
 }
 
 .onb4bet-rule {
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   text-align: center;
   color: rgba(255, 226, 169, 0.88);
-  font-size: 12px;
+  font-size: 11.5px;
   padding-top: 6px;
   border-top: 1px solid rgba(255, 209, 129, 0.24);
 }
@@ -5207,10 +5229,12 @@ body.onb1-body {
 
 .onb4bet-cols h3 {
   margin: 0;
-  font-family: "Bebas Neue", sans-serif;
-  font-size: 30px;
-  line-height: 0.88;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 31px;
+  line-height: 0.9;
   color: #ffd890;
+  letter-spacing: 0.2px;
 }
 
 .onb4bet-cols ul {
@@ -5220,7 +5244,7 @@ body.onb1-body {
   display: grid;
   gap: 1px;
   color: rgba(255, 235, 197, 0.94);
-  font-size: 13px;
+  font-size: 12.5px;
 }
 
 .onb4bet-cols ul li::before {
@@ -5235,9 +5259,9 @@ body.onb1-body {
 }
 
 .onb4bet-note {
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   color: rgba(255, 229, 183, 0.72);
-  font-size: 11px;
+  font-size: 10.5px;
   line-height: 1.25;
   text-align: center;
   border-top: 1px solid rgba(255, 209, 129, 0.18);
@@ -5245,7 +5269,7 @@ body.onb1-body {
 }
 
 .onb4bet-btn {
-  width: min(270px, 100%);
+  width: min(232px, 100%);
   margin: auto auto 0;
   text-align: center;
   text-decoration: none;
@@ -5254,15 +5278,15 @@ body.onb1-body {
   border-radius: 999px;
   background: linear-gradient(90deg, rgba(111, 72, 22, 0.94) 0%, rgba(207, 147, 50, 0.94) 52%, rgba(255, 208, 122, 0.92) 100%);
   box-shadow: 0 10px 24px rgba(190, 132, 30, 0.34), 0 0 0 2px rgba(255, 233, 182, 0.14) inset;
-  padding: 9px 12px 8px;
+  padding: 8px 10px 7px;
 }
 
 .onb4bet-btn strong {
   display: block;
   font-family: "Bebas Neue", sans-serif;
-  font-size: 42px;
+  font-size: 38px;
   line-height: 0.84;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
 }
 
 @media (max-width: 390px) {
@@ -5271,19 +5295,19 @@ body.onb1-body {
   }
 
   .onb4bet-title {
-    font-size: clamp(46px, 11.6vw, 56px);
+    font-size: clamp(42px, 10.8vw, 52px);
   }
 
   .onb4bet-copy {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .onb4bet-panel h2 {
-    font-size: 34px;
+    font-size: 30px;
   }
 
   .onb4bet-minimo strong {
-    font-size: 34px;
+    font-size: 36px;
   }
 
   .onb4bet-cols h3 {
@@ -5291,7 +5315,11 @@ body.onb1-body {
   }
 
   .onb4bet-cols ul {
-    font-size: 12px;
+    font-size: 11.5px;
+  }
+
+  .onb4bet-btn strong {
+    font-size: 34px;
   }
 }
 
