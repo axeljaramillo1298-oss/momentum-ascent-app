@@ -3043,6 +3043,126 @@ body.user-panel-premium .admin-chip {
   }
 }
 
+/* Conversion + readability upgrades */
+body.user-panel-premium .card {
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+body.user-panel-premium .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 34px rgba(9, 28, 56, 0.36);
+}
+
+body.user-panel-premium .today-sales-banner {
+  border: 1px solid var(--up-card-border);
+  border-radius: 14px;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+  background:
+    radial-gradient(120% 130% at 100% 0%, rgba(86, 177, 255, 0.16), transparent 65%),
+    linear-gradient(180deg, rgba(10, 31, 62, 0.76), rgba(8, 20, 42, 0.7));
+}
+
+body.user-panel-premium .today-sales-banner.max {
+  border-color: rgba(122, 225, 170, 0.5);
+  background:
+    radial-gradient(120% 130% at 100% 0%, rgba(110, 230, 172, 0.15), transparent 65%),
+    linear-gradient(180deg, rgba(10, 34, 47, 0.76), rgba(8, 24, 34, 0.7));
+}
+
+body.user-panel-premium .today-sales-banner strong {
+  color: var(--up-strong);
+  font-size: 16px;
+}
+
+body.user-panel-premium .today-sales-banner p {
+  margin: 4px 0 0;
+  color: var(--up-muted);
+  font-size: 13px;
+}
+
+body.user-panel-premium .today-sales-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+body.user-panel-premium .today-sales-points span {
+  border: 1px solid var(--up-chip-border);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--up-text);
+  background: var(--up-chip-bg);
+}
+
+body.user-panel-premium .today-feature-item {
+  border: 1px solid var(--up-card-border);
+  border-radius: 12px;
+}
+
+/* Female contrast fixes */
+body.user-panel-premium.theme-female .card {
+  box-shadow: 0 14px 30px rgba(133, 58, 104, 0.22);
+}
+
+body.user-panel-premium.theme-female .today-note,
+body.user-panel-premium.theme-female .today-date,
+body.user-panel-premium.theme-female .today-pressure,
+body.user-panel-premium.theme-female .today-status-line,
+body.user-panel-premium.theme-female .today-timer,
+body.user-panel-premium.theme-female .reg-hint,
+body.user-panel-premium.theme-female .admin-item p,
+body.user-panel-premium.theme-female .today-plan-tier p,
+body.user-panel-premium.theme-female .today-sales-banner p {
+  color: #754b66;
+}
+
+body.user-panel-premium.theme-female .admin-item,
+body.user-panel-premium.theme-female .admin-status-item,
+body.user-panel-premium.theme-female .today-feature-item,
+body.user-panel-premium.theme-female .today-plan-tier,
+body.user-panel-premium.theme-female #smart-reminders .admin-item {
+  background: rgba(255, 246, 252, 0.78) !important;
+  border-color: rgba(236, 176, 214, 0.62) !important;
+}
+
+body.user-panel-premium.theme-female .today-sales-banner {
+  background:
+    radial-gradient(120% 130% at 100% 0%, rgba(255, 181, 225, 0.2), transparent 65%),
+    linear-gradient(180deg, rgba(255, 244, 251, 0.74), rgba(255, 233, 246, 0.62));
+  border-color: rgba(235, 172, 211, 0.65);
+}
+
+body.user-panel-premium.theme-female .today-sales-banner.max {
+  border-color: rgba(129, 209, 160, 0.64);
+}
+
+body.user-panel-premium.theme-female .today-sales-points span,
+body.user-panel-premium.theme-female .admin-chip {
+  color: #6f445e;
+}
+
+body.user-panel-premium.theme-female .admin-status-pill.red,
+body.user-panel-premium.theme-female .admin-status-pill.pending {
+  color: #9d4963;
+  border-color: rgba(222, 120, 151, 0.58);
+  background: rgba(255, 230, 241, 0.78);
+}
+
+body.user-panel-premium.theme-female .admin-status-pill.yellow {
+  color: #8a6d2e;
+  border-color: rgba(220, 185, 102, 0.64);
+  background: rgba(255, 244, 210, 0.72);
+}
+
+body.user-panel-premium.theme-female .admin-status-pill.green {
+  color: #2f7255;
+  border-color: rgba(112, 201, 155, 0.62);
+  background: rgba(226, 255, 241, 0.72);
+}
+
 .onb-body {
   background:
     radial-gradient(1100px 520px at 10% -10%, rgba(21, 82, 179, 0.46), transparent 68%),

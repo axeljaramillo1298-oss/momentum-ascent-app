@@ -3548,6 +3548,18 @@ function buildPlanStatusHtml(caps) {
     { label: "Horario", value: draft.horario || "-" },
     { label: "Check-in foto", value: draft.foto_checkin || "-" },
   ];
+  const salesCopy =
+    caps.plan.id === "coach_humano"
+      ? {
+          title: "Plan Maximo activo",
+          desc: "Ya tienes IA + coach humano + prioridad de seguimiento. Enfocate en ejecutar.",
+          cta: "Gestionar plan",
+        }
+      : {
+          title: "Desbloquea resultados mas rapidos",
+          desc: "Activa Coach + Humano para revision 1:1, ajustes premium y mejor adherencia diaria.",
+          cta: "Subir a plan maximo",
+        };
 
   const enabledCount = accessRows.filter((r) => r.cls === "green").length;
   const pendingCount = accessRows.filter((r) => r.cls === "pending").length;
@@ -3609,6 +3621,18 @@ function buildPlanStatusHtml(caps) {
           )
           .join("")}
       </div>
+      <article class="today-sales-banner ${caps.plan.id === "coach_humano" ? "max" : ""}">
+        <div>
+          <strong>${salesCopy.title}</strong>
+          <p>${salesCopy.desc}</p>
+        </div>
+        <div class="today-sales-points">
+          <span>IA adaptativa</span>
+          <span>Coach humano</span>
+          <span>Seguimiento premium</span>
+        </div>
+        <a class="${caps.plan.id === "coach_humano" ? "ghost" : "primary"}" href="planes.html">${salesCopy.cta}</a>
+      </article>
       <div class="role-actions">
         <a class="ghost" href="planes.html">Cambiar plan (upgrade/downgrade)</a>
       </div>
