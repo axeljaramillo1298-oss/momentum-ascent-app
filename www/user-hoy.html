@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="es">
   <head>
     <meta charset="utf-8" />
@@ -6,37 +6,37 @@
     <title>Hoy | User</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
-    <div class="noise"></div>
-    <div class="stars"></div>
-    <header class="hero page-hero">
-      <nav class="nav">
-        <div class="logo">DISCIPLINA</div>
-        <div class="nav-actions">
-          <a class="ghost" href="index.html">Inicio</a>
-          <a class="ghost" href="user-hoy.html">Hoy</a>
-          <a class="ghost" href="user-rutinas.html">Rutinas</a>
-          <a class="ghost" href="user-progreso.html">Progreso</a>
-          <a class="ghost" href="user-dieta.html">Dieta</a>
-          <a class="ghost" href="user-checkin.html">Foto</a>
-          <a class="ghost" href="admin.html" data-role-only="admin">Admin</a>
+  <body class="user-panel-premium">
+    <main class="user-panel-shell">
+      <header class="user-panel-top">
+        <nav class="user-panel-nav">
+          <div class="logo">MOMENTUM ASCENT</div>
+          <div class="nav-actions">
+            <a class="ghost" href="index.html">Inicio</a>
+            <a class="ghost" href="user-hoy.html">Hoy</a>
+            <a class="ghost" href="user-rutinas.html">Rutinas</a>
+            <a class="ghost" href="user-progreso.html">Progreso</a>
+            <a class="ghost" href="user-dieta.html">Dieta</a>
+            <a class="ghost" href="user-checkin.html">Foto</a>
+            <a class="ghost" href="admin.html" data-role-only="admin">Admin</a>
+          </div>
+        </nav>
+        <div class="user-panel-hero">
+          <p class="eyebrow">MOMENTUM INDEX</p>
+          <h1>CONTROL DE HOY</h1>
+          <p class="subhead">Check-in diario con limite de 10 minutos. El silencio tambien cuenta como respuesta.</p>
         </div>
-      </nav>
-      <div class="hero-grid">
-        <div class="hero-copy">
-          <p class="eyebrow">Modulo User</p>
-          <h1>Pantalla de hoy</h1>
-          <p class="subhead">Check-in diario con limite de 10 minutos, estado y castigo acumulado.</p>
-        </div>
-      </div>
-    </header>
-    <main>
+      </header>
+
       <section class="section today-loop">
-        <article class="card" id="user-plan-panel"></article>
-        <article class="card">
-          <h3>Notificaciones</h3>
-          <div id="user-notifications" class="admin-list"></div>
-        </article>
+        <div class="today-top-grid">
+          <article class="card" id="user-plan-panel"></article>
+          <article class="card">
+            <h3>Notificaciones</h3>
+            <div id="user-notifications" class="admin-list"></div>
+          </article>
+        </div>
+
         <div class="today-grid">
           <article class="card today-main">
             <h3 id="today-question">Check-in del dia. Cumpliste?</h3>
@@ -51,8 +51,9 @@
               <button class="ghost" id="today-reset-window" type="button">Reiniciar ventana</button>
             </div>
           </article>
+
           <article class="card today-stats">
-            <h3>Estado de disciplina</h3>
+            <h3>Disciplina</h3>
             <ul class="stat-list">
               <li><span>Racha</span><strong id="today-streak">-</strong></li>
               <li><span>Mejor racha</span><strong id="today-best-streak">-</strong></li>
@@ -83,6 +84,7 @@
             <div id="smart-reminders" class="admin-list"></div>
           </article>
         </div>
+
         <div class="mission-grid">
           <article class="card" id="today-card-missions">
             <h3>Misiones diarias</h3>

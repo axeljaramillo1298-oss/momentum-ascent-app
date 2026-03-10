@@ -2384,6 +2384,195 @@ body.theme-female .tag {
   background: linear-gradient(150deg, rgba(255, 59, 48, 0.12), transparent 65%);
 }
 
+/* User panel premium theme */
+body.user-panel-premium {
+  min-height: 100dvh;
+  background:
+    radial-gradient(120% 60% at 50% -5%, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0) 62%),
+    radial-gradient(80% 50% at 80% 16%, rgba(255, 180, 226, 0.24), rgba(255, 180, 226, 0) 72%),
+    linear-gradient(180deg, #e9bfd7 0%, #d89abd 100%);
+  color: #44243b;
+}
+
+body.user-panel-premium .noise,
+body.user-panel-premium .stars,
+body.user-panel-premium .session-bar {
+  display: none !important;
+}
+
+.user-panel-shell {
+  width: min(100%, 920px);
+  margin: 10px auto 0;
+  padding: 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 244, 252, 0.48);
+  background:
+    radial-gradient(120% 80% at 50% -12%, rgba(255, 255, 255, 0.25), transparent 70%),
+    linear-gradient(180deg, rgba(255, 219, 239, 0.34), rgba(233, 184, 214, 0.42));
+  box-shadow: 0 22px 50px rgba(123, 53, 101, 0.28);
+  position: relative;
+  overflow: hidden;
+}
+
+.user-panel-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("assets/extras/panel-user-bg.png") center/cover no-repeat;
+  opacity: 0.68;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.user-panel-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.user-panel-top {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.user-panel-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 4px;
+}
+
+body.user-panel-premium .logo {
+  color: rgba(255, 245, 252, 0.95);
+  letter-spacing: 2px;
+  font-size: 12px;
+}
+
+body.user-panel-premium .nav-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+body.user-panel-premium .nav-actions .ghost {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 233, 246, 0.56);
+  background: rgba(255, 230, 245, 0.18);
+  color: #ffeafa;
+  min-height: 32px;
+  padding: 6px 12px;
+}
+
+body.user-panel-premium .nav-actions .ghost[href*="user-hoy"] {
+  background: linear-gradient(90deg, rgba(255, 245, 252, 0.36), rgba(255, 234, 248, 0.22));
+  border-color: rgba(255, 247, 253, 0.8);
+}
+
+.user-panel-hero {
+  max-width: 560px;
+  padding: 6px 4px;
+}
+
+body.user-panel-premium .eyebrow {
+  color: rgba(255, 241, 250, 0.8);
+  letter-spacing: 2.6px;
+}
+
+body.user-panel-premium .user-panel-hero h1 {
+  margin: 0;
+  font-size: clamp(36px, 5.2vw, 52px);
+  line-height: 0.92;
+  letter-spacing: -0.8px;
+  color: #7d2f64;
+}
+
+body.user-panel-premium .subhead {
+  color: rgba(91, 47, 79, 0.88);
+  max-width: 420px;
+  margin-top: 8px;
+}
+
+body.user-panel-premium .today-loop {
+  background: none;
+  padding: 0;
+  border: 0;
+}
+
+.today-top-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+body.user-panel-premium .card {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 224, 243, 0.75);
+  background:
+    linear-gradient(180deg, rgba(255, 246, 252, 0.52), rgba(255, 237, 248, 0.34));
+  box-shadow: 0 14px 30px rgba(115, 43, 90, 0.2);
+  backdrop-filter: blur(3px);
+}
+
+body.user-panel-premium .card h3,
+body.user-panel-premium .stat-list strong {
+  color: #512940;
+}
+
+body.user-panel-premium .today-note,
+body.user-panel-premium .today-date,
+body.user-panel-premium .today-pressure,
+body.user-panel-premium .today-status-line,
+body.user-panel-premium .today-timer,
+body.user-panel-premium .reg-hint,
+body.user-panel-premium .admin-item p,
+body.user-panel-premium .today-plan-tier p {
+  color: #845974;
+}
+
+body.user-panel-premium .admin-item,
+body.user-panel-premium .admin-status-item,
+body.user-panel-premium .today-plan-tier {
+  background: rgba(255, 247, 252, 0.62);
+  border-color: rgba(240, 176, 215, 0.5);
+}
+
+body.user-panel-premium .admin-chip {
+  background: rgba(255, 243, 250, 0.68);
+  color: #71425d;
+  border-color: rgba(238, 174, 212, 0.56);
+}
+
+body.user-panel-premium .admin-chip.green {
+  color: #29684d;
+}
+
+body.user-panel-premium .admin-chip.yellow {
+  color: #76581a;
+}
+
+body.user-panel-premium .admin-chip.red,
+body.user-panel-premium .admin-chip.pending {
+  color: #833850;
+}
+
+body.user-panel-premium .today-actions .primary {
+  min-width: 92px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 241, 250, 0.68);
+  background: linear-gradient(90deg, #b6f2dd, #f18ab4);
+  color: #592b45;
+}
+
+body.user-panel-premium .today-actions .ghost {
+  min-width: 92px;
+  border-radius: 999px;
+  border: 1px solid rgba(240, 170, 210, 0.62);
+  color: #7b3d62;
+  background: rgba(255, 244, 251, 0.4);
+}
+
 .today-grid {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
@@ -2491,6 +2680,23 @@ body.theme-female .today-plan-tier.active {
 }
 
 @media (max-width: 980px) {
+  .user-panel-shell {
+    margin-top: 0;
+    border-radius: 0;
+    width: 100%;
+    min-height: 100dvh;
+    padding: 10px;
+  }
+
+  .user-panel-nav {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  body.user-panel-premium .nav-actions {
+    justify-content: center;
+  }
+
   .today-grid {
     grid-template-columns: 1fr;
   }
