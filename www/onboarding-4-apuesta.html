@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Onboarding Apuesta | Disciplina</title>
-    <meta name="theme-color" content="#e7f8df" />
-    <link rel="preload" as="image" href="assets/extras/onb4-results.png" />
+    <meta name="theme-color" content="#1c1309" />
+    <link rel="preload" as="image" href="assets/extras/onb4-bet.png" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="onb-body onb4bet-body">
@@ -20,31 +20,59 @@
 
       <section class="onb4bet-stage">
         <article class="onb4bet-card">
-          <img class="onb4bet-bg" src="assets/extras/onb4-results.png" alt="Modo apuesta" loading="eager" decoding="async" fetchpriority="high" />
+          <img class="onb4bet-bg" src="assets/extras/onb4-bet.png" alt="Modo apuesta" loading="eager" decoding="async" fetchpriority="high" />
           <div class="onb4bet-shade" aria-hidden="true"></div>
 
           <div class="onb4bet-content">
-            <h1 class="onb4bet-title">
-              ACTIVA MODO<br />
-              <span>APUESTA</span>
-            </h1>
+            <p class="onb4bet-kicker">ACTIVA</p>
+            <h1 class="onb4bet-title">MODO APUESTA.</h1>
 
             <p class="onb4bet-copy">
-              Tu eliges cuanto apostar (minimo $500). Tienes 1 mes para cumplir tu objetivo.
-              Si cumples, se te devuelve el dinero y tu asesoria/servicios son gratis.
-              Si no cumples, la app se queda con lo apostado (bajo validacion de cumplimiento).
+              Comprometete con tu objetivo.<br />
+              Pon dinero en juego.<br />
+              Cumple o pierdes.
             </p>
 
-            <div class="onb4bet-input-wrap">
-              <label for="onbp-apuesta-monto">Monto a apostar (MXN)</label>
-              <input id="onbp-apuesta-monto" data-onb-input="apuesta" type="number" inputmode="numeric" min="500" step="50" required placeholder="Minimo 500" />
-            </div>
+            <section class="onb4bet-panel">
+              <div class="onb4bet-seal" aria-hidden="true">🏆</div>
+              <h2>APUESTA PERSONAL</h2>
+              <p>Tu eliges cuanto apostar.</p>
+              <div class="onb4bet-minimo">Monto minimo: <strong>$500 MXN</strong></div>
+
+              <div class="onb4bet-input-wrap">
+                <label for="onbp-apuesta-monto">Tu monto (MXN)</label>
+                <input id="onbp-apuesta-monto" data-onb-input="apuesta" type="number" inputmode="numeric" min="500" step="50" required placeholder="Minimo 500" />
+              </div>
+
+              <p class="onb4bet-rule">Tienes 30 dias para cumplir tu objetivo.</p>
+
+              <div class="onb4bet-cols">
+                <div>
+                  <h3>Si cumples:</h3>
+                  <ul>
+                    <li>Recuperas tu dinero</li>
+                    <li>Tu asesoria es GRATIS</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3>Si no cumples:</h3>
+                  <ul class="lose">
+                    <li>El monto apostado se pierde</li>
+                    <li>(bajo validacion del sistema)</li>
+                  </ul>
+                </div>
+              </div>
+
+              <p class="onb4bet-note">
+                La validacion del cumplimiento se realiza mediante check-ins,
+                registro de actividad y revision del sistema.
+              </p>
+            </section>
 
             <p class="reg-feedback" id="onbp-feedback-bet"></p>
 
             <a class="onb4bet-btn" data-onb-next href="onboarding-5.html">
               <strong>SIGUIENTE</strong>
-              <span>Confirmar apuesta</span>
             </a>
           </div>
         </article>
