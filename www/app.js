@@ -251,6 +251,15 @@ const initMobileMenu = () => {
 
 initMobileMenu();
 
+document.addEventListener("click", (event) => {
+  const trigger = event.target.closest("[data-action='theme']");
+  if (!trigger) {
+    return;
+  }
+  event.preventDefault();
+  openThemeSelector();
+});
+
 const ROLE_KEY = "discipline_role_mode";
 const ADMIN_ROUTINES_KEY = "discipline_admin_routines_v1";
 const ADMIN_NUTRITION_KEY = "discipline_admin_nutrition_v1";

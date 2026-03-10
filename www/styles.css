@@ -2809,10 +2809,11 @@ body.user-panel-premium .user-panel-top {
 }
 
 body.user-panel-premium .user-panel-nav {
-  padding: 6px 10px;
-  border-radius: 14px;
+  padding: 10px 14px;
+  border-radius: 16px;
   border: 1px solid var(--up-card-border);
   background: linear-gradient(180deg, rgba(11, 28, 55, 0.55), rgba(7, 18, 37, 0.38));
+  backdrop-filter: blur(4px);
 }
 
 body.user-panel-premium.theme-female .user-panel-nav {
@@ -2822,6 +2823,27 @@ body.user-panel-premium.theme-female .user-panel-nav {
 body.user-panel-premium .today-loop {
   display: grid;
   gap: 14px;
+}
+
+body.user-panel-premium .logo {
+  font-size: 15px;
+  letter-spacing: 3px;
+  font-weight: 800;
+}
+
+body.user-panel-premium .nav-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+body.user-panel-premium .nav-actions .ghost {
+  min-height: 38px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 999px;
 }
 
 body.user-panel-premium .today-grid {
@@ -3003,6 +3025,21 @@ body.user-panel-premium .admin-chip {
 
   body.user-panel-premium .today-extra-line {
     grid-template-columns: 1fr;
+  }
+
+  body.user-panel-premium .logo {
+    font-size: 13px;
+    letter-spacing: 2px;
+  }
+
+  body.user-panel-premium .nav-actions {
+    gap: 6px;
+  }
+
+  body.user-panel-premium .nav-actions .ghost {
+    min-height: 34px;
+    padding: 6px 11px;
+    font-size: 12px;
   }
 }
 
