@@ -276,6 +276,9 @@ const REG_PROFILE_KEY = "discipline_profile";
 const PLAN_HISTORY_KEY = "discipline_plan_history_v1";
 const SUBSCRIPTION_CACHE_KEY = "discipline_subscription_cache_v1";
 const QA_DEMO_KEY = "discipline_qa_demo_v1";
+const GOD_TOKEN_KEY = "discipline_god_token_v1";
+const GOD_EXPIRES_KEY = "discipline_god_expires_v1";
+const BILLING_TARGET_CACHE_KEY = "discipline_billing_target_v1";
 
 const PLAN_CATALOG = {
   free: {
@@ -514,11 +517,13 @@ const apiRequest = async (path, options = {}) => {
   const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   try {
     const activeUserEmail = String(localStorage.getItem(CURRENT_USER_KEY) || "").trim().toLowerCase();
+    const godToken = String(localStorage.getItem(GOD_TOKEN_KEY) || "").trim();
     const response = await fetch(apiUrl(path), {
       method: options.method || "GET",
       headers: {
         "Content-Type": "application/json",
         ...(activeUserEmail ? { "x-user-email": activeUserEmail } : {}),
+        ...(godToken ? { "x-god-token": godToken } : {}),
         ...(options.headers || {}),
       },
       body: options.body ? JSON.stringify(options.body) : undefined,
@@ -537,6 +542,37 @@ const apiRequest = async (path, options = {}) => {
 
 const apiGet = (path) => apiRequest(path);
 const apiPost = (path, body) => apiRequest(path, { method: "POST", body });
+
+const defaultBillingTarget = {
+  bankName: "BBVA",
+  accountHolder: "Momentum Ascent",
+  clabe: "012345678901234567",
+  accountNumber: "",
+  whatsapp: "+52 000 000 0000",
+  note: "Referencia: tu correo de registro",
+};
+
+const getBillingTarget = async () => {
+  const cachedRaw = localStorage.getItem(BILLING_TARGET_CACHE_KEY);
+  if (cachedRaw) {
+    try {
+      const cached = JSON.parse(cachedRaw);
+      if (cached && typeof cached === "object") {
+        return { ...defaultBillingTarget, ...cached };
+      }
+    } catch {
+      localStorage.removeItem(BILLING_TARGET_CACHE_KEY);
+    }
+  }
+  try {
+    const remote = await apiGet("/billing-target");
+    const billing = remote?.billing && typeof remote.billing === "object" ? remote.billing : defaultBillingTarget;
+    localStorage.setItem(BILLING_TARGET_CACHE_KEY, JSON.stringify(billing));
+    return { ...defaultBillingTarget, ...billing };
+  } catch {
+    return defaultBillingTarget;
+  }
+};
 
 const syncCurrentSubscriptionFromApi = async () => {
   const current = getCurrentUser();
@@ -2073,11 +2109,20 @@ function initPlanSelectionPage() {
     const extraLines = [];
     if (extras.diet_basic) extraLines.push("Dieta Basica (+$12/mes)");
     if (extras.diet_plus) extraLines.push("Dieta Pro (+$24/mes)");
+    const billingRaw = localStorage.getItem(BILLING_TARGET_CACHE_KEY);
+    let billing = defaultBillingTarget;
+    if (billingRaw) {
+      try {
+        billing = { ...defaultBillingTarget, ...JSON.parse(billingRaw) };
+      } catch {
+        billing = defaultBillingTarget;
+      }
+    }
     summary.innerHTML = `
       <strong>Plan seleccionado: ${selected.label}</strong>
       <p>${selected.price}</p>
       <p>Extras: ${extraLines.length ? extraLines.join(" • ") : "Ninguno"}</p>
-      <p class="reg-hint">Pago demo: transferencia bancaria y envio de comprobante al WhatsApp del staff.</p>
+      <p class="reg-hint">Pago por transferencia. Envia comprobante a: ${billing.whatsapp || defaultBillingTarget.whatsapp}</p>
     `;
   };
 
@@ -2111,6 +2156,7 @@ function initPlanSelectionPage() {
     confirmBtn.addEventListener("click", async () => {
       const current = getCurrentUser();
       const selection = persistPlanSelection({ id: getPlanSelection().id, extras: readExtras() });
+      const billing = await getBillingTarget();
       const pendingSub = {
         userId: current?.id || "",
         planId: selection.id,
@@ -2139,7 +2185,7 @@ function initPlanSelectionPage() {
             planLabel: selection.label,
             extras: selection.extras || {},
             method: "transfer",
-            proofTarget: "+52 000 000 0000",
+            proofTarget: billing.whatsapp || defaultBillingTarget.whatsapp,
           });
           await syncCurrentSubscriptionFromApi();
         } catch {
@@ -2157,6 +2203,7 @@ function initPlanSelectionPage() {
   if (dietBasic) dietBasic.checked = Boolean(current.extras?.diet_basic);
   if (dietPlus) dietPlus.checked = Boolean(current.extras?.diet_plus);
   renderSummary();
+  getBillingTarget().then(() => renderSummary());
 }
 
 function initAdminPaymentsPanel() {
@@ -2274,6 +2321,175 @@ function initQaChecklist() {
   });
 }
 
+function initGodModePanel() {
+  const loginBtn = document.getElementById("god-login-btn");
+  const logoutBtn = document.getElementById("god-logout-btn");
+  const authFeedback = document.getElementById("god-auth-feedback");
+  const userInput = document.getElementById("god-user");
+  const passInput = document.getElementById("god-pass");
+  const saveBillingBtn = document.getElementById("god-save-billing-btn");
+  const billingFeedback = document.getElementById("god-billing-feedback");
+  const setRoleBtn = document.getElementById("god-set-role-btn");
+  const grantPlanBtn = document.getElementById("god-grant-plan-btn");
+  const userFeedback = document.getElementById("god-user-feedback");
+  const targetUser = document.getElementById("god-target-user");
+  const targetRole = document.getElementById("god-target-role");
+  const planId = document.getElementById("god-plan-id");
+  const planLabel = document.getElementById("god-plan-label");
+  const planDays = document.getElementById("god-plan-days");
+  const bankName = document.getElementById("god-bank-name");
+  const bankHolder = document.getElementById("god-bank-holder");
+  const bankClabe = document.getElementById("god-bank-clabe");
+  const bankAccount = document.getElementById("god-bank-account");
+  const bankWhatsapp = document.getElementById("god-bank-whatsapp");
+  const bankNote = document.getElementById("god-bank-note");
+
+  if (!loginBtn && !logoutBtn && !saveBillingBtn && !setRoleBtn && !grantPlanBtn) {
+    return;
+  }
+
+  const setFeedback = (el, text, type = "") => {
+    if (!el) return;
+    el.className = `reg-feedback ${type}`.trim();
+    el.textContent = text;
+  };
+
+  const hasGod = () => Boolean(localStorage.getItem(GOD_TOKEN_KEY));
+
+  const refreshBilling = async () => {
+    if (!hasGod()) return;
+    try {
+      const remote = await apiGet("/god/settings/billing-target");
+      const billing = remote?.billing || {};
+      if (bankName) bankName.value = billing.bankName || "";
+      if (bankHolder) bankHolder.value = billing.accountHolder || "";
+      if (bankClabe) bankClabe.value = billing.clabe || "";
+      if (bankAccount) bankAccount.value = billing.accountNumber || "";
+      if (bankWhatsapp) bankWhatsapp.value = billing.whatsapp || "";
+      if (bankNote) bankNote.value = billing.note || "";
+    } catch {
+      // no-op
+    }
+  };
+
+  if (loginBtn && !loginBtn.dataset.bound) {
+    loginBtn.dataset.bound = "1";
+    loginBtn.addEventListener("click", async () => {
+      const username = userInput?.value?.trim();
+      const password = passInput?.value?.trim();
+      if (!username || !password) {
+        setFeedback(authFeedback, "Ingresa user y password.", "error");
+        return;
+      }
+      try {
+        const remote = await apiPost("/god/login", { username, password });
+        const token = String(remote?.token || "");
+        if (!token) {
+          throw new Error("god_token_missing");
+        }
+        localStorage.setItem(GOD_TOKEN_KEY, token);
+        localStorage.setItem(GOD_EXPIRES_KEY, String(remote?.expiresAt || ""));
+        setFeedback(authFeedback, "Modo Dios activo.", "success");
+        await refreshBilling();
+      } catch {
+        setFeedback(authFeedback, "Credenciales invalidas para Modo Dios.", "error");
+      }
+    });
+  }
+
+  if (logoutBtn && !logoutBtn.dataset.bound) {
+    logoutBtn.dataset.bound = "1";
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await apiPost("/god/logout", {});
+      } catch {
+        // ignore
+      }
+      localStorage.removeItem(GOD_TOKEN_KEY);
+      localStorage.removeItem(GOD_EXPIRES_KEY);
+      setFeedback(authFeedback, "Modo Dios cerrado.", "success");
+    });
+  }
+
+  if (saveBillingBtn && !saveBillingBtn.dataset.bound) {
+    saveBillingBtn.dataset.bound = "1";
+    saveBillingBtn.addEventListener("click", async () => {
+      if (!hasGod()) {
+        setFeedback(billingFeedback, "Activa Modo Dios primero.", "error");
+        return;
+      }
+      try {
+        const remote = await apiPost("/god/settings/billing-target", {
+          bankName: bankName?.value?.trim() || "",
+          accountHolder: bankHolder?.value?.trim() || "",
+          clabe: bankClabe?.value?.trim() || "",
+          accountNumber: bankAccount?.value?.trim() || "",
+          whatsapp: bankWhatsapp?.value?.trim() || "",
+          note: bankNote?.value?.trim() || "",
+        });
+        if (remote?.billing) {
+          localStorage.setItem(BILLING_TARGET_CACHE_KEY, JSON.stringify(remote.billing));
+        }
+        setFeedback(billingFeedback, "Cuenta bancaria actualizada.", "success");
+      } catch {
+        setFeedback(billingFeedback, "No se pudo actualizar cuenta bancaria.", "error");
+      }
+    });
+  }
+
+  if (setRoleBtn && !setRoleBtn.dataset.bound) {
+    setRoleBtn.dataset.bound = "1";
+    setRoleBtn.addEventListener("click", async () => {
+      if (!hasGod()) {
+        setFeedback(userFeedback, "Activa Modo Dios primero.", "error");
+        return;
+      }
+      const userId = targetUser?.value?.trim().toLowerCase();
+      const role = targetRole?.value || "user";
+      if (!userId) {
+        setFeedback(userFeedback, "Ingresa email del usuario.", "error");
+        return;
+      }
+      try {
+        await apiPost("/god/users/role", { userId, role });
+        setFeedback(userFeedback, `Rol actualizado a ${role}.`, "success");
+      } catch {
+        setFeedback(userFeedback, "No se pudo actualizar rol.", "error");
+      }
+    });
+  }
+
+  if (grantPlanBtn && !grantPlanBtn.dataset.bound) {
+    grantPlanBtn.dataset.bound = "1";
+    grantPlanBtn.addEventListener("click", async () => {
+      if (!hasGod()) {
+        setFeedback(userFeedback, "Activa Modo Dios primero.", "error");
+        return;
+      }
+      const userId = targetUser?.value?.trim().toLowerCase();
+      if (!userId) {
+        setFeedback(userFeedback, "Ingresa email del usuario.", "error");
+        return;
+      }
+      const payload = {
+        userId,
+        planId: planId?.value || "free",
+        planLabel: planLabel?.value?.trim() || "Free",
+        durationDays: Number(planDays?.value || 30),
+        status: "active",
+      };
+      try {
+        await apiPost("/god/users/grant-plan", payload);
+        setFeedback(userFeedback, `Plan ${payload.planLabel} otorgado a ${userId}.`, "success");
+      } catch {
+        setFeedback(userFeedback, "No se pudo otorgar plan.", "error");
+      }
+    });
+  }
+
+  refreshBilling();
+}
+
 function applyPlanNavVisibility() {
   const caps = getPlanCapabilities();
   document.querySelectorAll('a[href="user-dieta.html"]').forEach((link) => {
@@ -2297,6 +2513,7 @@ enforceOnboardingBeforeHome();
 initAdminPanel();
 initAdminPaymentsPanel();
 initQaChecklist();
+initGodModePanel();
 initPlanSelectionPage();
 applyPlanNavVisibility();
 renderUserRoutineFeed();
@@ -5045,7 +5262,7 @@ const initDynamicOnboarding = () => {
 
 initDynamicOnboarding();
 
-const initOnboardingSummary = () => {
+const initOnboardingSummary = async () => {
   const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
   if (page !== "onboarding-resumen.html") {
     return;
@@ -5067,6 +5284,12 @@ const initOnboardingSummary = () => {
   const costEl = document.getElementById("onb-summary-cost");
   const statusEl = document.getElementById("onb-summary-status");
   const paymentBox = document.getElementById("onb-summary-payment");
+  const payBank = document.getElementById("onb-pay-bank");
+  const payClabe = document.getElementById("onb-pay-clabe");
+  const payHolder = document.getElementById("onb-pay-holder");
+  const payAccount = document.getElementById("onb-pay-account");
+  const payWhatsapp = document.getElementById("onb-pay-whatsapp");
+  const payNote = document.getElementById("onb-pay-note");
 
   if (planEl) planEl.textContent = selectedPlan.label || "Free";
   if (extrasEl) extrasEl.textContent = extras.length ? extras.join(", ") : "Ninguno";
@@ -5080,6 +5303,15 @@ const initOnboardingSummary = () => {
   }
   if (paymentBox) {
     paymentBox.style.display = isFree ? "none" : "";
+  }
+  if (!isFree) {
+    const billing = await getBillingTarget();
+    if (payBank) payBank.textContent = billing.bankName || "-";
+    if (payClabe) payClabe.textContent = billing.clabe || "-";
+    if (payHolder) payHolder.textContent = billing.accountHolder || "-";
+    if (payAccount) payAccount.textContent = billing.accountNumber || "-";
+    if (payWhatsapp) payWhatsapp.textContent = billing.whatsapp || "-";
+    if (payNote) payNote.textContent = billing.note || "Si ya hiciste la transferencia, sera validada y tu acceso se actualizara pronto.";
   }
 };
 

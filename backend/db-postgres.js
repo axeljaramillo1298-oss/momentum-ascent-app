@@ -130,6 +130,12 @@ CREATE TABLE IF NOT EXISTS onboarding_profiles (
   answers_json JSONB NOT NULL DEFAULT '{}'::jsonb,
   updated_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT PRIMARY KEY,
+  value_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL
+);
 `;
 
 async function initDb() {
@@ -870,6 +876,96 @@ async function getUserPayments(userId) {
   }));
 }
 
+async function setUserRole(payload) {
+  const userId = normalizeEmail(payload?.userId);
+  if (!userId) {
+    throw new Error("user_id_required");
+  }
+  const role = safeStr(payload?.role).toLowerCase() === "admin" ? "admin" : "user";
+  const now = nowIso();
+  await ensureUserRecord(userId, { name: safeStr(payload?.name) || "User", role });
+  await pool.query("UPDATE users SET role = $1, updated_at = $2 WHERE id = $3", [role, now, userId]);
+  const result = await pool.query("SELECT role FROM users WHERE id = $1 LIMIT 1", [userId]);
+  return {
+    userId,
+    role: result.rows[0]?.role || role,
+    updatedAt: now,
+  };
+}
+
+async function grantSubscription(payload) {
+  const userId = normalizeEmail(payload?.userId);
+  if (!userId) {
+    throw new Error("user_id_required");
+  }
+  const planId = safeStr(payload?.planId) || "free";
+  const planLabel = safeStr(payload?.planLabel) || "Free";
+  const statusRaw = safeStr(payload?.status).toLowerCase();
+  const status = ["active", "pending", "inactive"].includes(statusRaw) ? statusRaw : "active";
+  const extras = payload?.extras && typeof payload.extras === "object" ? payload.extras : {};
+  const now = nowIso();
+  const durationDays = Math.max(1, Number(payload?.durationDays || 30));
+  let startAt = null;
+  let endAt = null;
+  if (status === "active") {
+    startAt = now;
+    const end = new Date();
+    end.setDate(end.getDate() + durationDays);
+    endAt = end.toISOString();
+  }
+  await ensureUserRecord(userId, { name: safeStr(payload?.name) || "User", role: "user", plan: planLabel });
+  await pool.query(
+    `
+    INSERT INTO subscriptions (user_id, plan_id, plan_label, extras_json, status, start_at, end_at, updated_at)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+    ON CONFLICT (user_id) DO UPDATE SET
+      plan_id = EXCLUDED.plan_id,
+      plan_label = EXCLUDED.plan_label,
+      extras_json = EXCLUDED.extras_json,
+      status = EXCLUDED.status,
+      start_at = EXCLUDED.start_at,
+      end_at = EXCLUDED.end_at,
+      updated_at = EXCLUDED.updated_at
+    `,
+    [userId, planId, planLabel, extras, status, startAt, endAt, now]
+  );
+  await pool.query("UPDATE users SET plan = $1, updated_at = $2 WHERE id = $3", [planLabel, now, userId]);
+  return getSubscription(userId);
+}
+
+async function getAppSetting(key, fallback = {}) {
+  const normalizedKey = safeStr(key);
+  if (!normalizedKey) return fallback;
+  const result = await pool.query(
+    `
+    SELECT value_json AS value
+    FROM app_settings
+    WHERE key = $1
+    LIMIT 1
+    `,
+    [normalizedKey]
+  );
+  return result.rows[0]?.value || fallback;
+}
+
+async function setAppSetting(key, value) {
+  const normalizedKey = safeStr(key);
+  if (!normalizedKey) throw new Error("setting_key_required");
+  const safeValue = value && typeof value === "object" ? value : {};
+  const now = nowIso();
+  await pool.query(
+    `
+    INSERT INTO app_settings (key, value_json, updated_at)
+    VALUES ($1,$2,$3)
+    ON CONFLICT (key) DO UPDATE SET
+      value_json = EXCLUDED.value_json,
+      updated_at = EXCLUDED.updated_at
+    `,
+    [normalizedKey, safeValue, now]
+  );
+  return getAppSetting(normalizedKey, {});
+}
+
 async function getAdminCsvReport(scope, userId) {
   const normalizedScope = safeStr(scope).toLowerCase() || "week";
   if (normalizedScope === "user") {
@@ -1076,6 +1172,10 @@ module.exports = {
   createPaymentRequest,
   listPendingPaymentRequests,
   reviewPaymentRequest,
+  setUserRole,
+  grantSubscription,
+  getAppSetting,
+  setAppSetting,
   getSubscription,
   getUserPayments,
   getUserByEmail,

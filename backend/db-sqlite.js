@@ -124,6 +124,12 @@ CREATE TABLE IF NOT EXISTS onboarding_profiles (
   answers_json TEXT NOT NULL DEFAULT '{}',
   updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT PRIMARY KEY,
+  value_json TEXT NOT NULL DEFAULT '{}',
+  updated_at TEXT NOT NULL
+);
 `);
 
 const nowIso = () => new Date().toISOString();
@@ -423,6 +429,21 @@ ON CONFLICT(user_id) DO UPDATE SET
   updated_at = excluded.updated_at
 `);
 
+const upsertSettingStmt = db.prepare(`
+INSERT INTO app_settings (key, value_json, updated_at)
+VALUES (?, ?, ?)
+ON CONFLICT(key) DO UPDATE SET
+  value_json = excluded.value_json,
+  updated_at = excluded.updated_at
+`);
+
+const getSettingStmt = db.prepare(`
+SELECT key, value_json AS valueJson, updated_at AS updatedAt
+FROM app_settings
+WHERE key = ?
+LIMIT 1
+`);
+
 const getSubscriptionStmt = db.prepare(`
 SELECT
   user_id AS userId,
@@ -441,6 +462,12 @@ LIMIT 1
 const updateUserPlanStmt = db.prepare(`
 UPDATE users
 SET plan = ?, updated_at = ?
+WHERE id = ?
+`);
+
+const updateUserRoleStmt = db.prepare(`
+UPDATE users
+SET role = ?, updated_at = ?
 WHERE id = ?
 `);
 
@@ -954,6 +981,60 @@ function getUserPayments(userId) {
   }));
 }
 
+function setUserRole(payload) {
+  const userId = normalizeEmail(payload?.userId);
+  if (!userId) throw new Error("user_id_required");
+  const role = safeStr(payload?.role).toLowerCase() === "admin" ? "admin" : "user";
+  const now = nowIso();
+  ensureUser({ email: userId, role, name: safeStr(payload?.name) || "User" });
+  updateUserRoleStmt.run(role, now, userId);
+  const row = getUserStmt.get(userId);
+  return {
+    userId,
+    role: row?.role || role,
+    updatedAt: now,
+  };
+}
+
+function grantSubscription(payload) {
+  const userId = normalizeEmail(payload?.userId);
+  if (!userId) throw new Error("user_id_required");
+  const planId = safeStr(payload?.planId) || "free";
+  const planLabel = safeStr(payload?.planLabel) || "Free";
+  const statusRaw = safeStr(payload?.status).toLowerCase();
+  const status = ["active", "pending", "inactive"].includes(statusRaw) ? statusRaw : "active";
+  const extras = payload?.extras && typeof payload.extras === "object" ? payload.extras : {};
+  const now = nowIso();
+  const durationDays = Math.max(1, Number(payload?.durationDays || 30));
+  let startAt = null;
+  let endAt = null;
+  if (status === "active") {
+    startAt = now;
+    endAt = addDaysIso(durationDays);
+  }
+  ensureUser({ email: userId, name: safeStr(payload?.name) || "User", role: "user", plan: planLabel });
+  upsertSubscriptionStmt.run(userId, planId, planLabel, JSON.stringify(extras), status, startAt, endAt, now);
+  updateUserPlanStmt.run(planLabel, now, userId);
+  return getSubscription(userId);
+}
+
+function getAppSetting(key, fallback = {}) {
+  const normalizedKey = safeStr(key);
+  if (!normalizedKey) return fallback;
+  const row = getSettingStmt.get(normalizedKey);
+  if (!row) return fallback;
+  return parseJsonSafe(row.valueJson, fallback);
+}
+
+function setAppSetting(key, value) {
+  const normalizedKey = safeStr(key);
+  if (!normalizedKey) throw new Error("setting_key_required");
+  const now = nowIso();
+  const safeValue = value && typeof value === "object" ? value : {};
+  upsertSettingStmt.run(normalizedKey, JSON.stringify(safeValue), now);
+  return getAppSetting(normalizedKey, {});
+}
+
 function getAdminCsvReport(scope, userId) {
   const normalizedScope = safeStr(scope).toLowerCase() || "week";
   if (normalizedScope === "user") {
@@ -1088,6 +1169,10 @@ module.exports = {
   createPaymentRequest: async (payload) => createPaymentRequest(payload),
   listPendingPaymentRequests: async () => listPendingPaymentRequests(),
   reviewPaymentRequest: async (payload) => reviewPaymentRequest(payload),
+  setUserRole: async (payload) => setUserRole(payload),
+  grantSubscription: async (payload) => grantSubscription(payload),
+  getAppSetting: async (key, fallback) => getAppSetting(key, fallback),
+  setAppSetting: async (key, value) => setAppSetting(key, value),
   getSubscription: async (userId) => getSubscription(userId),
   getUserPayments: async (userId) => getUserPayments(userId),
   getUserByEmail: async (email) => getUserByEmail(email),

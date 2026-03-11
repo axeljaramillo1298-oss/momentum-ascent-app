@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const crypto = require("node:crypto");
 const { generateAiPlan, buildFallbackPlan } = require("./ai");
 const { sendWhatsAppText } = require("./whatsapp");
 const { startCoachOnboardingForUser, handleIncomingCoachMessage } = require("./coach-whatsapp");
@@ -26,6 +27,10 @@ const {
   createPaymentRequest,
   listPendingPaymentRequests,
   reviewPaymentRequest,
+  setUserRole,
+  grantSubscription,
+  getAppSetting,
+  setAppSetting,
   saveNutritionPlan,
   saveRoutine,
   saveOnboardingProfile,
@@ -36,6 +41,9 @@ const {
 const app = express();
 const PORT = Number(process.env.PORT || 8787);
 const WHATSAPP_VERIFY_TOKEN = String(process.env.WHATSAPP_VERIFY_TOKEN || "").trim();
+const GOD_MODE_USER = String(process.env.GOD_MODE_USER || "").trim();
+const GOD_MODE_PASS = String(process.env.GOD_MODE_PASS || "").trim();
+const GOD_MODE_SESSION_HOURS = Math.max(1, Number(process.env.GOD_MODE_SESSION_HOURS || 24));
 const ADMIN_EMAILS = new Set(
   String(process.env.ADMIN_EMAILS || "")
     .split(",")
@@ -47,12 +55,54 @@ app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 
 const getRequestEmail = (req) => String(req.headers["x-user-email"] || "").trim().toLowerCase();
+const getGodToken = (req) => String(req.headers["x-god-token"] || "").trim();
+const GOD_SESSIONS = new Map();
+const cleanupGodSessions = () => {
+  const now = Date.now();
+  for (const [token, session] of GOD_SESSIONS.entries()) {
+    if (!session?.expiresAt || session.expiresAt <= now) {
+      GOD_SESSIONS.delete(token);
+    }
+  }
+};
+const isGodRequest = (req) => {
+  cleanupGodSessions();
+  const token = getGodToken(req);
+  if (!token) return false;
+  const session = GOD_SESSIONS.get(token);
+  return Boolean(session && session.expiresAt > Date.now());
+};
+
+const defaultBillingTarget = {
+  bankName: "BBVA",
+  accountHolder: "Momentum Ascent",
+  clabe: "012345678901234567",
+  accountNumber: "",
+  whatsapp: "+52 000 000 0000",
+  note: "Referencia: tu correo de registro",
+};
+
+const getBillingTarget = async () => {
+  const fromDb = await getAppSetting("billing_target", defaultBillingTarget);
+  return { ...defaultBillingTarget, ...(fromDb && typeof fromDb === "object" ? fromDb : {}) };
+};
+
 const requireAdmin = (req, res, next) => {
+  if (isGodRequest(req)) {
+    return next();
+  }
   const email = getRequestEmail(req);
   if (email && ADMIN_EMAILS.has(email)) {
     return next();
   }
   return res.status(403).json({ ok: false, error: "admin_only" });
+};
+
+const requireGod = (req, res, next) => {
+  if (isGodRequest(req)) {
+    return next();
+  }
+  return res.status(403).json({ ok: false, error: "god_only" });
 };
 
 app.get("/health", (req, res) => {
@@ -107,6 +157,79 @@ app.post("/auth/login", async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({ ok: false, error: String(error.message || "login_failed") });
+  }
+});
+
+app.post("/god/login", async (req, res) => {
+  try {
+    if (!GOD_MODE_USER || !GOD_MODE_PASS) {
+      return res.status(503).json({ ok: false, error: "god_mode_disabled" });
+    }
+    const username = String(req.body?.username || "").trim();
+    const password = String(req.body?.password || "").trim();
+    if (username !== GOD_MODE_USER || password !== GOD_MODE_PASS) {
+      return res.status(401).json({ ok: false, error: "invalid_credentials" });
+    }
+    cleanupGodSessions();
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = Date.now() + GOD_MODE_SESSION_HOURS * 60 * 60 * 1000;
+    GOD_SESSIONS.set(token, { username, expiresAt });
+    res.json({ ok: true, token, expiresAt: new Date(expiresAt).toISOString() });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: String(error.message || "god_login_failed") });
+  }
+});
+
+app.post("/god/logout", requireGod, async (req, res) => {
+  const token = getGodToken(req);
+  if (token) {
+    GOD_SESSIONS.delete(token);
+  }
+  res.json({ ok: true });
+});
+
+app.get("/god/settings/billing-target", requireGod, async (req, res) => {
+  try {
+    const billing = await getBillingTarget();
+    res.json({ ok: true, billing });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "god_billing_target_failed") });
+  }
+});
+
+app.post("/god/settings/billing-target", requireGod, async (req, res) => {
+  try {
+    const payload = req.body && typeof req.body === "object" ? req.body : {};
+    const nextValue = {
+      bankName: String(payload.bankName || "").trim(),
+      accountHolder: String(payload.accountHolder || "").trim(),
+      clabe: String(payload.clabe || "").trim(),
+      accountNumber: String(payload.accountNumber || "").trim(),
+      whatsapp: String(payload.whatsapp || "").trim(),
+      note: String(payload.note || "").trim(),
+    };
+    const billing = await setAppSetting("billing_target", nextValue);
+    res.json({ ok: true, billing: { ...defaultBillingTarget, ...billing } });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: String(error.message || "god_billing_update_failed") });
+  }
+});
+
+app.post("/god/users/role", requireGod, async (req, res) => {
+  try {
+    const result = await setUserRole(req.body || {});
+    res.json({ ok: true, result });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: String(error.message || "god_set_role_failed") });
+  }
+});
+
+app.post("/god/users/grant-plan", requireGod, async (req, res) => {
+  try {
+    const subscription = await grantSubscription(req.body || {});
+    res.json({ ok: true, subscription });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: String(error.message || "god_grant_plan_failed") });
   }
 });
 
@@ -337,10 +460,24 @@ app.post("/support-alert", async (req, res) => {
 
 app.post("/payments/request", async (req, res) => {
   try {
-    const payment = await createPaymentRequest(req.body || {});
+    const payload = req.body && typeof req.body === "object" ? { ...req.body } : {};
+    if (!String(payload.proofTarget || "").trim()) {
+      const billing = await getBillingTarget();
+      payload.proofTarget = String(billing.whatsapp || defaultBillingTarget.whatsapp);
+    }
+    const payment = await createPaymentRequest(payload);
     res.status(201).json({ ok: true, payment });
   } catch (error) {
     res.status(400).json({ ok: false, error: String(error.message || "payment_request_failed") });
+  }
+});
+
+app.get("/billing-target", async (req, res) => {
+  try {
+    const billing = await getBillingTarget();
+    res.json({ ok: true, billing });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "billing_target_failed") });
   }
 });
 
