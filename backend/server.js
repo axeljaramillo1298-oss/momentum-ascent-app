@@ -105,6 +105,37 @@ const requireGod = (req, res, next) => {
   return res.status(403).json({ ok: false, error: "god_only" });
 };
 
+const canActAsAdmin = (req) => {
+  if (isGodRequest(req)) return true;
+  const email = getRequestEmail(req);
+  return Boolean(email && ADMIN_EMAILS.has(email));
+};
+
+const requireSelfOrAdminByResolver = (resolver) => (req, res, next) => {
+  if (canActAsAdmin(req)) {
+    return next();
+  }
+  const actor = getRequestEmail(req);
+  const target = String(resolver(req) || "").trim().toLowerCase();
+  if (actor && target && actor === target) {
+    return next();
+  }
+  return res.status(403).json({ ok: false, error: "forbidden_user_scope" });
+};
+
+const requireSelfOrAdminByParam = (paramName = "userId") =>
+  requireSelfOrAdminByResolver((req) => req.params?.[paramName]);
+const requireSelfOrAdminByBody = (key = "userId") => requireSelfOrAdminByResolver((req) => req.body?.[key]);
+const requireSelfOrAdminByAnyBodyField = (fields = ["userId"]) =>
+  requireSelfOrAdminByResolver((req) => {
+    const body = req.body || {};
+    for (const field of fields) {
+      const value = String(body?.[field] || "").trim();
+      if (value) return value;
+    }
+    return "";
+  });
+
 app.get("/health", (req, res) => {
   res.json({
     ok: true,
@@ -233,7 +264,7 @@ app.post("/god/users/grant-plan", requireGod, async (req, res) => {
   }
 });
 
-app.post("/coach/onboarding/start", async (req, res) => {
+app.post("/coach/onboarding/start", requireSelfOrAdminByAnyBodyField(["email", "userId"]), async (req, res) => {
   try {
     const email = String(req.body?.email || req.body?.userId || "").trim().toLowerCase();
     if (!email) throw new Error("email_required");
@@ -250,7 +281,7 @@ app.post("/coach/onboarding/start", async (req, res) => {
   }
 });
 
-app.post("/onboarding/profile", async (req, res) => {
+app.post("/onboarding/profile", requireSelfOrAdminByAnyBodyField(["email", "userId"]), async (req, res) => {
   try {
     const email = String(req.body?.email || req.body?.userId || "").trim().toLowerCase();
     if (!email) throw new Error("email_required");
@@ -305,7 +336,7 @@ app.get("/users", requireAdmin, async (req, res) => {
   }
 });
 
-app.get("/feed/:userId", async (req, res) => {
+app.get("/feed/:userId", requireSelfOrAdminByParam("userId"), async (req, res) => {
   try {
     const userId = String(req.params.userId || "").trim().toLowerCase();
     const payload = await getFeed(userId);
@@ -315,7 +346,7 @@ app.get("/feed/:userId", async (req, res) => {
   }
 });
 
-app.get("/metrics/:userId", async (req, res) => {
+app.get("/metrics/:userId", requireSelfOrAdminByParam("userId"), async (req, res) => {
   try {
     const userId = String(req.params.userId || "").trim().toLowerCase();
     const metrics = await getMetrics(userId);
@@ -440,7 +471,7 @@ app.post("/admin/coach/nudge", requireAdmin, async (req, res) => {
   }
 });
 
-app.post("/checkins", async (req, res) => {
+app.post("/checkins", requireSelfOrAdminByBody("userId"), async (req, res) => {
   try {
     const metrics = await saveCheckin(req.body || {});
     res.status(201).json({ ok: true, metrics });
@@ -449,7 +480,7 @@ app.post("/checkins", async (req, res) => {
   }
 });
 
-app.post("/support-alert", async (req, res) => {
+app.post("/support-alert", requireSelfOrAdminByBody("userId"), async (req, res) => {
   try {
     const alert = await saveSupportAlert(req.body || {});
     res.status(201).json({ ok: true, alert });
@@ -458,7 +489,7 @@ app.post("/support-alert", async (req, res) => {
   }
 });
 
-app.post("/payments/request", async (req, res) => {
+app.post("/payments/request", requireSelfOrAdminByBody("userId"), async (req, res) => {
   try {
     const payload = req.body && typeof req.body === "object" ? { ...req.body } : {};
     if (!String(payload.proofTarget || "").trim()) {
@@ -500,7 +531,7 @@ app.post("/payments/:id/review", requireAdmin, async (req, res) => {
   }
 });
 
-app.get("/subscriptions/:userId", async (req, res) => {
+app.get("/subscriptions/:userId", requireSelfOrAdminByParam("userId"), async (req, res) => {
   try {
     const userId = String(req.params.userId || "").trim().toLowerCase();
     const subscription = await getSubscription(userId);
@@ -510,7 +541,7 @@ app.get("/subscriptions/:userId", async (req, res) => {
   }
 });
 
-app.get("/payments/:userId", async (req, res) => {
+app.get("/payments/:userId", requireSelfOrAdminByParam("userId"), async (req, res) => {
   try {
     const userId = String(req.params.userId || "").trim().toLowerCase();
     const payments = await getUserPayments(userId);

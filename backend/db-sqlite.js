@@ -211,12 +211,13 @@ SELECT
   u.email,
   u.whatsapp,
   u.role,
-  u.plan,
+  COALESCE(s.plan_label, u.plan) AS plan,
   u.goal,
   u.checkin_schedule AS checkinSchedule,
   op.answers_json AS onboardingAnswers
 FROM users u
 LEFT JOIN onboarding_profiles op ON op.user_id = u.id
+LEFT JOIN subscriptions s ON s.user_id = u.id
 WHERE u.name LIKE ? OR u.email LIKE ?
 ORDER BY u.updated_at DESC
 LIMIT 50
