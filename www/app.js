@@ -706,7 +706,28 @@ const syncCurrentSubscriptionFromApi = async () => {
   }
 };
 
+const hasActiveGodSession = () => {
+  const token = String(localStorage.getItem(GOD_TOKEN_KEY) || "").trim();
+  if (!token) {
+    return false;
+  }
+  const expiresRaw = String(localStorage.getItem(GOD_EXPIRES_KEY) || "").trim();
+  const expiresAt = Date.parse(expiresRaw);
+  if (!expiresRaw || !Number.isFinite(expiresAt)) {
+    return true;
+  }
+  if (Date.now() > expiresAt) {
+    localStorage.removeItem(GOD_TOKEN_KEY);
+    localStorage.removeItem(GOD_EXPIRES_KEY);
+    return false;
+  }
+  return true;
+};
+
 const getRoleMode = () => {
+  if (hasActiveGodSession()) {
+    return "admin";
+  }
   const current = getCurrentUser();
   return current?.role === "admin" ? "admin" : "user";
 };
