@@ -543,6 +543,121 @@ const apiRequest = async (path, options = {}) => {
 const apiGet = (path) => apiRequest(path);
 const apiPost = (path, body) => apiRequest(path, { method: "POST", body });
 
+const initHomeGodEntry = () => {
+  const page = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
+  if (page !== "index.html" && page !== "") {
+    return;
+  }
+  if (document.getElementById("home-god-fab")) {
+    return;
+  }
+
+  const fab = document.createElement("button");
+  fab.type = "button";
+  fab.id = "home-god-fab";
+  fab.className = "home-god-fab";
+  fab.setAttribute("aria-label", "Acceso especial");
+  fab.innerHTML = `<span></span>`;
+
+  const modal = document.createElement("div");
+  modal.id = "home-god-modal";
+  modal.className = "home-god-modal";
+  modal.hidden = true;
+  modal.innerHTML = `
+    <div class="home-god-modal-card" role="dialog" aria-modal="true" aria-labelledby="home-god-title">
+      <button class="home-god-close" type="button" aria-label="Cerrar">×</button>
+      <p class="home-god-kicker">Acceso Especial</p>
+      <h3 id="home-god-title">Modo Dios</h3>
+      <p class="home-god-sub">Ingresa tus credenciales para abrir el panel de control total.</p>
+      <div class="home-god-form">
+        <label>User
+          <input id="home-god-user" type="text" autocomplete="username" placeholder="usuario" />
+        </label>
+        <label>Password
+          <input id="home-god-pass" type="password" autocomplete="current-password" placeholder="password" />
+        </label>
+        <button id="home-god-enter" class="primary" type="button">Entrar</button>
+        <p id="home-god-feedback" class="reg-feedback" aria-live="polite"></p>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(fab);
+  document.body.appendChild(modal);
+
+  const closeBtn = modal.querySelector(".home-god-close");
+  const enterBtn = document.getElementById("home-god-enter");
+  const userInput = document.getElementById("home-god-user");
+  const passInput = document.getElementById("home-god-pass");
+  const feedback = document.getElementById("home-god-feedback");
+
+  const open = () => {
+    modal.hidden = false;
+    requestAnimationFrame(() => modal.classList.add("show"));
+    setTimeout(() => userInput?.focus(), 80);
+  };
+
+  const close = () => {
+    modal.classList.remove("show");
+    setTimeout(() => {
+      if (!modal.classList.contains("show")) {
+        modal.hidden = true;
+      }
+    }, 180);
+  };
+
+  const setFeedback = (text, type = "") => {
+    if (!feedback) return;
+    feedback.className = `reg-feedback ${type}`.trim();
+    feedback.textContent = text;
+  };
+
+  fab.addEventListener("click", open);
+  closeBtn?.addEventListener("click", close);
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) {
+      close();
+    }
+  });
+
+  const submit = async () => {
+    const username = userInput?.value?.trim();
+    const password = passInput?.value?.trim();
+    if (!username || !password) {
+      setFeedback("Completa user y password.", "error");
+      return;
+    }
+    enterBtn.disabled = true;
+    try {
+      const remote = await apiPost("/god/login", { username, password });
+      const token = String(remote?.token || "");
+      if (!token) {
+        throw new Error("token_missing");
+      }
+      localStorage.setItem(GOD_TOKEN_KEY, token);
+      localStorage.setItem(GOD_EXPIRES_KEY, String(remote?.expiresAt || ""));
+      setFeedback("Acceso concedido. Abriendo panel...", "success");
+      setTimeout(() => {
+        window.location.href = "admin.html#god-panel";
+      }, 350);
+    } catch {
+      setFeedback("Acceso denegado.", "error");
+    } finally {
+      enterBtn.disabled = false;
+    }
+  };
+
+  enterBtn?.addEventListener("click", submit);
+  [userInput, passInput].forEach((el) => {
+    el?.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        submit();
+      }
+    });
+  });
+};
+
 const defaultBillingTarget = {
   bankName: "BBVA",
   accountHolder: "Momentum Ascent",
@@ -2343,6 +2458,14 @@ function initGodModePanel() {
   const bankAccount = document.getElementById("god-bank-account");
   const bankWhatsapp = document.getElementById("god-bank-whatsapp");
   const bankNote = document.getElementById("god-bank-note");
+  const statusPill = document.getElementById("god-status-pill");
+  const usersSearch = document.getElementById("god-users-search");
+  const usersRefresh = document.getElementById("god-users-refresh");
+  const usersList = document.getElementById("god-users-list");
+  const usersCount = document.getElementById("god-users-count");
+  const usersAdmin = document.getElementById("god-users-admin");
+  const usersPaid = document.getElementById("god-users-paid");
+  const usersPending = document.getElementById("god-users-pending");
 
   if (!loginBtn && !logoutBtn && !saveBillingBtn && !setRoleBtn && !grantPlanBtn) {
     return;
@@ -2354,7 +2477,102 @@ function initGodModePanel() {
     el.textContent = text;
   };
 
-  const hasGod = () => Boolean(localStorage.getItem(GOD_TOKEN_KEY));
+  const planLabelById = (id) => {
+    const normalized = String(id || "").toLowerCase();
+    if (normalized === "coach_humano") return "Coach + Humano";
+    if (normalized === "ai_coach") return "Coach IA";
+    if (normalized === "retos") return "Retos";
+    return "Free";
+  };
+
+  const hasGod = () => {
+    const token = String(localStorage.getItem(GOD_TOKEN_KEY) || "").trim();
+    const expiresAt = Date.parse(String(localStorage.getItem(GOD_EXPIRES_KEY) || ""));
+    if (!token) return false;
+    if (Number.isFinite(expiresAt) && Date.now() > expiresAt) {
+      localStorage.removeItem(GOD_TOKEN_KEY);
+      localStorage.removeItem(GOD_EXPIRES_KEY);
+      return false;
+    }
+    return true;
+  };
+
+  const paintStatus = () => {
+    if (!statusPill) return;
+    if (hasGod()) {
+      statusPill.className = "admin-chip green";
+      statusPill.textContent = "Modo Dios activo";
+      return;
+    }
+    statusPill.className = "admin-chip pending";
+    statusPill.textContent = "Bloqueado";
+  };
+
+  const renderUsers = (users, pendingCount = null) => {
+    if (!usersList) return;
+    const safe = Array.isArray(users) ? users : [];
+    const admins = safe.filter((u) => String(u.role || "").toLowerCase() === "admin").length;
+    const paid = safe.filter((u) => String(u.plan || "Free").toLowerCase() !== "free").length;
+    if (usersCount) usersCount.textContent = String(safe.length);
+    if (usersAdmin) usersAdmin.textContent = String(admins);
+    if (usersPaid) usersPaid.textContent = String(paid);
+    if (usersPending) usersPending.textContent = pendingCount == null ? "-" : String(pendingCount);
+
+    if (!safe.length) {
+      usersList.innerHTML = `<div class="admin-item"><p>Sin users para mostrar.</p></div>`;
+      return;
+    }
+    usersList.innerHTML = safe
+      .map((u) => {
+        const email = String(u.email || u.id || "").toLowerCase();
+        const role = String(u.role || "user").toLowerCase();
+        const plan = String(u.plan || "Free");
+        const roleClass = role === "admin" ? "green" : "yellow";
+        const planClass = plan.toLowerCase() === "free" ? "pending" : "green";
+        return `
+          <article class="god-user-row">
+            <div>
+              <strong>${u.name || "User"}</strong>
+              <p>${email}</p>
+            </div>
+            <div class="god-user-chips">
+              <span class="admin-chip ${roleClass}">${role.toUpperCase()}</span>
+              <span class="admin-chip ${planClass}">${plan}</span>
+            </div>
+            <div class="god-user-actions">
+              <button class="ghost" type="button" data-god-action="fill" data-god-user="${email}" data-god-role="${role}" data-god-plan="${plan}">Cargar</button>
+              <button class="ghost" type="button" data-god-action="role-admin" data-god-user="${email}">Admin</button>
+              <button class="ghost" type="button" data-god-action="role-user" data-god-user="${email}">User</button>
+              <button class="primary" type="button" data-god-action="grant-coach" data-god-user="${email}">Coach+Humano</button>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
+  };
+
+  const loadGodUsers = async (query = "") => {
+    if (!usersList) return;
+    if (!hasGod()) {
+      renderUsers([]);
+      usersList.innerHTML = `<div class="admin-item"><p>Activa Modo Dios para ver y gestionar usuarios.</p></div>`;
+      return;
+    }
+    try {
+      const remote = await apiGet(`/users?search=${encodeURIComponent(query.trim())}`);
+      const users = Array.isArray(remote?.users) ? remote.users : [];
+      let pending = null;
+      try {
+        const p = await apiGet("/payments/pending");
+        pending = Array.isArray(p?.items) ? p.items.length : 0;
+      } catch {
+        pending = null;
+      }
+      renderUsers(users, pending);
+    } catch {
+      usersList.innerHTML = `<div class="admin-item"><p>No se pudo cargar users desde API.</p></div>`;
+    }
+  };
 
   const refreshBilling = async () => {
     if (!hasGod()) return;
@@ -2390,7 +2608,9 @@ function initGodModePanel() {
         localStorage.setItem(GOD_TOKEN_KEY, token);
         localStorage.setItem(GOD_EXPIRES_KEY, String(remote?.expiresAt || ""));
         setFeedback(authFeedback, "Modo Dios activo.", "success");
+        paintStatus();
         await refreshBilling();
+        await loadGodUsers(usersSearch?.value || "");
       } catch {
         setFeedback(authFeedback, "Credenciales invalidas para Modo Dios.", "error");
       }
@@ -2408,6 +2628,8 @@ function initGodModePanel() {
       localStorage.removeItem(GOD_TOKEN_KEY);
       localStorage.removeItem(GOD_EXPIRES_KEY);
       setFeedback(authFeedback, "Modo Dios cerrado.", "success");
+      paintStatus();
+      loadGodUsers("");
     });
   }
 
@@ -2453,6 +2675,7 @@ function initGodModePanel() {
       try {
         await apiPost("/god/users/role", { userId, role });
         setFeedback(userFeedback, `Rol actualizado a ${role}.`, "success");
+        await loadGodUsers(usersSearch?.value || "");
       } catch {
         setFeedback(userFeedback, "No se pudo actualizar rol.", "error");
       }
@@ -2474,20 +2697,79 @@ function initGodModePanel() {
       const payload = {
         userId,
         planId: planId?.value || "free",
-        planLabel: planLabel?.value?.trim() || "Free",
+        planLabel: planLabel?.value?.trim() || planLabelById(planId?.value),
         durationDays: Number(planDays?.value || 30),
         status: "active",
       };
       try {
         await apiPost("/god/users/grant-plan", payload);
         setFeedback(userFeedback, `Plan ${payload.planLabel} otorgado a ${userId}.`, "success");
+        await loadGodUsers(usersSearch?.value || "");
       } catch {
         setFeedback(userFeedback, "No se pudo otorgar plan.", "error");
       }
     });
   }
 
+  if (usersSearch && !usersSearch.dataset.bound) {
+    usersSearch.dataset.bound = "1";
+    usersSearch.addEventListener("input", () => {
+      loadGodUsers(usersSearch.value || "");
+    });
+  }
+
+  if (usersRefresh && !usersRefresh.dataset.bound) {
+    usersRefresh.dataset.bound = "1";
+    usersRefresh.addEventListener("click", () => {
+      loadGodUsers(usersSearch?.value || "");
+    });
+  }
+
+  if (usersList && !usersList.dataset.bound) {
+    usersList.dataset.bound = "1";
+    usersList.addEventListener("click", async (event) => {
+      const btn = event.target.closest("[data-god-action]");
+      if (!btn || !hasGod()) return;
+      const action = btn.dataset.godAction || "";
+      const userId = String(btn.dataset.godUser || "").trim().toLowerCase();
+      if (!userId) return;
+      if (action === "fill") {
+        if (targetUser) targetUser.value = userId;
+        if (targetRole) targetRole.value = btn.dataset.godRole === "admin" ? "admin" : "user";
+        return;
+      }
+      if (action === "role-admin" || action === "role-user") {
+        const role = action === "role-admin" ? "admin" : "user";
+        try {
+          await apiPost("/god/users/role", { userId, role });
+          setFeedback(userFeedback, `Rol ${role} aplicado a ${userId}.`, "success");
+          await loadGodUsers(usersSearch?.value || "");
+        } catch {
+          setFeedback(userFeedback, "No se pudo actualizar rol.", "error");
+        }
+        return;
+      }
+      if (action === "grant-coach") {
+        try {
+          await apiPost("/god/users/grant-plan", {
+            userId,
+            planId: "coach_humano",
+            planLabel: "Coach + Humano",
+            durationDays: 30,
+            status: "active",
+          });
+          setFeedback(userFeedback, `Plan Coach + Humano otorgado a ${userId}.`, "success");
+          await loadGodUsers(usersSearch?.value || "");
+        } catch {
+          setFeedback(userFeedback, "No se pudo otorgar plan.", "error");
+        }
+      }
+    });
+  }
+
+  paintStatus();
   refreshBilling();
+  loadGodUsers();
 }
 
 function applyPlanNavVisibility() {
@@ -2514,6 +2796,7 @@ initAdminPanel();
 initAdminPaymentsPanel();
 initQaChecklist();
 initGodModePanel();
+initHomeGodEntry();
 initPlanSelectionPage();
 applyPlanNavVisibility();
 renderUserRoutineFeed();
