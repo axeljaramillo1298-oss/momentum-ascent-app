@@ -2045,15 +2045,21 @@ const initAdminPanel = () => {
       fileText,
       mode,
     });
-    return remote?.plan || null;
+    return {
+      plan: remote?.plan || null,
+      aiMeta: remote?.aiMeta || null,
+    };
   };
 
   if (aiGenerate) {
     aiGenerate.addEventListener("click", async () => {
       let plan = buildAiPlan();
+      let aiMeta = null;
       if (aiOutput) aiOutput.innerHTML = `<strong>Generando...</strong><p>Consultando IA...</p>`;
       try {
-        const remotePlan = await buildAiPlanRemote();
+        const remoteResult = await buildAiPlanRemote();
+        const remotePlan = remoteResult?.plan || null;
+        aiMeta = remoteResult?.aiMeta || null;
         if (remotePlan?.routineText || remotePlan?.dietText) {
           plan = {
             routineText: remotePlan.routineText || plan.routineText,
@@ -2064,7 +2070,16 @@ const initAdminPanel = () => {
       } catch {
         // fallback local
       }
-      if (aiOutput) aiOutput.innerHTML = `<strong>Respuesta IA</strong><p>${plan.routineText}</p><p>${plan.dietText}</p>`;
+      if (aiOutput) {
+        const provider = String(aiMeta?.provider || plan?.provider || "local");
+        const model = String(aiMeta?.model || "").trim();
+        const reason = String(aiMeta?.reason || "").trim();
+        const providerLine =
+          provider === "openai"
+            ? `<p class="today-note">Proveedor: OpenAI${model ? ` • Modelo: ${model}` : ""}</p>`
+            : `<p class="today-note">Proveedor: Fallback${reason ? ` • Motivo: ${reason}` : ""}</p>`;
+        aiOutput.innerHTML = `<strong>Respuesta IA</strong>${providerLine}<p>${plan.routineText}</p><p>${plan.dietText}</p>`;
+      }
       if (finalRoutine) finalRoutine.value = plan.routineText;
       if (finalDiet) finalDiet.value = plan.dietText;
       if (finalMessage) finalMessage.value = plan.messageText;

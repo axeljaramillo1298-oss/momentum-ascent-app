@@ -431,13 +431,29 @@ app.post("/admin/ai-plan", requireAdmin, async (req, res) => {
     }
 
     let plan;
+    let aiMeta = {
+      provider: "fallback",
+      model: null,
+      reason: "unknown",
+    };
     try {
       plan = await generateAiPlan({
         ...payload,
         users,
       });
+      aiMeta = {
+        provider: plan?.provider || "openai",
+        model: plan?.model || null,
+        reason: null,
+      };
     } catch (err) {
-      console.warn("[backend] ai-plan fallback:", String(err.message || err));
+      const reason = String(err?.message || err || "openai_error");
+      console.warn("[backend] ai-plan fallback:", reason);
+      aiMeta = {
+        provider: "fallback",
+        model: null,
+        reason,
+      };
       plan = buildFallbackPlan({
         users,
         prompt: payload.prompt,
@@ -446,7 +462,7 @@ app.post("/admin/ai-plan", requireAdmin, async (req, res) => {
       });
     }
 
-    res.json({ ok: true, plan });
+    res.json({ ok: true, plan, aiMeta });
   } catch (error) {
     res.status(400).json({ ok: false, error: String(error.message || "ai_plan_failed") });
   }
