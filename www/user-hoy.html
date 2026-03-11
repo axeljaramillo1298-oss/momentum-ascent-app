@@ -15,6 +15,7 @@
             <a class="ghost" href="user-hoy.html">Hoy</a>
             <a class="ghost" href="user-rutinas.html">Rutinas</a>
             <a class="ghost" href="user-progreso.html">Progreso</a>
+            <a class="ghost" href="user-dieta.html">Nutricion</a>
             <a class="ghost" href="user-checkin.html">Perfil</a>
             <button class="ghost" type="button" data-action="theme">Cambiar vista</button>
           </div>
@@ -105,6 +106,19 @@
           <article class="card" id="today-card-ranking">
             <h3>Top 10 semanal (anonimo)</h3>
             <div id="weekly-anon-ranking" class="admin-list"></div>
+          </article>
+          <article class="card" id="today-card-nutrition">
+            <h3>Nutricion de hoy</h3>
+            <ul class="stat-list">
+              <li><span>Hidratacion</span><strong id="today-nutri-water">-</strong></li>
+              <li><span>Calorias</span><strong id="today-nutri-calories">-</strong></li>
+              <li><span>Dieta</span><strong id="today-nutri-diet">-</strong></li>
+              <li><span>Score</span><strong id="today-nutri-score">-</strong></li>
+            </ul>
+            <p id="today-nutri-hint" class="today-note"></p>
+            <div class="role-actions">
+              <a class="ghost" href="user-dieta.html">Abrir nutricion</a>
+            </div>
           </article>
         </div>
       </section>

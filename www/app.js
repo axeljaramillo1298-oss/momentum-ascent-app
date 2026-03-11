@@ -1079,6 +1079,7 @@ const renderUserDietPage = async () => {
   const quickWater = document.getElementById("diet-quick-water");
   const quickKcal = document.getElementById("diet-quick-300");
   const quickDone = document.getElementById("diet-quick-done");
+  const quickTraining = document.getElementById("diet-quick-training");
   if (!caps.dietAccess) {
     planList.innerHTML = `
       <div class="admin-item">
@@ -1086,14 +1087,14 @@ const renderUserDietPage = async () => {
         <p>Activa extra Dieta Basica o Dieta Pro en Planes para desbloquear este modulo.</p>
       </div>
     `;
-    [quickWater, quickKcal, quickDone].forEach((btn) => {
+    [quickWater, quickKcal, quickDone, quickTraining].forEach((btn) => {
       if (!btn) return;
       btn.disabled = true;
       btn.title = "Bloqueado por plan";
     });
     return;
   }
-  [quickWater, quickKcal, quickDone].forEach((btn) => {
+  [quickWater, quickKcal, quickDone, quickTraining].forEach((btn) => {
     if (!btn) return;
     btn.disabled = false;
     btn.removeAttribute("title");
@@ -1152,8 +1153,11 @@ const renderUserDietPage = async () => {
   const scoreEl = document.getElementById("user-diet-score");
   if (waterEl) waterEl.textContent = `${water}/8 vasos`;
   if (calEl) calEl.textContent = `${calories} kcal`;
-  if (statusEl) statusEl.textContent = state.dietDone ? "Cumplida" : "Pendiente";
+  if (statusEl) {
+    statusEl.textContent = state.dietDone ? (state.trainingDone ? "Dieta + entreno" : "Cumplida") : "Pendiente";
+  }
   if (scoreEl) scoreEl.textContent = `${score}/100`;
+  renderTodayNutritionSnapshot();
 
   const save = () => {
     localStorage.setItem(`discipline_nutrition_${dateKey}`, JSON.stringify(state));
@@ -1181,6 +1185,59 @@ const renderUserDietPage = async () => {
       save();
     });
   }
+  if (quickTraining && !quickTraining.dataset.bound) {
+    quickTraining.dataset.bound = "1";
+    quickTraining.addEventListener("click", () => {
+      state.trainingDone = !state.trainingDone;
+      save();
+    });
+  }
+};
+
+const readTodayNutritionState = () => {
+  const dateKey = new Date().toISOString().slice(0, 10);
+  const raw = localStorage.getItem(`discipline_nutrition_${dateKey}`);
+  const fallback = { water: 0, calories: 0, dietDone: false, trainingDone: false };
+  if (!raw) {
+    return fallback;
+  }
+  try {
+    return { ...fallback, ...JSON.parse(raw) };
+  } catch {
+    return fallback;
+  }
+};
+
+const getTodayNutritionScore = (state) =>
+  Math.min(100, Math.round((Math.min(8, Number(state.water || 0)) / 8) * 30) + (Number(state.calories || 0) > 0 ? 20 : 0) + (state.dietDone ? 25 : 0) + (state.trainingDone ? 25 : 0));
+
+const renderTodayNutritionSnapshot = () => {
+  const waterEl = document.getElementById("today-nutri-water");
+  const caloriesEl = document.getElementById("today-nutri-calories");
+  const dietEl = document.getElementById("today-nutri-diet");
+  const scoreEl = document.getElementById("today-nutri-score");
+  const hintEl = document.getElementById("today-nutri-hint");
+  if (!waterEl && !caloriesEl && !dietEl && !scoreEl && !hintEl) {
+    return;
+  }
+  const caps = getPlanCapabilities();
+  if (!caps.dietAccess) {
+    if (waterEl) waterEl.textContent = "Bloqueado";
+    if (caloriesEl) caloriesEl.textContent = "Bloqueado";
+    if (dietEl) dietEl.textContent = "Bloqueado";
+    if (scoreEl) scoreEl.textContent = "0/100";
+    if (hintEl) hintEl.textContent = "Activa extra de dieta para desbloquear el modulo.";
+    return;
+  }
+  const state = readTodayNutritionState();
+  const water = Number(state.water || 0);
+  const calories = Number(state.calories || 0);
+  const score = getTodayNutritionScore(state);
+  if (waterEl) waterEl.textContent = `${water}/8 vasos`;
+  if (caloriesEl) caloriesEl.textContent = `${calories} kcal`;
+  if (dietEl) dietEl.textContent = state.dietDone ? (state.trainingDone ? "Dieta + entreno" : "Cumplida") : "Pendiente";
+  if (scoreEl) scoreEl.textContent = `${score}/100`;
+  if (hintEl) hintEl.textContent = score >= 80 ? "Excelente adherencia nutricional." : "Sube hidratacion y registra calorias para mejorar tu score.";
 };
 
 const CHECKIN_PHOTOS_KEY = "discipline_checkin_photos_v1";
@@ -4001,6 +4058,7 @@ const renderTodayState = () => {
 
   renderUserPlanPanel();
   renderUserNotifications();
+  renderTodayNutritionSnapshot();
   updateWeeklyStats();
   applyReengageMessages();
 };
