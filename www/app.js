@@ -1598,15 +1598,29 @@ const renderAdminLists = async () => {
 
   let routines = readJsonArray(ADMIN_ROUTINES_KEY);
   let plans = readJsonArray(ADMIN_NUTRITION_KEY);
-  const current = getCurrentUser();
-  if (current?.id) {
+  const resolveFeedUserId = async () => {
+    const current = getCurrentUser();
+    if (current?.id) {
+      return current.id;
+    }
     try {
-      const remote = await apiGet(`/feed/${encodeURIComponent(current.id)}`);
+      const remoteUsers = await apiGet("/users?search=");
+      const firstId = Array.isArray(remoteUsers?.users) ? String(remoteUsers.users[0]?.id || "").trim() : "";
+      return firstId || "";
+    } catch {
+      return "";
+    }
+  };
+
+  try {
+    const feedUserId = await resolveFeedUserId();
+    if (feedUserId) {
+      const remote = await apiGet(`/feed/${encodeURIComponent(feedUserId)}`);
       routines = Array.isArray(remote?.routines) ? remote.routines : routines;
       plans = Array.isArray(remote?.plans) ? remote.plans : plans;
-    } catch {
-      // fallback local
     }
+  } catch {
+    // fallback local
   }
 
   if (routineList) {
