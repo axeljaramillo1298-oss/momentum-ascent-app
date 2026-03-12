@@ -6069,12 +6069,14 @@ body.onb1-body {
   position: relative;
   z-index: 1;
   height: 100%;
-  padding: calc(118px + env(safe-area-inset-top)) 16px 12px;
+  padding: calc(108px + env(safe-area-inset-top)) 16px 24px;
   display: flex;
   flex-direction: column;
   color: #fff8ee;
   text-align: left;
   gap: 8px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .onb4bet-kicker {
