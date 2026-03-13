@@ -57,6 +57,34 @@ app.use(express.json({ limit: "2mb" }));
 const getRequestEmail = (req) => String(req.headers["x-user-email"] || "").trim().toLowerCase();
 const getGodToken = (req) => String(req.headers["x-god-token"] || "").trim();
 const GOD_SESSIONS = new Map();
+
+// Rate limiting en memoria: max 10 intentos por IP en 15 min
+const RATE_LIMIT_MAP = new Map();
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const RATE_LIMIT_MAX = 10;
+const getClientIp = (req) =>
+  String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "")
+    .split(",")[0]
+    .trim() || "unknown";
+const checkRateLimit = (ip) => {
+  const now = Date.now();
+  const entry = RATE_LIMIT_MAP.get(ip);
+  if (!entry || entry.resetAt <= now) {
+    RATE_LIMIT_MAP.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  entry.count += 1;
+  return entry.count > RATE_LIMIT_MAX;
+};
+const resetRateLimit = (ip) => RATE_LIMIT_MAP.delete(ip);
+// Limpiar entradas expiradas cada 30 min
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of RATE_LIMIT_MAP.entries()) {
+    if (entry.resetAt <= now) RATE_LIMIT_MAP.delete(ip);
+  }
+}, 30 * 60 * 1000);
+
 const cleanupGodSessions = () => {
   const now = Date.now();
   for (const [token, session] of GOD_SESSIONS.entries()) {
@@ -146,6 +174,10 @@ app.get("/health", (req, res) => {
 });
 
 app.post("/auth/login", async (req, res) => {
+  const ip = getClientIp(req);
+  if (checkRateLimit(ip)) {
+    return res.status(429).json({ ok: false, error: "rate_limited", retryAfterMs: RATE_LIMIT_WINDOW_MS });
+  }
   try {
     const payload = req.body || {};
     const email = String(payload.email || "").trim().toLowerCase();
@@ -192,6 +224,10 @@ app.post("/auth/login", async (req, res) => {
 });
 
 app.post("/god/login", async (req, res) => {
+  const ip = getClientIp(req);
+  if (checkRateLimit(ip)) {
+    return res.status(429).json({ ok: false, error: "rate_limited", retryAfterMs: RATE_LIMIT_WINDOW_MS });
+  }
   try {
     if (!GOD_MODE_USER || !GOD_MODE_PASS) {
       return res.status(503).json({ ok: false, error: "god_mode_disabled" });
@@ -201,6 +237,7 @@ app.post("/god/login", async (req, res) => {
     if (username !== GOD_MODE_USER || password !== GOD_MODE_PASS) {
       return res.status(401).json({ ok: false, error: "invalid_credentials" });
     }
+    resetRateLimit(ip); // reset al loguearse bien
     cleanupGodSessions();
     const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = Date.now() + GOD_MODE_SESSION_HOURS * 60 * 60 * 1000;

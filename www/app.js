@@ -280,6 +280,14 @@ const GOD_TOKEN_KEY = "discipline_god_token_v1";
 const GOD_EXPIRES_KEY = "discipline_god_expires_v1";
 const BILLING_TARGET_CACHE_KEY = "discipline_billing_target_v1";
 
+const escHtml = (str) =>
+  String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 const PLAN_CATALOG = {
   free: {
     id: "free",
@@ -400,14 +408,23 @@ function getCurrentSubscription() {
   const current = getCurrentUser();
   if (!current?.id) return null;
   const cache = readSubscriptionCache();
-  return cache[current.id] || null;
+  const entry = cache[current.id];
+  if (!entry) return null;
+  if (entry._cachedAt && Date.now() - entry._cachedAt > SUBSCRIPTION_CACHE_TTL_MS) {
+    delete cache[current.id];
+    writeSubscriptionCache(cache);
+    return null;
+  }
+  return entry;
 }
+
+const SUBSCRIPTION_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hora
 
 function setCurrentSubscription(sub) {
   const current = getCurrentUser();
   if (!current?.id || !sub) return;
   const cache = readSubscriptionCache();
-  cache[current.id] = sub;
+  cache[current.id] = { ...sub, _cachedAt: Date.now() };
   writeSubscriptionCache(cache);
 }
 
@@ -1022,8 +1039,8 @@ const renderUserRoutineFeed = async () => {
       const remote = await apiGet(`/feed/${encodeURIComponent(currentUser.id)}`);
       routines = Array.isArray(remote?.routines) ? remote.routines : routines;
       nutrition = Array.isArray(remote?.plans) ? remote.plans : nutrition;
-    } catch {
-      // fallback local
+    } catch (err) {
+      console.warn("[api] fallback local:", err?.message || err);
     }
   }
   if (!routines.length && !nutrition.length) {
@@ -1038,16 +1055,16 @@ const renderUserRoutineFeed = async () => {
 
   const routineCards = routines.slice(-2).reverse().map((r) => `
     <article class="entry-card">
-      <h3>${r.title}</h3>
-      <p>${r.target} • ${r.duration}</p>
+      <h3>${escHtml(r.title)}</h3>
+      <p>${escHtml(r.target)} • ${escHtml(r.duration)}</p>
       <span class="reg-hint">Publicado por staff</span>
     </article>
   `);
   const nutritionCards = nutrition.slice(-1).reverse().map((n) => `
     <article class="entry-card">
-      <h3>${n.title}</h3>
-      <p>${n.focus}</p>
-      <span class="reg-hint">${n.note}</span>
+      <h3>${escHtml(n.title)}</h3>
+      <p>${escHtml(n.focus)}</p>
+      <span class="reg-hint">${escHtml(n.note)}</span>
     </article>
   `);
   container.innerHTML = [...routineCards, ...nutritionCards].join("");
@@ -1068,8 +1085,8 @@ const renderUserRoutinesPage = async () => {
       const remote = await apiGet(`/feed/${encodeURIComponent(currentUser.id)}`);
       routines = Array.isArray(remote?.routines) ? remote.routines : routines;
       personal = remote?.assignment || personal;
-    } catch {
-      // fallback local
+    } catch (err) {
+      console.warn("[api] fallback local:", err?.message || err);
     }
   }
   const visibleRoutines = caps.plan.id === "free" ? routines.slice(0, 1) : routines;
@@ -1088,9 +1105,9 @@ const renderUserRoutinesPage = async () => {
       .map(
         (r) => `
         <article class="entry-card">
-          <h3>${r.title}</h3>
-          <p>${r.target}</p>
-          <span class="reg-hint">${r.duration}</span>
+          <h3>${escHtml(r.title)}</h3>
+          <p>${escHtml(r.target)}</p>
+          <span class="reg-hint">${escHtml(r.duration)}</span>
         </article>
       `
       )
@@ -1165,8 +1182,8 @@ const renderUserProgressPage = async () => {
           failures: Number(m.failures || 0),
         };
       }
-    } catch {
-      // fallback local
+    } catch (err) {
+      console.warn("[api] fallback local:", err?.message || err);
     }
   }
 
@@ -1281,8 +1298,8 @@ const renderUserDietPage = async () => {
       const remote = await apiGet(`/feed/${encodeURIComponent(currentUser.id)}`);
       plans = Array.isArray(remote?.plans) ? remote.plans : plans;
       personal = remote?.assignment || personal;
-    } catch {
-      // fallback local
+    } catch (err) {
+      console.warn("[api] fallback local:", err?.message || err);
     }
   }
   planList.innerHTML = plans.length
@@ -1290,14 +1307,14 @@ const renderUserDietPage = async () => {
         .slice()
         .reverse()
         .slice(0, 2)
-        .map((p) => `<div class="admin-item"><strong>${p.title}</strong><p>${p.focus}</p><p>${p.note}</p></div>`)
+        .map((p) => `<div class="admin-item"><strong>${escHtml(p.title)}</strong><p>${escHtml(p.focus)}</p><p>${escHtml(p.note)}</p></div>`)
         .join("")
     : `<div class="admin-item"><p>Sin plan cargado por nutricionista.</p></div>`;
 
   if (personal?.diet && caps.dietPersonalized) {
     planList.insertAdjacentHTML(
       "afterbegin",
-      `<div class="admin-item"><strong>Tu dieta personalizada</strong><p>${personal.diet}</p><p>${personal.message || ""}</p></div>`
+      `<div class="admin-item"><strong>Tu dieta personalizada</strong><p>${escHtml(personal.diet)}</p><p>${escHtml(personal.message || "")}</p></div>`
     );
   } else if (personal?.diet && !caps.dietPersonalized) {
     planList.insertAdjacentHTML(
@@ -1427,9 +1444,9 @@ const renderUserCheckinList = () => {
         .map(
           (item) => `
       <div class="admin-item">
-        <strong>${item.note}</strong>
+        <strong>${escHtml(item.note)}</strong>
         <p>${new Date(item.createdAt).toLocaleString("es-MX")}</p>
-        <img src="${item.image}" class="photo-thumb" alt="checkin" />
+        <img src="${escHtml(item.image)}" class="photo-thumb" alt="checkin" />
       </div>
     `
         )
@@ -1543,7 +1560,7 @@ const initUserCheckinPage = () => {
       image,
       createdAt: new Date().toISOString(),
     });
-    saveJsonArray(CHECKIN_PHOTOS_KEY, items);
+    saveJsonArray(CHECKIN_PHOTOS_KEY, items.slice(-15)); // max 15 fotos para no llenar localStorage
     form.reset();
     selectedImageData = "";
     preview.removeAttribute("src");
@@ -1619,8 +1636,8 @@ const renderAdminLists = async () => {
       routines = Array.isArray(remote?.routines) ? remote.routines : routines;
       plans = Array.isArray(remote?.plans) ? remote.plans : plans;
     }
-  } catch {
-    // fallback local
+  } catch (err) {
+    console.warn("[api] fallback local:", err?.message || err);
   }
 
   if (routineList) {
@@ -1628,7 +1645,7 @@ const renderAdminLists = async () => {
       ? routines
           .slice()
           .reverse()
-          .map((r) => `<div class="admin-item"><strong>${r.title}</strong><p>${r.target} • ${r.duration}</p></div>`)
+          .map((r) => `<div class="admin-item"><strong>${escHtml(r.title)}</strong><p>${escHtml(r.target)} • ${escHtml(r.duration)}</p></div>`)
           .join("")
       : `<div class="admin-item"><p>Sin rutinas publicadas.</p></div>`;
   }
@@ -1638,7 +1655,7 @@ const renderAdminLists = async () => {
       ? plans
           .slice()
           .reverse()
-          .map((n) => `<div class="admin-item"><strong>${n.title}</strong><p>${n.focus}</p><p>${n.note}</p></div>`)
+          .map((n) => `<div class="admin-item"><strong>${escHtml(n.title)}</strong><p>${escHtml(n.focus)}</p><p>${escHtml(n.note)}</p></div>`)
           .join("")
       : `<div class="admin-item"><p>Sin planes publicados.</p></div>`;
   }
@@ -1749,13 +1766,13 @@ const renderAdminInsights = async () => {
             const schedule = u.checkinSchedule ? ` • ${u.checkinSchedule}` : "";
             const summary = buildRoutineContextSummary(u);
             return `
-              <article class="admin-status-item ${status}">
+              <article class="admin-status-item ${escHtml(status)}">
                 <div>
-                  <strong>${u.name || "User"}</strong>
-                  <p>${u.email || ""}${schedule}</p>
-                  ${summary ? `<p class="admin-onboarding-hint">${summary}</p>` : ""}
+                  <strong>${escHtml(u.name || "User")}</strong>
+                  <p>${escHtml(u.email || "")}${escHtml(schedule)}</p>
+                  ${summary ? `<p class="admin-onboarding-hint">${escHtml(summary)}</p>` : ""}
                 </div>
-                <span class="admin-status-pill ${status}">${status.toUpperCase()} ${compliance}%</span>
+                <span class="admin-status-pill ${escHtml(status)}">${escHtml(status.toUpperCase())} ${Number(compliance)}%</span>
               </article>
             `;
           })
@@ -1770,7 +1787,7 @@ const renderAdminInsights = async () => {
           .map((u) => {
             const schedule = u.checkinSchedule ? `Horario: ${u.checkinSchedule}` : "Horario sin definir";
             const summary = buildRoutineContextSummary(u);
-            return `<div class="admin-item"><strong>${u.name || "User"}</strong><p>${u.email || ""}</p><p>${schedule}</p>${summary ? `<p class="admin-onboarding-hint">${summary}</p>` : ""}</div>`;
+            return `<div class="admin-item"><strong>${escHtml(u.name || "User")}</strong><p>${escHtml(u.email || "")}</p><p>${escHtml(schedule)}</p>${summary ? `<p class="admin-onboarding-hint">${escHtml(summary)}</p>` : ""}</div>`;
           })
           .join("")
       : `<div class="admin-item"><p>Excelente: no hay pendientes hoy.</p></div>`;
@@ -1883,7 +1900,7 @@ const initAdminPanel = () => {
     const safeUsers = Array.isArray(users) ? users : [];
     const current = timelineUser.value || "";
     timelineUser.innerHTML = `<option value="">Todos los users</option>${safeUsers
-      .map((u) => `<option value="${u.id}">${u.name} • ${u.email}</option>`)
+      .map((u) => `<option value="${escHtml(u.id)}">${escHtml(u.name)} • ${escHtml(u.email)}</option>`)
       .join("")}`;
     if (current && safeUsers.some((u) => u.id === current)) {
       timelineUser.value = current;
@@ -1906,12 +1923,12 @@ const initAdminPanel = () => {
       timelineList.innerHTML = items
         .map((it) => {
           if (it.type === "checkin") {
-            return `<div class="admin-item"><strong>${it.userName || "User"} • check-in ${String(it.status || "").toUpperCase()}</strong><p>${it.userEmail || ""}</p><p>${it.dateKey || ""} • ${Math.round(Number(it.responseSeconds || 0))}s</p></div>`;
+            return `<div class="admin-item"><strong>${escHtml(it.userName || "User")} • check-in ${escHtml(String(it.status || "").toUpperCase())}</strong><p>${escHtml(it.userEmail || "")}</p><p>${escHtml(it.dateKey || "")} • ${Math.round(Number(it.responseSeconds || 0))}s</p></div>`;
           }
           if (it.type === "support_alert") {
-            return `<div class="admin-item"><strong>${it.userName || "User"} • alerta a coach</strong><p>${it.userEmail || ""}</p><p>${it.message || "Solicita carga de rutina/dieta"} • ${new Date(it.at).toLocaleString("es-MX")}</p></div>`;
+            return `<div class="admin-item"><strong>${escHtml(it.userName || "User")} • alerta a coach</strong><p>${escHtml(it.userEmail || "")}</p><p>${escHtml(it.message || "Solicita carga de rutina/dieta")} • ${new Date(it.at).toLocaleString("es-MX")}</p></div>`;
           }
-          return `<div class="admin-item"><strong>${it.userName || "User"} • asignacion</strong><p>${it.userEmail || ""}</p><p>Modo: ${it.mode || "admin_ai"} • ${new Date(it.at).toLocaleString("es-MX")}</p></div>`;
+          return `<div class="admin-item"><strong>${escHtml(it.userName || "User")} • asignacion</strong><p>${escHtml(it.userEmail || "")}</p><p>Modo: ${escHtml(it.mode || "admin_ai")} • ${new Date(it.at).toLocaleString("es-MX")}</p></div>`;
         })
         .join("");
     } catch {
@@ -1953,8 +1970,8 @@ const initAdminPanel = () => {
         }));
         saveJsonArray(USERS_KEY, users);
       }
-    } catch {
-      // fallback local
+    } catch (err) {
+      console.warn("[api] fallback local:", err?.message || err);
     }
     const q = query.trim().toLowerCase();
     const filtered = q
@@ -1972,11 +1989,11 @@ const initAdminPanel = () => {
         return `
         <label class="admin-user-item">
           <span>
-            <strong>${u.name}</strong><br />
-            <small>${u.email}</small>
-            ${summary ? `<small class="admin-user-meta">${summary}</small>` : ""}
+            <strong>${escHtml(u.name)}</strong><br />
+            <small>${escHtml(u.email)}</small>
+            ${summary ? `<small class="admin-user-meta">${escHtml(summary)}</small>` : ""}
           </span>
-          <input type="checkbox" data-admin-user="${u.id}" ${selectedUsers.has(u.id) ? "checked" : ""} />
+          <input type="checkbox" data-admin-user="${escHtml(u.id)}" ${selectedUsers.has(u.id) ? "checked" : ""} />
         </label>
       `;
       })
@@ -2582,18 +2599,18 @@ function initGodModePanel() {
         return `
           <article class="god-user-row">
             <div>
-              <strong>${u.name || "User"}</strong>
-              <p>${email}</p>
+              <strong>${escHtml(u.name || "User")}</strong>
+              <p>${escHtml(email)}</p>
             </div>
             <div class="god-user-chips">
-              <span class="admin-chip ${roleClass}">${role.toUpperCase()}</span>
-              <span class="admin-chip ${planClass}">${plan}</span>
+              <span class="admin-chip ${roleClass}">${escHtml(role.toUpperCase())}</span>
+              <span class="admin-chip ${planClass}">${escHtml(plan)}</span>
             </div>
             <div class="god-user-actions">
-              <button class="ghost" type="button" data-god-action="fill" data-god-user="${email}" data-god-role="${role}" data-god-plan="${plan}">Cargar</button>
-              <button class="ghost" type="button" data-god-action="role-admin" data-god-user="${email}">Admin</button>
-              <button class="ghost" type="button" data-god-action="role-user" data-god-user="${email}">User</button>
-              <button class="primary" type="button" data-god-action="grant-coach" data-god-user="${email}">Coach+Humano</button>
+              <button class="ghost" type="button" data-god-action="fill" data-god-user="${escHtml(email)}" data-god-role="${escHtml(role)}" data-god-plan="${escHtml(plan)}">Cargar</button>
+              <button class="ghost" type="button" data-god-action="role-admin" data-god-user="${escHtml(email)}">Admin</button>
+              <button class="ghost" type="button" data-god-action="role-user" data-god-user="${escHtml(email)}">User</button>
+              <button class="primary" type="button" data-god-action="grant-coach" data-god-user="${escHtml(email)}">Coach+Humano</button>
             </div>
           </article>
         `;
@@ -2837,11 +2854,52 @@ function applyPlanNavVisibility() {
   });
 }
 
+const USER_SESSION_KEYS = [
+  CURRENT_USER_KEY,
+  GOD_TOKEN_KEY,
+  GOD_EXPIRES_KEY,
+  SUBSCRIPTION_CACHE_KEY,
+  BILLING_TARGET_CACHE_KEY,
+  PLAN_SELECTION_KEY,
+  REG_DRAFT_KEY,
+];
+
+const logoutCurrentUser = async () => {
+  const godToken = String(localStorage.getItem(GOD_TOKEN_KEY) || "").trim();
+  if (godToken) {
+    try {
+      await apiPost("/god/logout", {});
+    } catch {
+      // ignorar si falla
+    }
+  }
+  USER_SESSION_KEYS.forEach((k) => localStorage.removeItem(k));
+  window.location.replace("registro.html#login");
+};
+
+const initUserLogoutButton = () => {
+  const userPages = new Set(["user-hoy.html", "user-rutinas.html", "user-progreso.html", "user-dieta.html", "user-checkin.html"]);
+  const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
+  if (!userPages.has(page)) return;
+  const navActions = document.querySelector(".user-panel-nav .nav-actions");
+  if (!navActions || navActions.querySelector("[data-action='logout']")) return;
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "ghost logout-btn";
+  btn.setAttribute("data-action", "logout");
+  btn.textContent = "Salir";
+  btn.addEventListener("click", () => {
+    if (confirm("¿Cerrar sesión?")) logoutCurrentUser();
+  });
+  navActions.appendChild(btn);
+};
+
 initRoleMode();
 initAppEntryScreen();
 hideGuestOnlyLinksIfLogged();
 guardAuthScreensForLoggedUser();
 enforceOnboardingBeforeHome();
+initUserLogoutButton();
 initAdminPanel();
 initAdminPaymentsPanel();
 initQaChecklist();
@@ -2886,8 +2944,8 @@ const bootApiSession = async () => {
     renderWeeklyAiAdjustment();
     applyPlanNavVisibility();
     renderUserNotifications();
-  } catch {
-    // fallback local
+  } catch (err) {
+    console.warn("[api] fallback local:", err?.message || err);
   }
 };
 
@@ -3724,8 +3782,8 @@ if (regForm) {
       await apiPost("/coach/onboarding/start", {
         email: String(data.get("email") || "").trim().toLowerCase(),
       }).catch(() => null);
-    } catch {
-      // fallback local
+    } catch (err) {
+      console.warn("[api] fallback local:", err?.message || err);
     }
 
     regForm.reset();
@@ -3775,8 +3833,8 @@ if (loginForm) {
       renderWeeklyAiAdjustment();
       applyPlanNavVisibility();
       renderUserNotifications();
-    } catch {
-      // fallback local
+    } catch (err) {
+      console.warn("[api] fallback local:", err?.message || err);
     }
     if (loginFeedback) {
       loginFeedback.textContent = localUser ? `Sesion iniciada como ${localUser.name}.` : "No fue posible iniciar sesion.";
@@ -3805,20 +3863,70 @@ if (progress) {
   });
 }
 
+// ---- 3D TILT mejorado con perspectiva, profundidad y retorno suave ----
 const tiltElements = document.querySelectorAll("[data-tilt]");
 tiltElements.forEach((el) => {
+  el.addEventListener("mouseenter", () => {
+    el.style.transition = "transform 0.12s ease";
+  });
   el.addEventListener("mousemove", (e) => {
     const rect = el.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const rx = (y / rect.height - 0.5) * -8;
-    const ry = (x / rect.width - 0.5) * 8;
-    el.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    const rx = -y * 14;
+    const ry = x * 14;
+    el.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) scale3d(1.02,1.02,1.02)`;
   });
   el.addEventListener("mouseleave", () => {
-    el.style.transform = "";
+    el.style.transition = "transform 0.5s cubic-bezier(0.03,0.98,0.52,0.99)";
+    el.style.transform = "perspective(900px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)";
   });
 });
+
+// ---- SPOTLIGHT en cards (sigue el mouse) ----
+const initCardSpotlight = () => {
+  document.querySelectorAll(".card, .panel, .price-card, .entry-card").forEach((el) => {
+    el.addEventListener("mousemove", (e) => {
+      const rect = el.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      el.style.setProperty("--mx", `${x}%`);
+      el.style.setProperty("--my", `${y}%`);
+    });
+  });
+};
+initCardSpotlight();
+
+// ---- RIPPLE en botones ----
+const initRipple = () => {
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".primary, .ghost");
+    if (!btn || getComputedStyle(btn).position === "static") return;
+    btn.style.position = "relative";
+    btn.style.overflow = "hidden";
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top - size / 2;
+    const ripple = document.createElement("span");
+    ripple.className = "ripple-wave";
+    ripple.style.cssText = `width:${size}px;height:${size}px;left:${x}px;top:${y}px;`;
+    btn.appendChild(ripple);
+    ripple.addEventListener("animationend", () => ripple.remove(), { once: true });
+  });
+};
+initRipple();
+
+// ---- ORBS animados en background (todas las páginas) ----
+const initOrbs = () => {
+  if (document.querySelector(".orb")) return;
+  [1, 2, 3].forEach((n) => {
+    const orb = document.createElement("div");
+    orb.className = `orb orb-${n}`;
+    document.body.insertBefore(orb, document.body.firstChild);
+  });
+};
+initOrbs();
 
 const floatCards = document.querySelectorAll("[data-float]");
 const floatObserver = new IntersectionObserver(
@@ -4390,7 +4498,7 @@ async function renderUserNotifications() {
     .sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")))
     .slice(0, 8);
   host.innerHTML = sorted.length
-    ? sorted.map((it) => `<div class="admin-item"><strong>${new Date(it.at).toLocaleString("es-MX")}</strong><p>${it.text}</p></div>`).join("")
+    ? sorted.map((it) => `<div class="admin-item"><strong>${new Date(it.at).toLocaleString("es-MX")}</strong><p>${escHtml(it.text)}</p></div>`).join("")
     : `<div class="admin-item"><p>Sin notificaciones nuevas.</p></div>`;
 }
 
@@ -4682,8 +4790,8 @@ const resolveTodayOutcome = async (status) => {
         disciplineState.failures = Number(m.failures || disciplineState.failures || 0);
         disciplineState.xp = Number(m.xp || disciplineState.xp || 0);
       }
-    } catch {
-      // fallback local
+    } catch (err) {
+      console.warn("[api] fallback local:", err?.message || err);
     }
   }
   saveDisciplineState();
