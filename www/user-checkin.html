@@ -12,23 +12,42 @@
         <nav class="user-panel-nav">
           <div class="logo">MOMENTUM ASCENT</div>
         <div class="nav-actions">
-          <a class="ghost" href="user-hoy.html">Hoy</a>
-          <a class="ghost" href="user-rutinas.html">Rutinas</a>
-          <a class="ghost" href="user-progreso.html">Progreso</a>
-          <a class="ghost" href="user-dieta.html">Nutricion</a>
-          <a class="ghost" href="user-checkin.html">Perfil</a>
+          <a class="ghost up-nav-link" href="user-hoy.html" data-nav="hoy">Hoy</a>
+          <a class="ghost up-nav-link" href="user-rutinas.html" data-nav="rutinas">Rutinas</a>
+          <a class="ghost up-nav-link" href="user-progreso.html" data-nav="progreso">Progreso</a>
+          <a class="ghost up-nav-link" href="user-dieta.html" data-nav="nutricion">Nutricion</a>
+          <a class="ghost up-nav-link up-nav-active" href="user-checkin.html" data-nav="perfil">Perfil</a>
           <button class="ghost" type="button" data-action="theme">Cambiar vista</button>
         </div>
         </nav>
         <div class="user-panel-hero">
           <p class="eyebrow">MOMENTUM INDEX</p>
-          <h1>CHECK-IN CON FOTO</h1>
-          <p class="subhead">Comparte evidencia de entrenamiento o habito cumplido.</p>
+          <h1>MI PERFIL</h1>
+          <p class="subhead">Tu progreso, nivel, apuesta activa y evidencia de entrenamiento.</p>
         </div>
       </header>
+
+      <!-- PROFILE HEADER CARD -->
+      <section class="section" style="padding-bottom:0;">
+        <div class="profile-header-card" id="profile-header-card">
+          <!-- Rendered by JS: renderProfileHeader() -->
+          <div class="profile-avatar">?</div>
+          <div class="profile-name">Cargando...</div>
+        </div>
+      </section>
+
       <section class="section admin-grid">
+        <!-- BET MODE -->
         <article class="card">
-          <h3>Nuevo check-in</h3>
+          <div class="section-header-row">
+            <h3>Modo Apuesta</h3>
+          </div>
+          <div class="bet-status-card"></div>
+        </article>
+
+        <!-- PHOTO CHECK-IN -->
+        <article class="card">
+          <h3>Nuevo check-in con foto</h3>
           <form id="user-checkin-form" class="admin-form">
             <label>Foto<input id="user-checkin-file" type="file" accept="image/*" capture="environment" required /></label>
             <label>Nota<input id="user-checkin-note" type="text" placeholder="Ej. Full body 30 min" required /></label>
@@ -37,12 +56,32 @@
             <p class="reg-feedback" id="user-checkin-feedback" aria-live="polite"></p>
           </form>
         </article>
+
         <article class="card">
           <h3>Historial reciente</h3>
           <div id="user-checkin-list" class="admin-list"></div>
         </article>
       </section>
     </main>
+
+    <nav class="bottom-nav" aria-label="Navegacion principal">
+      <a class="bottom-nav-item" href="user-hoy.html">
+        <span class="bottom-nav-icon">🏠</span><span>Hoy</span>
+      </a>
+      <a class="bottom-nav-item" href="user-rutinas.html">
+        <span class="bottom-nav-icon">💪</span><span>Rutinas</span>
+      </a>
+      <a class="bottom-nav-item" href="user-progreso.html">
+        <span class="bottom-nav-icon">📈</span><span>Progreso</span>
+      </a>
+      <a class="bottom-nav-item" href="user-dieta.html">
+        <span class="bottom-nav-icon">🥗</span><span>Nutricion</span>
+      </a>
+      <a class="bottom-nav-item bottom-nav-active" href="user-checkin.html">
+        <span class="bottom-nav-icon">👤</span><span>Perfil</span>
+      </a>
+    </nav>
+
     <script src="app.js"></script>
   </body>
 </html>

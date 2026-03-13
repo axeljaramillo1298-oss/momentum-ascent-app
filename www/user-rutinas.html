@@ -12,29 +12,42 @@
         <nav class="user-panel-nav">
           <div class="logo">MOMENTUM ASCENT</div>
         <div class="nav-actions">
-          <a class="ghost" href="user-hoy.html">Hoy</a>
-          <a class="ghost" href="user-rutinas.html">Rutinas</a>
-          <a class="ghost" href="user-progreso.html">Progreso</a>
-          <a class="ghost" href="user-dieta.html">Nutricion</a>
-          <a class="ghost" href="user-checkin.html">Perfil</a>
+          <a class="ghost up-nav-link" href="user-hoy.html" data-nav="hoy">Hoy</a>
+          <a class="ghost up-nav-link up-nav-active" href="user-rutinas.html" data-nav="rutinas">Rutinas</a>
+          <a class="ghost up-nav-link" href="user-progreso.html" data-nav="progreso">Progreso</a>
+          <a class="ghost up-nav-link" href="user-dieta.html" data-nav="nutricion">Nutricion</a>
+          <a class="ghost up-nav-link" href="user-checkin.html" data-nav="perfil">Perfil</a>
           <button class="ghost" type="button" data-action="theme">Cambiar vista</button>
         </div>
         </nav>
         <div class="user-panel-hero">
           <p class="eyebrow">MOMENTUM INDEX</p>
           <h1>RUTINAS ACTIVAS</h1>
-          <p class="subhead">Aqui ves rutinas publicadas por entrenadores y recomendaciones automaticas.</p>
+          <p class="subhead">Rutinas del coach + recomendaciones automaticas segun tu cumplimiento.</p>
         </div>
       </header>
+
+      <!-- LEVEL BAR QUICK VIEW -->
+      <section class="section" style="padding-bottom:0;">
+        <div class="level-bar-card" id="user-level-bar">
+          <div class="level-bar-head">
+            <span class="level-badge">🌱 Cargando...</span>
+          </div>
+          <div class="level-progress-track">
+            <div class="level-progress-fill" style="width:0%"></div>
+          </div>
+        </div>
+      </section>
+
       <section class="section admin-grid">
         <article class="card" id="user-plan-routines-panel"></article>
         <article class="card">
-          <h3>Modo multiactividad</h3>
+          <h3>Actividad de hoy</h3>
           <p class="today-note">Mantiene tu racha aunque cambies el tipo de entrenamiento.</p>
           <div id="activity-modes" class="chip-grid"></div>
         </article>
         <article class="card">
-          <h3>Coach IA adaptativo semanal</h3>
+          <h3>Ajuste semanal IA</h3>
           <div id="weekly-ai-adjustment" class="admin-list"></div>
         </article>
       </section>
@@ -53,6 +66,25 @@
         <div id="routine-templates" class="entry-grid"></div>
       </section>
     </main>
+
+    <nav class="bottom-nav" aria-label="Navegacion principal">
+      <a class="bottom-nav-item" href="user-hoy.html">
+        <span class="bottom-nav-icon">🏠</span><span>Hoy</span>
+      </a>
+      <a class="bottom-nav-item bottom-nav-active" href="user-rutinas.html">
+        <span class="bottom-nav-icon">💪</span><span>Rutinas</span>
+      </a>
+      <a class="bottom-nav-item" href="user-progreso.html">
+        <span class="bottom-nav-icon">📈</span><span>Progreso</span>
+      </a>
+      <a class="bottom-nav-item" href="user-dieta.html">
+        <span class="bottom-nav-icon">🥗</span><span>Nutricion</span>
+      </a>
+      <a class="bottom-nav-item" href="user-checkin.html">
+        <span class="bottom-nav-icon">👤</span><span>Perfil</span>
+      </a>
+    </nav>
+
     <script src="app.js"></script>
   </body>
 </html>

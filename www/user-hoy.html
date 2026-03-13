@@ -12,11 +12,11 @@
         <nav class="user-panel-nav">
           <div class="logo">MOMENTUM ASCENT</div>
           <div class="nav-actions">
-            <a class="ghost" href="user-hoy.html">Hoy</a>
-            <a class="ghost" href="user-rutinas.html">Rutinas</a>
-            <a class="ghost" href="user-progreso.html">Progreso</a>
-            <a class="ghost" href="user-dieta.html">Nutricion</a>
-            <a class="ghost" href="user-checkin.html">Perfil</a>
+            <a class="ghost up-nav-link up-nav-active" href="user-hoy.html" data-nav="hoy">Hoy</a>
+            <a class="ghost up-nav-link" href="user-rutinas.html" data-nav="rutinas">Rutinas</a>
+            <a class="ghost up-nav-link" href="user-progreso.html" data-nav="progreso">Progreso</a>
+            <a class="ghost up-nav-link" href="user-dieta.html" data-nav="nutricion">Nutricion</a>
+            <a class="ghost up-nav-link" href="user-checkin.html" data-nav="perfil">Perfil</a>
             <button class="ghost" type="button" data-action="theme">Cambiar vista</button>
           </div>
         </nav>
@@ -24,55 +24,115 @@
           <p class="eyebrow">MOMENTUM INDEX</p>
           <h1>CONTROL DE HOY</h1>
           <p class="subhead">Check-in diario con limite de 10 minutos. El silencio tambien cuenta como respuesta.</p>
+          <p class="user-greeting" id="user-greeting"></p>
         </div>
       </header>
 
       <section class="section today-loop">
+
+        <!-- TRIPLE CHECK-IN (3 habits = streak) -->
+        <div class="today-triple-wrap" style="margin-bottom:14px;">
+          <div class="triple-checkin-title">Check-in del dia — 3 habitos</div>
+          <div class="triple-checkin-container"></div>
+        </div>
+
         <div class="today-grid">
           <article class="card today-main">
-            <h3 id="today-question">Check-in del dia. Cumpliste?</h3>
-            <p class="today-date" id="today-date">Hoy</p>
-            <p class="today-timer">Tiempo restante: <strong id="today-countdown">10:00</strong></p>
-            <p class="today-status-line" id="today-status">Estado: Pendiente</p>
-            <p class="today-pressure" id="today-pressure"></p>
-            <p class="today-note" id="user-next-checkin">Proximo check-in: -</p>
-            <div class="today-actions">
-              <button class="primary" id="today-yes" type="button">Si</button>
-              <button class="ghost" id="today-no" type="button">No</button>
-              <button class="ghost" id="today-reset-window" type="button">Reiniciar ventana</button>
+            <div class="today-main-inner">
+              <div class="today-ring-wrap">
+                <svg class="today-ring" viewBox="0 0 100 100" aria-hidden="true">
+                  <circle class="today-ring-bg" cx="50" cy="50" r="42" />
+                  <circle class="today-ring-fill" id="today-ring-fill" cx="50" cy="50" r="42" />
+                </svg>
+                <div class="today-ring-center">
+                  <strong id="today-countdown">10:00</strong>
+                  <span>restante</span>
+                </div>
+              </div>
+              <div class="today-main-content">
+                <h3 id="today-question">Check-in del dia. Cumpliste?</h3>
+                <p class="today-date" id="today-date">Hoy</p>
+                <p class="today-status-line" id="today-status">Estado: Pendiente</p>
+                <p class="today-pressure" id="today-pressure"></p>
+                <p class="today-note" id="user-next-checkin">Proximo check-in: -</p>
+                <div class="today-actions">
+                  <button class="primary today-btn-yes" id="today-yes" type="button">✅ Si, cumpli</button>
+                  <button class="ghost today-btn-no" id="today-no" type="button">❌ No cumpli</button>
+                </div>
+                <button class="ghost today-btn-reset" id="today-reset-window" type="button">↺ Reiniciar ventana</button>
+              </div>
             </div>
           </article>
 
           <article class="card today-stats">
             <h3>Disciplina</h3>
-            <ul class="stat-list">
-              <li><span>Racha</span><strong id="today-streak">-</strong></li>
-              <li><span>Mejor racha</span><strong id="today-best-streak">-</strong></li>
-              <li><span>Nivel</span><strong id="today-level">-</strong></li>
-              <li><span>XP total</span><strong id="today-xp">-</strong></li>
-              <li><span>Ascent Index</span><strong id="today-ascent-index">-</strong></li>
-              <li><span>Cumplimiento</span><strong id="today-compliance">-</strong></li>
-              <li><span>Promedio respuesta</span><strong id="today-response">-</strong></li>
-              <li><span>Castigo pendiente</span><strong id="today-penalty">-</strong></li>
-            </ul>
-            <label>Modo coach
-              <select id="coach-mode">
-                <option value="normal">Normal</option>
-                <option value="disciplina">Disciplina</option>
-                <option value="castigo">Castigo</option>
-                <option value="adaptive">AI Adaptive</option>
-              </select>
-            </label>
-            <label class="agree-row"><input type="checkbox" id="mode-contract" /><span>Modo contrato (3 fallos reinician racha)</span></label>
+            <div class="stat-tiles">
+              <div class="stat-tile stat-tile--fire">
+                <span class="stat-tile-icon">🔥</span>
+                <strong id="today-streak">-</strong>
+                <span>Racha</span>
+              </div>
+              <div class="stat-tile stat-tile--trophy">
+                <span class="stat-tile-icon">🏆</span>
+                <strong id="today-best-streak">-</strong>
+                <span>Mejor racha</span>
+              </div>
+              <div class="stat-tile stat-tile--star">
+                <span class="stat-tile-icon">⭐</span>
+                <strong id="today-xp">-</strong>
+                <span>XP</span>
+              </div>
+              <div class="stat-tile stat-tile--check">
+                <span class="stat-tile-icon">✅</span>
+                <strong id="today-compliance">-</strong>
+                <span>Cumplimiento</span>
+              </div>
+              <div class="stat-tile stat-tile--index">
+                <span class="stat-tile-icon">📈</span>
+                <strong id="today-ascent-index">-</strong>
+                <span>Ascent Index</span>
+              </div>
+              <div class="stat-tile stat-tile--level">
+                <span class="stat-tile-icon">🎖️</span>
+                <strong id="today-level" class="stat-tile-small">-</strong>
+                <span>Nivel</span>
+              </div>
+            </div>
+
+            <div class="today-coach-row">
+              <label class="today-coach-label">Modo coach
+                <select id="coach-mode">
+                  <option value="normal">Normal</option>
+                  <option value="disciplina">Disciplina</option>
+                  <option value="castigo">Castigo</option>
+                  <option value="adaptive">AI Adaptive</option>
+                </select>
+              </label>
+              <label class="agree-row"><input type="checkbox" id="mode-contract" /><span>Modo contrato</span></label>
+            </div>
+
+            <div class="stat-tiles stat-tiles--sm">
+              <div class="stat-tile">
+                <strong id="weekly-rate">-</strong>
+                <span>Cumpl. 7d</span>
+              </div>
+              <div class="stat-tile">
+                <strong id="today-response">-</strong>
+                <span>Resp. prom.</span>
+              </div>
+              <div class="stat-tile stat-tile--warn">
+                <strong id="today-penalty">-</strong>
+                <span>Castigo</span>
+              </div>
+            </div>
+
             <p id="today-unstoppable" class="today-note"></p>
-            <ul class="stat-list">
-              <li><span>Cumplimiento 7 dias</span><strong id="weekly-rate">-</strong></li>
-              <li><span>Dia critico</span><strong id="weekly-critical">-</strong></li>
-              <li><span>Hora fuerte</span><strong id="weekly-hour">-</strong></li>
-            </ul>
             <p id="reengage-message" class="today-note"></p>
             <p id="mirror-message" class="today-note"></p>
             <div id="smart-reminders" class="admin-list"></div>
+            <!-- hidden refs used by JS -->
+            <span id="weekly-critical" hidden></span>
+            <span id="weekly-hour" hidden></span>
           </article>
         </div>
 
@@ -104,8 +164,16 @@
             <p id="mindset-status" class="reg-hint"></p>
           </article>
           <article class="card" id="today-card-ranking">
-            <h3>Top 10 semanal (anonimo)</h3>
-            <div id="weekly-anon-ranking" class="admin-list"></div>
+            <div class="section-header-row">
+              <h3>Ranking semanal</h3>
+              <a class="see-all" href="user-progreso.html">Ver todo</a>
+            </div>
+            <div id="hoy-gaming-ranking" class="gaming-ranking-list"></div>
+            <div id="weekly-anon-ranking" class="admin-list" style="display:none;"></div>
+          </article>
+
+          <article class="card" style="padding:0;">
+            <div class="bet-status-card"></div>
           </article>
           <article class="card" id="today-card-nutrition">
             <h3>Nutricion de hoy</h3>
@@ -123,6 +191,30 @@
         </div>
       </section>
     </main>
+
+    <nav class="bottom-nav" aria-label="Navegacion principal">
+      <a class="bottom-nav-item bottom-nav-active" href="user-hoy.html">
+        <span class="bottom-nav-icon">🏠</span>
+        <span>Hoy</span>
+      </a>
+      <a class="bottom-nav-item" href="user-rutinas.html">
+        <span class="bottom-nav-icon">💪</span>
+        <span>Rutinas</span>
+      </a>
+      <a class="bottom-nav-item" href="user-progreso.html">
+        <span class="bottom-nav-icon">📈</span>
+        <span>Progreso</span>
+      </a>
+      <a class="bottom-nav-item" href="user-dieta.html">
+        <span class="bottom-nav-icon">🥗</span>
+        <span>Nutricion</span>
+      </a>
+      <a class="bottom-nav-item" href="user-checkin.html">
+        <span class="bottom-nav-icon">👤</span>
+        <span>Perfil</span>
+      </a>
+    </nav>
+
     <script src="app.js"></script>
   </body>
 </html>

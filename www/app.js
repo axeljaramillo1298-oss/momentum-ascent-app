@@ -1567,6 +1567,7 @@ const initUserCheckinPage = () => {
     preview.style.display = "none";
     renderUserCheckinList();
     setFeedback("Check-in guardado.", "success");
+    showToast("📸 Check-in guardado correctamente.", "success");
   });
 
   renderUserCheckinList();
@@ -1824,6 +1825,7 @@ const initAdminPanel = () => {
       renderAdminLists();
       renderAdminInsights();
       renderUserRoutineFeed();
+      showToast("💪 Rutina guardada correctamente.", "success");
       if (routineFeedback) {
         routineFeedback.className = "reg-feedback success";
         routineFeedback.textContent = "Rutina guardada correctamente.";
@@ -1855,6 +1857,7 @@ const initAdminPanel = () => {
       renderAdminLists();
       renderAdminInsights();
       renderUserRoutineFeed();
+      showToast("🥗 Plan de nutricion guardado.", "success");
       if (nutritionFeedback) {
         nutritionFeedback.className = "reg-feedback success";
         nutritionFeedback.textContent = "Plan nutricional guardado.";
@@ -2889,10 +2892,135 @@ const initUserLogoutButton = () => {
   btn.setAttribute("data-action", "logout");
   btn.textContent = "Salir";
   btn.addEventListener("click", () => {
-    if (confirm("¿Cerrar sesión?")) logoutCurrentUser();
+    if (confirm("¿Cerrar sesión?")) {
+      showToast("Sesion cerrada. Hasta pronto.", "info", 1500);
+      setTimeout(logoutCurrentUser, 600);
+    }
   });
   navActions.appendChild(btn);
 };
+
+/* ── TOAST NOTIFICATION SYSTEM ── */
+const _toastQueue = [];
+let _toastActive = false;
+
+function showToast(message, type = "info", duration = 2800) {
+  _toastQueue.push({ message, type, duration });
+  if (!_toastActive) _processToastQueue();
+}
+
+function _processToastQueue() {
+  if (!_toastQueue.length) { _toastActive = false; return; }
+  _toastActive = true;
+  const { message, type, duration } = _toastQueue.shift();
+  let container = document.getElementById("toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toast-container";
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement("div");
+  toast.className = `toast toast--${type}`;
+  const icons = { success: "✅", error: "❌", info: "ℹ️", warning: "⚠️" };
+  toast.innerHTML = `<span class="toast-icon">${icons[type] || "ℹ️"}</span><span class="toast-msg">${String(message)}</span>`;
+  container.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add("toast--show"));
+  setTimeout(() => {
+    toast.classList.add("toast--hide");
+    setTimeout(() => { toast.remove(); _processToastQueue(); }, 380);
+  }, duration);
+}
+
+/* ── USER GREETING ── */
+function renderUserGreeting() {
+  const el = document.getElementById("user-greeting");
+  if (!el) return;
+  const user = getCurrentUser();
+  if (!user?.name) return;
+  const firstName = String(user.name).split(" ")[0];
+  const h = new Date().getHours();
+  const saludo = h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches";
+  el.textContent = `${saludo}, ${firstName}.`;
+}
+
+/* ── RING TIMER ── */
+const RING_TOTAL_SECONDS = 10 * 60;
+function updateRingTimer(remainingSeconds) {
+  const ring = document.getElementById("today-ring-fill");
+  if (!ring) return;
+  const pct = Math.max(0, Math.min(1, remainingSeconds / RING_TOTAL_SECONDS));
+  const circumference = 2 * Math.PI * 42; // r=42
+  ring.style.strokeDasharray = `${circumference}`;
+  ring.style.strokeDashoffset = `${circumference * (1 - pct)}`;
+  // Color: green -> orange -> red
+  const hue = Math.round(pct * 120); // 120=green, 0=red
+  ring.style.stroke = `hsl(${hue}, 85%, 52%)`;
+}
+
+/* ── ADMIN AUTO-REFRESH ── */
+function initAdminAutoRefresh() {
+  const isAdminPage = (window.location.pathname.split("/").pop() || "").toLowerCase() === "admin.html";
+  if (!isAdminPage) return;
+  const REFRESH_INTERVAL = 30 * 1000;
+  setInterval(() => {
+    if (typeof renderAdminKpis === "function") renderAdminKpis();
+    if (typeof renderAdminInsights === "function") renderAdminInsights();
+  }, REFRESH_INTERVAL);
+}
+
+/* ── ADMIN TAB NAV ── */
+function initAdminTabNav() {
+  const nav = document.getElementById("admin-tab-nav");
+  if (!nav) return;
+  const tabs = nav.querySelectorAll(".admin-tab[data-tab]");
+  if (!tabs.length) return;
+
+  const scrollToSection = (sectionId) => {
+    const el = document.getElementById(`admin-section-${sectionId}`);
+    if (!el) return;
+    const offset = nav.getBoundingClientRect().height + 12;
+    const top = el.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top, behavior: "smooth" });
+  };
+
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      tabs.forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      scrollToSection(tab.dataset.tab);
+    });
+  });
+
+  // Highlight tab on scroll via IntersectionObserver
+  const sections = Array.from(document.querySelectorAll(".admin-panel-section[data-admin-section], #admin-section-modo-dios[data-admin-section]"));
+  if (!sections.length) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const sectionId = entry.target.dataset.adminSection;
+        tabs.forEach((t) => t.classList.toggle("active", t.dataset.tab === sectionId));
+      });
+    },
+    { rootMargin: "-55% 0px -40% 0px" }
+  );
+
+  sections.forEach((s) => observer.observe(s));
+}
+
+/* ── MODO DIOS: pulse status when active ── */
+function initGodStatusPulse() {
+  const pill = document.getElementById("god-status-pill");
+  if (!pill) return;
+  const token = String(localStorage.getItem("discipline_god_token") || "").trim();
+  const exp = Date.parse(String(localStorage.getItem("discipline_god_expires") || ""));
+  const active = token && (!Number.isFinite(exp) || Date.now() <= exp);
+  if (active) {
+    pill.className = "admin-chip green god-status-badge";
+    pill.textContent = "Modo Dios activo";
+  }
+}
 
 initRoleMode();
 initAppEntryScreen();
@@ -2904,6 +3032,10 @@ initAdminPanel();
 initAdminPaymentsPanel();
 initQaChecklist();
 initGodModePanel();
+initAdminTabNav();
+initGodStatusPulse();
+initAdminAutoRefresh();
+renderUserGreeting();
 initHomeGodEntry();
 initPlanSelectionPage();
 applyPlanNavVisibility();
@@ -4653,25 +4785,31 @@ const renderTodayState = () => {
 
   const statusMap = {
     pending: "Estado: Pendiente",
-    yes: "Estado: Cumplido",
-    no: "Estado: Fallo declarado",
-    timeout: "Estado: Fallo por silencio",
+    yes: "✅ Cumplido",
+    no: "❌ Fallo declarado",
+    timeout: "⏰ Fallo por silencio",
   };
+  const currentStatus = disciplineState.daily?.status || "pending";
   if (todayStatus) {
-    todayStatus.textContent = statusMap[disciplineState.daily?.status] || "Estado: Pendiente";
+    todayStatus.textContent = statusMap[currentStatus] || "Estado: Pendiente";
+    todayStatus.dataset.status = currentStatus;
   }
 
   if (smartReminders) {
     const reminderText = [];
     if (disciplineState.daily?.status === "timeout" || disciplineState.daily?.status === "no") {
-      reminderText.push("You missed yesterday.");
-      reminderText.push("Momentum waits for no one.");
+      reminderText.push("Fallaste ayer. El momentum no espera.");
+      reminderText.push("Cada dia que no actuas te aleja del resultado.");
+    } else if (disciplineState.streak >= 7) {
+      reminderText.push(`${disciplineState.streak} dias seguidos. No rompas la cadena.`);
+      reminderText.push("Construye momentum. Eleva tu nivel diario.");
     } else {
-      reminderText.push("Momentum waits for no one.");
-      reminderText.push("Build momentum. Rise daily.");
+      reminderText.push("El momentum no espera a nadie.");
+      reminderText.push("Construye constancia. Sube dia a dia.");
     }
     smartReminders.innerHTML = reminderText.map((t) => `<div class="admin-item"><p>${t}</p></div>`).join("");
   }
+  renderUserGreeting();
 
   if (mindsetPhrase) {
     const phrases = [
@@ -4798,6 +4936,16 @@ const resolveTodayOutcome = async (status) => {
   closeTodayTimer();
   renderTodayState();
   renderUserProgressPage();
+  // Toast feedback
+  if (status === "yes") {
+    showToast(`🔥 ¡Cumpliste! +${120 + Math.min(20, disciplineState.streak)} XP. Racha: ${disciplineState.streak} dias.`, "success");
+  } else if (status === "no") {
+    showToast("Fallo registrado. Mañana es otra oportunidad.", "warning");
+  } else if (status === "timeout") {
+    showToast("Tiempo agotado. El silencio cuenta como fallo.", "error");
+  }
+  // Reset ring
+  updateRingTimer(0);
 };
 
 const tickTodayCountdown = () => {
@@ -4812,6 +4960,7 @@ const tickTodayCountdown = () => {
 
   const diffSeconds = Math.max(0, Math.floor((disciplineState.daily.deadlineAt - Date.now()) / 1000));
   todayCountdown.textContent = formatSeconds(diffSeconds);
+  updateRingTimer(diffSeconds);
   if (diffSeconds <= 0) {
     resolveTodayOutcome("timeout");
   }
@@ -5291,7 +5440,8 @@ const renderSessionBar = () => {
 };
 
 const renderBottomTabs = () => {
-  if (!isAppPage() || document.querySelector(".bottom-tabs")) {
+  // Skip if the new .bottom-nav is already in the HTML (Design v3)
+  if (!isAppPage() || document.querySelector(".bottom-tabs") || document.querySelector(".bottom-nav")) {
     return;
   }
   const file = getPageFile();
@@ -6049,6 +6199,434 @@ renderActivityModes();
 renderWeeklyAiAdjustment();
 renderRoutineTemplates();
 initShareCardActions();
+
+/* ================================================================
+   GAMIFICATION v2 — LEVEL SYSTEM, TRIPLE CHECK-IN, BET MODE
+   ================================================================ */
+
+// ── LEVEL 1-5 SYSTEM (Spanish names) ─────────────────────────────
+const LEVEL_THRESHOLDS = [
+  { level: 1, name: "Principiante", emoji: "🌱", minXP: 0,    maxXP: 120  },
+  { level: 2, name: "Constante",    emoji: "⚡", minXP: 120,   maxXP: 360  },
+  { level: 3, name: "Dedicado",     emoji: "🔥", minXP: 360,   maxXP: 720  },
+  { level: 4, name: "Implacable",   emoji: "💀", minXP: 720,   maxXP: 1440 },
+  { level: 5, name: "Imparable",    emoji: "👑", minXP: 1440,  maxXP: Infinity },
+];
+
+const getLevel5Info = (xp) => {
+  const n = Number(xp || 0);
+  for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+    const curr = LEVEL_THRESHOLDS[i];
+    if (n >= curr.minXP) {
+      const next = LEVEL_THRESHOLDS[i + 1] || null;
+      const rangeSize = next ? next.minXP - curr.minXP : 1;
+      const progress = next ? Math.min(100, Math.round(((n - curr.minXP) / rangeSize) * 100)) : 100;
+      return {
+        level: curr.level,
+        name: curr.name,
+        emoji: curr.emoji,
+        progress,
+        xpToNext: next ? next.minXP - n : 0,
+        nextName: next ? next.name : null,
+      };
+    }
+  }
+  return { level: 1, name: "Principiante", emoji: "🌱", progress: 0, xpToNext: 120, nextName: "Constante" };
+};
+
+const renderLevelBar = (containerId) => {
+  const host = document.getElementById(containerId);
+  if (!host) return;
+  const xp = Number(disciplineState?.xp || 0);
+  const info = getLevel5Info(xp);
+  host.innerHTML = `
+    <div class="level-bar-head">
+      <span class="level-badge">${info.emoji} ${info.name}</span>
+      <span class="level-next">${info.nextName ? `→ ${info.nextName}` : "🏆 Nivel máx."}</span>
+    </div>
+    <div class="level-progress-track">
+      <div class="level-progress-fill" style="width:${info.progress}%"></div>
+    </div>
+    <p class="level-xp-hint">${xp} XP${info.xpToNext > 0 ? ` · ${info.xpToNext} para siguiente nivel` : " · ¡Nivel máximo!"}</p>
+  `;
+};
+
+const renderProgressLevelSteps = () => {
+  const host = document.getElementById("progress-level-steps");
+  if (!host) return;
+  const xp = Number(disciplineState?.xp || 0);
+  const info = getLevel5Info(xp);
+  host.innerHTML = LEVEL_THRESHOLDS.map((lvl) => {
+    const cls = lvl.level < info.level ? "done" : lvl.level === info.level ? "current" : "";
+    return `
+      <div class="level-step ${cls}">
+        <div class="level-step-dot">${cls === "done" ? "✓" : lvl.emoji}</div>
+        <span class="level-step-name">${lvl.name}</span>
+      </div>`;
+  }).join("");
+};
+
+// ── TRIPLE CHECK-IN SYSTEM ─────────────────────────────────────────
+const TRIPLE_CHECKIN_KEY = "fitnes_triple_checkin_v1";
+
+const getTripleCheckinState = () => {
+  const raw = localStorage.getItem(TRIPLE_CHECKIN_KEY);
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    const data = raw ? JSON.parse(raw) : {};
+    if (data.date !== today) return { date: today, trained: false, diet: false, steps: false };
+    return data;
+  } catch {
+    return { date: today, trained: false, diet: false, steps: false };
+  }
+};
+
+const saveTripleCheckin = (state) => localStorage.setItem(TRIPLE_CHECKIN_KEY, JSON.stringify(state));
+
+const isTripleComplete = () => {
+  const s = getTripleCheckinState();
+  return s.trained && s.diet && s.steps;
+};
+
+const renderTripleCheckin = () => {
+  const hosts = document.querySelectorAll(".triple-checkin-container");
+  if (!hosts.length) return;
+  const state = getTripleCheckinState();
+  const items = [
+    { key: "trained", icon: "🏋️", label: "Entrené hoy",      sub: "Entrenamiento completado" },
+    { key: "diet",    icon: "🥗",  label: "Dieta cumplida",    sub: "Plan de alimentación seguido" },
+    { key: "steps",   icon: "👟",  label: "Pasos completados", sub: "Meta diaria alcanzada" },
+  ];
+  const done = [state.trained, state.diet, state.steps].filter(Boolean).length;
+  const allDone = done === 3;
+  const html = `
+    <div class="triple-checkin-list">
+      ${items.map((item) => `
+        <div class="triple-check-item ${state[item.key] ? "checked" : ""}" data-triple="${item.key}" role="button" tabindex="0" aria-pressed="${state[item.key]}">
+          <span class="triple-check-icon">${item.icon}</span>
+          <div class="triple-check-text">
+            <strong>${item.label}</strong>
+            <span>${item.sub}</span>
+          </div>
+          <div class="triple-check-box">${state[item.key] ? "✓" : ""}</div>
+        </div>`).join("")}
+    </div>
+    <div class="triple-checkin-progress">
+      <div class="triple-checkin-track">
+        <div class="triple-checkin-fill" style="width:${Math.round((done / 3) * 100)}%"></div>
+      </div>
+      <span class="triple-checkin-count">${done}/3${allDone ? " 🔥" : ""}</span>
+    </div>
+    ${allDone ? '<p style="font-size:12px;color:#27c93f;font-weight:700;margin-top:8px;text-align:center;">✅ ¡Check-in completo! Racha mantenida.</p>' : ""}
+  `;
+  hosts.forEach((host) => {
+    host.innerHTML = html;
+    host.querySelectorAll("[data-triple]").forEach((btn) => {
+      const doToggle = () => {
+        const s = getTripleCheckinState();
+        const wasAll = s.trained && s.diet && s.steps;
+        s[btn.dataset.triple] = !s[btn.dataset.triple];
+        saveTripleCheckin(s);
+        renderTripleCheckin();
+        const isAll = s.trained && s.diet && s.steps;
+        if (isAll && !wasAll) {
+          showToast("¡Check-in completo! +50 XP 🔥", "success");
+          disciplineState.xp = (disciplineState.xp || 0) + 50;
+          saveDisciplineState();
+          renderTodayState();
+          updateProgressPage();
+        }
+      };
+      btn.addEventListener("click", doToggle);
+      btn.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); doToggle(); } });
+    });
+  });
+};
+
+// ── BET MODE SYSTEM ────────────────────────────────────────────────
+const BET_STATE_KEY = "fitnes_bet_state_v1";
+
+const getDefaultBetState = () => ({
+  active: false, goal: "", amountMXN: 500,
+  durationDays: 30, startDate: null, status: "inactive",
+});
+
+const getBetState = () => {
+  const raw = localStorage.getItem(BET_STATE_KEY);
+  if (!raw) return getDefaultBetState();
+  try { return { ...getDefaultBetState(), ...JSON.parse(raw) }; }
+  catch { return getDefaultBetState(); }
+};
+
+const saveBetState = (s) => localStorage.setItem(BET_STATE_KEY, JSON.stringify(s));
+
+const renderBetStatus = () => {
+  document.querySelectorAll(".bet-status-card").forEach((host) => {
+    const bet = getBetState();
+
+    if (bet.status === "won") {
+      host.className = "bet-status-card bet-card won";
+      host.innerHTML = `
+        <div class="bet-card-label">APUESTA GANADA 🏆</div>
+        <div class="bet-result-msg win">¡Lo lograste! Completaste ${bet.durationDays} dias. $${bet.amountMXN} MXN devueltos (simulado).</div>
+        <div style="margin-top:12px;text-align:center;">
+          <button class="ghost bet-reset-btn" type="button">Nueva apuesta</button>
+        </div>`;
+    } else if (bet.status === "lost") {
+      host.className = "bet-status-card bet-card lost";
+      host.innerHTML = `
+        <div class="bet-card-label">APUESTA PERDIDA 💀</div>
+        <div class="bet-result-msg loss">Fallaste. Perdiste $${bet.amountMXN} MXN (simulado). La disciplina no perdona.</div>
+        <div style="margin-top:12px;text-align:center;">
+          <button class="ghost bet-reset-btn" type="button">Intentar de nuevo</button>
+        </div>`;
+    } else if (bet.status === "active") {
+      const start = new Date(bet.startDate);
+      const elapsed = Math.max(0, Math.floor((Date.now() - start.getTime()) / 86400000));
+      const remaining = Math.max(0, bet.durationDays - elapsed);
+      const progress = Math.min(100, Math.round((elapsed / bet.durationDays) * 100));
+      if (elapsed >= bet.durationDays) {
+        const compliance = getCompliancePct(disciplineState);
+        saveBetState({ ...bet, status: compliance >= 80 ? "won" : "lost" });
+        renderBetStatus();
+        return;
+      }
+      host.className = "bet-status-card bet-card active";
+      host.innerHTML = `
+        <div class="bet-card-label">APUESTA ACTIVA</div>
+        <p style="font-size:13px;font-weight:600;margin:0 0 10px;color:rgba(200,215,255,0.9);">${escHtml(bet.goal)}</p>
+        <div class="bet-stat-row">
+          <div class="bet-stat-item"><div class="bet-stat-num">${remaining}</div><div class="bet-stat-lbl">Dias rest.</div></div>
+          <div class="bet-stat-item"><div class="bet-stat-num">$${bet.amountMXN}</div><div class="bet-stat-lbl">En riesgo</div></div>
+          <div class="bet-stat-item"><div class="bet-stat-num">${progress}%</div><div class="bet-stat-lbl">Progreso</div></div>
+        </div>
+        <div class="bet-progress-track"><div class="bet-progress-fill" style="width:${progress}%"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;">
+          <span style="font-size:11px;color:var(--muted);">Inicio: ${start.toLocaleDateString("es-MX")}</span>
+          <span style="font-size:11px;color:var(--accent-2);font-weight:700;">Dia ${elapsed + 1} de ${bet.durationDays}</span>
+        </div>`;
+    } else {
+      // Inactive — show setup form
+      host.className = "bet-status-card bet-card inactive";
+      host.innerHTML = `
+        <div class="bet-card-label">MODO APUESTA</div>
+        <p style="font-size:13px;color:var(--muted);margin:0 0 12px;">Pon dinero en juego. Completa tu meta o pierde.</p>
+        <form class="bet-setup-form">
+          <label>Meta<input type="text" class="bet-goal-input" placeholder="Ej. 30 dias seguidos de entrenamiento" /></label>
+          <div class="bet-setup-row">
+            <label>Monto MXN<input type="number" class="bet-amount-input" value="500" min="50" max="10000" /></label>
+            <label>Duración<select class="bet-duration-input">
+              <option value="7">7 dias</option><option value="14">14 dias</option>
+              <option value="21">21 dias</option><option value="30" selected>30 dias</option>
+              <option value="60">60 dias</option><option value="90">90 dias</option>
+            </select></label>
+          </div>
+          <button class="primary" type="submit">Activar apuesta 🔥</button>
+        </form>`;
+    }
+
+    // Bind reset buttons
+    host.querySelectorAll(".bet-reset-btn").forEach((btn) => {
+      btn.addEventListener("click", () => { saveBetState(getDefaultBetState()); renderBetStatus(); });
+    });
+
+    // Bind setup form
+    const form = host.querySelector(".bet-setup-form");
+    if (form) {
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const goal = form.querySelector(".bet-goal-input")?.value?.trim();
+        if (!goal) return;
+        saveBetState({
+          active: true, goal,
+          amountMXN: Number(form.querySelector(".bet-amount-input")?.value || 500),
+          durationDays: Number(form.querySelector(".bet-duration-input")?.value || 30),
+          startDate: new Date().toISOString().slice(0, 10),
+          status: "active",
+        });
+        renderBetStatus();
+        showToast("¡Apuesta activada! No falles. 🔥", "success");
+      });
+    }
+  });
+};
+
+// ── GAMING RANKING ──────────────────────────────────────────────────
+const renderGamingRanking = (containerId) => {
+  const host = document.getElementById(containerId);
+  if (!host) return;
+  const userScore = computeUserDisciplineScore();
+  const userName = getCurrentUser()?.name || "Tú";
+  const baseList = [
+    { name: "Marco A.",   score: 94, streak: 21 },
+    { name: "Valeria R.", score: 91, streak: 18 },
+    { name: "Diego P.",   score: 88, streak: 15 },
+    { name: "Renata M.",  score: 85, streak: 12 },
+    { name: "Leo G.",     score: 82, streak: 9  },
+    { name: "Sofia T.",   score: 79, streak: 7  },
+    { name: "Carlos V.",  score: 74, streak: 5  },
+  ];
+  const me = { name: userName, score: userScore, streak: disciplineState?.streak || 0, isMe: true };
+  const list = [...baseList, me].sort((a, b) => b.score - a.score).slice(0, 5);
+  const posClass = ["gold", "silver", "bronze", "", ""];
+  const posLabel = ["🥇", "🥈", "🥉", "#4", "#5"];
+  host.className = "gaming-ranking-list";
+  host.innerHTML = list.map((row, i) => `
+    <div class="gaming-rank-item ${row.isMe ? "me" : ""}">
+      <div class="gaming-rank-pos ${posClass[i] || ""}">${posLabel[i]}</div>
+      <div class="gaming-rank-info">
+        <div class="gaming-rank-name">${escHtml(row.name)}${row.isMe ? " (Tú)" : ""}</div>
+        <div class="gaming-rank-detail">Score ${row.score}/100 · ${row.streak} dias racha</div>
+      </div>
+      <span class="gaming-rank-badge ${row.streak >= 14 ? "fire" : row.score >= 90 ? "elite" : ""}">${row.streak >= 14 ? "🔥" : row.score >= 90 ? "⭐" : row.streak + "d"}</span>
+    </div>`).join("");
+};
+
+// ── NUTRITION MACRO BARS ──────────────────────────────────────────
+const renderMacroBars = () => {
+  const host = document.getElementById("macro-bars-container");
+  if (!host) return;
+  const raw = localStorage.getItem("fitnes_nutrition_v1");
+  let n = { water: 0, calories: 0, protein: 0, carbs: 0, fat: 0 };
+  try { if (raw) n = { ...n, ...JSON.parse(raw)[new Date().toISOString().slice(0, 10)] || {} }; } catch {}
+  const macros = [
+    { key: "water",    label: "Agua",     cls: "water",   val: n.water || 0,    max: 8,    unit: "vaso" },
+    { key: "protein",  label: "Proteína", cls: "protein", val: n.protein || 0,  max: 150,  unit: "g" },
+    { key: "carbs",    label: "Carbos",   cls: "carbs",   val: n.carbs || 0,    max: 250,  unit: "g" },
+    { key: "fat",      label: "Grasa",    cls: "fat",     val: n.fat || 0,      max: 80,   unit: "g" },
+  ];
+  host.innerHTML = `<div class="macro-bars">${macros.map((m) => `
+    <div class="macro-bar-row">
+      <span class="macro-bar-label">${m.label}</span>
+      <div class="macro-bar-track">
+        <div class="macro-bar-fill ${m.cls}" style="width:${Math.min(100, Math.round((m.val / m.max) * 100))}%"></div>
+      </div>
+      <span class="macro-bar-val">${m.val}${m.unit}</span>
+    </div>`).join("")}</div>`;
+};
+
+// ── PROFILE PAGE ─────────────────────────────────────────────────
+const renderProfileHeader = () => {
+  const host = document.getElementById("profile-header-card");
+  if (!host) return;
+  const user = getCurrentUser();
+  const caps = getPlanCapabilities();
+  const xp = disciplineState?.xp || 0;
+  const info = getLevel5Info(xp);
+  const compliance = getCompliancePct(disciplineState);
+  const initials = user?.name
+    ? user.name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase()
+    : "?";
+  host.innerHTML = `
+    <div class="profile-avatar">${escHtml(initials)}</div>
+    <div class="profile-name">${escHtml(user?.name || "Usuario")}</div>
+    <span class="profile-plan-chip">${escHtml(caps.plan.label)}</span>
+    <div class="profile-stats-grid">
+      <div class="profile-stat-box">
+        <span class="profile-stat-val">${disciplineState?.streak || 0}</span>
+        <span class="profile-stat-lbl">Racha 🔥</span>
+      </div>
+      <div class="profile-stat-box">
+        <span class="profile-stat-val">${compliance}%</span>
+        <span class="profile-stat-lbl">Cumpl.</span>
+      </div>
+      <div class="profile-stat-box">
+        <span class="profile-stat-val">${xp}</span>
+        <span class="profile-stat-lbl">XP ⭐</span>
+      </div>
+    </div>
+    <div style="margin-top:14px;">
+      <div class="level-bar-head" style="margin-bottom:6px;">
+        <span class="level-badge">${info.emoji} ${info.name}</span>
+        <span class="level-next">${info.nextName ? "→ " + info.nextName : "🏆 Máx."}</span>
+      </div>
+      <div class="level-progress-track">
+        <div class="level-progress-fill" style="width:${info.progress}%"></div>
+      </div>
+    </div>`;
+};
+
+// ── PROGRESS PAGE RENDER ──────────────────────────────────────────
+const updateProgressPage = () => {
+  renderProgressLevelSteps();
+  renderLevelBar("progress-level-bar");
+  renderGamingRanking("progress-gaming-ranking");
+};
+
+// ── GAMING DASHBOARD (app-inicio.html) ────────────────────────────
+const initGamingDashboard = () => {
+  const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
+  if (page !== "app-inicio.html") return;
+
+  const streak = disciplineState?.streak || 0;
+  const xp = disciplineState?.xp || 0;
+  const totalDays = disciplineState?.totalDays || 0;
+  const completedDays = disciplineState?.completedDays || 0;
+  const compliance = totalDays ? Math.round((completedDays / totalDays) * 100) : 0;
+
+  // Greeting
+  const user = getCurrentUser();
+  const greetEl = document.getElementById("dash-greeting");
+  if (greetEl) greetEl.textContent = user?.name ? `Hola, ${user.name.split(" ")[0]}` : "Bienvenido de vuelta";
+
+  // Streak card
+  const streakNumEl = document.getElementById("dash-streak-num");
+  const streakSubEl = document.getElementById("dash-streak-sub");
+  const streakCard  = document.getElementById("dash-streak-card");
+  const fireEmoji   = document.getElementById("dash-fire-emoji");
+  if (streakNumEl) streakNumEl.textContent = streak;
+  if (streakSubEl) {
+    if (streak === 0) streakSubEl.textContent = "Primer dia. Empieza ahora.";
+    else if (streak < 7) streakSubEl.textContent = `${7 - streak} dias para racha semanal`;
+    else if (streak < 30) streakSubEl.textContent = `${30 - streak} dias para modo imparable`;
+    else streakSubEl.textContent = "🏆 Modo imparable activo";
+  }
+  if (streakCard && streak === 0) streakCard.classList.add("broken");
+  if (fireEmoji) {
+    if (streak >= 30) { fireEmoji.textContent = "👑"; }
+    else if (streak >= 14) { fireEmoji.textContent = "🔥"; }
+    else if (streak >= 7)  { fireEmoji.textContent = "⚡"; }
+    else if (streak > 0)   { fireEmoji.textContent = "🔥"; }
+    else { fireEmoji.textContent = "💀"; fireEmoji.style.filter = "grayscale(1)"; }
+  }
+
+  // Quick stats
+  const xpEl     = document.getElementById("dash-xp");
+  const rankEl   = document.getElementById("dash-rank-pos");
+  const compEl   = document.getElementById("dash-compliance");
+  if (xpEl) xpEl.textContent = xp;
+  if (compEl) compEl.textContent = `${compliance}%`;
+  if (rankEl) {
+    const score = computeUserDisciplineScore();
+    rankEl.textContent = score >= 90 ? "#1" : score >= 80 ? "#2" : score >= 70 ? "#3" : score >= 60 ? "#4" : "#5+";
+  }
+
+  // Level bar, triple check-in, bet, ranking
+  renderLevelBar("dash-level-bar");
+  renderTripleCheckin();
+  renderBetStatus();
+  renderGamingRanking("dash-ranking-list");
+
+  // Update CTA button if triple done
+  const cta = document.getElementById("app-entry-link");
+  if (cta && isTripleComplete()) {
+    cta.classList.add("done");
+    const mainSpan = cta.querySelector("span:first-child");
+    if (mainSpan) mainSpan.textContent = "✅ CHECK-IN COMPLETADO";
+  }
+};
+
+// ── BOOT ALL NEW FEATURES ─────────────────────────────────────────
+initGamingDashboard();
+renderTripleCheckin();
+renderBetStatus();
+renderProgressLevelSteps();
+renderLevelBar("progress-level-bar");
+renderLevelBar("user-level-bar");
+renderGamingRanking("progress-gaming-ranking");
+renderGamingRanking("hoy-gaming-ranking");
+renderMacroBars();
+renderProfileHeader();
 
 
 

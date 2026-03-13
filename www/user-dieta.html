@@ -12,11 +12,11 @@
         <nav class="user-panel-nav">
           <div class="logo">MOMENTUM ASCENT</div>
         <div class="nav-actions">
-          <a class="ghost" href="user-hoy.html">Hoy</a>
-          <a class="ghost" href="user-rutinas.html">Rutinas</a>
-          <a class="ghost" href="user-progreso.html">Progreso</a>
-          <a class="ghost" href="user-dieta.html">Nutricion</a>
-          <a class="ghost" href="user-checkin.html">Perfil</a>
+          <a class="ghost up-nav-link" href="user-hoy.html" data-nav="hoy">Hoy</a>
+          <a class="ghost up-nav-link" href="user-rutinas.html" data-nav="rutinas">Rutinas</a>
+          <a class="ghost up-nav-link" href="user-progreso.html" data-nav="progreso">Progreso</a>
+          <a class="ghost up-nav-link up-nav-active" href="user-dieta.html" data-nav="nutricion">Nutricion</a>
+          <a class="ghost up-nav-link" href="user-checkin.html" data-nav="perfil">Perfil</a>
           <button class="ghost" type="button" data-action="theme">Cambiar vista</button>
         </div>
         </nav>
@@ -42,16 +42,48 @@
           </ul>
         </article>
         <article class="card">
+          <h3>Macros del dia</h3>
+          <div id="macro-bars-container"></div>
+        </article>
+        <article class="card">
           <h3>Acciones rapidas</h3>
           <div class="role-actions">
-            <button class="ghost" type="button" id="diet-quick-water">+1 vaso</button>
-            <button class="ghost" type="button" id="diet-quick-300">+300 kcal</button>
-            <button class="ghost" type="button" id="diet-quick-done">Marcar dieta</button>
-            <button class="ghost" type="button" id="diet-quick-training">Marcar entrenamiento</button>
+            <button class="ghost" type="button" id="diet-quick-water">+1 vaso 💧</button>
+            <button class="ghost" type="button" id="diet-quick-300">+300 kcal 🍽️</button>
+            <button class="ghost" type="button" id="diet-quick-done">✅ Marcar dieta</button>
+            <button class="ghost" type="button" id="diet-quick-training">💪 Marcar entreno</button>
           </div>
+          <p class="reg-hint" id="diet-action-feedback" aria-live="polite"></p>
         </article>
       </section>
+
+      <!-- TRIPLE CHECK-IN QUICK ACCESS -->
+      <section class="section" style="padding-top:0;">
+        <div class="today-triple-wrap">
+          <div class="triple-checkin-title">Progreso del dia</div>
+          <div class="triple-checkin-container"></div>
+        </div>
+      </section>
     </main>
+
+    <nav class="bottom-nav" aria-label="Navegacion principal">
+      <a class="bottom-nav-item" href="user-hoy.html">
+        <span class="bottom-nav-icon">🏠</span><span>Hoy</span>
+      </a>
+      <a class="bottom-nav-item" href="user-rutinas.html">
+        <span class="bottom-nav-icon">💪</span><span>Rutinas</span>
+      </a>
+      <a class="bottom-nav-item" href="user-progreso.html">
+        <span class="bottom-nav-icon">📈</span><span>Progreso</span>
+      </a>
+      <a class="bottom-nav-item bottom-nav-active" href="user-dieta.html">
+        <span class="bottom-nav-icon">🥗</span><span>Nutricion</span>
+      </a>
+      <a class="bottom-nav-item" href="user-checkin.html">
+        <span class="bottom-nav-icon">👤</span><span>Perfil</span>
+      </a>
+    </nav>
+
     <script src="app.js"></script>
   </body>
 </html>
