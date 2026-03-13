@@ -5505,13 +5505,13 @@ const saveOnbpState = (state) => {
 
 const initDynamicOnboarding = () => {
   const page = getPageFile();
-  if (!["onboarding-4-apuesta.html", "onboarding-5.html", "onboarding-6.html", "onboarding-7.html", "onboarding-8.html", "onboarding-8-modos.html", "onboarding-9.html"].includes(page)) {
+  if (!["onboarding-2.html", "onboarding-3.html", "onboarding-4.html", "onboarding-4-apuesta.html", "onboarding-5.html", "onboarding-6.html", "onboarding-7.html", "onboarding-8.html", "onboarding-8-modos.html", "onboarding-9.html"].includes(page)) {
     return;
   }
   const ONBP_SESSION_KEY = "discipline_onbp_session_started";
   const ONBP_TOUCHED_PREFIX = "discipline_onbp_touched_";
-  const onboardingPages = ["onboarding-4-apuesta.html", "onboarding-5.html", "onboarding-6.html", "onboarding-7.html", "onboarding-8.html", "onboarding-8-modos.html", "onboarding-9.html"];
-  if ((page === "onboarding-4-apuesta.html" || page === "onboarding-5.html") && !sessionStorage.getItem(ONBP_SESSION_KEY)) {
+  const onboardingPages = ["onboarding-2.html", "onboarding-3.html", "onboarding-4.html", "onboarding-4-apuesta.html", "onboarding-5.html", "onboarding-6.html", "onboarding-7.html", "onboarding-8.html", "onboarding-8-modos.html", "onboarding-9.html"];
+  if ((page === "onboarding-2.html") && !sessionStorage.getItem(ONBP_SESSION_KEY)) {
     localStorage.removeItem(ONBP_DYNAMIC_KEY);
     onboardingPages.forEach((p) => sessionStorage.removeItem(`${ONBP_TOUCHED_PREFIX}${p}`));
     sessionStorage.setItem(ONBP_SESSION_KEY, "1");
@@ -5706,6 +5706,9 @@ const initDynamicOnboarding = () => {
   };
 
   const feedback =
+    document.getElementById("onbp-feedback-2") ||
+    document.getElementById("onbp-feedback-3") ||
+    document.getElementById("onbp-feedback-4") ||
     document.getElementById("onbp-feedback-bet") ||
     document.getElementById("onbp-feedback-5") ||
     document.getElementById("onbp-feedback-6") ||
