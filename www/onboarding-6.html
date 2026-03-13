@@ -1,75 +1,86 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Onboarding 6 | Disciplina</title>
-    <meta name="theme-color" content="#e9f2ff" />
-    <link rel="preload" as="image" href="assets/extras/onb6-status.png" />
+    <title>Paso 6 | Momentum Ascent</title>
+    <meta name="theme-color" content="#0a0a0f" />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="onb-body onb6v2-body">
-    <main class="onb6v2-shell">
-      <header class="onb6v2-top">
-        <a class="onb-back onb6v2-back" href="onboarding-5.html" aria-label="Atras">&lt;</a>
-        <div class="onb-dots onb6v2-dots">
-          <span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot active"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span>
-        </div>
-        <span class="onb6v2-spacer" aria-hidden="true"></span>
+  <body class="onb-dark-body">
+    <div class="noise"></div>
+    <div class="stars"></div>
+    <main class="onb-shell">
+      <header class="onb-header">
+        <a class="onb-back-btn" href="onboarding-5.html" aria-label="Atras">←</a>
+        <div class="onb-progress-wrap"><div class="onb-progress-bar" style="width:66%"></div></div>
+        <span class="onb-step-label">6/9</span>
       </header>
 
-      <section class="onb6v2-stage">
-        <article class="onb6v2-card">
-          <img class="onb6v2-bg" src="assets/extras/onb6-status.png" alt="Evalua tu estado actual" loading="eager" decoding="async" fetchpriority="high" />
-          <div class="onb6v2-shade" aria-hidden="true"></div>
+      <div class="onb-hero">
+        <img src="assets/extras/extra-07.jpeg" alt="Tu estado actual" loading="eager" />
+        <div class="onb-hero-overlay"></div>
+        <div class="onb-hero-label">
+          <h1>ESTADO<br />ACTUAL</h1>
+          <p>El punto de partida real.</p>
+        </div>
+      </div>
 
-          <div class="onb6v2-content">
-            <h1 class="onb6v2-title">
-              EVALUA TU<br />
-              <span>ESTADO ACTUAL</span>
-            </h1>
-            <p class="onb6v2-subtitle">Esto nos ayuda a ajustar tu plan</p>
+      <div class="onb-content">
+        <p class="onb-eyebrow">Paso 6 — Diagnóstico físico</p>
+        <h1 class="onb-title">¿Cómo estás <span>hoy físicamente?</span></h1>
+        <p class="onb-sub">Tu plan se ajusta según tu condición actual.</p>
 
-            <h3 class="onb6v2-label">NIVEL ACTUAL</h3>
-            <div class="onbp-options onb6v2-grid3 onb6v2-tier" data-onb-key="nivel" data-onb-type="single" data-onb-required="true">
-              <button class="onbp-option onb6v2-cardbtn" type="button" data-onb-value="Bajo"><span class="icon">✅</span><span><strong>BAJO</strong><small>Inicio o regreso al entrenamiento</small></span></button>
-              <button class="onbp-option onb6v2-cardbtn" type="button" data-onb-value="Medio"><span class="icon">🟡</span><span><strong>MEDIO</strong><small>Ya tienes algo de condicion</small></span></button>
-              <button class="onbp-option onb6v2-cardbtn" type="button" data-onb-value="Alto"><span class="icon">🏋️</span><span><strong>ALTO</strong><small>Entrenas regularmente</small></span></button>
-            </div>
+        <p class="onb-section-label">Nivel de condición física</p>
+        <div class="onb-options grid-2" data-onb-key="nivel" data-onb-type="single" data-onb-required="true">
+          <button class="onb-option" type="button" data-onb-value="Bajo">
+            <span class="onb-option-icon">✅</span>
+            <span class="onb-option-label">Bajo — Inicio o regreso</span>
+          </button>
+          <button class="onb-option" type="button" data-onb-value="Medio">
+            <span class="onb-option-icon">🟡</span>
+            <span class="onb-option-label">Medio — Algo de condición</span>
+          </button>
+          <button class="onb-option" type="button" data-onb-value="Alto">
+            <span class="onb-option-icon">🏋️</span>
+            <span class="onb-option-label">Alto — Entreno regular</span>
+          </button>
+          <button class="onb-option" type="button" data-onb-value="Elite">
+            <span class="onb-option-icon">🔥</span>
+            <span class="onb-option-label">Élite — Competitivo</span>
+          </button>
+        </div>
 
-            <h3 class="onb6v2-label">LESIONES</h3>
-            <div class="onbp-options onb6v2-grid2" data-onb-key="lesiones" data-onb-type="single" data-onb-required="true">
-              <button class="onbp-option onb6v2-midbtn" type="button" data-onb-value="No">🛡️ SIN LESIONES</button>
-              <button class="onbp-option onb6v2-midbtn" type="button" data-onb-value="Si">🦵 TENGO LESIONES</button>
-            </div>
+        <p class="onb-section-label">¿Tienes alguna lesión activa?</p>
+        <div class="onb-options grid-chips" data-onb-key="lesiones" data-onb-type="single" data-onb-required="true">
+          <button class="onb-option chip" type="button" data-onb-value="No">🛡️ Sin lesiones</button>
+          <button class="onb-option chip" type="button" data-onb-value="Leve">⚠️ Lesión leve</button>
+          <button class="onb-option chip" type="button" data-onb-value="Si">🦵 Tengo lesiones</button>
+        </div>
 
-            <h3 class="onb6v2-label">QUE TE FRENA</h3>
-            <p class="onb6v2-help">Puedes seleccionar varias opciones</p>
-            <div class="onbp-options onb6v2-grid3" data-onb-key="trigger" data-onb-type="multi" data-onb-required="true">
-              <button class="onbp-option onb6v2-pill" type="button" data-onb-value="Ansiedad">😵 ANSIEDAD</button>
-              <button class="onbp-option onb6v2-pill" type="button" data-onb-value="Estres">😤 ESTRES</button>
-              <button class="onbp-option onb6v2-pill" type="button" data-onb-value="Falta de tiempo">⏳ FALTA DE TIEMPO</button>
-              <button class="onbp-option onb6v2-pill" type="button" data-onb-value="Falta de energia">🔋 FALTA DE ENERGIA</button>
-              <button class="onbp-option onb6v2-pill" type="button" data-onb-value="Procrastinacion">🌀 PROCRASTINACION</button>
-              <button class="onbp-option onb6v2-pill" type="button" data-onb-value="Sueno irregular">😴 SUENO IRREGULAR</button>
-            </div>
+        <p class="onb-section-label">Estilo de alimentación preferido</p>
+        <div class="onb-options grid-2" data-onb-key="alimentacion" data-onb-type="single" data-onb-required="true">
+          <button class="onb-option" type="button" data-onb-value="Simple">
+            <span class="onb-option-icon">🥗</span>
+            <span class="onb-option-label">Simple — Comidas fáciles</span>
+          </button>
+          <button class="onb-option" type="button" data-onb-value="Flexible">
+            <span class="onb-option-icon">⚖️</span>
+            <span class="onb-option-label">Flexible — Sin reglas estrictas</span>
+          </button>
+          <button class="onb-option" type="button" data-onb-value="Guiado">
+            <span class="onb-option-icon">📋</span>
+            <span class="onb-option-label">Guiado — Plan estructurado</span>
+          </button>
+          <button class="onb-option" type="button" data-onb-value="Dieta especifica">
+            <span class="onb-option-icon">🎯</span>
+            <span class="onb-option-label">Dieta específica</span>
+          </button>
+        </div>
 
-            <h3 class="onb6v2-label">ESTILO DE ALIMENTACION</h3>
-            <div class="onbp-options onb6v2-grid3 onb6v2-food" data-onb-key="alimentacion" data-onb-type="single" data-onb-required="true">
-              <button class="onbp-option onb6v2-foodbtn" type="button" data-onb-value="Simple"><span class="icon">🥗</span><span><strong>SIMPLE</strong><small>Comidas faciles</small></span></button>
-              <button class="onbp-option onb6v2-foodbtn" type="button" data-onb-value="Flexible"><span class="icon">⚖️</span><span><strong>FLEXIBLE</strong><small>Sin reglas estrictas</small></span></button>
-              <button class="onbp-option onb6v2-foodbtn" type="button" data-onb-value="Guiado"><span class="icon">📋</span><span><strong>GUIADO</strong><small>Plan estructurado</small></span></button>
-            </div>
-
-            <p class="reg-feedback onb6v2-feedback" id="onbp-feedback-6" aria-live="polite"></p>
-
-            <a class="onb-go onb6v2-btn" data-onb-next href="onboarding-7.html">
-              <strong>CREAR MI PLAN</strong>
-              <span>Continuar</span>
-            </a>
-          </div>
-        </article>
-      </section>
+        <p class="reg-feedback onb-feedback" id="onbp-feedback-6" aria-live="polite"></p>
+        <a class="onb-cta" href="onboarding-7.html" data-onb-next>CREAR MI PLAN →</a>
+      </div>
     </main>
     <script src="app.js"></script>
   </body>

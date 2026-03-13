@@ -1,71 +1,82 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Onboarding 5 | Disciplina</title>
-    <meta name="theme-color" content="#e9f1ff" />
-    <link rel="preload" as="image" href="assets/extras/onb5-goals.png" />
+    <title>Paso 5 | Momentum Ascent</title>
+    <meta name="theme-color" content="#0a0a0f" />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="onb-body onb5v2-body">
-    <main class="onb5v2-shell">
-      <header class="onb5v2-top">
-        <a class="onb-back onb5v2-back" href="onboarding-4-apuesta.html" aria-label="Atras">&lt;</a>
-        <div class="onb-dots onb5v2-dots">
-          <span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot active"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span>
-        </div>
-        <span class="onb5v2-spacer" aria-hidden="true"></span>
+  <body class="onb-dark-body">
+    <div class="noise"></div>
+    <div class="stars"></div>
+    <main class="onb-shell">
+      <header class="onb-header">
+        <a class="onb-back-btn" href="onboarding-4-apuesta.html" aria-label="Atras">←</a>
+        <div class="onb-progress-wrap"><div class="onb-progress-bar" style="width:55%"></div></div>
+        <span class="onb-step-label">5/9</span>
       </header>
 
-      <section class="onb5v2-stage">
-        <article class="onb5v2-card">
-          <img class="onb5v2-bg" src="assets/extras/onb5-goals.png" alt="Define tu meta" loading="eager" decoding="async" fetchpriority="high" />
-          <div class="onb5v2-shade" aria-hidden="true"></div>
+      <div class="onb-hero">
+        <img src="assets/extras/extra-06.jpeg" alt="Define tu meta" loading="eager" />
+        <div class="onb-hero-overlay"></div>
+        <div class="onb-hero-label">
+          <h1>DEFINE<br />TU META</h1>
+          <p>Sin meta clara, no hay dirección.</p>
+        </div>
+      </div>
 
-          <div class="onb5v2-content">
-            <h1 class="onb5v2-title">DEFINE TU <span>META</span></h1>
-            <p class="onb5v2-subtitle">Elige lo que quieres lograr primero</p>
+      <div class="onb-content">
+        <p class="onb-eyebrow">Paso 5 — Tu objetivo</p>
+        <h1 class="onb-title">¿Qué quieres <span>lograr primero?</span></h1>
+        <p class="onb-sub">Elige el objetivo principal. El sistema se enfoca ahí.</p>
 
-            <div class="onbp-options onb5v2-goals" data-onb-key="objetivo" data-onb-type="single" data-onb-required="true">
-              <button class="onbp-option onb5v2-goal fire" type="button" data-onb-value="Bajar peso"><span class="icon">🔥</span><span>BAJAR<br />PESO</span></button>
-              <button class="onbp-option onb5v2-goal" type="button" data-onb-value="Ganar musculo"><span class="icon">💪</span><span>GANAR<br />MUSCULO</span></button>
-              <button class="onbp-option onb5v2-goal" type="button" data-onb-value="Resistencia"><span class="icon">⚡</span><span>RESISTENCIA</span></button>
-              <button class="onbp-option onb5v2-goal" type="button" data-onb-value="Mentalidad"><span class="icon">🧠</span><span>MENTALIDAD</span></button>
-              <button class="onbp-option onb5v2-goal" type="button" data-onb-value="Constancia"><span class="icon">📅</span><span>CONSTANCIA<br />DIARIA</span></button>
-              <button class="onbp-option onb5v2-goal" type="button" data-onb-value="Rendimiento total"><span class="icon">🎯</span><span>RENDIMIENTO<br />TOTAL</span></button>
-            </div>
+        <p class="onb-section-label">Objetivo principal</p>
+        <div class="onb-options grid-2" data-onb-key="objetivo" data-onb-type="single" data-onb-required="true">
+          <button class="onb-option" type="button" data-onb-value="Bajar peso">
+            <span class="onb-option-icon">🔥</span>
+            <span class="onb-option-label">Bajar peso</span>
+          </button>
+          <button class="onb-option" type="button" data-onb-value="Ganar musculo">
+            <span class="onb-option-icon">💪</span>
+            <span class="onb-option-label">Ganar músculo</span>
+          </button>
+          <button class="onb-option" type="button" data-onb-value="Resistencia">
+            <span class="onb-option-icon">⚡</span>
+            <span class="onb-option-label">Resistencia</span>
+          </button>
+          <button class="onb-option" type="button" data-onb-value="Mentalidad">
+            <span class="onb-option-icon">🧠</span>
+            <span class="onb-option-label">Mentalidad</span>
+          </button>
+          <button class="onb-option" type="button" data-onb-value="Constancia">
+            <span class="onb-option-icon">📅</span>
+            <span class="onb-option-label">Constancia diaria</span>
+          </button>
+          <button class="onb-option" type="button" data-onb-value="Rendimiento total">
+            <span class="onb-option-icon">🎯</span>
+            <span class="onb-option-label">Rendimiento total</span>
+          </button>
+        </div>
 
-            <h3 class="onb5v2-label">TIEMPO DISPONIBLE</h3>
-            <div class="onbp-options onb5v2-chips" data-onb-key="tiempo" data-onb-type="single" data-onb-required="true">
-              <button class="onbp-option onb5v2-chip" type="button" data-onb-value="20 min">20 MIN</button>
-              <button class="onbp-option onb5v2-chip" type="button" data-onb-value="30 min">30 MIN</button>
-              <button class="onbp-option onb5v2-chip" type="button" data-onb-value="40 min">40 MIN</button>
-            </div>
+        <p class="onb-section-label">¿Dónde entrenas?</p>
+        <div class="onb-options grid-chips" data-onb-key="lugar" data-onb-type="single" data-onb-required="true">
+          <button class="onb-option chip" type="button" data-onb-value="Casa">🏠 Casa</button>
+          <button class="onb-option chip" type="button" data-onb-value="Gym">🏋️ Gym</button>
+          <button class="onb-option chip" type="button" data-onb-value="Mixto">⚡ Mixto</button>
+          <button class="onb-option chip" type="button" data-onb-value="Al aire libre">🌿 Aire libre</button>
+        </div>
 
-            <h3 class="onb5v2-label">LUGAR</h3>
-            <div class="onbp-options onb5v2-chips" data-onb-key="lugar" data-onb-type="single" data-onb-required="true">
-              <button class="onbp-option onb5v2-chip" type="button" data-onb-value="Casa">🏠 CASA</button>
-              <button class="onbp-option onb5v2-chip" type="button" data-onb-value="Gym">🏋️ GYM</button>
-              <button class="onbp-option onb5v2-chip" type="button" data-onb-value="Mixto">⚡ MIXTO</button>
-            </div>
+        <p class="onb-section-label">Tono del coach</p>
+        <div class="onb-options grid-chips" data-onb-key="tono" data-onb-type="single" data-onb-required="true">
+          <button class="onb-option chip" type="button" data-onb-value="Neutral">🙂 Neutral</button>
+          <button class="onb-option chip" type="button" data-onb-value="Estricto">🪖 Estricto</button>
+          <button class="onb-option chip" type="button" data-onb-value="Rudo">🔥 Rudo</button>
+        </div>
 
-            <h3 class="onb5v2-label">TONO DEL COACH</h3>
-            <div class="onbp-options onb5v2-chips" data-onb-key="tono" data-onb-type="single" data-onb-required="true">
-              <button class="onbp-option onb5v2-chip" type="button" data-onb-value="Neutral">🙂 NEUTRAL</button>
-              <button class="onbp-option onb5v2-chip" type="button" data-onb-value="Estricto">🪖 ESTRICTO</button>
-              <button class="onbp-option onb5v2-chip" type="button" data-onb-value="Rudo">🔥 RUDO</button>
-            </div>
-
-            <p class="reg-feedback onb5v2-feedback" id="onbp-feedback-5" aria-live="polite"></p>
-
-            <a class="onb-go onb5v2-btn" data-onb-next href="onboarding-6.html">
-              <strong>CONTINUAR</strong>
-              <span>Configurar entrenamiento</span>
-            </a>
-          </div>
-        </article>
-      </section>
+        <p class="reg-feedback onb-feedback" id="onbp-feedback-5" aria-live="polite"></p>
+        <a class="onb-cta" href="onboarding-6.html" data-onb-next>CONTINUAR →</a>
+      </div>
     </main>
     <script src="app.js"></script>
   </body>

@@ -1,75 +1,66 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Onboarding Apuesta | Disciplina</title>
-    <meta name="theme-color" content="#1c1309" />
-    <link rel="preload" as="image" href="assets/extras/onb4-bet.png" />
+    <title>Modo Apuesta | Momentum Ascent</title>
+    <meta name="theme-color" content="#0a0a0f" />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="onb-body onb4bet-body">
-    <main class="onb4bet-shell">
-      <header class="onb4bet-top">
-        <a class="onb-back onb4bet-back" href="onboarding-4.html" aria-label="Atras">&lt;</a>
-        <div class="onb-dots onb4bet-dots">
-          <span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot active"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span>
-        </div>
-        <span class="onb4bet-spacer" aria-hidden="true"></span>
+  <body class="onb-dark-body">
+    <div class="noise"></div>
+    <div class="stars"></div>
+    <main class="onb-shell">
+      <header class="onb-header">
+        <a class="onb-back-btn" href="onboarding-4.html" aria-label="Atras">←</a>
+        <div class="onb-progress-wrap"><div class="onb-progress-bar" style="width:44%"></div></div>
+        <span class="onb-step-label">4/9</span>
       </header>
 
-      <section class="onb4bet-stage">
-        <article class="onb4bet-card">
-          <img class="onb4bet-bg" src="assets/extras/onb4-bet.png" alt="Modo apuesta" loading="eager" decoding="async" fetchpriority="high" />
-          <div class="onb4bet-shade" aria-hidden="true"></div>
+      <div class="onb-hero">
+        <img src="assets/extras/extra-05.jpeg" alt="Modo apuesta" loading="eager" />
+        <div class="onb-hero-overlay"></div>
+        <div class="onb-hero-label">
+          <h1>MODO<br />APUESTA</h1>
+          <p>Cumple o pierdes.</p>
+        </div>
+      </div>
 
-          <div class="onb4bet-content">
-            <p class="onb4bet-kicker">ACTIVA</p>
-            <h1 class="onb4bet-title">MODO APUESTA.</h1>
+      <div class="onb-content">
+        <p class="onb-eyebrow">Extra — Compromiso real</p>
+        <h1 class="onb-title">Pon dinero en <span>juego.</span></h1>
+        <p class="onb-sub">El modo apuesta activa presión real. No motivación — consecuencias.</p>
 
-            <p class="onb4bet-copy">
-              Comprometete con tu objetivo.<br />
-              Pon dinero en juego.<br />
-              Cumple o pierdes.
-            </p>
+        <div class="onb-bet-explainer">
+          <div class="onb-bet-seal">🏆</div>
+          <h2 class="onb-bet-title">APUESTA PERSONAL</h2>
+          <p class="onb-bet-sub">Tú eliges cuánto apostar. Monto mínimo: <strong>$500 MXN</strong></p>
+          <p class="onb-bet-rule">Tienes <strong>30 días</strong> para cumplir tu objetivo.</p>
 
-            <section class="onb4bet-panel">
-              <div class="onb4bet-seal" aria-hidden="true">🏆</div>
-              <h2>APUESTA PERSONAL</h2>
-              <p>Tu eliges cuanto apostar.</p>
-              <div class="onb4bet-minimo">Monto minimo: <strong>$500 MXN</strong></div>
-
-              <p class="onb4bet-rule">Tienes 30 dias para cumplir tu objetivo.</p>
-
-              <div class="onb4bet-cols">
-                <div>
-                  <h3>Si cumples:</h3>
-                  <ul>
-                    <li>Recuperas tu dinero</li>
-                    <li>Tu asesoria es GRATIS</li>
-                  </ul>
-                </div>
-                <div>
-                  <h3>Si no cumples:</h3>
-                  <ul class="lose">
-                    <li>El monto apostado se pierde</li>
-                    <li>(bajo validacion del sistema)</li>
-                  </ul>
-                </div>
-              </div>
-
-              <p class="onb4bet-note">
-                La validacion del cumplimiento se realiza mediante check-ins,
-                registro de actividad y revision del sistema.
-              </p>
-            </section>
-
-            <a class="onb4bet-btn" data-onb-next href="onboarding-5.html">
-              <strong>SIGUIENTE</strong>
-            </a>
+          <div class="onb-bet-cols">
+            <div class="onb-bet-col win">
+              <h3>✅ Si cumples</h3>
+              <ul>
+                <li>Recuperas tu dinero</li>
+                <li>Tu asesoría es GRATIS</li>
+                <li>+500 XP de bonificación</li>
+              </ul>
+            </div>
+            <div class="onb-bet-col lose">
+              <h3>❌ Si no cumples</h3>
+              <ul>
+                <li>El monto apostado se pierde</li>
+                <li>Bajo validación del sistema</li>
+                <li>Puedes reactivar después</li>
+              </ul>
+            </div>
           </div>
-        </article>
-      </section>
+
+          <p class="onb-bet-note">La validación se hace mediante check-ins diarios, registro de actividad y revisión del sistema. Puedes saltar este modo — es opcional.</p>
+        </div>
+
+        <a class="onb-cta" href="onboarding-5.html" data-onb-next>ENTENDIDO — CONTINUAR →</a>
+      </div>
     </main>
     <script src="app.js"></script>
   </body>
