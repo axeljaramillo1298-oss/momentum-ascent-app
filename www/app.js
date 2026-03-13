@@ -6617,6 +6617,26 @@ const initGamingDashboard = () => {
 };
 
 // ── BOOT ALL NEW FEATURES ─────────────────────────────────────────
+// ── NAV THEME TOGGLE BUTTON ───────────────────────────────────────
+(() => {
+  const btn   = document.getElementById("nav-theme-btn");
+  const icon  = document.getElementById("nav-theme-icon");
+  const label = document.getElementById("nav-theme-label");
+  if (!btn) return;
+  const syncBtn = () => {
+    const isFemale = document.body.classList.contains("theme-female");
+    if (icon)  icon.textContent  = isFemale ? "♀" : "♂";
+    if (label) label.textContent = isFemale ? "Mujer" : "Hombre";
+  };
+  syncBtn();
+  btn.addEventListener("click", () => {
+    const next = document.body.classList.contains("theme-female") ? "male" : "female";
+    applyTheme(next);
+    localStorage.setItem(THEME_KEY, next);
+    syncBtn();
+  });
+})();
+
 initGamingDashboard();
 renderTripleCheckin();
 renderBetStatus();

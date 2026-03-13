@@ -10848,6 +10848,41 @@ body.theme-female .login-card::before { background: linear-gradient(90deg, #ea7f
 body.theme-female .login-input:focus { border-color: #ea7fb0; background: rgba(234,127,176,0.05); box-shadow: 0 0 0 3px rgba(234,127,176,0.12); }
 body.theme-female .login-submit { background: linear-gradient(135deg, #ea7fb0, #f08cb8); }
 
+/* ── NAV THEME TOGGLE ─────────────────────────────────────────────── */
+.nav-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: 99px;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: rgba(200,215,255,0.75);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s, transform 0.15s;
+  white-space: nowrap;
+}
+.nav-theme-toggle:hover {
+  border-color: rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  transform: translateY(-1px);
+}
+.nav-theme-icon { font-size: 14px; line-height: 1; }
+body.theme-female .nav-theme-toggle {
+  border-color: rgba(234,127,176,0.35);
+  color: rgba(234,127,176,0.9);
+}
+body.theme-female .nav-theme-toggle:hover {
+  border-color: rgba(234,127,176,0.6);
+  background: rgba(234,127,176,0.08);
+  color: #ea7fb0;
+}
+
 /* ================================================================
    FIN DESIGN v7
    ================================================================ */
