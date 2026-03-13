@@ -11355,10 +11355,15 @@ body.theme-female .nav-theme-toggle:hover {
    DESIGN v10 — FEMALE THEME: dark pages (onboarding + app-inicio)
    ================================================================ */
 
-/* Female dark body: keep dark but swap accents to pink/rose */
+/* Female dark body: KEEP DARK — only swap accent colors to pink */
 body.theme-female.onb-dark-body {
+  --bg: #0a0a0f;
+  --bg-soft: #110a10;
+  --text: #f5eeff;
+  --muted: rgba(220,180,210,0.55);
   --accent: #f0609e;
   --accent-2: #ffadd5;
+  --line: rgba(240,96,158,0.18);
   background:
     radial-gradient(ellipse 90% 50% at 20% -10%, rgba(200,60,130,0.22) 0%, transparent 60%),
     radial-gradient(ellipse 70% 40% at 85% 15%, rgba(160,40,110,0.16) 0%, transparent 55%),
