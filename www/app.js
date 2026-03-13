@@ -3939,6 +3939,20 @@ if (regForm) {
   renderRegState();
 }
 
+// Show password field when email matches a known admin domain pattern
+const loginPasswordField = document.getElementById("login-password-field");
+const loginPassword = document.getElementById("login-password");
+const ADMIN_HINT_DOMAINS = ["ascent.com", "momentumascent.com"];
+if (loginEmail && loginPasswordField) {
+  loginEmail.addEventListener("blur", () => {
+    const email = String(loginEmail.value || "").trim().toLowerCase();
+    const domain = email.split("@")[1] || "";
+    const isAdminHint = ADMIN_HINT_DOMAINS.some((d) => domain === d);
+    loginPasswordField.classList.toggle("hidden-field", !isAdminHint);
+    if (loginPassword) loginPassword.required = isAdminHint;
+  });
+}
+
 if (loginForm) {
   loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -3947,6 +3961,7 @@ if (loginForm) {
       if (loginFeedback) loginFeedback.textContent = "Ingresa correo para entrar.";
       return;
     }
+    const password = loginPassword?.value?.trim() || "";
     const localUser = ensureUser({
       name: email.split("@")[0] || "User",
       email,
@@ -3954,13 +3969,22 @@ if (loginForm) {
       plan: getPlanSelection().label,
     });
     try {
-      const remote = await syncUserWithBackend({
+      const remote = await apiPost("/auth/login", {
         name: localUser?.name || email.split("@")[0] || "User",
         email,
         whatsapp: normalizeWhatsapp(loginWhatsapp?.value || ""),
         role: "user",
         plan: localUser?.plan || getPlanSelection().label,
+        password,
       });
+      if (!remote?.ok) {
+        if (loginFeedback) {
+          loginFeedback.textContent = remote?.error === "invalid_password"
+            ? "Contraseña incorrecta."
+            : "No fue posible iniciar sesión.";
+        }
+        return;
+      }
       hydrateUserCacheFromApi(remote?.user);
       applyRoleMode(remote?.user?.role === "admin" ? "admin" : "user");
       await syncCurrentSubscriptionFromApi();
@@ -3975,11 +3999,9 @@ if (loginForm) {
       console.warn("[api] fallback local:", err?.message || err);
     }
     if (loginFeedback) {
-      loginFeedback.textContent = localUser ? `Sesion iniciada como ${localUser.name}.` : "No fue posible iniciar sesion.";
+      loginFeedback.textContent = `Sesión iniciada como ${localUser?.name || email}.`;
     }
-    if (localUser) {
-      window.location.href = "app-inicio.html";
-    }
+    window.location.href = "app-inicio.html";
   });
 }
 

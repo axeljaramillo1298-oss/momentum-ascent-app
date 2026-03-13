@@ -51,6 +51,20 @@ const ADMIN_EMAILS = new Set(
     .filter(Boolean)
 );
 
+// Per-admin passwords: "email:pass,email2:pass2"
+const ADMIN_PASSWORDS = new Map(
+  String(process.env.ADMIN_PASSWORDS || "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const idx = entry.indexOf(":");
+      if (idx < 0) return null;
+      return [entry.slice(0, idx).trim().toLowerCase(), entry.slice(idx + 1).trim()];
+    })
+    .filter(Boolean)
+);
+
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 
@@ -182,6 +196,13 @@ app.post("/auth/login", async (req, res) => {
     const payload = req.body || {};
     const email = String(payload.email || "").trim().toLowerCase();
     const enforcedRole = ADMIN_EMAILS.has(email) ? "admin" : "user";
+    // If this admin email has a required password, validate it
+    if (enforcedRole === "admin" && ADMIN_PASSWORDS.has(email)) {
+      const provided = String(payload.password || "").trim();
+      if (provided !== ADMIN_PASSWORDS.get(email)) {
+        return res.status(401).json({ ok: false, error: "invalid_password" });
+      }
+    }
     const previous = email ? await getUserByEmail(email) : null;
     const user = await ensureUser({
       ...payload,
