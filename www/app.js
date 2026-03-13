@@ -60,6 +60,12 @@ const applyTheme = (theme) => {
   const normalized = theme === "female" ? "female" : "male";
   document.body.classList.remove("theme-male", "theme-female");
   document.body.classList.add(`theme-${normalized}`);
+  // Swap theme-specific images
+  document.querySelectorAll("[data-female-src]").forEach((img) => {
+    const maleSrc = img.dataset.maleSrc || img.getAttribute("src");
+    if (!img.dataset.maleSrc) img.dataset.maleSrc = maleSrc;
+    img.src = normalized === "female" ? img.dataset.femaleSrc : img.dataset.maleSrc;
+  });
   document.dispatchEvent(new CustomEvent("theme:changed", { detail: { theme: normalized } }));
 };
 

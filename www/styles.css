@@ -11350,3 +11350,124 @@ body.theme-female .nav-theme-toggle:hover {
 /* ================================================================
    FIN DESIGN v9
    ================================================================ */
+
+/* ================================================================
+   DESIGN v10 — FEMALE THEME: dark pages (onboarding + app-inicio)
+   ================================================================ */
+
+/* Female dark body: keep dark but swap accents to pink/rose */
+body.theme-female.onb-dark-body {
+  --accent: #f0609e;
+  --accent-2: #ffadd5;
+  background:
+    radial-gradient(ellipse 90% 50% at 20% -10%, rgba(200,60,130,0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 40% at 85% 15%, rgba(160,40,110,0.16) 0%, transparent 55%),
+    #0a0a0f;
+}
+
+/* Progress bar: pink gradient */
+body.theme-female .onb-progress-bar {
+  background: linear-gradient(90deg, #f0609e, #ffadd5);
+}
+
+/* Eyebrow accent */
+body.theme-female .onb-eyebrow { color: #f0609e; }
+
+/* Title accent span */
+body.theme-female .onb-title span { color: #f0609e; }
+
+/* CTA button: pink gradient */
+body.theme-female .onb-cta,
+body.theme-female button.onb-cta {
+  background: linear-gradient(135deg, #d94f8e 0%, #f0609e 50%, #ff8fc0 100%);
+  box-shadow: 0 8px 28px rgba(240,96,158,0.45);
+}
+body.theme-female .onb-cta:hover {
+  box-shadow: 0 12px 36px rgba(240,96,158,0.55);
+}
+
+/* Selected option: pink */
+body.theme-female .onb-option.selected {
+  border-color: #f0609e;
+  background: rgba(240,96,158,0.12);
+  box-shadow: 0 0 0 3px rgba(240,96,158,0.18);
+}
+body.theme-female .onb-option.selected .onb-option-icon { filter: none; }
+
+/* Chip selected: pink */
+body.theme-female .onb-option.chip.selected {
+  background: rgba(240,96,158,0.18);
+  border-color: #f0609e;
+  color: #ffadd5;
+}
+
+/* Back button: pink border on hover */
+body.theme-female .onb-back-btn:hover {
+  border-color: rgba(240,96,158,0.5);
+}
+
+/* Bet explainer in female: soft rose */
+body.theme-female .onb-bet-explainer {
+  background: rgba(240,96,158,0.06);
+  border-color: rgba(240,96,158,0.25);
+}
+body.theme-female .onb-bet-title { color: #ffadd5; }
+body.theme-female .onb-bet-col.win { background: rgba(52,199,89,0.06); border-color: rgba(52,199,89,0.2); }
+body.theme-female .onb-bet-col.lose { background: rgba(240,96,158,0.06); border-color: rgba(240,96,158,0.2); }
+
+/* Input focus: pink glow */
+body.theme-female .onb-input:focus {
+  border-color: #f0609e;
+  box-shadow: 0 0 0 3px rgba(240,96,158,0.2);
+}
+
+/* Show more button: pink on hover */
+body.theme-female .onb-show-more:hover,
+body.theme-female .onb-show-more.expanded {
+  border-color: #f0609e;
+  color: #f0609e;
+}
+
+/* Mode cards: pink accent border when hovered */
+body.theme-female .onb-mode-card:hover {
+  border-color: rgba(240,96,158,0.3);
+}
+
+/* Summary box accent for female */
+body.theme-female #onb-summary-payment {
+  border-color: rgba(240,96,158,0.25);
+  background: rgba(240,96,158,0.04);
+}
+
+/* Orbs in female dark pages: rose tones */
+body.theme-female.onb-dark-body .orb-1 {
+  background: radial-gradient(circle, rgba(220,80,140,0.35), transparent 70%);
+}
+body.theme-female.onb-dark-body .orb-2 {
+  background: radial-gradient(circle, rgba(180,50,120,0.25), transparent 70%);
+}
+body.theme-female.onb-dark-body .orb-3 {
+  background: radial-gradient(circle, rgba(255,130,180,0.2), transparent 70%);
+}
+
+/* Female app-inicio gaming dashboard */
+body.theme-female .streak-fire-card {
+  background: linear-gradient(135deg, #4a1530 0%, #2d0d1e 100%);
+  border-color: rgba(240,96,158,0.3);
+}
+body.theme-female .level-bar-fill {
+  background: linear-gradient(90deg, #d94f8e, #f0609e, #ffadd5);
+}
+body.theme-female .triple-check-item.checked {
+  border-color: #f0609e;
+  background: rgba(240,96,158,0.12);
+}
+body.theme-female .triple-check-item.checked .triple-check-icon { color: #f0609e; }
+body.theme-female #today-yes {
+  background: linear-gradient(135deg, #d94f8e, #f0609e);
+  box-shadow: 0 8px 24px rgba(240,96,158,0.4);
+}
+
+/* ================================================================
+   FIN DESIGN v10
+   ================================================================ */
