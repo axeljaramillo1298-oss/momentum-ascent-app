@@ -129,12 +129,24 @@ const getBillingTarget = async () => {
   return { ...defaultBillingTarget, ...(fromDb && typeof fromDb === "object" ? fromDb : {}) };
 };
 
-const requireAdmin = (req, res, next) => {
+const isAdminEmail = async (emailRaw) => {
+  const email = String(emailRaw || "").trim().toLowerCase();
+  if (!email) return false;
+  if (ADMIN_EMAILS.has(email)) return true;
+  try {
+    const user = await getUserByEmail(email);
+    return String(user?.role || "").toLowerCase() === "admin";
+  } catch {
+    return false;
+  }
+};
+
+const requireAdmin = async (req, res, next) => {
   if (isGodRequest(req)) {
     return next();
   }
   const email = getRequestEmail(req);
-  if (email && ADMIN_EMAILS.has(email)) {
+  if (await isAdminEmail(email)) {
     return next();
   }
   return res.status(403).json({ ok: false, error: "admin_only" });
@@ -147,14 +159,14 @@ const requireGod = (req, res, next) => {
   return res.status(403).json({ ok: false, error: "god_only" });
 };
 
-const canActAsAdmin = (req) => {
+const canActAsAdmin = async (req) => {
   if (isGodRequest(req)) return true;
   const email = getRequestEmail(req);
-  return Boolean(email && ADMIN_EMAILS.has(email));
+  return isAdminEmail(email);
 };
 
-const requireSelfOrAdminByResolver = (resolver) => (req, res, next) => {
-  if (canActAsAdmin(req)) {
+const requireSelfOrAdminByResolver = (resolver) => async (req, res, next) => {
+  if (await canActAsAdmin(req)) {
     return next();
   }
   const actor = getRequestEmail(req);
@@ -195,18 +207,21 @@ app.post("/auth/login", async (req, res) => {
   try {
     const payload = req.body || {};
     const email = String(payload.email || "").trim().toLowerCase();
-    const enforcedRole = ADMIN_EMAILS.has(email) ? "admin" : "user";
-    // If this admin email has a required password, validate it
-    if (enforcedRole === "admin" && ADMIN_PASSWORDS.has(email)) {
+    const previous = email ? await getUserByEmail(email) : null;
+    const wasAdmin = String(previous?.role || "").toLowerCase() === "admin";
+    const isAdminByAllowlist = ADMIN_EMAILS.has(email);
+    const resolvedRole = wasAdmin || isAdminByAllowlist ? "admin" : "user";
+    // If this admin email has a required password, validate it.
+    // Only applies to explicit allowlist admins.
+    if (isAdminByAllowlist && ADMIN_PASSWORDS.has(email)) {
       const provided = String(payload.password || "").trim();
       if (provided !== ADMIN_PASSWORDS.get(email)) {
         return res.status(401).json({ ok: false, error: "invalid_password" });
       }
     }
-    const previous = email ? await getUserByEmail(email) : null;
     const user = await ensureUser({
       ...payload,
-      role: enforcedRole,
+      role: resolvedRole,
     });
     const isNew = !previous;
     const hasNewWhatsapp = !String(previous?.whatsapp || "").trim() && String(user?.whatsapp || "").trim();
@@ -255,7 +270,8 @@ app.post("/god/login", async (req, res) => {
     }
     const username = String(req.body?.username || "").trim();
     const password = String(req.body?.password || "").trim();
-    if (username !== GOD_MODE_USER || password !== GOD_MODE_PASS) {
+    const validUser = username.toLowerCase() === GOD_MODE_USER.toLowerCase();
+    if (!validUser || password !== GOD_MODE_PASS) {
       return res.status(401).json({ ok: false, error: "invalid_credentials" });
     }
     resetRateLimit(ip); // reset al loguearse bien

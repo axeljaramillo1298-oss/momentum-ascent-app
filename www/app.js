@@ -670,8 +670,15 @@ const initHomeGodEntry = () => {
       setTimeout(() => {
         window.location.href = "admin.html#god-panel";
       }, 350);
-    } catch {
-      setFeedback("Acceso denegado.", "error");
+    } catch (error) {
+      const message = String(error?.message || "");
+      if (message.includes("god_mode_disabled")) {
+        setFeedback("Modo Dios no esta habilitado en API.", "error");
+      } else if (message.includes("invalid_credentials")) {
+        setFeedback("Credenciales invalidas.", "error");
+      } else {
+        setFeedback(`Error: ${message || "no se pudo iniciar"}`, "error");
+      }
     } finally {
       enterBtn.disabled = false;
     }
@@ -1027,7 +1034,6 @@ const syncUserWithBackend = async (payload) => {
     name: payload.name || "User",
     email,
     whatsapp: normalizeWhatsapp(payload.whatsapp || ""),
-    role: payload.role || "user",
     plan: payload.plan || "Free",
     goal: payload.goal || payload.objetivo || "",
     checkinSchedule: payload.checkinSchedule || payload.horario || "",
@@ -2713,8 +2719,15 @@ function initGodModePanel() {
         syncGodLinkVisibility();
         await refreshBilling();
         await loadGodUsers(usersSearch?.value || "");
-      } catch {
-        setFeedback(authFeedback, "Credenciales invalidas para Modo Dios.", "error");
+      } catch (error) {
+        const message = String(error?.message || "");
+        if (message.includes("god_mode_disabled")) {
+          setFeedback(authFeedback, "Modo Dios deshabilitado en API.", "error");
+        } else if (message.includes("invalid_credentials")) {
+          setFeedback(authFeedback, "Credenciales invalidas para Modo Dios.", "error");
+        } else {
+          setFeedback(authFeedback, `Error Modo Dios: ${message || "desconocido"}`, "error");
+        }
       }
     });
   }
@@ -3017,7 +3030,8 @@ function initAdminTabNav() {
   };
 
   tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
+    tab.addEventListener("click", (event) => {
+      event.preventDefault();
       tabs.forEach((t) => t.classList.remove("active"));
       tab.classList.add("active");
       scrollToSection(tab.dataset.tab);
@@ -3046,8 +3060,8 @@ function initAdminTabNav() {
 function initGodStatusPulse() {
   const pill = document.getElementById("god-status-pill");
   if (!pill) return;
-  const token = String(localStorage.getItem("discipline_god_token") || "").trim();
-  const exp = Date.parse(String(localStorage.getItem("discipline_god_expires") || ""));
+  const token = String(localStorage.getItem(GOD_TOKEN_KEY) || "").trim();
+  const exp = Date.parse(String(localStorage.getItem(GOD_EXPIRES_KEY) || ""));
   const active = token && (!Number.isFinite(exp) || Date.now() <= exp);
   if (active) {
     pill.className = "admin-chip green god-status-badge";
@@ -3095,7 +3109,7 @@ const bootApiSession = async () => {
       name: current.name || "User",
       email: current.email,
       whatsapp: current.whatsapp || "",
-      role: getRoleMode(),
+      role: current.role || "user",
       plan: current.plan || getPlanSelection().label,
       horario: current.horario || "",
       objetivo: current.objetivo || "",
@@ -4002,7 +4016,6 @@ if (loginForm) {
         name: email.split("@")[0] || "User",
         email,
         whatsapp: normalizeWhatsapp(loginWhatsapp?.value || ""),
-        role: "user",
         plan: getPlanSelection().label,
         password,
       });
@@ -6709,10 +6722,3 @@ renderGamingRanking("progress-gaming-ranking");
 renderGamingRanking("hoy-gaming-ranking");
 renderMacroBars();
 renderProfileHeader();
-
-
-
-
-
-
-
