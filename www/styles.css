@@ -2830,33 +2830,37 @@ body.user-panel-premium .nav-actions .ghost:hover {
 
 /* Female override */
 body.user-panel-premium.theme-female {
+  /* Deeper, richer rose-plum so cards contrast clearly */
   background:
-    radial-gradient(110% 55% at 50% -4%, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0) 64%),
-    radial-gradient(82% 52% at 84% 14%, rgba(255, 190, 230, 0.22), rgba(255, 180, 226, 0) 72%),
-    linear-gradient(180deg, #e6b6d2 0%, #ce89b0 100%);
-  color: #44243b;
+    radial-gradient(110% 50% at 50% -6%, rgba(255,255,255,0.28), transparent 60%),
+    radial-gradient(80% 45% at 88% 12%, rgba(255,160,210,0.2), transparent 65%),
+    linear-gradient(160deg, #c47da8 0%, #a45688 50%, #8a3d72 100%);
+  color: #fff0f8;
 }
 
 body.user-panel-premium.theme-female .user-panel-shell::before {
   background: url("assets/extras/panel-user-bg.png") center/cover no-repeat;
-  opacity: 0.9;
+  opacity: 0.12;
 }
 
 body.user-panel-premium.theme-female .user-panel-shell::after {
   background:
-    radial-gradient(100% 42% at 50% 0%, rgba(255, 255, 255, 0.18), transparent 75%),
-    linear-gradient(180deg, rgba(65, 24, 51, 0.18) 0%, rgba(73, 30, 57, 0.24) 100%);
+    radial-gradient(100% 42% at 50% 0%, rgba(255,255,255,0.12), transparent 70%),
+    linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.18) 100%);
 }
 
 body.user-panel-premium.theme-female .card {
-  border-color: rgba(255, 224, 243, 0.8);
-  background: linear-gradient(180deg, rgba(255, 246, 252, 0.58), rgba(255, 237, 248, 0.42));
-  box-shadow: 0 14px 32px rgba(115, 43, 90, 0.22);
+  border-color: rgba(255,200,235,0.35);
+  background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,240,250,0.12) 100%);
+  box-shadow: 0 12px 32px rgba(80,20,60,0.3);
+  backdrop-filter: blur(6px);
 }
 
 body.user-panel-premium.theme-female .card h3,
-body.user-panel-premium.theme-female .stat-list strong {
-  color: #512940;
+body.user-panel-premium.theme-female .stat-list strong,
+body.user-panel-premium.theme-female .today-main h3,
+body.user-panel-premium.theme-female .today-stats h3 {
+  color: #fff0f8;
 }
 
 body.user-panel-premium.theme-female .today-note,
@@ -2867,7 +2871,7 @@ body.user-panel-premium.theme-female .today-timer,
 body.user-panel-premium.theme-female .reg-hint,
 body.user-panel-premium.theme-female .admin-item p,
 body.user-panel-premium.theme-female .today-plan-tier p {
-  color: #845974;
+  color: rgba(255,220,240,0.75);
 }
 
 body.theme-female .today-loop {
@@ -2929,14 +2933,14 @@ body.user-panel-premium {
 }
 
 body.user-panel-premium.theme-female {
-  --up-text: #533046;
-  --up-muted: #875d76;
-  --up-strong: #4d2a40;
-  --up-chip-bg: rgba(255, 241, 249, 0.7);
-  --up-chip-border: rgba(236, 173, 211, 0.56);
-  --up-card-bg: linear-gradient(180deg, rgba(255, 246, 252, 0.62), rgba(255, 236, 248, 0.44));
-  --up-card-border: rgba(243, 182, 221, 0.66);
-  --up-accent: #ea7fb0;
+  --up-text: #fff0f8;
+  --up-muted: rgba(255,215,238,0.7);
+  --up-strong: #ffffff;
+  --up-chip-bg: rgba(255,255,255,0.15);
+  --up-chip-border: rgba(255,180,220,0.45);
+  --up-card-bg: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,240,250,0.10));
+  --up-card-border: rgba(255,200,235,0.35);
+  --up-accent: #ff80c0;
 }
 
 body.user-panel-premium .user-panel-shell {
@@ -2958,7 +2962,70 @@ body.user-panel-premium .user-panel-nav {
 }
 
 body.user-panel-premium.theme-female .user-panel-nav {
-  background: linear-gradient(180deg, rgba(255, 244, 251, 0.52), rgba(255, 235, 247, 0.36));
+  background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,240,250,0.08));
+  border-color: rgba(255,200,235,0.25);
+}
+
+/* Nav logo + eyebrow in female panel */
+body.user-panel-premium.theme-female .logo {
+  color: #fff0f8;
+}
+body.user-panel-premium.theme-female .eyebrow {
+  color: rgba(255,200,235,0.85);
+}
+
+/* Nav ghost buttons in female panel */
+body.user-panel-premium.theme-female .nav-actions .ghost {
+  border-color: rgba(255,180,220,0.4);
+  background: rgba(255,255,255,0.1);
+  color: #fff0f8;
+}
+body.user-panel-premium.theme-female .nav-actions .ghost[href*="user-hoy"] {
+  background: linear-gradient(90deg, rgba(200,80,140,0.45), rgba(240,96,158,0.3));
+  border-color: rgba(255,140,200,0.65);
+}
+
+/* Primary button in female panel */
+body.user-panel-premium.theme-female .primary {
+  background: linear-gradient(135deg, #c04080, #ea5fa0, #ff90c4);
+  box-shadow: 0 8px 24px rgba(200,64,128,0.4);
+}
+
+/* Active nav link accent */
+body.user-panel-premium.theme-female .up-nav-active {
+  color: #ff90c4 !important;
+  border-color: rgba(255,144,196,0.4) !important;
+  box-shadow: 0 0 14px rgba(255,144,196,0.2) !important;
+}
+
+/* Streak/XP numbers in female panel */
+body.user-panel-premium.theme-female .today-streak strong,
+body.user-panel-premium.theme-female .today-xp strong {
+  color: #ff90c4;
+}
+
+/* Today yes button */
+body.user-panel-premium.theme-female #today-yes {
+  background: linear-gradient(135deg, #c04080, #ea5fa0);
+  box-shadow: 0 8px 24px rgba(200,64,128,0.45);
+}
+
+/* Stat tile accent */
+body.user-panel-premium.theme-female .stat-tile {
+  border-color: rgba(255,180,220,0.25);
+  background: rgba(255,255,255,0.1);
+}
+body.user-panel-premium.theme-female .stat-tile strong {
+  color: #ff90c4;
+}
+
+/* Mission item done */
+body.user-panel-premium.theme-female .mission-item.done {
+  border-color: rgba(255,144,196,0.4);
+  background: rgba(255,144,196,0.08);
+}
+body.user-panel-premium.theme-female .mission-item.done::before {
+  color: #ff90c4;
 }
 
 body.user-panel-premium .today-loop {
@@ -3079,7 +3146,9 @@ body.user-panel-premium .today-onboarding-item {
 }
 
 body.user-panel-premium.theme-female .today-onboarding-item {
-  background: rgba(255, 246, 252, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 170, 215, 0.2);
+  color: #fff0f8;
 }
 
 body.user-panel-premium .today-onboarding-item span {
@@ -3247,9 +3316,9 @@ body.user-panel-premium .today-feature-item {
   border-radius: 12px;
 }
 
-/* Female contrast fixes */
+/* Female contrast fixes — dark rose-plum theme (glassmorphism cards) */
 body.user-panel-premium.theme-female .card {
-  box-shadow: 0 14px 30px rgba(133, 58, 104, 0.22);
+  box-shadow: 0 14px 36px rgba(100, 20, 60, 0.45);
 }
 
 body.user-panel-premium.theme-female .today-note,
@@ -3261,7 +3330,7 @@ body.user-panel-premium.theme-female .reg-hint,
 body.user-panel-premium.theme-female .admin-item p,
 body.user-panel-premium.theme-female .today-plan-tier p,
 body.user-panel-premium.theme-female .today-sales-banner p {
-  color: #754b66;
+  color: rgba(255, 215, 238, 0.8);
 }
 
 body.user-panel-premium.theme-female .admin-item,
@@ -3269,43 +3338,44 @@ body.user-panel-premium.theme-female .admin-status-item,
 body.user-panel-premium.theme-female .today-feature-item,
 body.user-panel-premium.theme-female .today-plan-tier,
 body.user-panel-premium.theme-female #smart-reminders .admin-item {
-  background: rgba(255, 246, 252, 0.78) !important;
-  border-color: rgba(236, 176, 214, 0.62) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 170, 215, 0.22) !important;
+  color: #fff0f8 !important;
 }
 
 body.user-panel-premium.theme-female .today-sales-banner {
   background:
-    radial-gradient(120% 130% at 100% 0%, rgba(255, 181, 225, 0.2), transparent 65%),
-    linear-gradient(180deg, rgba(255, 244, 251, 0.74), rgba(255, 233, 246, 0.62));
-  border-color: rgba(235, 172, 211, 0.65);
+    radial-gradient(120% 130% at 100% 0%, rgba(255, 144, 196, 0.18), transparent 65%),
+    linear-gradient(180deg, rgba(255,255,255,0.13), rgba(255,240,250,0.08));
+  border-color: rgba(255, 155, 205, 0.38);
 }
 
 body.user-panel-premium.theme-female .today-sales-banner.max {
-  border-color: rgba(129, 209, 160, 0.64);
+  border-color: rgba(90, 210, 140, 0.5);
 }
 
 body.user-panel-premium.theme-female .today-sales-points span,
 body.user-panel-premium.theme-female .admin-chip {
-  color: #6f445e;
+  color: rgba(255, 210, 238, 0.9);
 }
 
 body.user-panel-premium.theme-female .admin-status-pill.red,
 body.user-panel-premium.theme-female .admin-status-pill.pending {
-  color: #9d4963;
-  border-color: rgba(222, 120, 151, 0.58);
-  background: rgba(255, 230, 241, 0.78);
+  color: #ffb8cc;
+  border-color: rgba(255, 120, 158, 0.55);
+  background: rgba(200, 48, 95, 0.2);
 }
 
 body.user-panel-premium.theme-female .admin-status-pill.yellow {
-  color: #8a6d2e;
-  border-color: rgba(220, 185, 102, 0.64);
-  background: rgba(255, 244, 210, 0.72);
+  color: #ffd9a0;
+  border-color: rgba(255, 200, 95, 0.5);
+  background: rgba(180, 120, 20, 0.2);
 }
 
 body.user-panel-premium.theme-female .admin-status-pill.green {
-  color: #2f7255;
-  border-color: rgba(112, 201, 155, 0.62);
-  background: rgba(226, 255, 241, 0.72);
+  color: #b7f1d0;
+  border-color: rgba(90, 200, 140, 0.5);
+  background: rgba(46, 158, 98, 0.2);
 }
 
 /* Male palette alignment (dark navy + red accent like home) */
@@ -3417,45 +3487,41 @@ body.user-panel-premium .user-panel-shell {
   padding: 18px 20px 24px;
 }
 
-body.user-panel-premium.theme-female .nav-actions .ghost,
-body.user-panel-premium.theme-female .today-actions .primary,
 body.user-panel-premium.theme-female .today-actions .ghost,
-body.user-panel-premium.theme-female .role-actions .primary,
 body.user-panel-premium.theme-female .role-actions .ghost,
-body.user-panel-premium.theme-female .today-sales-banner .primary,
 body.user-panel-premium.theme-female .today-sales-banner .ghost {
-  border: 1px solid rgba(244, 186, 221, 0.82) !important;
+  border: 1px solid rgba(255, 170, 215, 0.45) !important;
   border-radius: 999px !important;
-  background: linear-gradient(90deg, #f19ac4, #f6b4d8) !important;
-  color: #5c2f46 !important;
-  box-shadow: 0 8px 18px rgba(173, 72, 126, 0.2);
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #fff0f8 !important;
 }
 
-body.user-panel-premium.theme-female .nav-actions .ghost[href*="user-hoy"] {
-  background: linear-gradient(90deg, #e886b6, #f19ac4) !important;
-  color: #fff3fa !important;
-}
-
-body.user-panel-premium.theme-female .today-actions .primary {
+body.user-panel-premium.theme-female .today-actions .primary,
+body.user-panel-premium.theme-female .role-actions .primary,
+body.user-panel-premium.theme-female .today-sales-banner .primary {
+  border: 1px solid rgba(255, 144, 200, 0.65) !important;
+  border-radius: 999px !important;
+  background: linear-gradient(135deg, #c04080, #ea5fa0, #ff90c4) !important;
   color: #fff5fb !important;
-  background: linear-gradient(90deg, #d56fa6, #e987bb) !important;
+  box-shadow: 0 8px 20px rgba(200, 64, 128, 0.38) !important;
 }
 
 body.user-panel-premium.theme-female select,
 body.user-panel-premium.theme-female input[type="text"],
 body.user-panel-premium.theme-female input[type="number"],
 body.user-panel-premium.theme-female textarea {
-  border: 1px solid rgba(232, 174, 210, 0.8);
+  border: 1px solid rgba(255, 170, 215, 0.4);
   border-radius: 12px;
-  background: rgba(255, 247, 252, 0.9);
-  color: #5c3650;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff0f8;
 }
 
 body.user-panel-premium.theme-female .agree-row {
-  border: 1px solid rgba(232, 174, 210, 0.65);
+  border: 1px solid rgba(255, 170, 215, 0.3);
   border-radius: 12px;
   padding: 10px 12px;
-  background: rgba(255, 248, 253, 0.78);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff0f8;
 }
 
 @media (max-width: 880px) {
@@ -9877,10 +9943,23 @@ textarea:focus {
 
 /* female theme bottom nav accent */
 body.theme-female .bottom-nav-item.bottom-nav-active {
-  color: #ea7fb0;
+  color: #ff80c0;
 }
 body.theme-female .bottom-nav-item.bottom-nav-active .bottom-nav-icon {
-  filter: drop-shadow(0 0 6px rgba(234, 127, 176, 0.6));
+  filter: drop-shadow(0 0 6px rgba(255, 128, 192, 0.7));
+}
+/* female: bottom nav bg blends with rose panel */
+body.user-panel-premium.theme-female .bottom-nav {
+  background: rgba(100, 30, 70, 0.88);
+  border-top-color: rgba(255, 180, 220, 0.2);
+}
+body.user-panel-premium.theme-female .bottom-nav-item {
+  color: rgba(255, 220, 240, 0.5);
+}
+body.user-panel-premium.theme-female .bottom-nav-item:hover,
+body.user-panel-premium.theme-female .bottom-nav-item:active {
+  color: rgba(255, 220, 240, 0.9);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* ── ACTIVE NAV LINK IN TOP NAV ────────────────────────────────── */
@@ -10844,9 +10923,27 @@ body.theme-female .nav-login-btn:hover { background: #ea7fb0; border-color: #ea7
 .login-back:hover { color: rgba(200,215,255,0.8); }
 
 /* ── FEMALE THEME ──────────────────────────────────────────────────── */
+body.theme-female .login-shell {
+  background:
+    radial-gradient(100% 55% at 70% -5%, rgba(200,60,130,0.3) 0%, transparent 60%),
+    radial-gradient(80% 45% at 15% 85%, rgba(150,40,110,0.2) 0%, transparent 60%),
+    #0e0712;
+}
 body.theme-female .login-card::before { background: linear-gradient(90deg, #ea7fb0, #f5c04a, #ea7fb0); }
+body.theme-female .login-input { border-color: rgba(234,127,176,0.2); }
 body.theme-female .login-input:focus { border-color: #ea7fb0; background: rgba(234,127,176,0.05); box-shadow: 0 0 0 3px rgba(234,127,176,0.12); }
-body.theme-female .login-submit { background: linear-gradient(135deg, #ea7fb0, #f08cb8); }
+body.theme-female .login-submit { background: linear-gradient(135deg, #c04080, #ea7fb0, #ff90c4); box-shadow: 0 8px 24px rgba(200,64,128,0.4); }
+body.theme-female .login-register-btn {
+  border-color: rgba(234,127,176,0.25);
+  color: rgba(255,200,235,0.85);
+}
+body.theme-female .login-register-btn:hover {
+  border-color: rgba(234,127,176,0.5);
+  background: rgba(234,127,176,0.08);
+  color: #ffc8e8;
+}
+body.theme-female .login-back { color: rgba(255,180,220,0.6); }
+body.theme-female .login-back:hover { color: rgba(255,200,235,0.9); }
 
 /* ── NAV THEME TOGGLE ─────────────────────────────────────────────── */
 .nav-theme-toggle {

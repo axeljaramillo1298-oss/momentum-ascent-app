@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Modo Dios | Momentum Ascent</title>
+    <meta name="description" content="Panel de control total. Solo acceso autorizado." />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="noise"></div>
+    <div class="stars"></div>
+
+    <header class="hero page-hero admin-hero">
+      <nav class="nav">
+        <div class="logo">MODO DIOS</div>
+        <div class="nav-actions">
+          <a class="ghost" href="admin.html">← Panel Coach</a>
+          <a class="ghost" href="index.html">Inicio</a>
+          <a class="primary" href="#god-main">Control</a>
+        </div>
+      </nav>
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Acceso nivel superior</p>
+          <h1>Modo Dios — Control Center</h1>
+          <p class="subhead">Banca, permisos, planes y gestión total del sistema.</p>
+        </div>
+      </div>
+    </header>
+
+    <main id="god-main">
+
+      <!-- STATUS STRIP -->
+      <section class="section">
+        <div class="admin-section-header">
+          <span class="admin-section-icon">🔐</span>
+          <div>
+            <h2 class="admin-section-title">Estado de sesión</h2>
+            <p class="admin-section-desc">Autentica con las credenciales de Modo Dios para activar el panel.</p>
+          </div>
+          <span class="admin-chip pending god-status-badge" id="god-status-pill">Bloqueado</span>
+        </div>
+
+        <article class="card god-shell">
+
+          <!-- KPIs overview -->
+          <div class="god-kpis">
+            <article class="god-kpi">
+              <span>Total users</span>
+              <strong id="god-users-count">-</strong>
+            </article>
+            <article class="god-kpi">
+              <span>Admins</span>
+              <strong id="god-users-admin">-</strong>
+            </article>
+            <article class="god-kpi">
+              <span>Planes activos</span>
+              <strong id="god-users-paid">-</strong>
+            </article>
+            <article class="god-kpi">
+              <span>Pendientes pago</span>
+              <strong id="god-users-pending">-</strong>
+            </article>
+          </div>
+
+          <div class="god-layout">
+
+            <!-- Auth -->
+            <article class="god-card god-auth-card">
+              <div class="god-card-header">
+                <span class="god-card-icon">🔑</span>
+                <h4>Autenticación</h4>
+              </div>
+              <div class="admin-form">
+                <label>Usuario
+                  <input id="god-user" type="text" placeholder="usuario modo dios" autocomplete="username" />
+                </label>
+                <label>Contraseña
+                  <input id="god-pass" type="password" placeholder="password modo dios" autocomplete="current-password" />
+                </label>
+                <div class="role-actions">
+                  <button class="primary" type="button" id="god-login-btn">🔓 Entrar Modo Dios</button>
+                  <button class="ghost" type="button" id="god-logout-btn">Salir</button>
+                </div>
+                <p class="reg-feedback" id="god-auth-feedback" aria-live="polite"></p>
+              </div>
+            </article>
+
+            <!-- Billing -->
+            <article class="god-card">
+              <div class="god-card-header">
+                <span class="god-card-icon">🏦</span>
+                <h4>Cuenta bancaria</h4>
+              </div>
+              <div class="admin-form">
+                <label>Banco<input id="god-bank-name" type="text" placeholder="BBVA" /></label>
+                <label>Titular<input id="god-bank-holder" type="text" placeholder="Momentum Ascent" /></label>
+                <label>CLABE<input id="god-bank-clabe" type="text" placeholder="18 dígitos" /></label>
+                <label>No. cuenta<input id="god-bank-account" type="text" placeholder="opcional" /></label>
+                <label>WhatsApp pagos<input id="god-bank-whatsapp" type="text" placeholder="+52..." /></label>
+                <label>Nota<input id="god-bank-note" type="text" placeholder="Referencia y condiciones" /></label>
+                <button class="primary" type="button" id="god-save-billing-btn">💾 Guardar cuenta bancaria</button>
+                <p class="reg-feedback" id="god-billing-feedback" aria-live="polite"></p>
+              </div>
+            </article>
+
+            <!-- Permissions -->
+            <article class="god-card">
+              <div class="god-card-header">
+                <span class="god-card-icon">🛡️</span>
+                <h4>Permisos y plan directo</h4>
+              </div>
+              <div class="admin-form">
+                <label>Email usuario<input id="god-target-user" type="text" placeholder="user@email.com" /></label>
+                <label>Rol
+                  <select id="god-target-role">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </label>
+                <button class="ghost" type="button" id="god-set-role-btn">Actualizar rol</button>
+
+                <label>Plan
+                  <select id="god-plan-id">
+                    <option value="free">Free</option>
+                    <option value="ai_coach">Coach IA</option>
+                    <option value="coach_humano">Coach + Humano</option>
+                    <option value="retos">Retos</option>
+                  </select>
+                </label>
+                <label>Label del plan<input id="god-plan-label" type="text" placeholder="Coach + Humano" /></label>
+                <label>Días activos<input id="god-plan-days" type="number" min="1" value="30" /></label>
+                <button class="primary" type="button" id="god-grant-plan-btn">🎁 Otorgar plan directo</button>
+                <p class="reg-feedback" id="god-user-feedback" aria-live="polite"></p>
+              </div>
+            </article>
+          </div>
+
+          <!-- Users list -->
+          <article class="god-users-box">
+            <div class="god-users-head">
+              <h4>Usuarios del sistema</h4>
+              <div class="admin-tools-row">
+                <input id="god-users-search" type="text" class="session-select" placeholder="Buscar por nombre o email" />
+                <button class="ghost" type="button" id="god-users-refresh">🔄 Actualizar</button>
+              </div>
+            </div>
+            <div id="god-users-list" class="god-users-list"></div>
+          </article>
+
+        </article>
+      </section>
+
+    </main>
+
+    <footer class="footer"><div>Momentum Ascent — Modo Dios</div></footer>
+    <script src="app.js"></script>
+  </body>
+</html>

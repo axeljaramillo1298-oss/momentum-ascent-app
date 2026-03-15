@@ -776,11 +776,27 @@ const applyRoleMode = (role) => {
 };
 
 const lockAdminIfNeeded = () => {
-  const isAdminPage = window.location.pathname.endsWith("/admin.html") || window.location.pathname.endsWith("admin.html");
+  const path = window.location.pathname;
+  const isAdminPage = path.endsWith("/admin.html") || path.endsWith("admin.html");
+  const isGodPage = path.endsWith("/god-panel.html") || path.endsWith("god-panel.html");
+  if (isGodPage) {
+    // god-panel.html requires an active god session
+    if (!hasActiveGodSession()) {
+      window.location.replace("admin.html");
+    }
+    return;
+  }
   if (!isAdminPage || getRoleMode() === "admin") {
     return;
   }
   window.location.replace("app-inicio.html");
+};
+
+// Show "Modo Dios" tab link in admin.html only when god session is active
+const syncGodLinkVisibility = () => {
+  const link = document.getElementById("admin-god-link");
+  if (!link) return;
+  link.classList.toggle("hidden-field", !hasActiveGodSession());
 };
 
 const hasCompletedOnboarding = () => {
@@ -798,6 +814,7 @@ const getUserEntryTarget = () => {
 const initRoleMode = () => {
   applyRoleMode(getRoleMode());
   lockAdminIfNeeded();
+  syncGodLinkVisibility();
 };
 
 const initAppEntryScreen = () => {
@@ -2685,6 +2702,7 @@ function initGodModePanel() {
         localStorage.setItem(GOD_EXPIRES_KEY, String(remote?.expiresAt || ""));
         setFeedback(authFeedback, "Modo Dios activo.", "success");
         paintStatus();
+        syncGodLinkVisibility();
         await refreshBilling();
         await loadGodUsers(usersSearch?.value || "");
       } catch {
@@ -2705,6 +2723,7 @@ function initGodModePanel() {
       localStorage.removeItem(GOD_EXPIRES_KEY);
       setFeedback(authFeedback, "Modo Dios cerrado.", "success");
       paintStatus();
+      syncGodLinkVisibility();
       loadGodUsers("");
     });
   }
