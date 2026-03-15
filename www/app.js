@@ -4017,12 +4017,15 @@ if (loginForm) {
         email,
         whatsapp: normalizeWhatsapp(loginWhatsapp?.value || ""),
         plan: getPlanSelection().label,
+        intent: "login",
         password,
       });
       if (!remote?.ok) {
         if (loginFeedback) {
           loginFeedback.textContent = remote?.error === "invalid_password"
             ? "Contraseña incorrecta."
+            : remote?.error === "user_not_found"
+            ? "Ese correo no existe. Regístrate primero."
             : remote?.error === "rate_limited"
             ? "Demasiados intentos. Espera unos minutos."
             : "No fue posible iniciar sesión. Verifica tus datos.";

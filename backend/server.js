@@ -207,9 +207,14 @@ app.post("/auth/login", async (req, res) => {
   try {
     const payload = req.body || {};
     const email = String(payload.email || "").trim().toLowerCase();
+    const intent = String(payload.intent || "").trim().toLowerCase();
+    const strictLogin = intent === "login";
     const previous = email ? await getUserByEmail(email) : null;
     const wasAdmin = String(previous?.role || "").toLowerCase() === "admin";
     const isAdminByAllowlist = ADMIN_EMAILS.has(email);
+    if (strictLogin && !previous && !isAdminByAllowlist) {
+      return res.status(404).json({ ok: false, error: "user_not_found" });
+    }
     const resolvedRole = wasAdmin || isAdminByAllowlist ? "admin" : "user";
     // If this admin email has a required password, validate it.
     // Only applies to explicit allowlist admins.

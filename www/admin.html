@@ -49,12 +49,6 @@
         <button class="admin-tab" data-tab="timeline" type="button">
           <span class="admin-tab-icon">⏱️</span><span>Timeline</span>
         </button>
-        <button class="admin-tab" data-tab="pagos" type="button">
-          <span class="admin-tab-icon">💳</span><span>Pagos</span>
-        </button>
-        <a class="admin-tab admin-tab-god hidden-field" id="admin-god-link" href="admin.html#god-panel" data-tab="modo-dios">
-          <span class="admin-tab-icon">🔐</span><span>Modo Dios</span>
-        </a>
       </div>
     </nav>
 
@@ -278,30 +272,6 @@
         </article>
       </section>
 
-      <!-- ─── SECCIÓN: PAGOS ────────────────────────────────────── -->
-      <section class="section admin-panel-section admin-grid" id="admin-section-pagos" data-admin-section="pagos">
-        <div class="admin-section-header admin-section-header--full">
-          <span class="admin-section-icon">💳</span>
-          <div>
-            <h2 class="admin-section-title">Pagos y QA</h2>
-            <p class="admin-section-desc">Valida pagos pendientes y comprueba el flujo demo.</p>
-          </div>
-        </div>
-
-        <article class="card">
-          <h3>Validacion de pagos</h3>
-          <div class="admin-tools-row">
-            <button class="ghost" type="button" id="admin-payments-refresh">🔄 Actualizar pagos</button>
-          </div>
-          <div id="admin-payments-list" class="admin-list"></div>
-        </article>
-
-        <article class="card">
-          <h3>Checklist QA demo</h3>
-          <p class="today-note">Progreso: <strong id="qa-checklist-progress">0/10 (0%)</strong></p>
-          <div id="qa-checklist-demo" class="admin-form"></div>
-        </article>
-      </section>
 
     </main>
 
