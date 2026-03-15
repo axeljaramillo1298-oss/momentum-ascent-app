@@ -780,9 +780,9 @@ const lockAdminIfNeeded = () => {
   const isAdminPage = path.endsWith("/admin.html") || path.endsWith("admin.html");
   const isGodPage = path.endsWith("/god-panel.html") || path.endsWith("god-panel.html");
   if (isGodPage) {
-    // god-panel.html requires an active god session
-    if (!hasActiveGodSession()) {
-      window.location.replace("admin.html");
+    // god-panel.html requiere ser admin — el login de Modo Dios está dentro de esa página
+    if (getRoleMode() !== "admin") {
+      window.location.replace("app-inicio.html");
     }
     return;
   }
@@ -792,11 +792,12 @@ const lockAdminIfNeeded = () => {
   window.location.replace("app-inicio.html");
 };
 
-// Show "Modo Dios" tab link in admin.html only when god session is active
+// Muestra el link de Modo Dios a todos los admins; el panel interno se bloquea sin sesión activa
 const syncGodLinkVisibility = () => {
   const link = document.getElementById("admin-god-link");
   if (!link) return;
-  link.classList.toggle("hidden-field", !hasActiveGodSession());
+  // Visible para cualquier admin — pueden entrar a loguear modo dios ahí
+  link.classList.toggle("hidden-field", getRoleMode() !== "admin");
 };
 
 const hasCompletedOnboarding = () => {
@@ -4005,7 +4006,8 @@ if (loginForm) {
         return;
       }
       hydrateUserCacheFromApi(remote?.user);
-      applyRoleMode(remote?.user?.role === "admin" ? "admin" : "user");
+      const resolvedRole = remote?.user?.role === "admin" ? "admin" : "user";
+      applyRoleMode(resolvedRole);
       await syncCurrentSubscriptionFromApi();
       renderUserPlanPanel();
       renderUserRoutinesPage();
@@ -4014,6 +4016,11 @@ if (loginForm) {
       renderWeeklyAiAdjustment();
       applyPlanNavVisibility();
       renderUserNotifications();
+      if (loginFeedback) {
+        loginFeedback.textContent = `Sesión iniciada como ${localUser?.name || email}.`;
+      }
+      window.location.href = resolvedRole === "admin" ? "admin.html" : "app-inicio.html";
+      return;
     } catch (err) {
       console.warn("[api] fallback local:", err?.message || err);
     }
