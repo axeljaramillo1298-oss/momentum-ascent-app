@@ -552,8 +552,15 @@ const apiRequest = async (path, options = {}) => {
       body: options.body ? JSON.stringify(options.body) : undefined,
       signal: controller.signal,
     });
+    // Para errores de cliente (4xx) intentar devolver el body JSON
+    // para que el caller pueda leer remote.error y mostrar mensaje
     if (!response.ok) {
-      throw new Error(`api_${response.status}`);
+      try {
+        const errBody = await response.json();
+        return errBody; // { ok: false, error: "invalid_password" } etc.
+      } catch {
+        throw new Error(`api_${response.status}`);
+      }
     }
     const payload = await response.json();
     localStorage.setItem(API_LAST_OK_KEY, new Date().toISOString());
@@ -3978,33 +3985,38 @@ if (loginForm) {
     event.preventDefault();
     const email = loginEmail?.value?.trim().toLowerCase();
     if (!email) {
-      if (loginFeedback) loginFeedback.textContent = "Ingresa correo para entrar.";
+      if (loginFeedback) loginFeedback.textContent = "Ingresa tu correo para entrar.";
       return;
     }
+    // Mostrar password si corresponde a dominio admin (por si hicieron submit sin salir del campo)
+    if (loginPasswordField) {
+      const domain = email.split("@")[1] || "";
+      const isAdminHint = ADMIN_HINT_DOMAINS.some((d) => domain === d);
+      loginPasswordField.classList.toggle("hidden-field", !isAdminHint);
+      if (loginPassword) loginPassword.required = isAdminHint;
+    }
     const password = loginPassword?.value?.trim() || "";
-    const localUser = ensureUser({
-      name: email.split("@")[0] || "User",
-      email,
-      whatsapp: normalizeWhatsapp(loginWhatsapp?.value || ""),
-      plan: getPlanSelection().label,
-    });
+    if (loginFeedback) loginFeedback.textContent = "Verificando...";
     try {
       const remote = await apiPost("/auth/login", {
-        name: localUser?.name || email.split("@")[0] || "User",
+        name: email.split("@")[0] || "User",
         email,
         whatsapp: normalizeWhatsapp(loginWhatsapp?.value || ""),
         role: "user",
-        plan: localUser?.plan || getPlanSelection().label,
+        plan: getPlanSelection().label,
         password,
       });
       if (!remote?.ok) {
         if (loginFeedback) {
           loginFeedback.textContent = remote?.error === "invalid_password"
             ? "Contraseña incorrecta."
-            : "No fue posible iniciar sesión.";
+            : remote?.error === "rate_limited"
+            ? "Demasiados intentos. Espera unos minutos."
+            : "No fue posible iniciar sesión. Verifica tus datos.";
         }
         return;
       }
+      // Guardar usuario en local solo después de validación exitosa
       hydrateUserCacheFromApi(remote?.user);
       const resolvedRole = remote?.user?.role === "admin" ? "admin" : "user";
       applyRoleMode(resolvedRole);
@@ -4016,18 +4028,11 @@ if (loginForm) {
       renderWeeklyAiAdjustment();
       applyPlanNavVisibility();
       renderUserNotifications();
-      if (loginFeedback) {
-        loginFeedback.textContent = `Sesión iniciada como ${localUser?.name || email}.`;
-      }
       window.location.href = resolvedRole === "admin" ? "admin.html" : "app-inicio.html";
-      return;
     } catch (err) {
-      console.warn("[api] fallback local:", err?.message || err);
+      console.warn("[login] error de red:", err?.message || err);
+      if (loginFeedback) loginFeedback.textContent = "No se pudo conectar al servidor. Verifica tu conexión.";
     }
-    if (loginFeedback) {
-      loginFeedback.textContent = `Sesión iniciada como ${localUser?.name || email}.`;
-    }
-    window.location.href = "app-inicio.html";
   });
 }
 
