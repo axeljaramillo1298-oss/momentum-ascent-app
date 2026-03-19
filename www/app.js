@@ -2042,6 +2042,9 @@ const initAdminPanel = () => {
           name: u.name,
           email: u.email,
           whatsapp: u.whatsapp || "",
+          role: u.role || "user",
+          plan: u.plan || "Free",
+          subscriptionStatus: u.subscriptionStatus || "inactive",
           horario: u.checkinSchedule || "",
           objetivo: u.goal || "",
           perfil: "",
@@ -2059,18 +2062,27 @@ const initAdminPanel = () => {
       : users;
 
     if (!filtered.length) {
-      userResults.innerHTML = `<div class="admin-item"><p>Sin usuarios. Primero registra usuarios desde registro.</p></div>`;
+      userResults.innerHTML = `<div class="admin-item"><p>Sin usuarios habilitados para coach. Modo Dios debe activar plan, extras o pago primero.</p></div>`;
       return;
     }
 
     userResults.innerHTML = filtered
       .map((u) => {
         const summary = buildRoutineContextSummary(u);
+        const plan = String(u.plan || "Free");
+        const subscriptionStatus = String(u.subscriptionStatus || "inactive").toLowerCase();
+        const accessLabel =
+          subscriptionStatus === "active"
+            ? "Activo"
+            : subscriptionStatus === "pending"
+              ? "Pendiente"
+              : "Sin acceso";
         return `
         <label class="admin-user-item">
           <span>
             <strong>${escHtml(u.name)}</strong><br />
             <small>${escHtml(u.email)}</small>
+            <small class="admin-user-meta">Plan: ${escHtml(plan)} • Estado: ${escHtml(accessLabel)}</small>
             ${summary ? `<small class="admin-user-meta">${escHtml(summary)}</small>` : ""}
           </span>
           <input type="checkbox" data-admin-user="${escHtml(u.id)}" ${selectedUsers.has(u.id) ? "checked" : ""} />
@@ -2543,7 +2555,7 @@ function initQaChecklist() {
     { id: "login_user", label: "Login user funciona" },
     { id: "login_admin", label: "Login admin funciona" },
     { id: "plan_request", label: "Solicitud de pago desde planes" },
-    { id: "payment_review", label: "Admin aprueba/rechaza pago" },
+    { id: "payment_review", label: "Modo Dios aprueba/rechaza pago" },
     { id: "subscription_gate", label: "Dashboard cambia por suscripcion" },
     { id: "coach_alert", label: "Alerta a coach humano visible en timeline" },
     { id: "diet_gate", label: "Dieta se bloquea/desbloquea por plan" },

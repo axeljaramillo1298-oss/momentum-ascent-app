@@ -212,6 +212,7 @@ SELECT
   u.whatsapp,
   u.role,
   COALESCE(s.plan_label, u.plan) AS plan,
+  COALESCE(s.status, 'inactive') AS subscriptionStatus,
   u.goal,
   u.checkin_schedule AS checkinSchedule,
   op.answers_json AS onboardingAnswers

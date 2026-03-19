@@ -152,6 +152,14 @@ const requireAdmin = async (req, res, next) => {
   return res.status(403).json({ ok: false, error: "admin_only" });
 };
 
+const isCoachManageableUser = (user) => {
+  const role = String(user?.role || "").trim().toLowerCase();
+  if (role === "admin") return false;
+  const plan = String(user?.plan || "Free").trim().toLowerCase();
+  const subscriptionStatus = String(user?.subscriptionStatus || "inactive").trim().toLowerCase();
+  return subscriptionStatus === "active" || subscriptionStatus === "pending" || plan !== "free";
+};
+
 const requireGod = (req, res, next) => {
   if (isGodRequest(req)) {
     return next();
@@ -409,7 +417,8 @@ app.post("/whatsapp/webhook", async (req, res) => {
 app.get("/users", requireAdmin, async (req, res) => {
   try {
     const users = await searchUsers(req.query.search || "");
-    res.json({ ok: true, users });
+    const visibleUsers = isGodRequest(req) ? users : users.filter(isCoachManageableUser);
+    res.json({ ok: true, users: visibleUsers });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || "users_failed") });
   }
@@ -607,7 +616,7 @@ app.get("/billing-target", async (req, res) => {
   }
 });
 
-app.get("/payments/pending", requireAdmin, async (req, res) => {
+app.get("/payments/pending", requireGod, async (req, res) => {
   try {
     const items = await listPendingPaymentRequests();
     res.json({ ok: true, items });
@@ -616,7 +625,7 @@ app.get("/payments/pending", requireAdmin, async (req, res) => {
   }
 });
 
-app.post("/payments/:id/review", requireAdmin, async (req, res) => {
+app.post("/payments/:id/review", requireGod, async (req, res) => {
   try {
     const id = Number(req.params.id || 0);
     const result = await reviewPaymentRequest({ id, ...(req.body || {}) });
