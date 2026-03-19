@@ -2989,6 +2989,53 @@ const initUserLogoutButton = () => {
   navActions.appendChild(btn);
 };
 
+const initPublicNavSessionButton = () => {
+  const navActions = document.querySelector(".nav .nav-actions");
+  if (!navActions) return;
+
+  const page = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
+  const publicPages = new Set([
+    "index.html",
+    "",
+    "planes.html",
+    "sistema.html",
+    "nutricion.html",
+    "demo.html",
+    "roadmap.html",
+  ]);
+  if (!publicPages.has(page)) return;
+
+  const loginLink = navActions.querySelector(".nav-login-btn");
+  const current = getCurrentUser();
+  const isLogged = Boolean(current);
+
+  let logoutBtn = navActions.querySelector("[data-public-nav-logout]");
+  if (!isLogged) {
+    if (loginLink) loginLink.style.display = "";
+    if (logoutBtn) logoutBtn.remove();
+    return;
+  }
+
+  if (loginLink) {
+    loginLink.style.display = "none";
+  }
+  if (logoutBtn) {
+    return;
+  }
+
+  logoutBtn = document.createElement("button");
+  logoutBtn.type = "button";
+  logoutBtn.className = "nav-login-btn";
+  logoutBtn.setAttribute("data-public-nav-logout", "1");
+  logoutBtn.textContent = "Cerrar sesion";
+  logoutBtn.addEventListener("click", () => {
+    if (confirm("¿Cerrar sesión?")) {
+      logoutCurrentUser();
+    }
+  });
+  navActions.appendChild(logoutBtn);
+};
+
 /* ── TOAST NOTIFICATION SYSTEM ── */
 const _toastQueue = [];
 let _toastActive = false;
@@ -3118,6 +3165,7 @@ hideGuestOnlyLinksIfLogged();
 guardAuthScreensForLoggedUser();
 enforceOnboardingBeforeHome();
 initUserLogoutButton();
+initPublicNavSessionButton();
 initAdminPanel();
 initAdminPaymentsPanel();
 initQaChecklist();
