@@ -11,16 +11,13 @@
     <div class="stars"></div>
 
     <main class="game-dashboard">
-
-      <!-- HERO GREETING -->
       <div class="game-hero">
         <p class="brand">MOMENTUM ASCENT</p>
         <h2 class="greeting" id="dash-greeting">Bienvenido de vuelta</h2>
       </div>
 
-      <!-- STREAK FIRE CARD -->
       <div class="streak-fire-card" id="dash-streak-card">
-        <div class="streak-fire-emoji" id="dash-fire-emoji">🔥</div>
+        <div class="streak-fire-emoji" id="dash-fire-emoji">RC</div>
         <div class="streak-fire-info">
           <div class="streak-fire-number" id="dash-streak-num">0</div>
           <div class="streak-fire-label">Dias de racha</div>
@@ -28,54 +25,48 @@
         </div>
       </div>
 
-      <!-- LEVEL BAR -->
       <div class="level-bar-card" id="dash-level-bar">
         <div class="level-bar-head">
-          <span class="level-badge">🌱 Principiante</span>
-          <span class="level-next">→ Constante</span>
+          <span class="level-badge">Nivel: Principiante</span>
+          <span class="level-next">Siguiente: Constante</span>
         </div>
         <div class="level-progress-track">
           <div class="level-progress-fill" style="width:0%"></div>
         </div>
-        <p class="level-xp-hint">0 XP · 120 para siguiente nivel</p>
+        <p class="level-xp-hint">0 XP • 120 para siguiente nivel</p>
       </div>
 
-      <!-- QUICK STATS -->
       <div class="quick-stats-row">
         <div class="quick-stat">
-          <span class="quick-stat-icon">⭐</span>
+          <span class="quick-stat-icon">XP</span>
           <span class="quick-stat-val" id="dash-xp">0</span>
           <span class="quick-stat-lbl">XP Total</span>
         </div>
         <div class="quick-stat">
-          <span class="quick-stat-icon">🏆</span>
+          <span class="quick-stat-icon">RK</span>
           <span class="quick-stat-val" id="dash-rank-pos">#-</span>
           <span class="quick-stat-lbl">Ranking</span>
         </div>
         <div class="quick-stat">
-          <span class="quick-stat-icon">✅</span>
+          <span class="quick-stat-icon">OK</span>
           <span class="quick-stat-val" id="dash-compliance">0%</span>
           <span class="quick-stat-lbl">Cumpl.</span>
         </div>
       </div>
 
-      <!-- MAIN CHECK-IN CTA -->
       <a class="checkin-cta-btn" id="app-entry-link" href="user-hoy.html">
-        <span>⚡ CHECK-IN DEL DÍA</span>
+        <span>CHECK-IN DEL DIA</span>
         <span class="checkin-cta-status" id="app-entry-countdown"></span>
       </a>
       <p id="app-entry-copy" style="font-size:12px;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:0;"></p>
 
-      <!-- TRIPLE CHECK-IN -->
       <div class="triple-checkin-card">
         <div class="triple-checkin-title">Completa los 3 para sumar racha</div>
         <div class="triple-checkin-container"></div>
       </div>
 
-      <!-- BET MODE -->
       <div class="bet-status-card"></div>
 
-      <!-- WEEKLY RANKING -->
       <div class="level-bar-card">
         <div class="section-header-row">
           <h3>Ranking semanal</h3>
@@ -83,7 +74,6 @@
         </div>
         <div id="dash-ranking-list" class="gaming-ranking-list"></div>
       </div>
-
     </main>
 
     <script src="app.js"></script>
