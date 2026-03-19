@@ -2146,8 +2146,8 @@ const initAdminPanel = () => {
     const context = aiContext?.value?.trim() || "";
     const mode = modeSelect?.value || "admin_ai";
 
-    const routineBase = mode === "ai_only" ? "IA generara bloque full-body 4 dias + cardio 2 dias." : "IA sugiere y admin ajusta bloque fuerza + adherencia.";
-    const dietBase = mode === "ai_only" ? "IA recomienda deficit moderado, proteina alta, agua 8 vasos." : "Plan mixto: admin valida macros y timing.";
+    const routineBase = mode === "ai_only" ? "IA generara bloque full-body 4 dias + cardio 2 dias." : "IA sugiere y el coach ajusta bloque fuerza + adherencia.";
+    const dietBase = mode === "ai_only" ? "IA recomienda deficit moderado, proteina alta, agua 8 vasos." : "Plan mixto: el coach valida macros, timing y seguimiento.";
 
     const routineText = `${routineBase} Destino: ${names}. Prompt: ${prompt || "general"}.`;
     const dietText = `${dietBase} Contexto: ${(context || fileText || "sin contexto extra").slice(0, 180)}.`;
@@ -2466,7 +2466,7 @@ function initPlanSelectionPage() {
           // fallback local
         }
       }
-      setFeedback("Solicitud enviada. Queda pendiente hasta validacion de admin.", "success");
+      setFeedback("Solicitud enviada. Queda pendiente hasta validacion en Modo Dios.", "success");
       setTimeout(() => {
         window.location.href = "user-hoy.html";
       }, 800);
@@ -2531,7 +2531,7 @@ function initAdminPaymentsPanel() {
       try {
         await apiPost(`/payments/${id}/review`, {
           action,
-          reviewedBy: "admin",
+          reviewedBy: "god",
           note: action === "approve" ? "Pago validado en dashboard." : "Comprobante invalido en demo.",
         });
       } catch {
@@ -4764,7 +4764,7 @@ async function renderUserNotifications() {
   const items = [];
   const subscription = getCurrentSubscription();
   if (subscription?.status === "pending") {
-    items.push({ at: subscription.updatedAt || new Date().toISOString(), text: "Pago pendiente de validacion por admin." });
+    items.push({ at: subscription.updatedAt || new Date().toISOString(), text: "Pago pendiente de validacion en Modo Dios." });
   }
   if (subscription?.status === "active") {
     items.push({

@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Panel Admin | Disciplina</title>
-    <meta name="description" content="Panel para entrenadores y nutricionistas." />
+    <title>Panel Coach | Disciplina</title>
+    <meta name="description" content="Panel operativo para coaches humanos, entrenadores y nutricionistas." />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -19,19 +19,18 @@
           <a class="ghost" href="planes.html">Planes</a>
           <a class="ghost" href="nutricion.html">Nutricion</a>
           <a class="ghost" href="user-hoy.html">Hoy</a>
-          <a class="primary" href="#panel">Panel</a>
+          <a class="primary" href="#panel">Panel Coach</a>
         </div>
       </nav>
       <div class="hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow">Modo staff</p>
-          <h1>Panel admin para coaches humanos</h1>
-          <p class="subhead">Supervisa avances, asigna rutinas/dietas y acompaña solo a usuarios ya habilitados. Pagos, permisos y planes se gestionan en Modo Dios.</p>
+          <p class="eyebrow">Operacion diaria</p>
+          <h1>Panel Coach Humano</h1>
+          <p class="subhead">Aqui solo operas usuarios ya habilitados: seguimiento, rutina, dieta, timeline y acompanamiento. Pagos, permisos, planes y configuracion global viven en Modo Dios.</p>
         </div>
       </div>
     </header>
 
-    <!-- STICKY TAB NAV -->
     <nav class="admin-tab-nav" id="admin-tab-nav" aria-label="Secciones del panel">
       <div class="admin-tab-track">
         <button class="admin-tab active" data-tab="motor" type="button">
@@ -53,25 +52,23 @@
     </nav>
 
     <main id="panel">
-
-      <!-- ─── SECCIÓN: MOTOR ─────────────────────────────────────── -->
       <section class="section admin-panel-section" id="admin-section-motor" data-admin-section="motor">
         <div class="admin-section-header">
           <span class="admin-section-icon">⚙️</span>
           <div>
-            <h2 class="admin-section-title">Motor de asignacion</h2>
-            <p class="admin-section-desc">Selecciona modo operativo y busca usuarios con acceso activo o pendiente para gestionar.</p>
+            <h2 class="admin-section-title">Motor de trabajo del coach</h2>
+            <p class="admin-section-desc">Busca usuarios con acceso activo o pendiente y prepara su seguimiento operativo.</p>
           </div>
         </div>
         <article class="card">
           <div class="admin-assistant-grid">
-            <label>Modo operativo
+            <label>Modo de apoyo
               <select id="admin-operating-mode">
-                <option value="admin_ai">Opcion 1: Admin + IA</option>
-                <option value="ai_only">Opcion 2: Solo IA</option>
+                <option value="admin_ai">Coach + IA</option>
+                <option value="ai_only">Solo IA</option>
               </select>
             </label>
-            <label>Buscar user por nombre/correo
+            <label>Buscar usuario habilitado
               <input id="admin-user-search" type="text" placeholder="Ej. axel@email.com o Axel" />
             </label>
           </div>
@@ -79,26 +76,25 @@
         </article>
       </section>
 
-      <!-- ─── SECCIÓN: IA + PLAN ─────────────────────────────────── -->
       <section class="section admin-panel-section admin-grid" id="admin-section-ia" data-admin-section="ia">
         <div class="admin-section-header admin-section-header--full">
           <span class="admin-section-icon">🤖</span>
           <div>
-            <h2 class="admin-section-title">IA + Plan final</h2>
-            <p class="admin-section-desc">Genera recomendaciones con IA y asigna plan al usuario seleccionado.</p>
+            <h2 class="admin-section-title">Asistente IA + entrega final</h2>
+            <p class="admin-section-desc">Usa IA como apoyo y luego entrega la rutina, dieta y mensaje final al usuario seleccionado.</p>
           </div>
         </div>
 
         <article class="card">
-          <h3>Chat IA para asistirte</h3>
+          <h3>Asistente IA para el coach</h3>
           <div class="admin-form">
             <label>Prompt para IA
               <textarea id="admin-ai-prompt" placeholder="Ej. Dame rutina fuerza 4 dias + dieta para objetivo bajar grasa"></textarea>
             </label>
-            <label>Contexto adicional (texto/conversacion)
+            <label>Contexto adicional
               <textarea id="admin-ai-context" placeholder="Pega notas o conversacion con usuario"></textarea>
             </label>
-            <label>Subir archivo/conversacion
+            <label>Subir archivo o conversacion
               <input id="admin-ai-file" type="file" accept=".txt,.md,.json,.csv,.log,.text" />
             </label>
             <button class="ghost" type="button" id="admin-ai-generate">
@@ -109,15 +105,15 @@
         </article>
 
         <article class="card">
-          <h3>Plan final para user(s)</h3>
+          <h3>Entrega final para usuario(s)</h3>
           <div class="admin-form">
             <label>Rutina final
-              <textarea id="admin-final-routine" placeholder="Rutina que recibira el user"></textarea>
+              <textarea id="admin-final-routine" placeholder="Rutina que recibira el usuario"></textarea>
             </label>
             <label>Dieta final
-              <textarea id="admin-final-diet" placeholder="Plan de dieta que recibira el user"></textarea>
+              <textarea id="admin-final-diet" placeholder="Plan de dieta que recibira el usuario"></textarea>
             </label>
-            <label>Mensaje final al user
+            <label>Mensaje final al usuario
               <textarea id="admin-final-message" placeholder="Mensaje de acompanamiento"></textarea>
             </label>
             <button class="primary" type="button" id="admin-assign-plan">
@@ -125,8 +121,8 @@
             </button>
             <div class="admin-tools-row">
               <button class="ghost" type="button" id="admin-duplicate-plan">📋 Duplicar plan</button>
-              <button class="ghost" type="button" id="admin-export-user-csv">📥 CSV user</button>
-              <button class="ghost" type="button" id="admin-export-week-csv">📥 CSV semana</button>
+              <button class="ghost" type="button" id="admin-export-user-csv">📥 CSV usuario</button>
+              <button class="ghost" type="button" id="admin-export-week-csv">📥 CSV semanal</button>
             </div>
             <p class="reg-feedback" id="admin-assign-feedback" aria-live="polite"></p>
             <p class="reg-feedback" id="admin-tools-feedback" aria-live="polite"></p>
@@ -134,13 +130,12 @@
         </article>
       </section>
 
-      <!-- ─── SECCIÓN: KPIs ─────────────────────────────────────── -->
       <section class="section admin-panel-section admin-grid" id="admin-section-kpis" data-admin-section="kpis">
         <div class="admin-section-header admin-section-header--full">
           <span class="admin-section-icon">📊</span>
           <div>
-            <h2 class="admin-section-title">KPIs de supervision</h2>
-            <p class="admin-section-desc">Metricas clave del usuario seleccionado.</p>
+            <h2 class="admin-section-title">KPIs de seguimiento</h2>
+            <p class="admin-section-desc">Metricas clave para que el coach supervise al usuario seleccionado.</p>
           </div>
         </div>
 
@@ -182,13 +177,12 @@
         </article>
       </section>
 
-      <!-- ─── SECCIÓN: CONTENIDO ─────────────────────────────────── -->
       <section class="section admin-panel-section admin-grid" id="admin-section-contenido" data-admin-section="contenido">
         <div class="admin-section-header admin-section-header--full">
           <span class="admin-section-icon">📋</span>
           <div>
-            <h2 class="admin-section-title">Publicar contenido</h2>
-            <p class="admin-section-desc">Rutinas y planes de nutricion que reciben los usuarios.</p>
+            <h2 class="admin-section-title">Biblioteca del coach</h2>
+            <p class="admin-section-desc">Rutinas y lineamientos nutricionales base para usuarios habilitados.</p>
           </div>
         </div>
 
@@ -212,7 +206,7 @@
         </article>
 
         <article class="card">
-          <h3>Publicar plan nutricion</h3>
+          <h3>Publicar plan de nutricion</h3>
           <form id="admin-nutrition-form" class="admin-form">
             <label>Titulo<input id="nutrition-title" type="text" required placeholder="Ej. Plan definicion 4 semanas" /></label>
             <label>Enfoque
@@ -236,7 +230,7 @@
         </article>
 
         <article class="card">
-          <h3>Planes nutricion publicados</h3>
+          <h3>Planes de nutricion publicados</h3>
           <div id="admin-nutrition-list" class="admin-list"></div>
         </article>
 
@@ -252,31 +246,27 @@
         </article>
       </section>
 
-      <!-- ─── SECCIÓN: TIMELINE ──────────────────────────────────── -->
       <section class="section admin-panel-section" id="admin-section-timeline" data-admin-section="timeline">
         <div class="admin-section-header">
           <span class="admin-section-icon">⏱️</span>
           <div>
-            <h2 class="admin-section-title">Timeline de actividad</h2>
-            <p class="admin-section-desc">Historial de acciones de todos los usuarios en tiempo real.</p>
+            <h2 class="admin-section-title">Timeline operativo</h2>
+            <p class="admin-section-desc">Historial de acciones de usuarios habilitados para seguimiento del coach.</p>
           </div>
         </div>
         <article class="card">
           <div class="admin-tools-row">
             <select id="admin-timeline-user" class="session-select">
-              <option value="">Todos los users</option>
+              <option value="">Todos los usuarios</option>
             </select>
             <button class="ghost" type="button" id="admin-timeline-refresh">🔄 Actualizar</button>
           </div>
           <div id="admin-timeline-list" class="admin-list"></div>
         </article>
       </section>
-
-
     </main>
 
-    <footer class="footer"><div>Disciplina WhatsApp Coach</div></footer>
+    <footer class="footer"><div>Momentum Ascent • Panel Coach Humano</div></footer>
     <script src="app.js"></script>
   </body>
 </html>
-
