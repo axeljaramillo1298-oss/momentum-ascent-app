@@ -1140,7 +1140,14 @@ function saveOnboardingProfile(payload) {
   if (!userId) throw new Error("email_required");
   const answers = payload?.answers && typeof payload.answers === "object" ? payload.answers : {};
   const now = nowIso();
-  ensureUser({ email: userId, name: safeStr(answers.nombre) || "User", role: "user" });
+  ensureUser({
+    email: userId,
+    name: safeStr(answers.nombre) || "User",
+    role: "user",
+    goal: safeStr(answers.objetivo),
+    checkinSchedule: safeStr(answers.horario),
+    plan: safeStr(answers.plan) || "Free",
+  });
   upsertOnboardingProfileStmt.run(userId, JSON.stringify(answers), now);
   return { userId, updatedAt: now };
 }
