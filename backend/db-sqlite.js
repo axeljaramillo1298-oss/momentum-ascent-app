@@ -399,6 +399,24 @@ ORDER BY p.created_at DESC
 LIMIT 200
 `);
 
+const pendingPaymentRequestByUserPlanStmt = db.prepare(`
+SELECT
+  id,
+  user_id AS userId,
+  plan_id AS planId,
+  plan_label AS planLabel,
+  extras_json AS extrasJson,
+  method,
+  proof_target AS proofTarget,
+  status,
+  created_at AS createdAt,
+  updated_at AS updatedAt
+FROM payment_requests
+WHERE user_id = ? AND plan_id = ? AND status = 'pending'
+ORDER BY created_at DESC
+LIMIT 1
+`);
+
 const paymentRequestByIdStmt = db.prepare(`
 SELECT
   id,
@@ -882,6 +900,23 @@ function createPaymentRequest(payload) {
   const method = safeStr(payload.method) || "transfer";
   const proofTarget = safeStr(payload.proofTarget) || "+52 000 000 0000";
   const now = nowIso();
+  const existing = pendingPaymentRequestByUserPlanStmt.get(userId, planId);
+  if (existing) {
+    upsertSubscriptionStmt.run(userId, planId, planLabel, JSON.stringify(extras), "pending", null, null, now);
+    return {
+      id: Number(existing.id),
+      userId,
+      planId,
+      planLabel: existing.planLabel || planLabel,
+      extras: parseJsonSafe(existing.extrasJson, extras),
+      method: existing.method || method,
+      proofTarget: existing.proofTarget || proofTarget,
+      status: existing.status || "pending",
+      createdAt: existing.createdAt || now,
+      updatedAt: existing.updatedAt || now,
+      existing: true,
+    };
+  }
   const result = insertPaymentRequestStmt.run(userId, planId, planLabel, JSON.stringify(extras), method, proofTarget, now, now);
   upsertSubscriptionStmt.run(userId, planId, planLabel, JSON.stringify(extras), "pending", null, null, now);
   return {
@@ -895,6 +930,7 @@ function createPaymentRequest(payload) {
     status: "pending",
     createdAt: now,
     updatedAt: now,
+    existing: false,
   };
 }
 

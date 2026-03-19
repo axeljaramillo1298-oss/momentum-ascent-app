@@ -33,7 +33,7 @@
 
     <main>
       <section class="section" id="nutricion-idea" data-role-hide="admin">
-        <div class="section-title"><h2>Tracker rapido diario</h2><p>Prototipo simple para validar el flujo antes de hacerlo avanzado.</p></div>
+        <div class="section-title"><h2>Tracker rapido diario</h2><p>Prototipo simple para validar el flujo antes de convertirlo en un modulo completo.</p></div>
         <div class="nutrition-grid">
           <article class="card nutrition-card">
             <h3>Agua de hoy</h3>
@@ -86,151 +86,14 @@
 
       <section class="section" data-role-only="admin">
         <article class="card">
-          <h3>Dashboard admin de nutricion</h3>
-          <div class="admin-assistant-grid">
-            <label>Modo operativo
-              <select id="admin-operating-mode">
-                <option value="admin_ai">Opcion 1: Admin + IA</option>
-                <option value="ai_only">Opcion 2: Solo IA</option>
-              </select>
-            </label>
-            <label>Buscar user por nombre/correo
-              <input id="admin-user-search" type="text" placeholder="Ej. axel@email.com o Axel" />
-            </label>
-          </div>
-          <div id="admin-user-results" class="admin-user-results"></div>
-        </article>
-      </section>
-
-      <section class="section admin-grid" data-role-only="admin">
-        <article class="card">
-          <h3>Chat IA para nutricion/rutina</h3>
-          <div class="admin-form">
-            <label>Prompt para IA
-              <textarea id="admin-ai-prompt" placeholder="Ej. Ajusta plan nutricional para bajar grasa"></textarea>
-            </label>
-            <label>Contexto adicional
-              <textarea id="admin-ai-context" placeholder="Pega notas del usuario"></textarea>
-            </label>
-            <label>Subir archivo/contexto
-              <input id="admin-ai-file" type="file" accept=".txt,.md,.json,.csv,.log,.text" />
-            </label>
-            <button class="ghost" type="button" id="admin-ai-generate">Generar recomendacion IA</button>
-            <div id="admin-ai-output" class="admin-item">Sin respuesta IA aun.</div>
-          </div>
-        </article>
-
-        <article class="card">
-          <h3>Plan final para user(s)</h3>
-          <div class="admin-form">
-            <label>Rutina final
-              <textarea id="admin-final-routine" placeholder="Rutina que recibira el user"></textarea>
-            </label>
-            <label>Dieta final
-              <textarea id="admin-final-diet" placeholder="Plan de dieta que recibira el user"></textarea>
-            </label>
-            <label>Mensaje final al user
-              <textarea id="admin-final-message" placeholder="Mensaje de acompanamiento"></textarea>
-            </label>
-            <button class="primary" type="button" id="admin-assign-plan">Asignar a seleccionados</button>
-            <div class="admin-tools-row">
-              <button class="ghost" type="button" id="admin-duplicate-plan">Duplicar plan</button>
-              <button class="ghost" type="button" id="admin-export-user-csv">Exportar CSV user</button>
-              <button class="ghost" type="button" id="admin-export-week-csv">Exportar CSV semana</button>
-            </div>
-            <p class="reg-feedback" id="admin-assign-feedback" aria-live="polite"></p>
-            <p class="reg-feedback" id="admin-tools-feedback" aria-live="polite"></p>
-          </div>
-        </article>
-      </section>
-
-      <section class="section admin-grid" data-role-only="admin">
-        <article class="card">
-          <h3>KPIs supervision</h3>
-          <ul class="stat-list">
-            <li><span>Racha usuario</span><strong id="admin-kpi-streak">-</strong></li>
-            <li><span>Cumplimiento</span><strong id="admin-kpi-compliance">-</strong></li>
-            <li><span>Promedio respuesta</span><strong id="admin-kpi-response">-</strong></li>
-            <li><span>Fallos acumulados</span><strong id="admin-kpi-fails">-</strong></li>
-          </ul>
-        </article>
-
-        <article class="card">
-          <h3>Publicar rutina</h3>
-          <form id="admin-routine-form" class="admin-form">
-            <label>Titulo<input id="routine-title" type="text" required placeholder="Ej. Fuerza Tren Superior" /></label>
-            <label>Objetivo<input id="routine-target" type="text" required placeholder="Ej. Hipertrofia + constancia" /></label>
-            <label>Duracion<select id="routine-duration" required><option value="">Selecciona</option><option>20 min</option><option>30 min</option><option>40 min</option><option>60 min</option></select></label>
-            <button class="primary" type="submit">Guardar rutina</button>
-            <p class="reg-feedback" id="admin-routine-feedback" aria-live="polite"></p>
-          </form>
-        </article>
-
-        <article class="card">
-          <h3>Publicar plan nutricion</h3>
-          <form id="admin-nutrition-form" class="admin-form">
-            <label>Titulo<input id="nutrition-title" type="text" required placeholder="Ej. Plan definicion 4 semanas" /></label>
-            <label>Enfoque<select id="nutrition-focus" required><option value="">Selecciona</option><option>Definicion</option><option>Mantenimiento</option><option>Volumen limpio</option><option>Habitos base</option></select></label>
-            <label>Nota<textarea id="nutrition-note" required placeholder="Lineamientos clave para el usuario"></textarea></label>
-            <button class="primary" type="submit">Guardar plan</button>
-            <p class="reg-feedback" id="admin-nutrition-feedback" aria-live="polite"></p>
-          </form>
-        </article>
-      </section>
-
-      <section class="section admin-grid" data-role-only="admin">
-        <article class="card">
-          <h3>Rutinas publicadas</h3>
-          <div id="admin-routine-list" class="admin-list"></div>
-        </article>
-        <article class="card">
-          <h3>Planes nutricion publicados</h3>
-          <div id="admin-nutrition-list" class="admin-list"></div>
-        </article>
-      </section>
-
-      <section class="section admin-grid" data-role-only="admin">
-        <article class="card">
-          <h3>Timeline de actividad</h3>
-          <div class="admin-tools-row">
-            <select id="admin-timeline-user" class="session-select">
-              <option value="">Todos los users</option>
-            </select>
-            <button class="ghost" type="button" id="admin-timeline-refresh">Actualizar timeline</button>
-          </div>
-          <div id="admin-timeline-list" class="admin-list"></div>
-        </article>
-      </section>
-
-      <section class="section admin-grid" data-role-only="admin">
-        <article class="card">
-          <h3>Semaforo de adherencia</h3>
-          <div id="admin-summary-chips" class="admin-summary-chips"></div>
-          <div id="admin-semaphore-list" class="admin-status-grid"></div>
-        </article>
-        <article class="card">
-          <h3>Pendientes hoy</h3>
-          <div id="admin-pending-list" class="admin-list"></div>
-        </article>
-      </section>
-
-      <section class="section admin-grid" data-role-only="admin">
-        <article class="card">
-          <h3>Validacion de pagos</h3>
-          <div class="admin-tools-row">
-            <button class="ghost" type="button" id="admin-payments-refresh">Actualizar pagos</button>
-          </div>
-          <div id="admin-payments-list" class="admin-list"></div>
-        </article>
-        <article class="card">
-          <h3>Checklist QA demo</h3>
-          <p class="today-note">Progreso: <strong id="qa-checklist-progress">0/10 (0%)</strong></p>
-          <div id="qa-checklist-demo" class="admin-form"></div>
+          <h3>Operacion de coach centralizada</h3>
+          <p>La gestion operativa de usuarios, ajustes de dieta, seguimiento y timeline ya vive en el Panel Coach dedicado.</p>
+          <a class="primary" href="admin.html">Abrir Panel Coach</a>
         </article>
       </section>
     </main>
 
-    <footer class="footer"><div>Disciplina WhatsApp Coach</div></footer>
+    <footer class="footer"><div>Momentum Ascent • Sistema de disciplina</div></footer>
     <div class="scroll-progress" aria-hidden="true"></div>
     <script src="app.js"></script>
   </body>

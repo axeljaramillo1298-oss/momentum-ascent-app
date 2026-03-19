@@ -716,6 +716,48 @@ async function createPaymentRequest(payload) {
   const method = safeStr(payload.method) || "transfer";
   const proofTarget = safeStr(payload.proofTarget) || "+52 000 000 0000";
   const now = nowIso();
+  const existingRes = await pool.query(
+    `
+    SELECT id, user_id AS "userId", plan_id AS "planId", plan_label AS "planLabel", extras_json AS "extras",
+           method, proof_target AS "proofTarget", status, created_at AS "createdAt", updated_at AS "updatedAt"
+    FROM payment_requests
+    WHERE user_id = $1 AND plan_id = $2 AND status = 'pending'
+    ORDER BY created_at DESC
+    LIMIT 1
+    `,
+    [userId, planId]
+  );
+  const existing = existingRes.rows[0];
+  if (existing) {
+    await pool.query(
+      `
+      INSERT INTO subscriptions (user_id, plan_id, plan_label, extras_json, status, start_at, end_at, updated_at)
+      VALUES ($1,$2,$3,$4,'pending',NULL,NULL,$5)
+      ON CONFLICT (user_id) DO UPDATE SET
+        plan_id = EXCLUDED.plan_id,
+        plan_label = EXCLUDED.plan_label,
+        extras_json = EXCLUDED.extras_json,
+        status = EXCLUDED.status,
+        start_at = EXCLUDED.start_at,
+        end_at = EXCLUDED.end_at,
+        updated_at = EXCLUDED.updated_at
+      `,
+      [userId, planId, planLabel, extras, now]
+    );
+    return {
+      id: Number(existing.id),
+      userId,
+      planId,
+      planLabel: existing.planLabel || planLabel,
+      extras: existing.extras || extras,
+      method: existing.method || method,
+      proofTarget: existing.proofTarget || proofTarget,
+      status: existing.status || "pending",
+      createdAt: existing.createdAt || now,
+      updatedAt: existing.updatedAt || now,
+      existing: true,
+    };
+  }
   const result = await pool.query(
     `
     INSERT INTO payment_requests (user_id, plan_id, plan_label, extras_json, method, proof_target, status, reviewed_by, note, created_at, updated_at)
@@ -750,6 +792,7 @@ async function createPaymentRequest(payload) {
     status: "pending",
     createdAt: now,
     updatedAt: now,
+    existing: false,
   };
 }
 

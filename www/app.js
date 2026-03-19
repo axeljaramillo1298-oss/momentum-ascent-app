@@ -1508,12 +1508,24 @@ const renderTodayNutritionSnapshot = () => {
 
 const CHECKIN_PHOTOS_KEY = "discipline_checkin_photos_v1";
 
+const getCheckinPhotosForUser = (userId) => {
+  const normalized = String(userId || "").trim().toLowerCase();
+  if (!normalized) return [];
+  return readJsonArray(CHECKIN_PHOTOS_KEY).filter((item) => String(item?.userId || "").trim().toLowerCase() === normalized);
+};
+
 const renderUserCheckinList = () => {
   const list = document.getElementById("user-checkin-list");
   if (!list) {
     return;
   }
-  const items = readJsonArray(CHECKIN_PHOTOS_KEY);
+  const current = getCurrentUser();
+  const items = current?.id
+    ? readJsonArray(CHECKIN_PHOTOS_KEY).filter((item) => {
+        const owner = String(item?.userId || "").trim().toLowerCase();
+        return !owner || owner === String(current.id || "").trim().toLowerCase();
+      })
+    : readJsonArray(CHECKIN_PHOTOS_KEY);
   list.innerHTML = items.length
     ? items
         .slice()
@@ -1633,6 +1645,7 @@ const initUserCheckinPage = () => {
     const image = await compressImage(selectedImageData);
     const items = readJsonArray(CHECKIN_PHOTOS_KEY);
     items.push({
+      userId: getCurrentUser()?.id || "",
       note: noteInput.value.trim(),
       image,
       createdAt: new Date().toISOString(),
@@ -1952,6 +1965,8 @@ const initAdminPanel = () => {
   const finalRoutine = document.getElementById("admin-final-routine");
   const finalDiet = document.getElementById("admin-final-diet");
   const finalMessage = document.getElementById("admin-final-message");
+  const profileCard = document.getElementById("admin-user-profile-card");
+  const profilePhotos = document.getElementById("admin-user-photos");
   const aiGenerate = document.getElementById("admin-ai-generate");
   const assignBtn = document.getElementById("admin-assign-plan");
   const assignFeedback = document.getElementById("admin-assign-feedback");
@@ -1963,6 +1978,8 @@ const initAdminPanel = () => {
   const timelineRefresh = document.getElementById("admin-timeline-refresh");
   const timelineList = document.getElementById("admin-timeline-list");
   let selectedUsers = new Set();
+  let primarySelectedUserId = "";
+  let latestCoachUsers = [];
   let fileText = "";
 
   const setToolsFeedback = (text, type = "") => {
@@ -1979,11 +1996,122 @@ const initAdminPanel = () => {
     }
     const safeUsers = Array.isArray(users) ? users : [];
     const current = timelineUser.value || "";
-    timelineUser.innerHTML = `<option value="">Todos los users</option>${safeUsers
+    timelineUser.innerHTML = `<option value="">Todos los usuarios</option>${safeUsers
       .map((u) => `<option value="${escHtml(u.id)}">${escHtml(u.name)} • ${escHtml(u.email)}</option>`)
       .join("")}`;
     if (current && safeUsers.some((u) => u.id === current)) {
       timelineUser.value = current;
+    }
+  };
+
+  const buildProfileContextText = (user, metrics, subscription) => {
+    const answers = readOnboardingAnswers(user?.onboardingAnswers);
+    const lines = [
+      `Usuario: ${user?.name || "User"} <${user?.email || user?.id || ""}>`,
+      `Plan: ${subscription?.planLabel || user?.plan || "Free"} (${subscription?.status || user?.subscriptionStatus || "inactive"})`,
+      `Meta: ${answers.objetivo || user?.goal || user?.objetivo || "-"}`,
+      `Horario: ${user?.horario || user?.checkinSchedule || answers.horario || "-"}`,
+      `Perfil: ${answers.perfil || user?.perfil || "-"}`,
+      `Nivel: ${answers.nivel || "-"}`,
+      `Deporte: ${answers.deporte_otro || answers.deporte || "-"}`,
+      `Lugar: ${answers.lugar || "-"}`,
+      `Tiempo disponible: ${answers.tiempo || "-"}`,
+      `WhatsApp: ${user?.whatsapp || "-"}`,
+      `Racha: ${metrics?.streak ?? "-"}`,
+      `Cumplimiento: ${metrics?.totalDays ? Math.round((Number(metrics.completedDays || 0) * 100) / Math.max(1, Number(metrics.totalDays || 0))) : 0}%`,
+    ];
+    return lines.join("\n");
+  };
+
+  const renderAdminUserProfile = async () => {
+    if (!profileCard && !profilePhotos) {
+      return;
+    }
+    const selectedId = primarySelectedUserId || timelineUser?.value || Array.from(selectedUsers)[0] || "";
+    if (!selectedId) {
+      if (profileCard) profileCard.innerHTML = `<div class="admin-item"><p>Selecciona un usuario para ver su ficha operativa.</p></div>`;
+      if (profilePhotos) profilePhotos.innerHTML = `<div class="admin-item"><p>Aqui apareceran las fotos del usuario cuando suba check-ins.</p></div>`;
+      return;
+    }
+
+    const baseUser = latestCoachUsers.find((u) => u.id === selectedId) || readJsonArray(USERS_KEY).find((u) => u.id === selectedId) || null;
+    if (!baseUser) {
+      if (profileCard) profileCard.innerHTML = `<div class="admin-item"><p>No se encontro informacion local del usuario seleccionado.</p></div>`;
+      if (profilePhotos) profilePhotos.innerHTML = `<div class="admin-item"><p>Sin fotos de check-in para este usuario.</p></div>`;
+      return;
+    }
+
+    let metrics = null;
+    let subscription = null;
+    try {
+      const [metricsRemote, subscriptionRemote] = await Promise.all([
+        apiGet(`/metrics/${encodeURIComponent(selectedId)}`).catch(() => null),
+        apiGet(`/subscriptions/${encodeURIComponent(selectedId)}`).catch(() => null),
+      ]);
+      metrics = metricsRemote?.metrics || null;
+      subscription = subscriptionRemote?.subscription || null;
+    } catch {
+      metrics = null;
+      subscription = null;
+    }
+
+    const answers = readOnboardingAnswers(baseUser.onboardingAnswers);
+    const planLabel = subscription?.planLabel || baseUser.plan || "Free";
+    const planStatus = String(subscription?.status || baseUser.subscriptionStatus || "inactive");
+    const compliance = metrics?.totalDays
+      ? Math.round((Number(metrics.completedDays || 0) * 100) / Math.max(1, Number(metrics.totalDays || 0)))
+      : 0;
+    const whatsappLink = baseUser.whatsapp ? `https://wa.me/${String(baseUser.whatsapp).replace(/[^\d]/g, "")}` : "";
+    const profileContext = buildProfileContextText(baseUser, metrics, subscription);
+
+    if (profileCard) {
+      profileCard.innerHTML = `
+        <div class="admin-item">
+          <strong>${escHtml(baseUser.name || "User")}</strong>
+          <p>${escHtml(baseUser.email || baseUser.id || "")}</p>
+          <p>Plan: ${escHtml(planLabel)} • Estado: ${escHtml(planStatus)}</p>
+          <p>WhatsApp: ${escHtml(baseUser.whatsapp || "Sin numero")}</p>
+          <p>Meta: ${escHtml(answers.objetivo || baseUser.goal || baseUser.objetivo || "Sin definir")}</p>
+          <p>Horario: ${escHtml(baseUser.horario || baseUser.checkinSchedule || answers.horario || "Sin definir")}</p>
+          <p>Perfil: ${escHtml(answers.perfil || baseUser.perfil || "Sin definir")}</p>
+          <p>Racha: ${escHtml(String(metrics?.streak ?? "-"))} • Cumplimiento: ${escHtml(String(compliance))}% • Fallos: ${escHtml(String(metrics?.failures ?? "-"))}</p>
+          <div class="role-actions">
+            ${whatsappLink ? `<a class="ghost" href="${escHtml(whatsappLink)}" target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>` : ""}
+            <button class="ghost" type="button" id="admin-profile-copy-context">Copiar contexto a IA</button>
+            <button class="ghost" type="button" id="admin-profile-focus-timeline">Ver timeline</button>
+          </div>
+        </div>
+      `;
+      const copyBtn = document.getElementById("admin-profile-copy-context");
+      if (copyBtn) {
+        copyBtn.addEventListener("click", () => {
+          if (aiContext) {
+            aiContext.value = profileContext;
+            setToolsFeedback("Contexto del usuario cargado en IA.", "success");
+          }
+        });
+      }
+      const timelineBtn = document.getElementById("admin-profile-focus-timeline");
+      if (timelineBtn) {
+        timelineBtn.addEventListener("click", () => {
+          if (timelineUser) timelineUser.value = selectedId;
+          renderAdminTimeline();
+          setToolsFeedback(`Timeline filtrado para ${selectedId}.`, "success");
+        });
+      }
+    }
+
+    const photos = getCheckinPhotosForUser(selectedId).slice().reverse().slice(0, 6);
+    if (profilePhotos) {
+      profilePhotos.innerHTML = photos.length
+        ? photos.map((item) => `
+            <div class="admin-item">
+              <strong>${escHtml(item.note || "Check-in")}</strong>
+              <p>${new Date(item.createdAt || Date.now()).toLocaleString("es-MX")}</p>
+              <img src="${escHtml(item.image || "")}" class="photo-thumb" alt="checkin" />
+            </div>
+          `).join("")
+        : `<div class="admin-item"><p>Sin fotos de check-in de este usuario todavia.</p></div>`;
     }
   };
 
@@ -2056,6 +2184,7 @@ const initAdminPanel = () => {
     } catch (err) {
       console.warn("[api] fallback local:", err?.message || err);
     }
+    latestCoachUsers = users;
     const q = query.trim().toLowerCase();
     const filtered = q
       ? users.filter((u) => (u.name || "").toLowerCase().includes(q) || (u.email || "").toLowerCase().includes(q))
@@ -2092,16 +2221,22 @@ const initAdminPanel = () => {
       .join("");
 
     renderTimelineUserOptions(users);
+    renderAdminUserProfile();
 
     userResults.querySelectorAll("[data-admin-user]").forEach((cb) => {
       cb.addEventListener("change", () => {
         const id = cb.dataset.adminUser;
         if (cb.checked) {
           selectedUsers.add(id);
+          primarySelectedUserId = id;
         } else {
           selectedUsers.delete(id);
+          if (primarySelectedUserId === id) {
+            primarySelectedUserId = Array.from(selectedUsers)[0] || "";
+          }
         }
         renderAdminTimeline();
+        renderAdminUserProfile();
       });
     });
   };
@@ -2115,7 +2250,9 @@ const initAdminPanel = () => {
 
   if (timelineUser) {
     timelineUser.addEventListener("change", () => {
+      primarySelectedUserId = timelineUser.value || primarySelectedUserId;
       renderAdminTimeline();
+      renderAdminUserProfile();
     });
   }
   if (timelineRefresh) {
@@ -2429,6 +2566,13 @@ function initPlanSelectionPage() {
   if (confirmBtn) {
     confirmBtn.addEventListener("click", async () => {
       const current = getCurrentUser();
+      if (!current?.id || !current?.email) {
+        setFeedback("Primero inicia sesion para solicitar un plan.", "error");
+        setTimeout(() => {
+          window.location.href = "registro.html#login";
+        }, 600);
+        return;
+      }
       const selection = persistPlanSelection({ id: getPlanSelection().id, extras: readExtras() });
       const billing = await getBillingTarget();
       const pendingSub = {
@@ -2453,7 +2597,7 @@ function initPlanSelectionPage() {
             role: current.role || "user",
             plan: selection.label,
           });
-          await apiPost("/payments/request", {
+          const paymentRemote = await apiPost("/payments/request", {
             userId: current.id,
             planId: selection.id,
             planLabel: selection.label,
@@ -2462,11 +2606,16 @@ function initPlanSelectionPage() {
             proofTarget: billing.whatsapp || defaultBillingTarget.whatsapp,
           });
           await syncCurrentSubscriptionFromApi();
+          if (paymentRemote?.payment?.existing) {
+            setFeedback("Ya tenias una solicitud pendiente para este plan. Reutilizamos esa misma solicitud.", "success");
+          } else {
+            setFeedback("Solicitud enviada. Queda pendiente hasta validacion en Modo Dios.", "success");
+          }
         } catch {
           // fallback local
+          setFeedback("Solicitud guardada localmente. Verifica la conexion antes de reenviar.", "success");
         }
       }
-      setFeedback("Solicitud enviada. Queda pendiente hasta validacion en Modo Dios.", "success");
       setTimeout(() => {
         window.location.href = "user-hoy.html";
       }, 800);
