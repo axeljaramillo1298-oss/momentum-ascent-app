@@ -34,19 +34,19 @@
     <nav class="admin-tab-nav" id="admin-tab-nav" aria-label="Secciones del panel">
       <div class="admin-tab-track">
         <button class="admin-tab active" data-tab="motor" type="button">
-          <span class="admin-tab-icon">⚙️</span><span>Motor</span>
+          <span class="admin-tab-icon">MG</span><span>Motor</span>
         </button>
         <button class="admin-tab" data-tab="ia" type="button">
-          <span class="admin-tab-icon">🤖</span><span>IA + Plan</span>
+          <span class="admin-tab-icon">IA</span><span>IA + Plan</span>
         </button>
         <button class="admin-tab" data-tab="kpis" type="button">
-          <span class="admin-tab-icon">📊</span><span>KPIs</span>
+          <span class="admin-tab-icon">KP</span><span>KPIs</span>
         </button>
         <button class="admin-tab" data-tab="contenido" type="button">
-          <span class="admin-tab-icon">📋</span><span>Contenido</span>
+          <span class="admin-tab-icon">CT</span><span>Contenido</span>
         </button>
         <button class="admin-tab" data-tab="timeline" type="button">
-          <span class="admin-tab-icon">⏱️</span><span>Timeline</span>
+          <span class="admin-tab-icon">TL</span><span>Timeline</span>
         </button>
       </div>
     </nav>
@@ -54,7 +54,7 @@
     <main id="panel">
       <section class="section admin-panel-section" id="admin-section-motor" data-admin-section="motor">
         <div class="admin-section-header">
-          <span class="admin-section-icon">⚙️</span>
+          <span class="admin-section-icon">MG</span>
           <div>
             <h2 class="admin-section-title">Motor de trabajo del coach</h2>
             <p class="admin-section-desc">Busca usuarios con acceso activo o pendiente y prepara su seguimiento operativo.</p>
@@ -92,7 +92,7 @@
 
       <section class="section admin-panel-section admin-grid" id="admin-section-ia" data-admin-section="ia">
         <div class="admin-section-header admin-section-header--full">
-          <span class="admin-section-icon">🤖</span>
+          <span class="admin-section-icon">IA</span>
           <div>
             <h2 class="admin-section-title">Asistente IA + entrega final</h2>
             <p class="admin-section-desc">Usa IA como apoyo y luego entrega la rutina, dieta y mensaje final al usuario seleccionado.</p>
@@ -112,7 +112,7 @@
               <input id="admin-ai-file" type="file" accept=".txt,.md,.json,.csv,.log,.text" />
             </label>
             <button class="ghost" type="button" id="admin-ai-generate">
-              <span>🚀</span> Generar recomendacion IA
+              <span>IA</span> Generar recomendacion IA
             </button>
             <div id="admin-ai-output" class="admin-item admin-ai-output-box">Sin respuesta IA aun.</div>
           </div>
@@ -131,12 +131,12 @@
               <textarea id="admin-final-message" placeholder="Mensaje de acompanamiento"></textarea>
             </label>
             <button class="primary" type="button" id="admin-assign-plan">
-              <span>✅</span> Asignar a seleccionados
+              <span>OK</span> Asignar a seleccionados
             </button>
             <div class="admin-tools-row">
-              <button class="ghost" type="button" id="admin-duplicate-plan">📋 Duplicar plan</button>
-              <button class="ghost" type="button" id="admin-export-user-csv">📥 CSV usuario</button>
-              <button class="ghost" type="button" id="admin-export-week-csv">📥 CSV semanal</button>
+              <button class="ghost" type="button" id="admin-duplicate-plan">Duplicar plan</button>
+              <button class="ghost" type="button" id="admin-export-user-csv">CSV usuario</button>
+              <button class="ghost" type="button" id="admin-export-week-csv">CSV semanal</button>
             </div>
             <p class="reg-feedback" id="admin-assign-feedback" aria-live="polite"></p>
             <p class="reg-feedback" id="admin-tools-feedback" aria-live="polite"></p>
@@ -146,7 +146,7 @@
 
       <section class="section admin-panel-section admin-grid" id="admin-section-kpis" data-admin-section="kpis">
         <div class="admin-section-header admin-section-header--full">
-          <span class="admin-section-icon">📊</span>
+          <span class="admin-section-icon">KP</span>
           <div>
             <h2 class="admin-section-title">KPIs de seguimiento</h2>
             <p class="admin-section-desc">Metricas clave para que el coach supervise al usuario seleccionado.</p>
@@ -157,22 +157,22 @@
           <h3>KPIs activos</h3>
           <div class="kpi-strip">
             <div class="kpi-tile">
-              <span class="kpi-tile-icon">🔥</span>
+              <span class="kpi-tile-icon">RC</span>
               <strong id="admin-kpi-streak">-</strong>
               <span>Racha</span>
             </div>
             <div class="kpi-tile">
-              <span class="kpi-tile-icon">✅</span>
+              <span class="kpi-tile-icon">OK</span>
               <strong id="admin-kpi-compliance">-</strong>
               <span>Cumplimiento</span>
             </div>
             <div class="kpi-tile">
-              <span class="kpi-tile-icon">⚡</span>
+              <span class="kpi-tile-icon">RP</span>
               <strong id="admin-kpi-response">-</strong>
               <span>Resp. prom.</span>
             </div>
             <div class="kpi-tile kpi-tile--danger">
-              <span class="kpi-tile-icon">⚠️</span>
+              <span class="kpi-tile-icon">AL</span>
               <strong id="admin-kpi-fails">-</strong>
               <span>Fallos</span>
             </div>
@@ -193,7 +193,7 @@
 
       <section class="section admin-panel-section admin-grid" id="admin-section-contenido" data-admin-section="contenido">
         <div class="admin-section-header admin-section-header--full">
-          <span class="admin-section-icon">📋</span>
+          <span class="admin-section-icon">CT</span>
           <div>
             <h2 class="admin-section-title">Biblioteca del coach</h2>
             <p class="admin-section-desc">Rutinas y lineamientos nutricionales base para usuarios habilitados.</p>
@@ -214,7 +214,7 @@
                 <option>60 min</option>
               </select>
             </label>
-            <button class="primary" type="submit">💪 Guardar rutina</button>
+            <button class="primary" type="submit">Guardar rutina</button>
             <p class="reg-feedback" id="admin-routine-feedback" aria-live="polite"></p>
           </form>
         </article>
@@ -233,7 +233,7 @@
               </select>
             </label>
             <label>Nota<textarea id="nutrition-note" required placeholder="Lineamientos clave para el usuario"></textarea></label>
-            <button class="primary" type="submit">🥗 Guardar plan</button>
+            <button class="primary" type="submit">Guardar plan</button>
             <p class="reg-feedback" id="admin-nutrition-feedback" aria-live="polite"></p>
           </form>
         </article>
@@ -251,9 +251,9 @@
         <article class="card">
           <h3>QA local (solo pruebas)</h3>
           <div class="role-actions">
-            <button class="ghost" type="button" id="qa-seed-users">🧪 Crear 10 usuarios demo</button>
-            <button class="ghost" type="button" id="qa-reset-data">🗑️ Resetear datos demo</button>
-            <button class="ghost" type="button" id="qa-toggle-debug">🔍 Debug ON/OFF</button>
+            <button class="ghost" type="button" id="qa-seed-users">Crear 10 usuarios demo</button>
+            <button class="ghost" type="button" id="qa-reset-data">Resetear datos demo</button>
+            <button class="ghost" type="button" id="qa-toggle-debug">Debug ON/OFF</button>
           </div>
           <p class="reg-feedback" id="qa-feedback" aria-live="polite"></p>
           <div id="qa-debug-panel" class="admin-list" hidden></div>
@@ -262,7 +262,7 @@
 
       <section class="section admin-panel-section" id="admin-section-timeline" data-admin-section="timeline">
         <div class="admin-section-header">
-          <span class="admin-section-icon">⏱️</span>
+          <span class="admin-section-icon">TL</span>
           <div>
             <h2 class="admin-section-title">Timeline operativo</h2>
             <p class="admin-section-desc">Historial de acciones de usuarios habilitados para seguimiento del coach.</p>
@@ -273,14 +273,14 @@
             <select id="admin-timeline-user" class="session-select">
               <option value="">Todos los usuarios</option>
             </select>
-            <button class="ghost" type="button" id="admin-timeline-refresh">🔄 Actualizar</button>
+            <button class="ghost" type="button" id="admin-timeline-refresh">Actualizar</button>
           </div>
           <div id="admin-timeline-list" class="admin-list"></div>
         </article>
       </section>
     </main>
 
-    <footer class="footer"><div>Momentum Ascent • Panel Coach Humano</div></footer>
+    <footer class="footer"><div>Momentum Ascent &bull; Panel Coach</div></footer>
     <script src="app.js"></script>
   </body>
 </html>

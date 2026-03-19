@@ -7,7 +7,20 @@ const applyBranding = () => {
     el.textContent = "MOMENTUM ASCENT";
   });
   document.querySelectorAll(".footer > div:first-child").forEach((el) => {
-    el.textContent = BRAND_NAME;
+    const current = String(el.textContent || "").trim();
+    if (!current) {
+      el.textContent = BRAND_NAME;
+      return;
+    }
+    const normalized = current
+      .replace(/Disciplina WhatsApp Coach/gi, BRAND_NAME)
+      .replace(/Momentum Ascent\s*[â€¢•]\s*/gi, `${BRAND_NAME} • `)
+      .trim();
+    if (/^Momentum Ascent$/i.test(normalized)) {
+      el.textContent = BRAND_NAME;
+      return;
+    }
+    el.textContent = normalized || BRAND_NAME;
   });
   if (document.title && /Disciplina/i.test(document.title)) {
     document.title = document.title.replace(/Disciplina[^|]*/i, BRAND_NAME);
