@@ -816,7 +816,35 @@ const syncGodLinkVisibility = () => {
 
 const hasCompletedOnboarding = () => {
   const done = String(localStorage.getItem(ONBOARDING_DONE_STORAGE_KEY) || "").toLowerCase();
-  return done === "1" || done === "true";
+  if (done === "1" || done === "true") {
+    return true;
+  }
+  const current = getCurrentUser();
+  if (!current || current.role === "admin") {
+    return false;
+  }
+  const hasStructuredUserData = Boolean(
+    String(current.objetivo || "").trim() ||
+    String(current.horario || "").trim()
+  );
+  const rawProfile = localStorage.getItem(REG_PROFILE_KEY);
+  let hasProfile = false;
+  if (rawProfile) {
+    try {
+      const profile = JSON.parse(rawProfile);
+      hasProfile = Boolean(
+        profile &&
+        (
+          String(profile.objetivo || "").trim() ||
+          String(profile.horario || "").trim() ||
+          String(profile.nombre || "").trim()
+        )
+      );
+    } catch {
+      hasProfile = false;
+    }
+  }
+  return hasStructuredUserData || hasProfile;
 };
 
 const getUserEntryTarget = () => {
@@ -1048,19 +1076,31 @@ const hydrateUserCacheFromApi = (apiUser) => {
   if (!apiUser || !apiUser.email) {
     return null;
   }
-  return ensureUser({
+  const localUser = ensureUser({
     name: apiUser.name || "User",
     email: apiUser.email,
     whatsapp: apiUser.whatsapp || "",
     role: apiUser.role || "user",
     plan: apiUser.plan || "Free",
     horario: apiUser.checkin_schedule || "",
-    objetivo: "",
+    objetivo: apiUser.goal || "",
     perfil: "",
     edad: apiUser.edad || "",
     peso: apiUser.peso || "",
     estatura: apiUser.estatura || "",
   });
+  const hasCompletedProfile = Boolean(
+    localUser &&
+    localUser.role !== "admin" &&
+    (
+      String(localUser.objetivo || "").trim() ||
+      String(localUser.horario || "").trim()
+    )
+  );
+  if (hasCompletedProfile) {
+    localStorage.setItem(ONBOARDING_DONE_STORAGE_KEY, "1");
+  }
+  return localUser;
 };
 
 const renderUserRoutineFeed = async () => {
@@ -2911,6 +2951,9 @@ const USER_SESSION_KEYS = [
   BILLING_TARGET_CACHE_KEY,
   PLAN_SELECTION_KEY,
   REG_DRAFT_KEY,
+  REG_PROFILE_KEY,
+  ONBOARDING_DONE_STORAGE_KEY,
+  "discipline_onbp_dynamic_v1",
 ];
 
 const logoutCurrentUser = async () => {
