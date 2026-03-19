@@ -224,11 +224,13 @@ app.post("/auth/login", async (req, res) => {
       return res.status(404).json({ ok: false, error: "user_not_found" });
     }
     const resolvedRole = wasAdmin || isAdminByAllowlist ? "admin" : "user";
-    // If this admin email has a required password, validate it.
-    // Only applies to explicit allowlist admins.
-    if (isAdminByAllowlist && ADMIN_PASSWORDS.has(email)) {
+    if (resolvedRole === "admin") {
+      const configuredPassword = String(ADMIN_PASSWORDS.get(email) || "").trim();
+      if (!configuredPassword) {
+        return res.status(403).json({ ok: false, error: "admin_password_not_configured" });
+      }
       const provided = String(payload.password || "").trim();
-      if (provided !== ADMIN_PASSWORDS.get(email)) {
+      if (!provided || provided !== configuredPassword) {
         return res.status(401).json({ ok: false, error: "invalid_password" });
       }
     }

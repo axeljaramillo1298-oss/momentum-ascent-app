@@ -3006,30 +3006,53 @@ const initPublicNavSessionButton = () => {
   if (!navActions) return;
 
   const page = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
-  const publicPages = new Set([
-    "index.html",
-    "",
-    "planes.html",
-    "sistema.html",
-    "nutricion.html",
-    "demo.html",
-    "roadmap.html",
+  const blockedPages = new Set([
+    "registro.html",
+    "app-inicio.html",
+    "admin.html",
+    "god-panel.html",
+    "user-hoy.html",
+    "user-rutinas.html",
+    "user-progreso.html",
+    "user-dieta.html",
+    "user-checkin.html",
+    "onboarding.html",
+    "onboarding-1.html",
+    "onboarding-2.html",
+    "onboarding-3.html",
+    "onboarding-4.html",
+    "onboarding-4-apuesta.html",
+    "onboarding-5.html",
+    "onboarding-6.html",
+    "onboarding-7.html",
+    "onboarding-8.html",
+    "onboarding-8-modos.html",
+    "onboarding-9.html",
+    "onboarding-resumen.html",
   ]);
-  if (!publicPages.has(page)) return;
+  if (blockedPages.has(page)) return;
 
   const loginLink = navActions.querySelector(".nav-login-btn");
+  const guestAuthLink = Array.from(navActions.querySelectorAll("a[href]")).find((a) => {
+    const href = String(a.getAttribute("href") || "").toLowerCase();
+    return href.includes("registro.html#login") || href === "registro.html" || href.includes("registro/login");
+  });
   const current = getCurrentUser();
   const isLogged = Boolean(current);
 
   let logoutBtn = navActions.querySelector("[data-public-nav-logout]");
   if (!isLogged) {
     if (loginLink) loginLink.style.display = "";
+    if (guestAuthLink) guestAuthLink.style.display = "";
     if (logoutBtn) logoutBtn.remove();
     return;
   }
 
   if (loginLink) {
     loginLink.style.display = "none";
+  }
+  if (guestAuthLink) {
+    guestAuthLink.style.display = "none";
   }
   if (logoutBtn) {
     return;
@@ -4124,9 +4147,15 @@ if (loginForm) {
         password,
       });
       if (!remote?.ok) {
+        if (remote?.error === "invalid_password" || remote?.error === "admin_password_not_configured") {
+          if (loginPasswordField) loginPasswordField.classList.remove("hidden-field");
+          if (loginPassword) loginPassword.required = true;
+        }
         if (loginFeedback) {
           loginFeedback.textContent = remote?.error === "invalid_password"
             ? "Contraseña incorrecta."
+            : remote?.error === "admin_password_not_configured"
+            ? "Este admin no tiene credenciales configuradas en el servidor."
             : remote?.error === "user_not_found"
             ? "Ese correo no existe. Regístrate primero."
             : remote?.error === "rate_limited"
