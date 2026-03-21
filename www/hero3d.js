@@ -69,7 +69,7 @@
   ];
 
   var particles = [];
-  var pcols = ["#ff3b30", "#ff6b35", "#f5c04a", "#ffffff"];
+  var pcols = ["#ff6b35", "#f5c04a", "#fff0de"];
 
   function resize() {
     var hero = canvas.parentElement;
@@ -163,9 +163,9 @@
     var cx = w * 0.63;
     var cy = h * 0.48;
 
-    drawGlow(cx, cy, 420, "rgba(255,83,58,0.12)", 0.52);
-    drawGlow(cx + 30, cy + 150, 280, "rgba(245,192,74,0.09)", 0.34);
-    drawGlow(cx - 180, cy - 140, 180, "rgba(255,255,255,0.06)", 0.2);
+    drawGlow(cx, cy, 340, "rgba(255,83,58,0.09)", 0.42);
+    drawGlow(cx + 30, cy + 150, 220, "rgba(245,192,74,0.06)", 0.24);
+    drawGlow(cx - 180, cy - 140, 130, "rgba(255,255,255,0.04)", 0.12);
 
     var haze = ctx.createLinearGradient(0, 0, 0, h);
     haze.addColorStop(0, "rgba(255,255,255,0.02)");
@@ -175,9 +175,9 @@
     ctx.fillRect(0, 0, w, h);
 
     var beam = ctx.createLinearGradient(cx, cy - 260, cx, cy + 300);
-    beam.addColorStop(0, "rgba(255,255,255,0.14)");
-    beam.addColorStop(0.25, "rgba(255,205,166,0.1)");
-    beam.addColorStop(0.65, "rgba(255,102,72,0.05)");
+    beam.addColorStop(0, "rgba(255,255,255,0.12)");
+    beam.addColorStop(0.25, "rgba(255,205,166,0.08)");
+    beam.addColorStop(0.65, "rgba(255,102,72,0.035)");
     beam.addColorStop(1, "transparent");
     ctx.fillStyle = beam;
     ctx.fillRect(cx - 50, cy - 260, 100, 600);
@@ -186,7 +186,7 @@
   function drawFloor(ry, time) {
     var size = 560;
     var step = 54;
-    var pulse = 0.035 + Math.sin(time * 0.5) * 0.012;
+    var pulse = 0.02 + Math.sin(time * 0.5) * 0.008;
     ctx.lineWidth = 0.6;
     ctx.strokeStyle = "rgba(255,96,75,0.9)";
     for (var x = -size; x <= size; x += step) {
@@ -254,7 +254,7 @@
     var g = ctx.createLinearGradient(center.x, center.y, anchor.x, anchor.y);
     g.addColorStop(0, color);
     g.addColorStop(1, "transparent");
-    ctx.globalAlpha = 0.32;
+      ctx.globalAlpha = 0.22;
     ctx.strokeStyle = g;
     ctx.lineWidth = 1.1;
     ctx.setLineDash([8, 10]);
@@ -473,7 +473,7 @@
       if (!pq) continue;
       var radius = particle.size * Math.min(1.6, pq.s * 2.4);
       if (radius < 0.24) continue;
-      ctx.globalAlpha = (0.18 + 0.24 * Math.sin(t * particle.speed * 10 + particle.phase)) * Math.min(1, pq.s * 2.1);
+      ctx.globalAlpha = (0.1 + 0.16 * Math.sin(t * particle.speed * 10 + particle.phase)) * Math.min(1, pq.s * 2.1);
       ctx.fillStyle = particle.col;
       ctx.beginPath();
       ctx.arc(pq.x, pq.y, radius, 0, Math.PI * 2);
@@ -482,7 +482,7 @@
     ctx.globalAlpha = 1;
   }
 
-  for (var p = 0; p < 180; p++) {
+  for (var p = 0; p < 96; p++) {
     var radius = 240 + Math.random() * 420;
     var phi = Math.random() * Math.PI * 2;
     var theta = Math.random() * Math.PI;
