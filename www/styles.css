@@ -12029,7 +12029,7 @@ body.theme-female #today-yes {
   box-shadow: 0 8px 32px rgba(0,0,0,.32);
   transition: all .35s cubic-bezier(.23,1,.32,1);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 .home-v2-step::before {
   content: '';
