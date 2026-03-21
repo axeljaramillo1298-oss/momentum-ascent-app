@@ -7,58 +7,30 @@
     <meta name="description" content="Sistema de disciplina diaria con check-ins, nutricion y seguimiento real." />
     <link rel="stylesheet" href="styles.css" />
 
-    <!-- Three.js importmap para hero3d.js -->
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js"
-        }
-      }
-    </script>
-
     <style>
-      /* ── CANVAS 3D HERO ──────────────────────────────────────────── */
+      /* ── CANVAS 3D FULL-HERO ─────────────────────────────────────── */
       #hero-canvas {
         position: absolute;
-        right: -2%;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 58%;
-        height: 110%;
+        inset: 0;
+        width: 100%;
+        height: 100%;
         pointer-events: none;
         z-index: 1;
         opacity: 0;
-        transition: opacity 1.2s ease;
+        transition: opacity 1.4s ease;
+        display: block;
       }
       #hero-canvas.ready { opacity: 1; }
 
-      /* Device mockup z-index sobre el canvas */
-      .home-v2-device {
-        position: relative;
-        z-index: 4;
-      }
-      /* Asegurar que el copy quede encima */
-      .home-v2-copy {
-        position: relative;
-        z-index: 4;
-      }
+      /* Contenido del hero encima del canvas */
+      .home-v2-copy     { position: relative; z-index: 4; }
+      .home-v2-device   { position: relative; z-index: 4; }
       .home-v2-float-stats { z-index: 5; }
 
-      /* Mobile: canvas pequeño arriba del copy */
+      /* Mobile */
       @media (max-width: 768px) {
-        #hero-canvas {
-          position: relative;
-          right: auto;
-          top: auto;
-          transform: none;
-          width: 100%;
-          height: 260px;
-          grid-column: 1 / -1;
-          order: -1;
-          margin-bottom: -60px;
-          opacity: 0;
-        }
-        #hero-canvas.ready { opacity: .85; }
+        #hero-canvas { opacity: 0 !important; }
+        #hero-canvas.ready { opacity: .6 !important; }
       }
     </style>
   </head>
@@ -70,7 +42,6 @@
       <section class="home-v2-frame">
         <header class="home-v2-top">
           <nav class="nav home-v2-nav">
-            <!-- LOGO MARK -->
             <a class="logo home-logo-link" href="index.html" aria-label="Momentum Ascent home">
               <svg class="logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <defs>
@@ -104,10 +75,10 @@
 
         <section class="home-v2-hero">
 
-          <!-- CANVAS 3D — escena WebGL Three.js -->
+          <!-- CANVAS 3D WebGL — full hero background -->
           <canvas id="hero-canvas" aria-hidden="true"></canvas>
 
-          <!-- floating stat chips V11 -->
+          <!-- Floating stat chips -->
           <div class="home-v2-float-stats" aria-hidden="true">
             <div class="home-v2-float-chip fchip-streak">
               <span class="fchip-val">14</span>
@@ -176,16 +147,11 @@
     </main>
 
     <div class="scroll-progress" aria-hidden="true"></div>
-    <script src="app.js"></script>
 
-    <!-- Hero 3D — carga despues de app.js para no bloquear -->
-    <script type="module">
-      import('hero3d.js').then(mod => {
-        const c = document.getElementById('hero-canvas');
-        if (c) setTimeout(() => c.classList.add('ready'), 200);
-      }).catch(err => {
-        console.warn('[hero3d] no disponible:', err.message);
-      });
-    </script>
+    <!-- Three.js CDN clásico (sin módulos para máxima compatibilidad) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
+    <script src="app.js"></script>
+    <!-- Escena 3D — carga después de Three.js y app.js -->
+    <script src="hero3d.js"></script>
   </body>
 </html>
