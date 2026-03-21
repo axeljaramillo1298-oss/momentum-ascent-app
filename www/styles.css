@@ -12006,7 +12006,7 @@ body.theme-female #today-yes {
 .fchip-users .fchip-val { color: #f5c04a; }
 
 /* ── HOW IT WORKS ───────────────────────────────────────────────── */
-.home-v2-how { padding: 16px 36px 0; }
+.home-v2-how { padding: 60px 36px 72px; }
 
 .home-v2-how h2 {
   font-size: clamp(30px, 4.2vw, 52px);
@@ -12017,7 +12017,7 @@ body.theme-female #today-yes {
   background-clip: text;
 }
 
-.home-v2-steps { margin-top: 18px; gap: 14px; }
+.home-v2-steps { margin-top: 28px; gap: 18px; }
 
 .home-v2-step {
   border-radius: 22px;
@@ -12207,7 +12207,8 @@ body.user-panel-premium #today-yes:hover {
   .home-v2-hero::after { display: none; }
   .home-v2-float-stats { display: none; }
   .home-v2-nav { margin: 0 12px; padding: 10px 14px 10px 18px; border-radius: 16px; }
-  .home-v2-how, .home-v2-footer-banner { padding-left: 20px; padding-right: 20px; }
+  .home-v2-how { padding: 44px 20px 56px; }
+  .home-v2-footer-banner { padding-left: 20px; padding-right: 20px; }
   .home-v2-step { padding: 22px 16px 18px; }
   .home-v2-device { width: min(400px, 100%); }
 }
