@@ -12561,3 +12561,53 @@ body.user-panel-premium #today-yes:hover {
 /* ================================================================
    FIN DESIGN v11
    ================================================================ */
+
+/* ================================================================
+   RUTINAS 3D — figura wireframe fitness
+   ================================================================ */
+
+.rutinas-hero-wrap {
+  position: relative;
+  overflow: hidden;
+  min-height: 320px;
+}
+
+.rutinas-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+  pointer-events: none;
+}
+
+.rutinas-canvas.ready {
+  opacity: 1;
+}
+
+.rutinas-hero-wrap .user-panel-nav,
+.rutinas-hero-wrap .user-panel-hero {
+  position: relative;
+  z-index: 2;
+}
+
+/* vignette left so text stays legible */
+.rutinas-hero-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    90deg,
+    rgba(7,8,18,0.78) 0%,
+    rgba(7,8,18,0.50) 42%,
+    transparent 68%
+  );
+  pointer-events: none;
+}
+
+/* ================================================================
+   FIN RUTINAS 3D
+   ================================================================ */
