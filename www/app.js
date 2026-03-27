@@ -197,9 +197,6 @@ const initMobileMenu = () => {
   }
 
   navs.forEach((nav) => {
-    if (nav.classList.contains("home-v2-nav")) {
-      return;
-    }
     const actions = nav.querySelector(".nav-actions");
     if (!actions) {
       return;
@@ -216,7 +213,7 @@ const initMobileMenu = () => {
       nav.appendChild(toggle);
     }
 
-    if (!actions.querySelector("[data-action='theme']")) {
+    if (!actions.querySelector("[data-action='theme'], #nav-theme-btn, .nav-theme-toggle")) {
       const themeButton = document.createElement("button");
       themeButton.type = "button";
       themeButton.className = "ghost menu-theme-btn";

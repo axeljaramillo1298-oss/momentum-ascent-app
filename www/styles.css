@@ -11721,6 +11721,24 @@ body.theme-female #today-yes {
   overflow: hidden;
 }
 
+.home-v2-hero::before {
+  content: "";
+  position: absolute;
+  right: -4%;
+  top: 8%;
+  width: min(52vw, 760px);
+  height: min(70vh, 760px);
+  border-radius: 40px;
+  background:
+    radial-gradient(circle at 44% 38%, rgba(255,248,236,.2) 0%, rgba(255,226,188,.08) 18%, rgba(255,96,74,.08) 42%, transparent 70%),
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
+  filter: blur(8px);
+  opacity: .9;
+  pointer-events: none;
+  transform: perspective(1200px) rotateY(-18deg) rotateX(7deg);
+  z-index: 0;
+}
+
 .home-v2-lightbeam {
   position: absolute;
   inset: 5% auto auto 48%;
@@ -12539,8 +12557,9 @@ body.user-panel-premium #today-yes:hover {
 @media (max-width: 768px) {
   .home-v2-hero {
     min-height: auto;
-    padding: 24px 20px 16px;
+    padding: 22px 18px 18px;
   }
+  .home-v2-hero::before,
   .home-v2-hero::after { display: none; }
   .home-v2-float-stats,
   .home-v2-side-card,
@@ -12551,11 +12570,19 @@ body.user-panel-premium #today-yes:hover {
   .home-v2-how { padding: 44px 20px 56px; }
   .home-v2-footer-banner { padding-left: 20px; padding-right: 20px; }
   .home-v2-step { padding: 22px 16px 18px; }
-  .home-v2-device-stage { width: 100%; padding: 0; }
+  .home-v2-copy { order: 1; }
+  .home-v2-device-stage { width: 100%; padding: 6px 0 0; order: 2; }
   .home-v2-device { width: min(400px, 100%); transform: none; }
   .home-v2-proofbar { grid-template-columns: 1fr; }
   .home-v2-copy-panel { padding-right: 0; }
   .home-v2-copy-panel::before { inset: -18px -8px -18px -8px; }
+  .home-v2-copy h1 { font-size: clamp(52px, 16vw, 76px); line-height: .92; }
+  .home-v2-copy > p { font-size: 16px; line-height: 1.58; }
+  .home-v2-cta-row { width: 100%; flex-direction: column; align-items: stretch; }
+  .home-v2-cta-row .primary,
+  .home-v2-cta-row .ghost { width: 100%; justify-content: center; }
+  .home-login-shortcut { margin-top: 16px; flex-wrap: wrap; }
+  .home-v2-device-metrics { grid-template-columns: 1fr; }
 }
 
 /* ================================================================
