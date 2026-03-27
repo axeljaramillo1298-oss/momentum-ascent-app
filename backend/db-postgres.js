@@ -12,7 +12,6 @@ const pool = new Pool({
 
 const DB_META = {
   client: "postgres",
-  databaseUrl: DATABASE_URL,
 };
 
 const nowIso = () => new Date().toISOString();
