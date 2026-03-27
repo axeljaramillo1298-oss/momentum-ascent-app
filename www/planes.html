@@ -95,12 +95,12 @@
           <div id="plan-selection-summary" class="admin-item"></div>
         </article>
         <article class="card transfer-demo-card">
-          <h3>Pago demo (transferencia bancaria)</h3>
-          <p><strong>Banco:</strong> Demo Bank</p>
-          <p><strong>CLABE:</strong> 0000-1111-2222-3333-444</p>
-          <p><strong>Titular:</strong> Momentum Ascent Demo</p>
-          <p><strong>Enviar comprobante a WhatsApp:</strong> +52 000 000 0000 (placeholder)</p>
-          <p class="reg-hint">Cuando tengas el numero real, lo reemplazamos en un minuto.</p>
+          <h3>Datos de pago (transferencia bancaria)</h3>
+          <p><strong>Banco:</strong> <span id="planes-pay-bank">Cargando...</span></p>
+          <p><strong>CLABE:</strong> <span id="planes-pay-clabe">Cargando...</span></p>
+          <p><strong>Titular:</strong> <span id="planes-pay-holder">Cargando...</span></p>
+          <p><strong>Comprobante via WhatsApp:</strong> <span id="planes-pay-whatsapp">Cargando...</span></p>
+          <p class="reg-hint">Usa tu correo de registro como referencia en la transferencia.</p>
           <button class="primary" type="button" id="plan-confirm-button">Confirmar plan y continuar</button>
           <p class="reg-feedback" id="plan-payment-feedback" aria-live="polite"></p>
         </article>

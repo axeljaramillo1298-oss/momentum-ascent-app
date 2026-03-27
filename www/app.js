@@ -6229,6 +6229,10 @@ const initOnboardingSummary = async () => {
   }
 
   const draft = getRegDraft();
+  if (!draft.email && !getCurrentUser()) {
+    window.location.replace("onboarding-1.html");
+    return;
+  }
   const selectedPlan = normalizePlanSelection({
     id: draft.plan || getPlanSelection().id || "free",
     extras: getPlanSelection().extras,
@@ -6276,6 +6280,21 @@ const initOnboardingSummary = async () => {
 };
 
 initOnboardingSummary();
+
+const initPlanesBillingCard = async () => {
+  const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
+  if (page !== "planes.html") return;
+  const billing = await getBillingTarget();
+  const bankEl   = document.getElementById("planes-pay-bank");
+  const clabeEl  = document.getElementById("planes-pay-clabe");
+  const holderEl = document.getElementById("planes-pay-holder");
+  const waEl     = document.getElementById("planes-pay-whatsapp");
+  if (bankEl)   bankEl.textContent   = billing.bankName || "-";
+  if (clabeEl)  clabeEl.textContent  = billing.clabe || "-";
+  if (holderEl) holderEl.textContent = billing.accountHolder || "-";
+  if (waEl)     waEl.textContent     = billing.whatsapp || "-";
+};
+initPlanesBillingCard();
 
 const SQUAD_KEY = "discipline_squad_v1";
 const MISSIONS_KEY = "discipline_missions_v1";
