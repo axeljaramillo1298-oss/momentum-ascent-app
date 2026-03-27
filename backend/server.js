@@ -208,15 +208,15 @@ app.get("/health", (req, res) => {
 });
 
 app.post("/auth/login", async (req, res) => {
-  const ip = getClientIp(req);
-  if (checkRateLimit(ip)) {
-    return res.status(429).json({ ok: false, error: "rate_limited", retryAfterMs: RATE_LIMIT_WINDOW_MS });
-  }
   try {
+    const ip = getClientIp(req);
     const payload = req.body || {};
     const email = String(payload.email || "").trim().toLowerCase();
     const intent = String(payload.intent || "").trim().toLowerCase();
     const strictLogin = intent === "login";
+    if (strictLogin && checkRateLimit(ip)) {
+      return res.status(429).json({ ok: false, error: "rate_limited", retryAfterMs: RATE_LIMIT_WINDOW_MS });
+    }
     const previous = email ? await getUserByEmail(email) : null;
     const wasAdmin = String(previous?.role || "").toLowerCase() === "admin";
     const isAdminByAllowlist = ADMIN_EMAILS.has(email);
@@ -238,6 +238,9 @@ app.post("/auth/login", async (req, res) => {
       ...payload,
       role: resolvedRole,
     });
+    if (strictLogin) {
+      resetRateLimit(ip);
+    }
     const isNew = !previous;
     const hasNewWhatsapp = !String(previous?.whatsapp || "").trim() && String(user?.whatsapp || "").trim();
     let onboarding = null;
@@ -618,7 +621,7 @@ app.get("/billing-target", async (req, res) => {
   }
 });
 
-app.get("/payments/pending", requireGod, async (req, res) => {
+app.get("/payments/pending", requireAdmin, async (req, res) => {
   try {
     const items = await listPendingPaymentRequests();
     res.json({ ok: true, items });
@@ -627,7 +630,7 @@ app.get("/payments/pending", requireGod, async (req, res) => {
   }
 });
 
-app.post("/payments/:id/review", requireGod, async (req, res) => {
+app.post("/payments/:id/review", requireAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id || 0);
     const result = await reviewPaymentRequest({ id, ...(req.body || {}) });

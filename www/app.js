@@ -295,6 +295,8 @@ const QA_DEMO_KEY = "discipline_qa_demo_v1";
 const GOD_TOKEN_KEY = "discipline_god_token_v1";
 const GOD_EXPIRES_KEY = "discipline_god_expires_v1";
 const BILLING_TARGET_CACHE_KEY = "discipline_billing_target_v1";
+const USER_SYNC_META_KEY = "discipline_user_sync_meta_v1";
+const USER_SYNC_COOLDOWN_MS = 60 * 1000;
 
 const escHtml = (str) =>
   String(str ?? "")
@@ -453,6 +455,13 @@ function isSubscriptionActive(sub) {
   return new Date(endAt).getTime() > Date.now();
 }
 
+function hasPendingPaidAccess() {
+  const sub = getCurrentSubscription();
+  const pending = String(sub?.status || "").toLowerCase() === "pending";
+  const planId = String(sub?.planId || "free").trim().toLowerCase();
+  return pending && planId !== "free";
+}
+
 function getEffectivePlanSelection() {
   const sub = getCurrentSubscription();
   if (isSubscriptionActive(sub)) {
@@ -531,7 +540,9 @@ const resolveApiBase = () => {
     return forced.replace(/\/+$/, "");
   }
   if (window.location.protocol === "file:") {
-    return "https://api.momentumascent.com";
+    const capacitorPlatform = window.Capacitor?.getPlatform?.();
+    const isNativeCapacitor = Boolean(window.Capacitor?.isNativePlatform?.() || (capacitorPlatform && capacitorPlatform !== "web"));
+    return isNativeCapacitor ? "https://api.momentumascent.com" : "http://localhost:8787";
   }
   const host = (window.location.hostname || "").toLowerCase();
   if (host === "localhost" || host === "127.0.0.1") {
@@ -861,6 +872,9 @@ const getUserEntryTarget = () => {
   if (getRoleMode() === "admin") {
     return "admin.html";
   }
+  if (hasPendingPaidAccess()) {
+    return "onboarding-resumen.html";
+  }
   return hasCompletedOnboarding() ? "user-hoy.html" : "onboarding-1.html";
 };
 
@@ -1058,6 +1072,10 @@ const enforceOnboardingBeforeHome = () => {
   }
   const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
   const appPages = new Set(["user-hoy.html", "user-rutinas.html", "user-progreso.html", "user-dieta.html", "user-checkin.html"]);
+  if (appPages.has(page) && hasPendingPaidAccess()) {
+    window.location.replace("onboarding-resumen.html");
+    return;
+  }
   if (appPages.has(page) && !hasCompletedOnboarding()) {
     window.location.replace("app-inicio.html");
   }
@@ -1068,7 +1086,7 @@ const syncUserWithBackend = async (payload) => {
   if (!email) {
     return null;
   }
-  const response = await apiPost("/auth/login", {
+  const normalizedPayload = {
     name: payload.name || "User",
     email,
     whatsapp: normalizeWhatsapp(payload.whatsapp || ""),
@@ -1078,7 +1096,35 @@ const syncUserWithBackend = async (payload) => {
     edad: payload.edad || "",
     peso: payload.peso || "",
     estatura: payload.estatura || "",
-  });
+  };
+  let syncMeta = {};
+  try {
+    syncMeta = JSON.parse(localStorage.getItem(USER_SYNC_META_KEY) || "{}") || {};
+  } catch {
+    syncMeta = {};
+  }
+  const signature = JSON.stringify(normalizedPayload);
+  const cached = syncMeta[email];
+  const now = Date.now();
+  if (cached?.signature === signature && now - Number(cached.at || 0) < USER_SYNC_COOLDOWN_MS) {
+    return {
+      ok: true,
+      cached: true,
+      user: getCurrentUser() || ensureUser(normalizedPayload),
+    };
+  }
+  const response = await apiPost("/auth/login", normalizedPayload);
+  if (response?.ok || response?.error === "rate_limited") {
+    syncMeta[email] = { signature, at: now };
+    localStorage.setItem(USER_SYNC_META_KEY, JSON.stringify(syncMeta));
+  }
+  if (response?.error === "rate_limited") {
+    return {
+      ok: true,
+      cached: true,
+      user: getCurrentUser() || ensureUser(normalizedPayload),
+    };
+  }
   return response;
 };
 
@@ -2619,7 +2665,7 @@ function initPlanSelectionPage() {
           if (paymentRemote?.payment?.existing) {
             setFeedback("Ya tenias una solicitud pendiente para este plan. Reutilizamos esa misma solicitud.", "success");
           } else {
-            setFeedback("Solicitud enviada. Queda pendiente hasta validacion en Modo Dios.", "success");
+            setFeedback("Solicitud enviada. Queda pendiente hasta validacion de un admin.", "success");
           }
         } catch {
           // fallback local
@@ -2627,7 +2673,7 @@ function initPlanSelectionPage() {
         }
       }
       setTimeout(() => {
-        window.location.href = "user-hoy.html";
+        window.location.href = selection.id === "free" ? "user-hoy.html" : "onboarding-resumen.html";
       }, 800);
     });
   }
@@ -2688,9 +2734,10 @@ function initAdminPaymentsPanel() {
       if (!id || !action) return;
       btn.disabled = true;
       try {
+        const reviewer = getCurrentUser()?.email || "admin";
         await apiPost(`/payments/${id}/review`, {
           action,
-          reviewedBy: "god",
+          reviewedBy: reviewer,
           note: action === "approve" ? "Pago validado en dashboard." : "Comprobante invalido en demo.",
         });
       } catch {
@@ -2714,7 +2761,7 @@ function initQaChecklist() {
     { id: "login_user", label: "Login user funciona" },
     { id: "login_admin", label: "Login admin funciona" },
     { id: "plan_request", label: "Solicitud de pago desde planes" },
-    { id: "payment_review", label: "Modo Dios aprueba/rechaza pago" },
+    { id: "payment_review", label: "Admin aprueba/rechaza pago" },
     { id: "subscription_gate", label: "Dashboard cambia por suscripcion" },
     { id: "coach_alert", label: "Alerta a coach humano visible en timeline" },
     { id: "diet_gate", label: "Dieta se bloquea/desbloquea por plan" },
@@ -3119,6 +3166,7 @@ const USER_SESSION_KEYS = [
   GOD_TOKEN_KEY,
   GOD_EXPIRES_KEY,
   SUBSCRIPTION_CACHE_KEY,
+  USER_SYNC_META_KEY,
   BILLING_TARGET_CACHE_KEY,
   PLAN_SELECTION_KEY,
   REG_DRAFT_KEY,
@@ -3390,16 +3438,6 @@ const bootApiSession = async () => {
     return;
   }
   try {
-    const remote = await syncUserWithBackend({
-      name: current.name || "User",
-      email: current.email,
-      whatsapp: current.whatsapp || "",
-      role: current.role || "user",
-      plan: current.plan || getPlanSelection().label,
-      horario: current.horario || "",
-      objetivo: current.objetivo || "",
-    });
-    hydrateUserCacheFromApi(remote?.user);
     await syncCurrentSubscriptionFromApi();
     renderUserPlanPanel();
     renderUserRoutinesPage();
@@ -4952,7 +4990,7 @@ async function renderUserNotifications() {
   const items = [];
   const subscription = getCurrentSubscription();
   if (subscription?.status === "pending") {
-    items.push({ at: subscription.updatedAt || new Date().toISOString(), text: "Pago pendiente de validacion en Modo Dios." });
+    items.push({ at: subscription.updatedAt || new Date().toISOString(), text: "Pago pendiente de validacion por admin." });
   }
   if (subscription?.status === "active") {
     items.push({
@@ -5794,6 +5832,7 @@ const renderSessionBar = () => {
   if (logout) {
     logout.addEventListener("click", () => {
       localStorage.removeItem(CURRENT_USER_KEY);
+      localStorage.removeItem(USER_SYNC_META_KEY);
       paint();
       if (window.location.pathname.endsWith("admin.html")) {
         return;
@@ -6254,6 +6293,24 @@ const initOnboardingSummary = async () => {
   const payAccount = document.getElementById("onb-pay-account");
   const payWhatsapp = document.getElementById("onb-pay-whatsapp");
   const payNote = document.getElementById("onb-pay-note");
+  const ctaPrimary = document.querySelector(".onb-cta");
+  const ctaSecondary = document.querySelector(".onb-login-link");
+
+  let subscription = getCurrentSubscription();
+  const current = getCurrentUser();
+  if (current?.id) {
+    try {
+      const remote = await apiGet(`/subscriptions/${encodeURIComponent(current.id)}`);
+      if (remote?.subscription) {
+        subscription = remote.subscription;
+        setCurrentSubscription(subscription);
+      }
+    } catch {
+      subscription = getCurrentSubscription();
+    }
+  }
+  const activeNow = isSubscriptionActive(subscription);
+  const pendingNow = selectedPlan.id !== "free" && String(subscription?.status || "").toLowerCase() === "pending";
 
   if (planEl) planEl.textContent = selectedPlan.label || "Free";
   if (extrasEl) extrasEl.textContent = extras.length ? extras.join(", ") : "Ninguno";
@@ -6263,12 +6320,12 @@ const initOnboardingSummary = async () => {
     costEl.textContent = isFree ? "Gratis" : selectedPlan.price || "Costo pendiente";
   }
   if (statusEl) {
-    statusEl.textContent = isFree ? "Activo sin pago" : "Pendiente de validacion de pago";
+    statusEl.textContent = isFree ? "Activo sin pago" : activeNow ? "Activo" : pendingNow ? "Pendiente de validacion de pago" : "Pago requerido";
   }
   if (paymentBox) {
-    paymentBox.style.display = isFree ? "none" : "";
+    paymentBox.style.display = isFree || activeNow ? "none" : "";
   }
-  if (!isFree) {
+  if (!isFree && !activeNow) {
     const billing = await getBillingTarget();
     if (payBank) payBank.textContent = billing.bankName || "-";
     if (payClabe) payClabe.textContent = billing.clabe || "-";
@@ -6277,6 +6334,15 @@ const initOnboardingSummary = async () => {
     if (payWhatsapp) payWhatsapp.textContent = billing.whatsapp || "-";
     if (payNote) payNote.textContent = billing.note || "Si ya hiciste la transferencia, sera validada y tu acceso se actualizara pronto.";
   }
+  const targetHref = isFree || activeNow ? "user-hoy.html" : "planes.html";
+  const primaryText = isFree || activeNow ? "EMPEZAR MI PRIMER DIA" : "VER DATOS DE PAGO";
+  const secondaryText = isFree || activeNow ? "Ir al panel" : "Revisar planes";
+  [ctaPrimary, ctaSecondary].forEach((link) => {
+    if (!link) return;
+    link.setAttribute("href", targetHref);
+  });
+  if (ctaPrimary) ctaPrimary.textContent = primaryText;
+  if (ctaSecondary) ctaSecondary.textContent = secondaryText;
 };
 
 initOnboardingSummary();

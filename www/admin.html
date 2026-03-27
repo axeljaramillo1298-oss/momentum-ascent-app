@@ -26,7 +26,7 @@
         <div class="hero-copy">
           <p class="eyebrow">Operacion diaria</p>
           <h1>Panel Coach Humano</h1>
-          <p class="subhead">Aqui solo operas usuarios ya habilitados: seguimiento, rutina, dieta, timeline y acompanamiento. Pagos, permisos, planes y configuracion global viven en Modo Dios.</p>
+          <p class="subhead">Aqui operas usuarios, aprobaciones de pago, rutina, dieta, timeline y acompanamiento. Los permisos globales y ajustes sensibles siguen en Modo Dios.</p>
         </div>
       </div>
     </header>
@@ -48,6 +48,9 @@
         <button class="admin-tab" data-tab="timeline" type="button">
           <span class="admin-tab-icon">TL</span><span>Timeline</span>
         </button>
+        <a class="admin-tab admin-tab-god hidden-field" id="admin-god-link" href="god-panel.html">
+          <span class="admin-tab-icon">&#128274;</span><span>Modo Dios</span>
+        </a>
       </div>
     </nav>
 
@@ -73,6 +76,16 @@
             </label>
           </div>
           <div id="admin-user-results" class="admin-user-results"></div>
+        </article>
+        <article class="card">
+          <div class="section-header-row">
+            <h3>Pagos pendientes</h3>
+            <button class="ghost" type="button" id="admin-payments-refresh">Actualizar</button>
+          </div>
+          <p class="reg-hint">Aprueba o rechaza solicitudes de plan sin salir del panel coach.</p>
+          <div id="admin-payments-list" class="admin-list">
+            <div class="admin-item"><p>Cargando pagos pendientes...</p></div>
+          </div>
         </article>
         <div class="admin-grid">
           <article class="card">

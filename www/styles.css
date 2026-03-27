@@ -4251,6 +4251,7 @@ body.user-panel-premium.theme-female .agree-row {
   z-index: 4000;
   display: grid;
   place-items: center;
+  pointer-events: none;
   background:
     radial-gradient(900px 440px at 10% 10%, rgba(75, 136, 255, 0.25), transparent 70%),
     radial-gradient(820px 420px at 90% 90%, rgba(255, 92, 146, 0.22), transparent 70%),
