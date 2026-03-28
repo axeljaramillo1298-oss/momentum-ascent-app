@@ -1189,6 +1189,20 @@ function saveOnboardingProfile(payload) {
   return { userId, updatedAt: now };
 }
 
+function deleteUser(userId) {
+  const normalized = normalizeEmail(userId);
+  if (!normalized) throw new Error("user_id_required");
+  const existing = getUserStmt.get(normalized);
+  if (!existing) throw new Error("user_not_found");
+  db.prepare("DELETE FROM users WHERE id = ?").run(normalized);
+  return {
+    userId: existing.id,
+    email: existing.email || existing.id,
+    role: existing.role || "user",
+    deleted: true,
+  };
+}
+
 const DB_META = {
   client: "sqlite",
   path: DB_PATH,
@@ -1226,6 +1240,7 @@ module.exports = {
   getCoachFlowByPhone: async (phone) => getCoachFlowByPhone(phone),
   getCoachFlowByUser: async (userId) => getCoachFlowByUser(userId),
   saveOnboardingProfile: async (payload) => saveOnboardingProfile(payload),
+  deleteUser: async (userId) => deleteUser(userId),
   getAdminDashboard: async (dateKey) => getAdminDashboard(dateKey),
   getAdminTimeline: async (userId, limit) => getAdminTimeline(userId, limit),
   getAdminCsvReport: async (scope, userId) => getAdminCsvReport(scope, userId),

@@ -1212,6 +1212,31 @@ async function saveOnboardingProfile(payload) {
   return { userId, updatedAt: now };
 }
 
+async function deleteUser(userId) {
+  const normalized = normalizeEmail(userId);
+  if (!normalized) {
+    throw new Error("user_id_required");
+  }
+  const result = await pool.query(
+    `
+    DELETE FROM users
+    WHERE id = $1
+    RETURNING id, email, role
+    `,
+    [normalized]
+  );
+  const row = result.rows[0];
+  if (!row) {
+    throw new Error("user_not_found");
+  }
+  return {
+    userId: row.id,
+    email: row.email || row.id,
+    role: row.role || "user",
+    deleted: true,
+  };
+}
+
 module.exports = {
   DB_META,
   initDb,
@@ -1239,6 +1264,7 @@ module.exports = {
   getCoachFlowByPhone,
   getCoachFlowByUser,
   saveOnboardingProfile,
+  deleteUser,
   getAdminDashboard,
   getAdminTimeline,
   getAdminCsvReport,

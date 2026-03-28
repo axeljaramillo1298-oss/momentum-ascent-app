@@ -36,6 +36,7 @@ const {
   saveOnboardingProfile,
   saveSupportAlert,
   searchUsers,
+  deleteUser,
 } = require("./db");
 
 const app = express();
@@ -400,6 +401,17 @@ app.post("/god/users/grant-plan", requireGod, async (req, res) => {
     res.json({ ok: true, subscription });
   } catch (error) {
     res.status(400).json({ ok: false, error: String(error.message || "god_grant_plan_failed") });
+  }
+});
+
+app.post("/god/users/delete", requireGod, async (req, res) => {
+  try {
+    const userId = String(req.body?.userId || req.body?.email || "").trim().toLowerCase();
+    if (!userId) throw new Error("user_id_required");
+    const result = await deleteUser(userId);
+    res.json({ ok: true, result });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: String(error.message || "god_delete_user_failed") });
   }
 });
 
