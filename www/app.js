@@ -554,58 +554,6 @@ const resolveApiBase = () => {
   return `${window.location.protocol}//${window.location.host}`;
 };
 
-const APP_PUBLIC_ORIGIN = "https://app.momentumascent.com";
-const APP_PAGE_PATTERN =
-  /^(?:index|app-inicio|registro|admin|god-panel|demo|planes|nutricion|sistema|roadmap|onboarding(?:-[a-z0-9-]+)?|user-[a-z0-9-]+)\.html(?:[?#].*)?$/i;
-
-const resolveAppOrigin = () => {
-  const host = String(window.location.hostname || "").trim().toLowerCase();
-  if (!host || window.location.protocol === "file:") {
-    return "";
-  }
-  if (host === "momentumascent.com" || host === "www.momentumascent.com" || host === "app.momentumascent.com") {
-    return APP_PUBLIC_ORIGIN;
-  }
-  return `${window.location.protocol}//${window.location.host}`;
-};
-
-const appUrl = (path) => {
-  const cleanPath = String(path || "").trim();
-  if (!cleanPath) {
-    return cleanPath;
-  }
-  if (/^(?:https?:|mailto:|tel:|#)/i.test(cleanPath)) {
-    return cleanPath;
-  }
-  const origin = resolveAppOrigin();
-  if (!origin) {
-    return cleanPath;
-  }
-  return `${origin}/${cleanPath.replace(/^\/+/, "")}`;
-};
-
-const navigateToApp = (path, replace = false) => {
-  const target = appUrl(path);
-  if (!target) {
-    return;
-  }
-  if (replace) {
-    window.location.replace(target);
-    return;
-  }
-  window.location.href = target;
-};
-
-const syncAppLinksToPublicOrigin = () => {
-  document.querySelectorAll("a[href]").forEach((anchor) => {
-    const rawHref = String(anchor.getAttribute("href") || "").trim();
-    if (!APP_PAGE_PATTERN.test(rawHref)) {
-      return;
-    }
-    anchor.setAttribute("href", appUrl(rawHref));
-  });
-};
-
 const apiUrl = (path) => `${resolveApiBase()}${path}`;
 
 const apiRequest = async (path, options = {}) => {
@@ -741,7 +689,7 @@ const initHomeGodEntry = () => {
       localStorage.setItem(GOD_EXPIRES_KEY, String(remote?.expiresAt || ""));
       setFeedback("Acceso concedido. Abriendo panel...", "success");
       setTimeout(() => {
-        navigateToApp("admin.html#god-panel");
+        window.location.href = "admin.html#god-panel";
       }, 350);
     } catch (error) {
       const message = String(error?.message || "");
@@ -869,14 +817,14 @@ const lockAdminIfNeeded = () => {
   if (isGodPage) {
     // god-panel.html requiere ser admin — el login de Modo Dios está dentro de esa página
     if (getRoleMode() !== "admin") {
-      navigateToApp("app-inicio.html", true);
+      window.location.replace("app-inicio.html");
     }
     return;
   }
   if (!isAdminPage || getRoleMode() === "admin") {
     return;
   }
-  navigateToApp("app-inicio.html", true);
+  window.location.replace("app-inicio.html");
 };
 
 // Muestra el link de Modo Dios a todos los admins; el panel interno se bloquea sin sesión activa
@@ -898,27 +846,8 @@ const hasCompletedOnboarding = () => {
   }
   const hasStructuredUserData = Boolean(
     String(current.objetivo || "").trim() ||
-    String(current.horario || "").trim() ||
-    String(current.goal || "").trim() ||
-    String(current.checkinSchedule || "").trim()
+    String(current.horario || "").trim()
   );
-  const rawDraft = localStorage.getItem(REG_DRAFT_KEY);
-  let hasDraft = false;
-  if (rawDraft) {
-    try {
-      const draft = JSON.parse(rawDraft);
-      hasDraft = Boolean(
-        draft &&
-        (
-          String(draft.objetivo || "").trim() ||
-          String(draft.horario || "").trim() ||
-          String(draft.deporte || "").trim()
-        )
-      );
-    } catch {
-      hasDraft = false;
-    }
-  }
   const rawProfile = localStorage.getItem(REG_PROFILE_KEY);
   let hasProfile = false;
   if (rawProfile) {
@@ -936,7 +865,7 @@ const hasCompletedOnboarding = () => {
       hasProfile = false;
     }
   }
-  return hasStructuredUserData || hasDraft || hasProfile;
+  return hasStructuredUserData || hasProfile;
 };
 
 const getUserEntryTarget = () => {
@@ -962,7 +891,7 @@ const initAppEntryScreen = () => {
   }
   const current = getCurrentUser();
   if (!current) {
-    navigateToApp("registro.html#login", true);
+    window.location.replace("registro.html#login");
     return;
   }
   const target = getUserEntryTarget();
@@ -1132,7 +1061,7 @@ const guardAuthScreensForLoggedUser = () => {
   }
   const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
   if (page === "registro.html") {
-    navigateToApp(getRoleMode() === "admin" ? "admin.html" : "app-inicio.html");
+    window.location.href = getRoleMode() === "admin" ? "admin.html" : "app-inicio.html";
   }
 };
 
@@ -1144,11 +1073,11 @@ const enforceOnboardingBeforeHome = () => {
   const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
   const appPages = new Set(["user-hoy.html", "user-rutinas.html", "user-progreso.html", "user-dieta.html", "user-checkin.html"]);
   if (appPages.has(page) && hasPendingPaidAccess()) {
-    navigateToApp("onboarding-resumen.html", true);
+    window.location.replace("onboarding-resumen.html");
     return;
   }
   if (appPages.has(page) && !hasCompletedOnboarding()) {
-    navigateToApp("app-inicio.html", true);
+    window.location.replace("app-inicio.html");
   }
 };
 
@@ -1203,50 +1132,29 @@ const hydrateUserCacheFromApi = (apiUser) => {
   if (!apiUser || !apiUser.email) {
     return null;
   }
-  const onboardingAnswers =
-    apiUser.onboardingAnswers && typeof apiUser.onboardingAnswers === "object" ? apiUser.onboardingAnswers : {};
-  const resolvedGoal = apiUser.goal || onboardingAnswers.objetivo || "";
-  const resolvedSchedule = apiUser.checkin_schedule || apiUser.checkinSchedule || onboardingAnswers.horario || "";
   const localUser = ensureUser({
     name: apiUser.name || "User",
     email: apiUser.email,
     whatsapp: apiUser.whatsapp || "",
     role: apiUser.role || "user",
     plan: apiUser.plan || "Free",
-    horario: resolvedSchedule,
-    objetivo: resolvedGoal,
+    horario: apiUser.checkin_schedule || "",
+    objetivo: apiUser.goal || "",
     perfil: "",
     edad: apiUser.edad || "",
     peso: apiUser.peso || "",
     estatura: apiUser.estatura || "",
   });
-  const hasRemoteProfile = Boolean(
-    apiUser.onboardingComplete ||
-    resolvedGoal ||
-    resolvedSchedule ||
-    Object.keys(onboardingAnswers).length
-  );
   const hasCompletedProfile = Boolean(
     localUser &&
     localUser.role !== "admin" &&
     (
       String(localUser.objetivo || "").trim() ||
-      String(localUser.horario || "").trim() ||
-      hasRemoteProfile
+      String(localUser.horario || "").trim()
     )
   );
   if (hasCompletedProfile) {
     localStorage.setItem(ONBOARDING_DONE_STORAGE_KEY, "1");
-    saveJsonObject(
-      REG_PROFILE_KEY,
-      {
-        ...(readJsonObject(REG_PROFILE_KEY) || {}),
-        nombre: localUser?.name || apiUser.name || "",
-        objetivo: resolvedGoal,
-        horario: resolvedSchedule,
-        activatedAt: new Date().toISOString(),
-      }
-    );
   }
   return localUser;
 };
@@ -2717,7 +2625,7 @@ function initPlanSelectionPage() {
       if (!current?.id || !current?.email) {
         setFeedback("Primero inicia sesion para solicitar un plan.", "error");
         setTimeout(() => {
-          navigateToApp("registro.html#login");
+          window.location.href = "registro.html#login";
         }, 600);
         return;
       }
@@ -2765,7 +2673,7 @@ function initPlanSelectionPage() {
         }
       }
       setTimeout(() => {
-        navigateToApp(selection.id === "free" ? "user-hoy.html" : "onboarding-resumen.html");
+        window.location.href = selection.id === "free" ? "user-hoy.html" : "onboarding-resumen.html";
       }, 800);
     });
   }
@@ -3277,7 +3185,7 @@ const logoutCurrentUser = async () => {
     }
   }
   USER_SESSION_KEYS.forEach((k) => localStorage.removeItem(k));
-  navigateToApp("registro.html#login", true);
+  window.location.replace("registro.html#login");
 };
 
 const initUserLogoutButton = () => {
@@ -4063,20 +3971,20 @@ const lockRegistrationIfGuidedDone = () => {
   if (!regForm || !regSummary) {
     return;
   }
-  const done = hasCompletedOnboarding();
+  const done = localStorage.getItem(ONBOARDING_DONE_KEY);
   const current = getCurrentUser();
   regForm.style.display = "none";
   const regProgress = document.querySelector(".reg-progress");
   if (regProgress) {
     regProgress.style.display = "none";
   }
-  if (done) {
+  if (done === "1" || done === "true") {
     regSummary.innerHTML = `
       <h3>Registro ya completado en la guia</h3>
       <p>Tu cuenta ya esta activada${current ? ` como <strong>${current.name}</strong>` : ""}. No necesitas repetir el formulario.</p>
       <div class="role-actions">
-        <a class="primary" href="${appUrl("app-inicio.html")}">Entrar a la app</a>
-        <a class="ghost" href="${appUrl("registro.html#login")}">Ir a login</a>
+        <a class="primary" href="app-inicio.html">Entrar a la app</a>
+        <a class="ghost" href="registro.html#login">Ir a login</a>
       </div>
     `;
     return;
@@ -4085,8 +3993,8 @@ const lockRegistrationIfGuidedDone = () => {
     <h3>Registro centralizado en la guia</h3>
     <p>Para evitar duplicados, el alta completa se hace solo en pantallas guiadas.</p>
     <div class="role-actions">
-      <a class="primary" href="${appUrl("onboarding-1.html")}">Ir a la guia</a>
-      <a class="ghost" href="${appUrl("registro.html#login")}">Ya tengo cuenta</a>
+      <a class="primary" href="onboarding-1.html">Ir a la guia</a>
+      <a class="ghost" href="registro.html#login">Ya tengo cuenta</a>
     </div>
   `;
 };
@@ -4465,7 +4373,7 @@ if (loginForm) {
       renderWeeklyAiAdjustment();
       applyPlanNavVisibility();
       renderUserNotifications();
-      navigateToApp(resolvedRole === "admin" ? "admin.html" : "app-inicio.html");
+      window.location.href = resolvedRole === "admin" ? "admin.html" : "app-inicio.html";
     } catch (err) {
       console.warn("[login] error de red:", err?.message || err);
       if (loginFeedback) loginFeedback.textContent = "No se pudo conectar al servidor. Verifica tu conexión.";
@@ -5833,7 +5741,7 @@ const initQaTools = () => {
     resetBtn.addEventListener("click", () => {
       clearDemoData();
       setFeedback("Datos demo reiniciados.", "error");
-      navigateToApp("registro.html");
+      window.location.href = "registro.html";
     });
   }
 
@@ -5851,6 +5759,7 @@ const initQaTools = () => {
 
 const renderSessionBar = () => {
   document.querySelectorAll(".session-bar").forEach((el) => el.remove());
+  return;
   const nav = document.querySelector(".nav");
   if (!nav || document.querySelector(".session-bar")) {
     return;
@@ -5928,7 +5837,7 @@ const renderSessionBar = () => {
       if (window.location.pathname.endsWith("admin.html")) {
         return;
       }
-      navigateToApp("registro.html#login");
+      window.location.href = "registro.html#login";
     });
   }
 
@@ -5968,12 +5877,11 @@ const renderMobileBack = () => {
       window.history.back();
       return;
     }
-    navigateToApp("user-hoy.html");
+    window.location.href = "user-hoy.html";
   });
   document.body.appendChild(btn);
 };
 
-syncAppLinksToPublicOrigin();
 renderSessionBar();
 renderBottomTabs();
 renderMobileBack();
@@ -6344,7 +6252,7 @@ const initDynamicOnboarding = () => {
       localStorage.removeItem(ONBP_DYNAMIC_KEY);
       sessionStorage.removeItem(ONBP_SESSION_KEY);
       onboardingPages.forEach((p) => sessionStorage.removeItem(`${ONBP_TOUCHED_PREFIX}${p}`));
-      navigateToApp("onboarding-resumen.html");
+      window.location.href = "onboarding-resumen.html";
     });
   }
 
@@ -6361,7 +6269,7 @@ const initOnboardingSummary = async () => {
 
   const draft = getRegDraft();
   if (!draft.email && !getCurrentUser()) {
-    navigateToApp("onboarding-1.html", true);
+    window.location.replace("onboarding-1.html");
     return;
   }
   const selectedPlan = normalizePlanSelection({
@@ -7189,7 +7097,6 @@ renderBetStatus();
 renderProgressLevelSteps();
 renderLevelBar("progress-level-bar");
 renderLevelBar("user-level-bar");
-renderLevelBar("onb1-level-bar");
 renderGamingRanking("progress-gaming-ranking");
 renderGamingRanking("hoy-gaming-ranking");
 renderMacroBars();

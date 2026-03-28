@@ -34,7 +34,7 @@
 
       <div class="onb-welcome-stack">
         <div class="onb-streak-card">
-          <div class="onb-streak-fire">&#128293;</div>
+          <div class="onb-streak-fire">🔥</div>
           <div>
             <div class="onb-streak-num">0</div>
             <span class="onb-streak-lbl">Dias de racha</span>
@@ -59,9 +59,12 @@
           EMPEZAR
           <span class="onb-cta-sub">Activa tu disciplina en 5 min</span>
         </a>
-        <a class="onb-login-link" href="https://app.momentumascent.com/registro.html#login">Ya tengo cuenta</a>
+        <a class="onb-login-link" href="registro.html#login">Ya tengo cuenta</a>
       </div>
     </main>
     <script src="app.js"></script>
+    <script>
+      if (typeof renderLevelBar === "function") renderLevelBar("onb1-level-bar");
+    </script>
   </body>
 </html>

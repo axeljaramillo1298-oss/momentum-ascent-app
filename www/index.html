@@ -31,11 +31,8 @@
       .home-v2-floor-glow { z-index: 2; }
 
       @media (max-width: 768px) {
-        #hero-canvas {
-          opacity: .18 !important;
-          filter: saturate(1.08) contrast(1.04);
-        }
-        #hero-canvas.ready { opacity: .82 !important; }
+        #hero-canvas { opacity: 0 !important; }
+        #hero-canvas.ready { opacity: .72 !important; }
       }
     </style>
   </head>
@@ -65,12 +62,12 @@
               <a class="ghost" href="sistema.html">Sistema</a>
               <a class="ghost" href="planes.html">Planes</a>
               <a class="ghost" href="nutricion.html">Nutricion</a>
-              <a class="ghost" href="https://app.momentumascent.com/admin.html" data-role-only="admin">Admin</a>
+              <a class="ghost" href="admin.html" data-role-only="admin">Admin</a>
               <button class="nav-theme-toggle" type="button" id="nav-theme-btn" aria-label="Cambiar vista" title="Cambiar vista hombre / mujer">
                 <span class="nav-theme-icon" id="nav-theme-icon">&#9794;</span>
                 <span class="nav-theme-label" id="nav-theme-label">Vista</span>
               </button>
-              <a class="nav-login-btn" href="https://app.momentumascent.com/registro.html#login">
+              <a class="nav-login-btn" href="registro.html#login">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 12H8M20 12L16 8M20 12L16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 Entrar
               </a>
@@ -109,8 +106,8 @@
               <h1 id="home-v2-title">NO TE MOTIVAMOS.<br />TE PRESIONAMOS<br />PARA QUE CUMPLAS.</h1>
               <p id="home-v2-sub">Sistema de disciplina diaria con check-ins, nutricion y seguimiento real.</p>
               <div class="home-v2-cta-row">
-                <a class="primary" href="https://app.momentumascent.com/onboarding-1.html" id="home-v2-cta-main">Empezar onboarding</a>
-                <a class="ghost" href="https://app.momentumascent.com/registro.html#login" id="home-v2-cta-login">Ya tengo cuenta</a>
+                <a class="primary" href="onboarding-1.html" id="home-v2-cta-main">Empezar onboarding</a>
+                <a class="ghost" href="registro.html#login" id="home-v2-cta-login">Ya tengo cuenta</a>
                 <a class="ghost" href="demo.html" id="home-v2-cta-alt">Ver demo</a>
               </div>
               <div class="home-v2-proofbar" aria-label="Prueba social">
@@ -127,7 +124,7 @@
                   <span>seguimiento con presion diaria</span>
                 </div>
               </div>
-              <a class="home-login-shortcut" href="https://app.momentumascent.com/registro.html#login">
+              <a class="home-login-shortcut" href="registro.html#login">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 12H8M20 12L16 8M20 12L16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 Ya tienes cuenta? <strong>Entrar al panel &#8594;</strong>
               </a>
@@ -176,7 +173,7 @@
                 <li><span id="home-v2-item-3">&#129367; Nutricion OK</span><b>&#8250;</b></li>
                 <li><span id="home-v2-item-4">&#9989; Entrenamiento 30m</span><b>&#8250;</b></li>
               </ul>
-              <a class="home-v2-device-btn" href="https://app.momentumascent.com/user-hoy.html" id="home-v2-device-btn">Enviar check-in</a>
+              <a class="home-v2-device-btn" href="user-hoy.html" id="home-v2-device-btn">Enviar check-in</a>
             </article>
             <div class="home-v2-side-card side-card-bottom" aria-hidden="true">
               <span class="side-card-kicker">Coach Signal</span>
