@@ -6180,8 +6180,7 @@ const initDynamicOnboarding = () => {
       }
       const value = state[key];
       const valid = Array.isArray(value) ? value.length > 0 : Boolean(value);
-      const interacted = touched.has(key);
-      if (!valid || !interacted) {
+      if (!valid) {
         return false;
       }
     }
