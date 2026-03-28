@@ -834,11 +834,19 @@ const hasActiveGodSession = () => {
   return true;
 };
 
+const clearGodSession = () => {
+  localStorage.removeItem(GOD_TOKEN_KEY);
+  localStorage.removeItem(GOD_EXPIRES_KEY);
+};
+
 const getRoleMode = () => {
-  if (hasActiveGodSession()) {
+  const current = getCurrentUser();
+  if (current?.role === "admin" && hasActiveGodSession()) {
     return "admin";
   }
-  const current = getCurrentUser();
+  if (current?.role !== "admin" && hasActiveGodSession()) {
+    clearGodSession();
+  }
   return current?.role === "admin" ? "admin" : "user";
 };
 
@@ -4456,6 +4464,9 @@ if (loginForm) {
       // Guardar usuario en local solo después de validación exitosa
       hydrateUserCacheFromApi(remote?.user);
       const resolvedRole = remote?.user?.role === "admin" ? "admin" : "user";
+      if (resolvedRole !== "admin") {
+        clearGodSession();
+      }
       applyRoleMode(resolvedRole);
       await syncCurrentSubscriptionFromApi();
       renderUserPlanPanel();
