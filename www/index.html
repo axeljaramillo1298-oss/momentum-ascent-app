@@ -31,8 +31,11 @@
       .home-v2-floor-glow { z-index: 2; }
 
       @media (max-width: 768px) {
-        #hero-canvas { opacity: 0 !important; }
-        #hero-canvas.ready { opacity: .72 !important; }
+        #hero-canvas {
+          opacity: .18 !important;
+          filter: saturate(1.08) contrast(1.04);
+        }
+        #hero-canvas.ready { opacity: .82 !important; }
       }
     </style>
   </head>
