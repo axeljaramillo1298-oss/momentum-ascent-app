@@ -12,6 +12,10 @@ const normalizeText = (value) =>
 
 const joinLines = (lines) => lines.filter(Boolean).join("\n");
 
+const DEFAULT_WARMUP = "5-8 min de movilidad dinamica + activacion del core.";
+const DEFAULT_SERIES = "3-4 series por ejercicio principal, 8-12 reps o 30-45 seg por bloque.";
+const DEFAULT_RECOVERY = "Estira 5 min y registra check-in al terminar.";
+
 const TEMPLATES = {
   default: {
     weekFocus: "fuerza general, capacidad aerobica y adherencia",
@@ -421,6 +425,190 @@ const TEMPLATES = {
   },
 };
 
+const SPORT_FORMAT = {
+  default: {
+    warmup: "Movilidad general + activacion de gluteo y abdomen 6 min.",
+    finisher: "Cuerda 6 x 45 seg o caminata inclinada 10 min.",
+    recovery: DEFAULT_RECOVERY,
+  },
+  gym: {
+    warmup: "Bici o cuerda 5 min + movilidad de cadera/hombro.",
+    finisher: "Cuerda 8 x 40 seg o assault bike 6 min suave-fuerte.",
+    recovery: DEFAULT_RECOVERY,
+  },
+  running: {
+    warmup: "Trote suave 8 min + skipping, talones y movilidad de tobillo.",
+    finisher: "Cuerda ligera 5 x 1 min o caminata 8 min.",
+    recovery: "Descarga gemelo/soleo y reporta sensaciones de zancada.",
+  },
+  cycling: {
+    warmup: "Bici suave 8 min + apertura de cadera y tobillo.",
+    finisher: "Cadencia alta 5 x 30 seg o cuerda 4 x 1 min.",
+    recovery: "Movilidad de cuadriceps, piramidal y pantorrilla 5 min.",
+  },
+  swimming: {
+    warmup: "Ligero en seco: bandas, hombro y core 6 min.",
+    finisher: "Patada ligera o cuerda suave 4 x 1 min.",
+    recovery: "Descarga dorsal, pectoral y hombro al final.",
+  },
+  calisthenics: {
+    warmup: "Movilidad de muneca, hombro y escápula 6 min.",
+    finisher: "Cuerda 5 x 1 min o hollow hold / plancha 3 rondas.",
+    recovery: "Estira hombro, dorsal y cadera antes del check-in.",
+  },
+  crossfit: {
+    warmup: "Remo o cuerda 5 min + movilidad activa de cadera y hombro.",
+    finisher: "EMOM 6 min de cuerda, assault o burpees controlados.",
+    recovery: "Baja pulsaciones 5 min y anota RPE real.",
+  },
+  field_team: {
+    warmup: "Skipping, desplazamientos laterales y movilidad de cadera 8 min.",
+    finisher: "Cuerda 5 x 1 min o sprints cortos tecnicos.",
+    recovery: "Descarga aductor, isquio y tobillo al terminar.",
+  },
+  american_football: {
+    warmup: "Activacion de gluteo, cuello y tobillo 8 min.",
+    finisher: "Trineo o cuerda 6 rondas cortas.",
+    recovery: "Respiracion y descarga de cadera/cuello 5 min.",
+  },
+  basketball: {
+    warmup: "Movilidad de tobillo, skipping y saltos de baja carga.",
+    finisher: "Cuerda 6 x 45 seg o desplazamientos de cancha 6 min.",
+    recovery: "Descarga rodilla, tobillo y aductor 5 min.",
+  },
+  racket_sport: {
+    warmup: "Split step, movilidad de hombro y tobillo 6 min.",
+    finisher: "Cuerda 6 x 45 seg o cambios laterales 5 min.",
+    recovery: "Estira codo, hombro y aductor antes de salir.",
+  },
+  striking: {
+    warmup: "Sombra suave, movilidad de cadera y hombro 8 min.",
+    finisher: "Cuerda 8 x 1 min.",
+    recovery: "Respiracion nasal + movilidad de cadera y hombro.",
+  },
+  mma: {
+    warmup: "Sombra, sprawls suaves y movilidad de columna/cadera 8 min.",
+    finisher: "Cuerda 6 x 1 min o bike 6 min.",
+    recovery: "Descarga espalda, aductores y cuello 5 min.",
+  },
+  bjj: {
+    warmup: "Hip escapes, puente y movilidad de cadera 8 min.",
+    finisher: "Cuerda 5 x 1 min o carries cortos por rondas.",
+    recovery: "Movilidad de dedos, cadera y espalda al cerrar.",
+  },
+  hyrox: {
+    warmup: "Trote o remo 6 min + movilidad general.",
+    finisher: "Cuerda 6 x 1 min o farmer carry 4 vueltas.",
+    recovery: "Camina 5 min y baja pulsaciones antes del check-in.",
+  },
+  powerlifting: {
+    warmup: "Movilidad de cadera/toracica + aproximaciones de barra.",
+    finisher: "Cuerda suave 4 x 1 min o caminata inclinada 8 min.",
+    recovery: "Descarga lumbar y cadera 5 min.",
+  },
+  weightlifting: {
+    warmup: "PVC, tobillo, cadera y overhead 8 min.",
+    finisher: "Cuerda 5 x 45 seg o saltos tecnicos de baja carga.",
+    recovery: "Movilidad de hombro, muñeca y tobillo 5 min.",
+  },
+  functional: {
+    warmup: "Cuerda 4 min + movilidad global y activacion de core.",
+    finisher: "Circuito funcional corto o cuerda 6 x 40 seg.",
+    recovery: DEFAULT_RECOVERY,
+  },
+  yoga: {
+    warmup: "Respiracion + movilidad articular 5 min.",
+    finisher: "Caminata ligera 10 min o flujo suave de descarga.",
+    recovery: "Respira 3 min en calma y cierra la sesion.",
+  },
+  pilates: {
+    warmup: "Respiracion, pelvis neutra y movilidad toracica 5 min.",
+    finisher: "Caminata ligera o cuerda muy suave 4 min.",
+    recovery: "Descarga lumbar y flexores de cadera al terminar.",
+  },
+  climbing: {
+    warmup: "Movilidad de hombro, dedos y escápula 8 min.",
+    finisher: "Cuerda 4 x 1 min o hangs suaves controlados.",
+    recovery: "Abre antebrazo, dorsal y dedos 5 min.",
+  },
+  hiking: {
+    warmup: "Caminata 6 min + movilidad de tobillo y cadera.",
+    finisher: "Escaladora o cuerda 5 x 45 seg.",
+    recovery: "Descarga pie, soleo y gluteo al terminar.",
+  },
+  trail: {
+    warmup: "Trote suave + movilidad de tobillo y rodilla 8 min.",
+    finisher: "Cuerda 5 x 45 seg o subidas cortas tecnicas.",
+    recovery: "Descarga gemelo, tibial y gluteo medio 5 min.",
+  },
+  triathlon: {
+    warmup: "Cardio suave 6 min + movilidad general.",
+    finisher: "Cuerda 5 x 45 seg o trote suave 8 min.",
+    recovery: "Respiracion y estiramiento rapido de cadera/hombro.",
+  },
+  spinning: {
+    warmup: "Pedaleo suave o cuerda 5 min + movilidad de cadera.",
+    finisher: "Cadencia alta 5 x 30 seg o cuerda 4 x 1 min.",
+    recovery: "Descarga cuadriceps y soleo al bajar de la bici.",
+  },
+  dance: {
+    warmup: "Movilidad de cadera, tobillo y tronco 6 min.",
+    finisher: "Cuerda 5 x 45 seg o pasos rapidos por rondas.",
+    recovery: "Respira y descarga pantorrilla, pie y espalda baja.",
+  },
+  surf: {
+    warmup: "Movilidad de hombro, dorsal y cadera 8 min.",
+    finisher: "Cuerda 5 x 45 seg o pop-up drills 4 rondas.",
+    recovery: "Descarga hombro, espalda baja y flexor de cadera 5 min.",
+  },
+};
+
+const getFormatForTemplate = (templateName) => SPORT_FORMAT[templateName] || SPORT_FORMAT.default;
+
+const splitTitleAndBlock = (line) => {
+  const text = String(line || "").trim();
+  const idx = text.indexOf(":");
+  if (idx < 0) {
+    return { title: text || "Sesion del dia", block: text || "Trabajo principal del deporte." };
+  }
+  return {
+    title: text.slice(0, idx).trim(),
+    block: text.slice(idx + 1).trim(),
+  };
+};
+
+const buildSeriesHint = (templateName, title) => {
+  const normalizedTitle = normalizeText(title);
+  if (["running", "cycling", "swimming", "trail", "triathlon", "spinning"].includes(templateName)) {
+    return normalizedTitle.includes("series") || normalizedTitle.includes("rodaje") || normalizedTitle.includes("tirada")
+      ? "Haz 4-8 bloques segun nivel o 30-60 min continuos si toca base."
+      : "Usa 3-4 ejercicios, 3 series de 8-12 reps por movimiento de soporte."
+  }
+  if (["yoga", "pilates"].includes(templateName)) {
+    return "Mantén 30-45 seg por postura o 8-12 reps controladas por bloque."
+  }
+  if (["mma", "striking", "bjj", "crossfit", "hyrox"].includes(templateName)) {
+    return "Trabaja 3-5 rondas o 3-4 series segun intensidad del dia."
+  }
+  return DEFAULT_SERIES;
+};
+
+const formatWeekRoutine = (templateName, days) =>
+  days
+    .map((line, index) => {
+      const parsed = splitTitleAndBlock(line);
+      const format = getFormatForTemplate(templateName);
+      return [
+        `${DAY_NAMES[index]} | ${parsed.title}`,
+        `- Calentamiento: ${format.warmup}`,
+        `- Bloque principal: ${parsed.block}`,
+        `- Series sugeridas: ${buildSeriesHint(templateName, parsed.title)}`,
+        `- Finisher: ${format.finisher}`,
+        `- Cierre: ${format.recovery}`,
+      ].join("\n");
+    })
+    .join("\n\n");
+
 const SPORTS = {
   generic: { label: "General", template: "default", aliases: [] },
   gym: { label: "Gym", template: "gym", aliases: ["pesas", "musculacion"] },
@@ -530,7 +718,7 @@ const buildFallbackPlanForSport = ({ sport, goal, level, time, place, prompt, na
   const sportConfig = SPORTS[sportKey] || SPORTS.generic;
   const template = TEMPLATES[sportConfig.template] || TEMPLATES.default;
   const metaLine = formatMetaLine({ goal, level, time, place, prompt });
-  const routineLines = template.days.map((line, index) => `${DAY_NAMES[index]}: ${line}`);
+  const routineBody = formatWeekRoutine(sportConfig.template, template.days);
 
   return {
     sportKey,
@@ -539,7 +727,8 @@ const buildFallbackPlanForSport = ({ sport, goal, level, time, place, prompt, na
       `Rutina semanal de respaldo para ${sportConfig.label}.`,
       `Enfoque: ${template.weekFocus}.`,
       metaLine,
-      ...routineLines,
+      "",
+      routineBody,
     ]),
     dietText: joinLines([
       `Plan nutricional base para ${sportConfig.label}.`,

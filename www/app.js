@@ -5851,6 +5851,14 @@ const initQaTools = () => {
 
 const renderSessionBar = () => {
   document.querySelectorAll(".session-bar").forEach((el) => el.remove());
+  const shouldShow =
+    localStorage.getItem(QA_DEBUG_KEY) === "1" ||
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1" ||
+    window.location.protocol === "file:";
+  if (!shouldShow) {
+    return;
+  }
   const nav = document.querySelector(".nav");
   if (!nav || document.querySelector(".session-bar")) {
     return;
