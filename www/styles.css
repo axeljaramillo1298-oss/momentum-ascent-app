@@ -12873,8 +12873,10 @@ body.user-panel-premium #today-yes:hover {
     width: 100%;
   }
   .home-v2-proofbar {
-    grid-template-columns: repeat(3, minmax(80vw, 80vw));
-    gap: 10px;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    overflow: visible;
+    scroll-snap-type: none;
   }
   .home-v2-proof-item {
     padding: 12px 12px 10px;
