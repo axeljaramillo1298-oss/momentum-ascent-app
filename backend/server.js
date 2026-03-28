@@ -198,6 +198,31 @@ const requireSelfOrAdminByAnyBodyField = (fields = ["userId"]) =>
     return "";
   });
 
+const toPlainObject = (value) => (value && typeof value === "object" && !Array.isArray(value) ? value : {});
+
+const isWhatsAppOnboardingError = (value) => {
+  const text = String(value?.message || value || "").toLowerCase();
+  return (
+    text.includes("whatsapp") ||
+    text.includes("provider_error") ||
+    text.includes("authentication error") ||
+    text.includes("graph.facebook.com") ||
+    text.includes("insufficient_quota") ||
+    text.includes("missing_credentials")
+  );
+};
+
+const normalizeWhatsAppOnboardingResult = (error) => {
+  if (!isWhatsAppOnboardingError(error)) {
+    return null;
+  }
+  return {
+    ok: false,
+    skipped: true,
+    reason: "whatsapp_unavailable",
+  };
+};
+
 app.get("/health", (req, res) => {
   res.json({
     ok: true,
@@ -238,6 +263,14 @@ app.post("/auth/login", async (req, res) => {
       ...payload,
       role: resolvedRole,
     });
+    let onboardingProfile = null;
+    try {
+      const candidates = email ? await searchUsers(email) : [];
+      onboardingProfile =
+        candidates.find((candidate) => String(candidate?.id || candidate?.email || "").trim().toLowerCase() === email) || null;
+    } catch (error) {
+      console.warn("[backend] auth/login profile lookup skipped:", String(error?.message || error));
+    }
     if (strictLogin) {
       resetRateLimit(ip);
     }
@@ -251,15 +284,27 @@ app.post("/auth/login", async (req, res) => {
           upsertCoachFlow,
         });
       } catch (err) {
-        onboarding = { ok: false, error: String(err.message || err) };
+        const normalized = normalizeWhatsAppOnboardingResult(err);
+        if (!normalized) throw err;
+        onboarding = normalized;
         console.warn("[backend] whatsapp onboarding skipped:", String(err.message || err));
       }
     }
     const metrics = await getMetrics(user.id);
+    const onboardingAnswers = toPlainObject(onboardingProfile?.onboardingAnswers);
+    const onboardingComplete = Boolean(
+      String(user?.goal || "").trim() ||
+      String(user?.checkin_schedule || "").trim() ||
+      Object.keys(onboardingAnswers).length
+    );
     res.json({
       ok: true,
       isNew,
       onboarding,
+      onboardingProfile: {
+        complete: onboardingComplete,
+        answers: onboardingAnswers,
+      },
       user: {
         id: user.id,
         name: user.name,
@@ -269,6 +314,8 @@ app.post("/auth/login", async (req, res) => {
         plan: user.plan || "Free",
         goal: user.goal || "",
         checkin_schedule: user.checkin_schedule || "",
+        onboardingComplete,
+        onboardingAnswers,
       },
       metrics,
     });
@@ -363,10 +410,18 @@ app.post("/coach/onboarding/start", requireSelfOrAdminByAnyBodyField(["email", "
     const user = await getUserByEmail(email);
     if (!user) throw new Error("user_not_found");
     if (!String(user.whatsapp || "").trim()) throw new Error("whatsapp_required");
-    const result = await startCoachOnboardingForUser(user, {
-      getCoachFlowByUser,
-      upsertCoachFlow,
-    });
+    let result;
+    try {
+      result = await startCoachOnboardingForUser(user, {
+        getCoachFlowByUser,
+        upsertCoachFlow,
+      });
+    } catch (err) {
+      const normalized = normalizeWhatsAppOnboardingResult(err);
+      if (!normalized) throw err;
+      result = normalized;
+      console.warn("[backend] coach onboarding skipped:", String(err.message || err));
+    }
     res.json({ ok: true, result });
   } catch (error) {
     res.status(400).json({ ok: false, error: String(error.message || "coach_onboarding_start_failed") });

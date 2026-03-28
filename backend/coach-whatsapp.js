@@ -10,6 +10,27 @@ const QUESTIONS = [
 const safeStr = (value) => String(value || "").trim();
 const normalizePhone = (raw) => safeStr(raw).replace(/[^\d]/g, "");
 
+const normalizeSendResult = (result) => {
+  if (!result || typeof result !== "object") {
+    return { ok: false, skipped: true, reason: "unknown_whatsapp_result" };
+  }
+  if (result.ok || result.skipped) {
+    return result;
+  }
+  if (result.reason === "provider_error") {
+    return {
+      ok: false,
+      skipped: true,
+      reason: "whatsapp_unavailable",
+    };
+  }
+  return {
+    ok: false,
+    skipped: true,
+    reason: result.reason || "whatsapp_unavailable",
+  };
+};
+
 const buildWelcome = (name) => {
   const clean = safeStr(name) || "Atleta";
   return `Hola ${clean}. Soy tu coach de Momentum Ascent. Aqui no hay excusas, hay ejecucion diaria.`;
@@ -35,14 +56,19 @@ async function startCoachOnboardingForUser(user, db) {
   });
 
   const sent = [];
-  sent.push(await sendWhatsAppText({ to: phone, body: buildWelcome(user.name) }));
+  sent.push(normalizeSendResult(await sendWhatsAppText({ to: phone, body: buildWelcome(user.name) })));
   sent.push(
-    await sendWhatsAppText({
+    normalizeSendResult(
+      await sendWhatsAppText({
       to: phone,
       body: `${QUESTIONS[0].text}\nResponde directo por este chat. Tienes 10 minutos para arrancar fuerte.`,
-    })
+      })
+    )
   );
-  return { ok: true, sent };
+  const providerIssues = sent.some((item) => item && item.skipped && item.reason === "whatsapp_unavailable");
+  return providerIssues
+    ? { ok: true, skipped: true, reason: "whatsapp_unavailable", sent }
+    : { ok: true, sent };
 }
 
 async function handleIncomingCoachMessage(message, db) {
@@ -101,4 +127,3 @@ module.exports = {
   startCoachOnboardingForUser,
   handleIncomingCoachMessage,
 };
-

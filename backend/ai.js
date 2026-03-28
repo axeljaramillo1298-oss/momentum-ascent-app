@@ -1,24 +1,33 @@
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 const OPENAI_TIMEOUT_MS = Math.max(5_000, Number(process.env.OPENAI_TIMEOUT_MS || 25_000));
+const { detectSportFallback, buildFallbackPlanForSport } = require("./sport-routine-fallbacks");
 
 const safeStr = (value) => String(value || "").trim();
 
 const buildFallbackPlan = ({ users = [], prompt = "", context = "", mode = "admin_ai" }) => {
   const names = users.map((u) => safeStr(u.name) || safeStr(u.email) || "User").join(", ") || "usuario";
-  const routineBase =
+  const sportProfile = detectSportFallback({ users, prompt, context });
+  const basePlan = buildFallbackPlanForSport({
+    sport: sportProfile.sport,
+    goal: sportProfile.goal,
+    level: sportProfile.level,
+    time: sportProfile.time,
+    place: sportProfile.place,
+    prompt,
+    mode,
+    names,
+  });
+  const providerNote =
     mode === "ai_only"
-      ? "Bloque de entrenamiento: full-body 4 dias, cardio 2 dias, 1 dia recuperacion activa."
-      : "Bloque de entrenamiento mixto: fuerza + adherencia, con ajuste semanal de carga.";
-  const dietBase =
-    mode === "ai_only"
-      ? "Nutricion base: proteina alta, deficit moderado y 8 vasos de agua."
-      : "Nutricion validada por admin: enfoque en proteina, fibra y distribucion por horarios.";
+      ? "Modo respaldo IA directo."
+      : "Modo respaldo coach + IA, listo para editar antes de asignar.";
 
   return {
     provider: "fallback",
-    routineText: `${routineBase} Usuario(s): ${names}. Objetivo: ${prompt || "mejorar composicion corporal"}.`,
-    dietText: `${dietBase} Contexto aplicado: ${(context || "sin contexto adicional").slice(0, 220)}.`,
-    messageText: `Momentum check: ${names}, ya tienes plan asignado. Ejecuta hoy y reporta check-in.`,
+    sport: basePlan.sportLabel,
+    routineText: [basePlan.routineText, `Destino: ${names}.`, providerNote].filter(Boolean).join("\n"),
+    dietText: [basePlan.dietText, context ? `Contexto aplicado: ${safeStr(context).slice(0, 220)}.` : ""].filter(Boolean).join("\n"),
+    messageText: basePlan.messageText || `Momentum check: ${names}, ya tienes plan asignado. Ejecuta hoy y reporta check-in.`,
   };
 };
 

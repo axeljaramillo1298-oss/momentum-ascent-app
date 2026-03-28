@@ -149,12 +149,23 @@ async function ensureUserRecord(userId, opts = {}) {
   }
   const now = nowIso();
   const email = id;
-  const name = safeStr(opts.name) || "User";
-  const whatsapp = safeStr(opts.whatsapp);
-  const role = safeStr(opts.role) || "user";
-  const plan = safeStr(opts.plan) || "Free";
-  const goal = safeStr(opts.goal);
-  const checkinSchedule = safeStr(opts.checkinSchedule);
+  const existingRes = await pool.query(
+    `
+    SELECT name, whatsapp, role, plan, goal, checkin_schedule AS "checkinSchedule", created_at AS "createdAt"
+    FROM users
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [id]
+  );
+  const existing = existingRes.rows[0] || null;
+  const name = safeStr(opts.name) || safeStr(existing?.name) || "User";
+  const whatsapp = safeStr(opts.whatsapp) || safeStr(existing?.whatsapp);
+  const role = safeStr(opts.role) || safeStr(existing?.role) || "user";
+  const plan = safeStr(opts.plan) || safeStr(existing?.plan) || "Free";
+  const goal = safeStr(opts.goal) || safeStr(existing?.goal);
+  const checkinSchedule = safeStr(opts.checkinSchedule) || safeStr(existing?.checkinSchedule);
+  const createdAt = existing?.createdAt || now;
 
   await pool.query(
     `
@@ -169,7 +180,7 @@ async function ensureUserRecord(userId, opts = {}) {
       checkin_schedule = EXCLUDED.checkin_schedule,
       updated_at = EXCLUDED.updated_at
     `,
-    [id, name, email, whatsapp, role, plan, goal, checkinSchedule, now, now]
+    [id, name, email, whatsapp, role, plan, goal, checkinSchedule, createdAt, now]
   );
 
   await pool.query(
