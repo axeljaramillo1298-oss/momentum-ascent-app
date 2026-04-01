@@ -524,7 +524,7 @@ function getEffectivePlanSelection() {
   if (isSubscriptionActive(sub)) {
     return normalizePlanSelection({
       id: sub.planId || "free",
-      label: sub.planLabel || "Free",
+      label: sub.planLabel || sub.plan || "Free",
       extras: sub.extras || {},
     });
   }
@@ -542,22 +542,22 @@ function getSubscriptionPlanSelection(subscription = getCurrentSubscription()) {
   }
   return normalizePlanSelection({
     id: planId,
-    label: subscription?.planLabel || "Free",
+    label: subscription?.planLabel || subscription?.plan || "Free",
     extras: subscription?.extras || {},
   });
 }
 
 function formatPlanExtrasList(extras = {}) {
   const list = [];
-  if (extras.contract_enabled) list.push("Contrato activo");
-  if (extras.bet_mode) {
+  if (extras.contract_enabled || extras.contract) list.push("Contrato");
+  if (extras.bet_mode || extras.bet) {
     const betAmount = Number(extras.bet_amount || 0);
     list.push(betAmount > 0 ? `Apuesta $${betAmount.toLocaleString("es-MX")}` : "Apuesta");
   }
   if (extras.diet_basic) list.push("Dieta Basica");
   if (extras.diet_plus) list.push("Dieta Pro");
-  if (extras.challenge_type) list.push(`Reto ${String(extras.challenge_type).trim()}`);
-  if (!list.length && extras.nutrition_plan) list.push(`Nutricion ${String(extras.nutrition_plan).toUpperCase()}`);
+  if (extras.challenge_type) list.push(`Tipo de reto: ${String(extras.challenge_type).trim()}`);
+  if (extras.nutrition_plan) list.push(`Nutricion ${String(extras.nutrition_plan).toUpperCase()}`);
   return list.filter(Boolean);
 }
 
@@ -615,6 +615,96 @@ function persistPlanSelection(input) {
     extras: normalized.extras,
   });
   saveJsonArray(PLAN_HISTORY_KEY, history.slice(-40));
+  return normalized;
+}
+
+function normalizeSubscriptionRecord(subscription) {
+  if (!subscription || typeof subscription !== "object") {
+    return null;
+  }
+  const selection = normalizePlanSelection({
+    id: subscription.planId || subscription.plan || subscription.planLabel || subscription.label || "",
+    label: subscription.planLabel || subscription.plan || subscription.label || "",
+    extras: subscription.extras || subscription.planExtras || {},
+  });
+  return {
+    ...subscription,
+    planId: selection.id,
+    plan: subscription.plan || selection.label,
+    planLabel: subscription.planLabel || selection.label,
+    planExtras: selection.extras,
+    extras: selection.extras,
+    status: String(subscription.status || subscription.subscriptionStatus || "").trim().toLowerCase(),
+  };
+}
+
+function syncPlanStateFromSubscription(subscription) {
+  const normalized = normalizeSubscriptionRecord(subscription);
+  if (!normalized) {
+    return null;
+  }
+  const selection = normalizePlanSelection({
+    id: normalized.planId,
+    label: normalized.planLabel,
+    extras: normalized.extras,
+  });
+  localStorage.setItem(PLAN_SELECTION_KEY, JSON.stringify(selection));
+
+  const extrasLine = formatPlanExtrasList(selection.extras).join(" | ");
+  const current = getCurrentUser();
+  if (current?.id) {
+    const users = readJsonArray(USERS_KEY);
+    const nextUsers = users.map((user) =>
+      user.id === current.id
+        ? {
+            ...user,
+            plan: selection.label,
+            planId: selection.id,
+            planExtras: selection.extras,
+            subscriptionStatus: normalized.status || user.subscriptionStatus || "",
+            subscriptionPlanLabel: normalized.planLabel || selection.label,
+            updatedAt: new Date().toISOString(),
+          }
+        : user
+    );
+    saveJsonArray(USERS_KEY, nextUsers);
+  }
+
+  const draftRaw = localStorage.getItem(REG_DRAFT_KEY);
+  if (draftRaw) {
+    try {
+      const draft = JSON.parse(draftRaw);
+      if (draft && typeof draft === "object") {
+        draft.plan = selection.label;
+        draft.extra_diet_basic = selection.extras.diet_basic ? "on" : "";
+        draft.extra_diet_plus = selection.extras.diet_plus ? "on" : "";
+        draft.extras_plan = extrasLine;
+        if (selection.extras.challenge_type) {
+          draft.modo_especial = selection.extras.challenge_type;
+        }
+        saveRegDraft(draft);
+      }
+    } catch {
+      // ignore invalid draft cache
+    }
+  }
+
+  const profileRaw = localStorage.getItem(REG_PROFILE_KEY);
+  if (profileRaw) {
+    try {
+      const profile = JSON.parse(profileRaw);
+      if (profile && typeof profile === "object") {
+        profile.plan = selection.label;
+        profile.planId = selection.id;
+        profile.planExtras = selection.extras;
+        profile.extras_plan = extrasLine;
+        localStorage.setItem(REG_PROFILE_KEY, JSON.stringify(profile));
+      }
+    } catch {
+      // ignore invalid profile cache
+    }
+  }
+
   return normalized;
 }
 
@@ -1599,10 +1689,13 @@ const renderUserProgressPage = async () => {
 
   if (premiumPanel) {
     const caps = getPlanCapabilities();
+    const subscription = getCurrentSubscription();
+    const extras = subscription ? formatPlanExtrasList(subscription.extras || {}) : [];
     premiumPanel.innerHTML = `
       <div class="admin-item">
         <strong>Plan activo: ${caps.plan.label}</strong>
         <p>${caps.plan.price}</p>
+        <p>Extras activos: ${extras.length ? extras.join(", ") : "Ninguno"}</p>
         <p>${caps.aiAdaptive ? "IA adaptativa habilitada." : "IA adaptativa bloqueada en este plan."}</p>
       </div>
     `;
@@ -2980,6 +3073,18 @@ function initPlanSelectionPage() {
   if (dietPlus) dietPlus.checked = Boolean(current.extras?.diet_plus);
   renderSummary();
   getBillingTarget().then(() => renderSummary());
+  const currentUser = getCurrentUser();
+  if (currentUser?.id) {
+    syncCurrentSubscriptionFromApi()
+      .then(() => {
+        const refreshed = getPlanSelection();
+        if (dietBasic) dietBasic.checked = Boolean(refreshed.extras?.diet_basic);
+        if (dietPlus) dietPlus.checked = Boolean(refreshed.extras?.diet_plus);
+        renderSummary();
+        applyPlanNavVisibility();
+      })
+      .catch(() => {});
+  }
 }
 
 function initAdminPaymentsPanel() {
