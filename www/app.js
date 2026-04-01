@@ -1640,7 +1640,7 @@ const buildFeaturedAssignmentCard = ({ type = "Rutina", title = "", body = "", m
   const ctaLabel = accent === "diet" ? "Abrir nutricion" : "Ir al check-in de hoy";
   const pulseLabel = accent === "diet" ? "Come con estructura" : "Entrena sin improvisar";
   const missionLabel = accent === "diet" ? "Objetivo semanal" : "Mision semanal";
-  const missionValue = highlights[0] || intro || "Cumplir el bloque asignado completo.";
+  const missionValue = highlights.find((line) => String(line || "").trim() && String(line || "").trim() !== intro) || "";
   const muscleBar = muscles.length
     ? `<div class="rcard-muscle-bar">${muscles.map((m) => `<span class="rcard-muscle-pill">${m}</span>`).join("")}</div>`
     : "";
@@ -1712,10 +1712,14 @@ const buildFeaturedAssignmentCard = ({ type = "Rutina", title = "", body = "", m
       </div>
       <h3>${escHtml(title || type)}</h3>
       <p class="featured-assignment-intro">${escHtml(intro)}</p>
-      <div class="featured-assignment-mission">
-        <span>${escHtml(missionLabel)}</span>
-        <strong>${escHtml(missionValue)}</strong>
-      </div>
+      ${
+        missionValue
+          ? `<div class="featured-assignment-mission">
+              <span>${escHtml(missionLabel)}</span>
+              <strong>${escHtml(missionValue)}</strong>
+            </div>`
+          : ""
+      }
       ${
         highlights.length
           ? `<div class="featured-assignment-points">${highlights
@@ -1824,19 +1828,23 @@ const renderUserRoutinesPage = async () => {
   }
   container.innerHTML = cards.join("");
 
-  // Event delegation for weekly day tabs
-  if (!container.dataset.rwdBound) {
-    container.dataset.rwdBound = "1";
-    container.addEventListener("click", (e) => {
-      const tab = e.target.closest("[data-rwd-day]");
-      if (!tab) return;
-      const wrap = tab.closest(".rwd-wrap");
-      if (!wrap) return;
-      const day = tab.dataset.rwdDay;
-      wrap.querySelectorAll(".rwd-tab").forEach((t) => t.classList.toggle("rwd-tab-active", t.dataset.rwdDay === day));
-      wrap.querySelectorAll(".rwd-pane").forEach((p) => p.classList.toggle("rwd-pane-active", p.dataset.rwdPane === day));
-    });
+  bindWeeklyDayTabs(container);
+};
+
+const bindWeeklyDayTabs = (container) => {
+  if (!container || container.dataset.rwdBound) {
+    return;
   }
+  container.dataset.rwdBound = "1";
+  container.addEventListener("click", (e) => {
+    const tab = e.target.closest("[data-rwd-day]");
+    if (!tab) return;
+    const wrap = tab.closest(".rwd-wrap");
+    if (!wrap) return;
+    const day = tab.dataset.rwdDay;
+    wrap.querySelectorAll(".rwd-tab").forEach((t) => t.classList.toggle("rwd-tab-active", t.dataset.rwdDay === day));
+    wrap.querySelectorAll(".rwd-pane").forEach((p) => p.classList.toggle("rwd-pane-active", p.dataset.rwdPane === day));
+  });
 };
 
 const renderUserProgressPage = async () => {
@@ -2035,6 +2043,7 @@ const renderUserDietPage = async () => {
     dietCards.push(`<div class="admin-item"><p>Sin plan cargado por nutricionista.</p></div>`);
   }
   planList.innerHTML = dietCards.join("");
+  bindWeeklyDayTabs(planList);
 
   const dateKey = new Date().toISOString().slice(0, 10);
   const raw = localStorage.getItem(`discipline_nutrition_${dateKey}`);
