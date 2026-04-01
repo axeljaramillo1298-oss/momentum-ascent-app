@@ -1086,6 +1086,9 @@ const lockAdminIfNeeded = () => {
     }
     return;
   }
+  if (isAdminPage && hasActiveGodSession()) {
+    return;
+  }
   if (!isAdminPage || getRoleMode() === "admin") {
     return;
   }
@@ -1508,6 +1511,40 @@ const renderUserRoutineFeed = async () => {
   container.innerHTML = [...routineCards, ...nutritionCards].join("");
 };
 
+const splitPlanBlocks = (text) =>
+  String(text || "")
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+const buildFeaturedAssignmentCard = ({ type = "Rutina", title = "", body = "", meta = "", accent = "routine" }) => {
+  const lines = splitPlanBlocks(body);
+  const intro = lines[0] || body || "";
+  const highlights = lines.slice(1, 5);
+  return `
+    <article class="featured-assignment-card ${escHtml(accent)}">
+      <div class="featured-assignment-glow"></div>
+      <div class="featured-assignment-head">
+        <span class="featured-assignment-kicker">${escHtml(type)}</span>
+        <span class="featured-assignment-chip">Listo para hoy</span>
+      </div>
+      <h3>${escHtml(title || type)}</h3>
+      <p class="featured-assignment-intro">${escHtml(intro)}</p>
+      ${
+        highlights.length
+          ? `<div class="featured-assignment-points">${highlights
+              .map((line) => `<div class="featured-assignment-point"><span></span><p>${escHtml(line)}</p></div>`)
+              .join("")}</div>`
+          : ""
+      }
+      <div class="featured-assignment-footer">
+        <strong>${escHtml(meta || "Asignado por tu coach")}</strong>
+        <span>Ejecuta hoy y registra check-in</span>
+      </div>
+    </article>
+  `;
+};
+
 const renderUserRoutinesPage = async () => {
   const container = document.getElementById("user-routines-page-feed");
   if (!container) {
@@ -1530,52 +1567,50 @@ const renderUserRoutinesPage = async () => {
   }
   const visibleRoutines = caps.plan.id === "free" ? routines.slice(0, 1) : routines;
 
-  if (!visibleRoutines.length) {
-    container.innerHTML = `
-      <article class="entry-card">
-        <h3>Sin rutinas publicadas</h3>
-        <p>Tu entrenador cargara rutinas desde el panel admin.</p>
-      </article>
-    `;
-  } else {
-    container.innerHTML = visibleRoutines
-      .slice()
-      .reverse()
-      .map(
-        (r) => `
-        <article class="entry-card">
-          <h3>${escHtml(r.title)}</h3>
-          <p>${escHtml(r.target)}</p>
-          <span class="reg-hint">${escHtml(r.duration)}</span>
-        </article>
-      `
-      )
-      .join("");
-  }
-
   const canShowAssignedRoutine = Boolean(personal?.routine) && (caps.personalRoutine || caps.challengeCore || isSubscriptionActive(getCurrentSubscription()));
+  const cards = [];
   if (canShowAssignedRoutine) {
-    container.insertAdjacentHTML(
-      "afterbegin",
-      `
-      <article class="entry-card">
-        <h3>${caps.challengeType ? "Tu rutina de reto" : "Tu rutina personalizada"}</h3>
-        <p>${personal.routine}</p>
-        <span class="reg-hint">Asignada por tu coach • ${new Date(personal.updatedAt).toLocaleDateString("es-MX")}</span>
-      </article>
-    `
+    cards.push(
+      buildFeaturedAssignmentCard({
+        type: caps.challengeType ? "Rutina de reto" : "Rutina personalizada",
+        title: caps.challengeType ? `Hoy toca: ${caps.challengeType}` : "Tu bloque principal",
+        body: personal.routine,
+        meta: `Asignada por tu coach • ${new Date(personal.updatedAt).toLocaleDateString("es-MX")}`,
+        accent: "routine",
+      })
     );
   } else if (personal?.routine && !canShowAssignedRoutine) {
-    container.insertAdjacentHTML(
-      "afterbegin",
-      `
+    cards.push(`
       <article class="entry-card">
         <h3>Rutina personalizada bloqueada</h3>
         <p>Tu asignacion existe, pero tu acceso premium no esta activo todavia.</p>
       </article>
-    `
+    `);
+  }
+  if (!visibleRoutines.length) {
+    cards.push(`
+      <article class="entry-card">
+        <h3>Sin rutinas publicadas</h3>
+        <p>Tu entrenador cargara rutinas desde el panel admin.</p>
+      </article>
+    `);
+  } else {
+    cards.push(
+      ...visibleRoutines
+        .slice()
+        .reverse()
+        .map(
+          (r) => `
+          <article class="entry-card">
+            <h3>${escHtml(r.title)}</h3>
+            <p>${escHtml(r.target)}</p>
+            <span class="reg-hint">${escHtml(r.duration)}</span>
+          </article>
+        `
+        )
     );
   }
+  container.innerHTML = cards.join("");
 };
 
 const renderUserProgressPage = async () => {
@@ -1746,27 +1781,33 @@ const renderUserDietPage = async () => {
       console.warn("[api] fallback local:", err?.message || err);
     }
   }
-  planList.innerHTML = plans.length
-    ? plans
+  const canShowAssignedDiet = Boolean(personal?.diet) && (caps.dietPersonalized || caps.challengeCore || isSubscriptionActive(getCurrentSubscription()));
+  const dietCards = [];
+  if (canShowAssignedDiet) {
+    dietCards.push(
+      buildFeaturedAssignmentCard({
+        type: caps.challengeType ? "Dieta de reto" : "Dieta personalizada",
+        title: "Tu mapa nutricional",
+        body: personal.diet,
+        meta: personal.message || "Ajustada para tu objetivo actual",
+        accent: "diet",
+      })
+    );
+  } else if (personal?.diet && !canShowAssignedDiet) {
+    dietCards.push(`<div class="admin-item"><strong>Dieta personalizada bloqueada</strong><p>Tu asignacion existe, pero tu acceso premium no esta activo todavia.</p></div>`);
+  }
+  if (plans.length) {
+    dietCards.push(
+      ...plans
         .slice()
         .reverse()
         .slice(0, 2)
         .map((p) => `<div class="admin-item"><strong>${escHtml(p.title)}</strong><p>${escHtml(p.focus)}</p><p>${escHtml(p.note)}</p></div>`)
-        .join("")
-    : `<div class="admin-item"><p>Sin plan cargado por nutricionista.</p></div>`;
-
-  const canShowAssignedDiet = Boolean(personal?.diet) && (caps.dietPersonalized || caps.challengeCore || isSubscriptionActive(getCurrentSubscription()));
-  if (canShowAssignedDiet) {
-    planList.insertAdjacentHTML(
-      "afterbegin",
-      `<div class="admin-item"><strong>${caps.challengeType ? "Tu dieta de reto" : "Tu dieta personalizada"}</strong><p>${escHtml(personal.diet)}</p><p>${escHtml(personal.message || "")}</p></div>`
     );
-  } else if (personal?.diet && !canShowAssignedDiet) {
-    planList.insertAdjacentHTML(
-      "afterbegin",
-      `<div class="admin-item"><strong>Dieta personalizada bloqueada</strong><p>Tu asignacion existe, pero tu acceso premium no esta activo todavia.</p></div>`
-    );
+  } else {
+    dietCards.push(`<div class="admin-item"><p>Sin plan cargado por nutricionista.</p></div>`);
   }
+  planList.innerHTML = dietCards.join("");
 
   const dateKey = new Date().toISOString().slice(0, 10);
   const raw = localStorage.getItem(`discipline_nutrition_${dateKey}`);
