@@ -44,9 +44,6 @@ const applyAppIcon = () => {
 };
 
 const showBrandSplash = () => {
-  if (IS_NATIVE_APP) {
-    return;
-  }
   const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
   const isLoginPage = page === "registro.html" && (!window.location.hash || window.location.hash === "#login");
   const isAppOpen = page === "" || page === "index.html";
@@ -74,7 +71,6 @@ const showBrandSplash = () => {
 
 applyBranding();
 applyAppIcon();
-document.body.classList.toggle("native-app", IS_NATIVE_APP);
 showBrandSplash();
 
 const applyTheme = (theme) => {
@@ -870,6 +866,14 @@ const apiPost = (path, body) => apiRequest(path, { method: "POST", body });
 const initHomeGodEntry = () => {
   const page = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
   if (page !== "index.html" && page !== "") {
+    return;
+  }
+  const host = String(window.location.hostname || "").trim().toLowerCase();
+  const exposeSpecialAccess =
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    window.location.search.includes("god=1");
+  if (!exposeSpecialAccess) {
     return;
   }
   if (document.getElementById("home-god-fab")) {
@@ -8391,7 +8395,6 @@ const initGamingDashboard = () => {
 // ── BOOT ALL NEW FEATURES ─────────────────────────────────────────
 // ── NAV THEME TOGGLE BUTTON ───────────────────────────────────────
 (() => {
-  if (IS_NATIVE_APP) return;
   const btn   = document.getElementById("nav-theme-btn");
   const icon  = document.getElementById("nav-theme-icon");
   const label = document.getElementById("nav-theme-label");
@@ -8424,7 +8427,6 @@ renderProfileHeader();
 
 // ── GSAP animations (lazy-loaded, page-aware) ─────────────────────
 (function () {
-  if (IS_NATIVE_APP) return;
   var base = "";
   var cs = document.currentScript;
   if (cs && cs.src) base = cs.src.replace(/app\.js[^/]*$/, "");
@@ -8433,5 +8435,3 @@ renderProfileHeader();
   s.defer = true;
   document.body.appendChild(s);
 })();
-const CAPACITOR_PLATFORM = window.Capacitor?.getPlatform?.();
-const IS_NATIVE_APP = Boolean(window.Capacitor?.isNativePlatform?.() || (CAPACITOR_PLATFORM && CAPACITOR_PLATFORM !== "web"));
