@@ -868,14 +868,6 @@ const initHomeGodEntry = () => {
   if (page !== "index.html" && page !== "") {
     return;
   }
-  const host = String(window.location.hostname || "").trim().toLowerCase();
-  const exposeSpecialAccess =
-    host === "localhost" ||
-    host === "127.0.0.1" ||
-    window.location.search.includes("god=1");
-  if (!exposeSpecialAccess) {
-    return;
-  }
   if (document.getElementById("home-god-fab")) {
     return;
   }
@@ -885,7 +877,7 @@ const initHomeGodEntry = () => {
   fab.id = "home-god-fab";
   fab.className = "home-god-fab";
   fab.setAttribute("aria-label", "Acceso especial");
-  fab.innerHTML = `<span></span>`;
+  fab.innerHTML = `<span class="home-god-fab-core" aria-hidden="true"></span><strong>Modo Dios</strong>`;
 
   const modal = document.createElement("div");
   modal.id = "home-god-modal";
@@ -910,7 +902,12 @@ const initHomeGodEntry = () => {
     </div>
   `;
 
-  document.body.appendChild(fab);
+  const mountTarget =
+    document.querySelector(".home-v2-footer-banner") ||
+    document.querySelector(".home-v2-frame") ||
+    document.body;
+
+  mountTarget.appendChild(fab);
   document.body.appendChild(modal);
 
   const closeBtn = modal.querySelector(".home-god-close");

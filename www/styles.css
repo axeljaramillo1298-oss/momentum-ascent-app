@@ -9296,11 +9296,47 @@ select {
   animation: homeGodPulse 2.4s ease-in-out infinite;
 }
 
-.home-god-fab span {
+.home-god-fab span,
+.home-god-fab .home-god-fab-core {
   display: block;
   width: 100%;
   height: 100%;
   border-radius: 999px;
+}
+
+.home-god-fab strong {
+  display: none;
+}
+
+.home-v2-footer-banner .home-god-fab {
+  position: static;
+  right: auto;
+  bottom: auto;
+  width: auto;
+  min-width: 180px;
+  height: 52px;
+  padding: 0 18px 0 12px;
+  margin: 20px auto 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: 999px;
+}
+
+.home-v2-footer-banner .home-god-fab .home-god-fab-core {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+}
+
+.home-v2-footer-banner .home-god-fab strong {
+  display: block;
+  color: #1a0d03;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
 @keyframes homeGodPulse {
