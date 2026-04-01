@@ -9313,14 +9313,14 @@ select {
   right: auto;
   bottom: auto;
   width: auto;
-  min-width: 180px;
+  width: 52px;
+  min-width: 52px;
   height: 52px;
-  padding: 0 18px 0 12px;
+  padding: 0;
   margin: 20px auto 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
   border-radius: 999px;
 }
 

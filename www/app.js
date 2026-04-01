@@ -877,7 +877,7 @@ const initHomeGodEntry = () => {
   fab.id = "home-god-fab";
   fab.className = "home-god-fab";
   fab.setAttribute("aria-label", "Acceso especial");
-  fab.innerHTML = `<span class="home-god-fab-core" aria-hidden="true"></span><strong>Modo Dios</strong>`;
+  fab.innerHTML = `<span class="home-god-fab-core" aria-hidden="true"></span>`;
 
   const modal = document.createElement("div");
   modal.id = "home-god-modal";
