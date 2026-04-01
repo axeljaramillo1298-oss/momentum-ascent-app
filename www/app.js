@@ -5125,7 +5125,7 @@ const saveDisciplineState = () => {
   localStorage.setItem(DISCIPLINE_STATE_KEY, JSON.stringify(disciplineState));
 };
 
-const resolveLevel = (xp) => {
+function resolveLevel(xp) {
   const levelNumber = Math.max(1, Math.min(50, Math.floor((Number(xp || 0)) / 120) + 1));
   let tier = "Initiate";
   if (levelNumber >= 50) tier = "Elite";
@@ -5133,28 +5133,28 @@ const resolveLevel = (xp) => {
   else if (levelNumber >= 10) tier = "Relentless";
   else if (levelNumber >= 5) tier = "Consistent";
   return { levelNumber, label: `Level ${levelNumber} - ${tier}` };
-};
+}
 
-const getCompliancePct = (state) => {
+function getCompliancePct(state) {
   const totalDays = Number(state?.totalDays || 0);
   const completed = Number(state?.completedDays || 0);
   return totalDays ? Math.round((completed / totalDays) * 100) : 0;
-};
+}
 
-const getDisciplineScore = (state) => {
+function getDisciplineScore(state) {
   const compliance = getCompliancePct(state);
   const streak = Number(state?.streak || 0);
   const avgResponse = state?.responseCount ? Math.round((state.responseSecondsTotal || 0) / state.responseCount) : 600;
   const responseFactor = Math.max(0, Math.min(100, 100 - Math.round(avgResponse / 6)));
   return Math.max(0, Math.min(100, Math.round(compliance * 0.55 + Math.min(25, streak) + responseFactor * 0.2)));
-};
+}
 
-const getAscentIndex = (state) => {
+function getAscentIndex(state) {
   const score = getDisciplineScore(state);
   const streak = Number(state?.streak || 0);
   const xp = Number(state?.xp || 0);
   return Math.round(score * 6 + streak * 8 + xp * 0.4);
-};
+}
 
 function getUserGoal() {
   const raw = localStorage.getItem(REG_PROFILE_KEY);
