@@ -2985,6 +2985,7 @@ function initGodModePanel() {
   const billingFeedback = document.getElementById("god-billing-feedback");
   const setRoleBtn = document.getElementById("god-set-role-btn");
   const grantPlanBtn = document.getElementById("god-grant-plan-btn");
+  const deleteUserBtn = document.getElementById("god-delete-user-btn");
   const userFeedback = document.getElementById("god-user-feedback");
   const targetUser = document.getElementById("god-target-user");
   const targetRole = document.getElementById("god-target-role");
@@ -3006,7 +3007,7 @@ function initGodModePanel() {
   const usersPaid = document.getElementById("god-users-paid");
   const usersPending = document.getElementById("god-users-pending");
 
-  if (!loginBtn && !logoutBtn && !saveBillingBtn && !setRoleBtn && !grantPlanBtn) {
+  if (!loginBtn && !logoutBtn && !saveBillingBtn && !setRoleBtn && !grantPlanBtn && !deleteUserBtn) {
     return;
   }
 
@@ -3083,6 +3084,7 @@ function initGodModePanel() {
               <button class="ghost" type="button" data-god-action="role-admin" data-god-user="${escHtml(email)}">Admin</button>
               <button class="ghost" type="button" data-god-action="role-user" data-god-user="${escHtml(email)}">User</button>
               <button class="primary" type="button" data-god-action="grant-coach" data-god-user="${escHtml(email)}">Coach+Humano</button>
+              <button class="ghost" type="button" data-god-action="delete-user" data-god-user="${escHtml(email)}">Eliminar</button>
             </div>
           </article>
         `;
@@ -3259,6 +3261,33 @@ function initGodModePanel() {
     });
   }
 
+  if (deleteUserBtn && !deleteUserBtn.dataset.bound) {
+    deleteUserBtn.dataset.bound = "1";
+    deleteUserBtn.addEventListener("click", async () => {
+      if (!hasGod()) {
+        setFeedback(userFeedback, "Activa Modo Dios primero.", "error");
+        return;
+      }
+      const userId = targetUser?.value?.trim().toLowerCase();
+      if (!userId) {
+        setFeedback(userFeedback, "Carga o escribe el email del usuario.", "error");
+        return;
+      }
+      const confirmed = window.confirm(`Vas a eliminar a ${userId}. Esta accion no se puede deshacer. Continuar?`);
+      if (!confirmed) {
+        return;
+      }
+      try {
+        await apiPost("/god/users/delete", { userId });
+        if (targetUser) targetUser.value = "";
+        setFeedback(userFeedback, `Usuario eliminado: ${userId}.`, "success");
+        await loadGodUsers(usersSearch?.value || "");
+      } catch {
+        setFeedback(userFeedback, "No se pudo eliminar el usuario.", "error");
+      }
+    });
+  }
+
   if (usersSearch && !usersSearch.dataset.bound) {
     usersSearch.dataset.bound = "1";
     usersSearch.addEventListener("input", () => {
@@ -3310,6 +3339,21 @@ function initGodModePanel() {
           await loadGodUsers(usersSearch?.value || "");
         } catch {
           setFeedback(userFeedback, "No se pudo otorgar plan.", "error");
+        }
+        return;
+      }
+      if (action === "delete-user") {
+        const confirmed = window.confirm(`Vas a eliminar a ${userId}. Esta accion no se puede deshacer. Continuar?`);
+        if (!confirmed) {
+          return;
+        }
+        try {
+          await apiPost("/god/users/delete", { userId });
+          if (targetUser) targetUser.value = "";
+          setFeedback(userFeedback, `Usuario eliminado: ${userId}.`, "success");
+          await loadGodUsers(usersSearch?.value || "");
+        } catch {
+          setFeedback(userFeedback, "No se pudo eliminar el usuario.", "error");
         }
       }
     });
