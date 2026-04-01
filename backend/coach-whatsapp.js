@@ -1,4 +1,4 @@
-const { sendWhatsAppText } = require("./whatsapp");
+const { sendWhatsAppText, sendWhatsAppTemplate, getWhatsAppConfig } = require("./whatsapp");
 
 const QUESTIONS = [
   { key: "goal", text: "1/4 Objetivo principal? (bajar grasa, ganar musculo, recomposicion)." },
@@ -36,6 +36,34 @@ const buildWelcome = (name) => {
   return `Hola ${clean}. Soy tu coach de Momentum Ascent. Aqui no hay excusas, hay ejecucion diaria.`;
 };
 
+async function sendOnboardingKickoff(user) {
+  const cfg = getWhatsAppConfig();
+  const phone = normalizePhone(user?.whatsapp);
+  const sent = [];
+  if (cfg.onboardingTemplateName) {
+    sent.push(
+      normalizeSendResult(
+        await sendWhatsAppTemplate({
+          to: phone,
+          name: cfg.onboardingTemplateName,
+          languageCode: cfg.onboardingTemplateLang || "es_MX",
+        })
+      )
+    );
+  } else {
+    sent.push(normalizeSendResult(await sendWhatsAppText({ to: phone, body: buildWelcome(user?.name) })));
+  }
+  sent.push(
+    normalizeSendResult(
+      await sendWhatsAppText({
+        to: phone,
+        body: `${QUESTIONS[0].text}\nResponde directo por este chat. Tienes 10 minutos para arrancar fuerte.`,
+      })
+    )
+  );
+  return sent;
+}
+
 async function startCoachOnboardingForUser(user, db) {
   if (!user || !db) return { ok: false, reason: "missing_input" };
   const userId = safeStr(user.id || user.email).toLowerCase();
@@ -55,16 +83,7 @@ async function startCoachOnboardingForUser(user, db) {
     answers: existing?.answers || {},
   });
 
-  const sent = [];
-  sent.push(normalizeSendResult(await sendWhatsAppText({ to: phone, body: buildWelcome(user.name) })));
-  sent.push(
-    normalizeSendResult(
-      await sendWhatsAppText({
-      to: phone,
-      body: `${QUESTIONS[0].text}\nResponde directo por este chat. Tienes 10 minutos para arrancar fuerte.`,
-      })
-    )
-  );
+  const sent = await sendOnboardingKickoff(user);
   const providerIssues = sent.some((item) => item && item.skipped && item.reason === "whatsapp_unavailable");
   return providerIssues
     ? { ok: true, skipped: true, reason: "whatsapp_unavailable", sent }

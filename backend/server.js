@@ -4,7 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const crypto = require("node:crypto");
 const { generateAiPlan, buildFallbackPlan } = require("./ai");
-const { sendWhatsAppText } = require("./whatsapp");
+const { sendWhatsAppText, getWhatsAppConfigStatus } = require("./whatsapp");
 const { startCoachOnboardingForUser, handleIncomingCoachMessage } = require("./coach-whatsapp");
 const {
   DB_META,
@@ -827,6 +827,26 @@ app.post("/admin/coach/nudge", requireAdmin, async (req, res) => {
     res.json({ ok: true, userId, to, result });
   } catch (error) {
     res.status(400).json({ ok: false, error: String(error.message || "coach_nudge_failed") });
+  }
+});
+
+app.get("/admin/whatsapp-status", requireAdmin, async (req, res) => {
+  try {
+    res.json({ ok: true, whatsapp: getWhatsAppConfigStatus() });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "whatsapp_status_failed") });
+  }
+});
+
+app.post("/admin/whatsapp/test", requireAdmin, async (req, res) => {
+  try {
+    const to = String(req.body?.to || "").trim();
+    const body = String(req.body?.body || "Prueba tecnica desde Momentum Ascent.").trim();
+    if (!to) throw new Error("phone_required");
+    const result = await sendWhatsAppText({ to, body });
+    res.json({ ok: true, result });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: String(error.message || "whatsapp_test_failed") });
   }
 });
 
