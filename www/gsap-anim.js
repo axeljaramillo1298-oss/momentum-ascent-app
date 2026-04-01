@@ -165,12 +165,9 @@
   // ── HOME / LANDING ────────────────────────────────────────────────
   function initHome(gsap, ScrollTrigger) {
     // Hero headline
-    var heroTargets = document.querySelectorAll(".hero-title, .hero-sub, .hero-cta");
-    if (heroTargets.length) {
-      gsap.from(heroTargets, {
-        y: 30, opacity: 0, duration: 0.6, stagger: 0.15, delay: 0.2, ease: "power3.out"
-      });
-    }
+    gsap.from(".hero-title, .hero-sub, .hero-cta", {
+      y: 30, opacity: 0, duration: 0.6, stagger: 0.15, delay: 0.2, ease: "power3.out"
+    });
 
     if (!ScrollTrigger) return;
 

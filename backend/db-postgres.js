@@ -218,21 +218,6 @@ function getAssignedForWeek(date = new Date()) {
   return utc.toISOString().slice(0, 10);
 }
 
-function resolveAssignmentWeekMeta(record) {
-  const weekKey = safeStr(record?.weekKey);
-  const assignedForWeek = safeStr(record?.assignedForWeek);
-  if (weekKey && assignedForWeek) {
-    return { weekKey, assignedForWeek };
-  }
-  const baseDateRaw = assignedForWeek || safeStr(record?.updatedAt);
-  const baseDate = baseDateRaw ? new Date(baseDateRaw) : new Date();
-  const safeDate = Number.isNaN(baseDate.getTime()) ? new Date() : baseDate;
-  return {
-    weekKey: weekKey || getWeekKey(safeDate),
-    assignedForWeek: assignedForWeek || getAssignedForWeek(safeDate),
-  };
-}
-
 async function ensureUserRecord(userId, opts = {}) {
   const id = normalizeEmail(userId);
   if (!id) {
@@ -441,15 +426,14 @@ async function saveAssignments(payload) {
       );
       const existingRes = await client.query(
         `
-        SELECT week_key AS "weekKey", assigned_for_week AS "assignedForWeek", updated_at AS "updatedAt"
+        SELECT week_key AS "weekKey"
         FROM assignments
         WHERE user_id = $1
         LIMIT 1
         `,
         [userId]
       );
-      const existingMeta = resolveAssignmentWeekMeta(existingRes.rows[0] || {});
-      const existingWeekKey = safeStr(existingMeta.weekKey);
+      const existingWeekKey = safeStr(existingRes.rows[0]?.weekKey);
       if (existingWeekKey === weekKey && !force) {
         throw new Error(`assignment_already_exists_for_week:${userId}:${weekKey}`);
       }
@@ -495,16 +479,10 @@ async function getFeed(userId) {
       [id]
     ),
   ]);
-  const normalizedAssignment = assignment.rows[0]
-    ? {
-        ...assignment.rows[0],
-        ...resolveAssignmentWeekMeta(assignment.rows[0]),
-      }
-    : null;
   return {
     routines: routines.rows,
     plans: plans.rows,
-    assignment: normalizedAssignment,
+    assignment: assignment.rows[0] || null,
   };
 }
 
@@ -1121,15 +1099,7 @@ async function grantSubscription(payload) {
     end.setDate(end.getDate() + durationDays);
     endAt = end.toISOString();
   }
-  const existing = await getUserByEmail(userId);
-  await ensureUserRecord(userId, {
-    name: safeStr(payload?.name) || existing?.name || "User",
-    role: safeStr(existing?.role) || "user",
-    plan: planLabel,
-    whatsapp: safeStr(existing?.whatsapp),
-    goal: safeStr(existing?.goal),
-    checkinSchedule: safeStr(existing?.checkin_schedule || existing?.checkinSchedule),
-  });
+  await ensureUserRecord(userId, { name: safeStr(payload?.name) || "User", role: "user", plan: planLabel });
   await pool.query(
     `
     INSERT INTO subscriptions (user_id, plan_id, plan_label, extras_json, status, start_at, end_at, updated_at)

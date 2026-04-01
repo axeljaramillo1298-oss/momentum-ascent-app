@@ -3241,7 +3241,7 @@ body.theme-female .today-plan-tier.active {
 @media (max-width: 460px) {
   body.user-panel-premium .nav-actions .ghost {
     padding: 4px 8px;
-    min-height: 40px;
+    min-height: 28px;
     font-size: 11px;
   }
 
@@ -9285,8 +9285,8 @@ select {
   position: fixed;
   right: 16px;
   bottom: max(14px, env(safe-area-inset-bottom));
-  width: 44px;
-  height: 44px;
+  width: 18px;
+  height: 18px;
   border-radius: 999px;
   border: 1px solid rgba(255, 188, 106, 0.75);
   background: radial-gradient(circle at 30% 30%, #ffd9a2, #ff9f43 60%, #7f4810);
@@ -9296,47 +9296,11 @@ select {
   animation: homeGodPulse 2.4s ease-in-out infinite;
 }
 
-.home-god-fab span,
-.home-god-fab .home-god-fab-core {
+.home-god-fab span {
   display: block;
   width: 100%;
   height: 100%;
   border-radius: 999px;
-}
-
-.home-god-fab strong {
-  display: none;
-}
-
-.home-v2-footer-banner .home-god-fab {
-  position: static;
-  right: auto;
-  bottom: auto;
-  width: auto;
-  width: 52px;
-  min-width: 52px;
-  height: 52px;
-  padding: 0;
-  margin: 20px auto 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-}
-
-.home-v2-footer-banner .home-god-fab .home-god-fab-core {
-  width: 28px;
-  height: 28px;
-  flex: 0 0 28px;
-}
-
-.home-v2-footer-banner .home-god-fab strong {
-  display: block;
-  color: #1a0d03;
-  font-size: 12px;
-  line-height: 1;
-  letter-spacing: 2px;
-  text-transform: uppercase;
 }
 
 @keyframes homeGodPulse {
@@ -10282,29 +10246,6 @@ textarea:focus {
   .bottom-nav { display: flex; }
   /* push page content above bottom nav */
   .user-panel-shell { padding-bottom: 76px !important; }
-  body.user-panel-premium .user-panel-nav {
-    justify-content: flex-end;
-    gap: 10px;
-  }
-  body.user-panel-premium .user-panel-nav .logo,
-  body.user-panel-premium .user-panel-nav .up-nav-link {
-    display: none !important;
-  }
-  body.user-panel-premium .user-panel-nav .nav-actions {
-    width: 100%;
-    justify-content: flex-end;
-    gap: 8px;
-  }
-  body.user-panel-premium .routine-prime-section,
-  body.user-panel-premium .mp-section {
-    display: none;
-  }
-}
-
-@media (max-width: 560px) {
-  .onb-row-3 {
-    grid-template-columns: 1fr;
-  }
 }
 
 .bottom-nav-item {
@@ -11007,50 +10948,6 @@ body.theme-female .user-greeting { color: rgba(234,127,176,0.9); }
 .profile-stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--text); display: block; line-height: 1; }
 .profile-stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-top: 2px; }
 
-.checkin-share-card {
-  display: grid;
-  gap: 14px;
-}
-.checkin-share-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-}
-.checkin-share-header p {
-  margin: 6px 0 0;
-  color: var(--muted);
-}
-.checkin-share-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.checkin-share-canvas {
-  width: min(100%, 320px);
-  aspect-ratio: 9 / 16;
-  border-radius: 22px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: #0d111b;
-  box-shadow: 0 18px 40px rgba(0,0,0,0.34);
-}
-.checkin-share-empty {
-  border: 1px dashed rgba(255,255,255,0.18);
-  border-radius: 18px;
-  padding: 22px 18px;
-  color: var(--muted);
-  background: rgba(255,255,255,0.03);
-}
-@media (max-width: 560px) {
-  .checkin-share-header {
-    flex-direction: column;
-  }
-  .checkin-share-canvas {
-    width: 100%;
-    max-width: 100%;
-  }
-}
-
 /* ── ROUTINE CATEGORY GRID ────────────────────────────────────────────── */
 .routine-cat-grid {
   display: grid; grid-template-columns: repeat(2,1fr); gap: 10px;
@@ -11099,9 +10996,7 @@ body.theme-female .user-greeting { color: rgba(234,127,176,0.9); }
 .home-logo-link {
   display: flex;
   align-items: center;
-  min-height: 44px;
   gap: 10px;
-  padding: 4px 0;
   text-decoration: none;
   color: inherit;
 }
@@ -13099,9 +12994,8 @@ body.user-panel-premium #today-yes:hover {
     letter-spacing: 1.8px;
   }
   .home-v2-nav .nav-login-btn {
-    min-height: 44px;
-    padding: 10px 14px;
-    font-size: 11px;
+    padding: 7px 12px;
+    font-size: 10px;
     white-space: nowrap;
   }
   .home-v2-hero {
@@ -13269,9 +13163,7 @@ body.user-panel-premium #today-yes:hover {
   .home-login-shortcut {
     margin-top: 14px;
     flex-wrap: wrap;
-    min-height: 44px;
-    align-items: center;
-    font-size: 13px;
+    font-size: 12px;
   }
   .home-v2-device-metrics { grid-template-columns: 1fr; }
   .home-v2-device-caption {
@@ -13293,9 +13185,8 @@ body.user-panel-premium #today-yes:hover {
     letter-spacing: 1.55px;
   }
   .home-v2-nav .nav-login-btn {
-    min-height: 44px;
-    padding: 10px 12px;
-    font-size: 11px;
+    padding: 7px 10px;
+    font-size: 10px;
   }
   .home-v2-hero {
     padding: 12px 8px 2px;
