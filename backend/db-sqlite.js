@@ -178,6 +178,20 @@ const getAssignedForWeek = (date = new Date()) => {
   utc.setUTCDate(utc.getUTCDate() - (day - 1));
   return utc.toISOString().slice(0, 10);
 };
+const resolveAssignmentWeekMeta = (record) => {
+  const weekKey = safeStr(record?.weekKey);
+  const assignedForWeek = safeStr(record?.assignedForWeek);
+  if (weekKey && assignedForWeek) {
+    return { weekKey, assignedForWeek };
+  }
+  const baseDateRaw = assignedForWeek || safeStr(record?.updatedAt);
+  const baseDate = baseDateRaw ? new Date(baseDateRaw) : new Date();
+  const safeDate = Number.isNaN(baseDate.getTime()) ? new Date() : baseDate;
+  return {
+    weekKey: weekKey || getWeekKey(safeDate),
+    assignedForWeek: assignedForWeek || getAssignedForWeek(safeDate),
+  };
+};
 
 const insertUserStmt = db.prepare(`
 INSERT INTO users (id, name, email, whatsapp, role, plan, goal, checkin_schedule, created_at, updated_at)
@@ -798,7 +812,8 @@ function saveAssignments(payload) {
       ensureUser({ email: userId, name: "User", role: "user" });
       ensureMetricsStmt.run(userId, now);
       const existing = getAssignmentWeekStmt.get(userId);
-      if (safeStr(existing?.weekKey) === weekKey && !force) {
+      const existingMeta = resolveAssignmentWeekMeta(existing || {});
+      if (safeStr(existingMeta.weekKey) === weekKey && !force) {
         throw new Error(`assignment_already_exists_for_week:${userId}:${weekKey}`);
       }
       upsertAssignmentStmt.run(userId, mode, routine, diet, message, weekKey, assignedForWeek, createdBy, now);
@@ -825,7 +840,8 @@ function saveAssignments(payload) {
 function getFeed(userId) {
   const routines = getFeedRoutinesStmt.all();
   const plans = getFeedPlansStmt.all();
-  const assignment = getAssignmentStmt.get(userId) || null;
+  const assignmentRaw = getAssignmentStmt.get(userId) || null;
+  const assignment = assignmentRaw ? { ...assignmentRaw, ...resolveAssignmentWeekMeta(assignmentRaw) } : null;
   return { routines, plans, assignment };
 }
 

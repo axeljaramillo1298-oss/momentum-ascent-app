@@ -135,7 +135,6 @@ const ensureThemePicker = () => {
     applyTheme(savedTheme);
   } else {
     applyTheme("male");
-    openThemeSelector();
   }
 };
 
@@ -867,6 +866,14 @@ const apiPost = (path, body) => apiRequest(path, { method: "POST", body });
 const initHomeGodEntry = () => {
   const page = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
   if (page !== "index.html" && page !== "") {
+    return;
+  }
+  const host = String(window.location.hostname || "").trim().toLowerCase();
+  const exposeSpecialAccess =
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    window.location.search.includes("god=1");
+  if (!exposeSpecialAccess) {
     return;
   }
   if (document.getElementById("home-god-fab")) {
@@ -1829,9 +1836,8 @@ const renderUserRoutinesPage = async () => {
       console.warn("[api] fallback local:", err?.message || err);
     }
   }
-  const visibleRoutines = caps.plan.id === "free" ? routines.slice(0, 1) : routines;
-
   const canShowAssignedRoutine = Boolean(personal?.routine) && (caps.personalRoutine || caps.challengeCore || isSubscriptionActive(getCurrentSubscription()));
+  const visibleRoutines = canShowAssignedRoutine ? [] : caps.plan.id === "free" ? routines.slice(0, 1) : routines;
   const cards = [];
   if (canShowAssignedRoutine) {
     cards.push(
@@ -2086,6 +2092,7 @@ const renderUserDietPage = async () => {
     }
   }
   const canShowAssignedDiet = Boolean(personal?.diet) && (caps.dietPersonalized || caps.challengeCore || isSubscriptionActive(getCurrentSubscription()));
+  const visiblePlans = canShowAssignedDiet ? [] : plans;
   const dietCards = [];
   if (canShowAssignedDiet) {
     dietCards.push(
@@ -2101,9 +2108,9 @@ const renderUserDietPage = async () => {
   } else if (personal?.diet && !canShowAssignedDiet) {
     dietCards.push(`<div class="admin-item"><strong>Dieta personalizada bloqueada</strong><p>Tu asignacion existe, pero tu acceso premium no esta activo todavia.</p></div>`);
   }
-  if (plans.length) {
+  if (visiblePlans.length) {
     dietCards.push(
-      ...plans
+      ...visiblePlans
         .slice()
         .reverse()
         .slice(0, 2)
@@ -3469,6 +3476,9 @@ const initAdminPanel = () => {
       if (finalRoutine) finalRoutine.value = plan.routineText;
       if (finalDiet) finalDiet.value = plan.dietText;
       if (finalMessage) finalMessage.value = plan.messageText;
+      if (assignFeedback) {
+        assignFeedback.textContent = "Borrador IA listo. Revisa el contenido y pulsa Asignar plan para publicarlo al usuario.";
+      }
     });
   }
 
@@ -7332,7 +7342,7 @@ const initDynamicOnboarding = () => {
     });
   });
 
-  const validateCurrentPage = () => {
+  const getValidationIssue = () => {
     for (const [key, conf] of optionsByKey.entries()) {
       if (conf.group.dataset.onbRequired !== "true") {
         continue;
@@ -7340,7 +7350,12 @@ const initDynamicOnboarding = () => {
       const value = state[key];
       const valid = Array.isArray(value) ? value.length > 0 : Boolean(value);
       if (!valid) {
-        return false;
+        const labels = {
+          horario: "Selecciona tu horario de check-in.",
+          plan: "Selecciona el plan que quieres activar.",
+          foto_checkin: "Elige si usaras check-in con foto.",
+        };
+        return labels[key] || "Completa las preguntas requeridas.";
       }
     }
     for (const input of inputs) {
@@ -7349,15 +7364,23 @@ const initDynamicOnboarding = () => {
       }
       if (!String(input.value || "").trim()) {
         input.reportValidity();
-        return false;
+        const labels = {
+          nombre: "Escribe tu nombre completo.",
+          email: "Escribe un correo valido.",
+          whatsapp: "Escribe tu WhatsApp.",
+          edad: "Escribe tu edad.",
+          peso: "Escribe tu peso.",
+          estatura: "Escribe tu estatura.",
+        };
+        return labels[input.dataset.onbInput] || "Completa los campos requeridos.";
       }
       if (!input.checkValidity()) {
         input.reportValidity();
-        return false;
+        return "Revisa los campos marcados e intenta otra vez.";
       }
     }
     if (state.deporte === "Otro" && !String(state.deporte_otro || "").trim()) {
-      return false;
+      return "Especifica tu deporte.";
     }
     if (state.deporte === "Otro" && isDuplicateSportName(state.deporte_otro, getOnboardingSportCatalog())) {
       const sportInput = document.getElementById("onbp-deporte-otro");
@@ -7366,17 +7389,26 @@ const initDynamicOnboarding = () => {
         sportInput.reportValidity();
         sportInput.setCustomValidity("");
       }
-      return false;
+      return "Ese deporte ya existe en la lista.";
     }
-    if (state.modo_especial === "Apuesta" && !String(state.apuesta || "").trim()) {
-      return false;
+    const betWrap = document.getElementById("onbp-apuesta-wrap");
+    const betVisible = betWrap && !betWrap.classList.contains("hidden-field");
+    if (betVisible && state.modo_especial === "Apuesta" && !String(state.apuesta || "").trim()) {
+      return "Indica el monto o detalle de tu apuesta.";
     }
     for (const check of checks) {
       if (check.required && !check.checked) {
-        return false;
+        return check.dataset.onbCheck === "compromiso"
+          ? "Debes aceptar el compromiso de respuesta."
+          : "Debes aceptar el aviso final para continuar.";
       }
     }
-    return true;
+    return "";
+  };
+
+  const validateCurrentPage = () => {
+    const issue = getValidationIssue();
+    return !issue;
   };
 
   const feedback =
@@ -7400,20 +7432,22 @@ const initDynamicOnboarding = () => {
 
   document.querySelectorAll("[data-onb-next]").forEach((link) => {
     link.addEventListener("click", (event) => {
-      if (validateCurrentPage()) {
+      const issue = getValidationIssue();
+      if (!issue) {
         showFeedback("");
         return;
       }
       event.preventDefault();
-      showFeedback("Completa las preguntas para continuar.");
+      showFeedback(issue);
     });
   });
 
   const finish = document.getElementById("onbp-finish");
   if (finish) {
     finish.addEventListener("click", async () => {
-      if (!validateCurrentPage()) {
-        showFeedback("Faltan datos para activar tu cuenta.");
+      const issue = getValidationIssue();
+      if (issue) {
+        showFeedback(issue);
         return;
       }
       const email = String(state.email || "").toLowerCase();
