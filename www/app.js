@@ -7673,3 +7673,14 @@ renderGamingRanking("progress-gaming-ranking");
 renderGamingRanking("hoy-gaming-ranking");
 renderMacroBars();
 renderProfileHeader();
+
+// ── GSAP animations (lazy-loaded, page-aware) ─────────────────────
+(function () {
+  var base = "";
+  var cs = document.currentScript;
+  if (cs && cs.src) base = cs.src.replace(/app\.js[^/]*$/, "");
+  var s = document.createElement("script");
+  s.src = base + "gsap-anim.js";
+  s.defer = true;
+  document.body.appendChild(s);
+})();
