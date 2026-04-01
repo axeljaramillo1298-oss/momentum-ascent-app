@@ -752,9 +752,12 @@ const resolveApiBase = () => {
   if (forced) {
     return forced.replace(/\/+$/, "");
   }
+  const capacitorPlatform = window.Capacitor?.getPlatform?.();
+  const isNativeCapacitor = Boolean(window.Capacitor?.isNativePlatform?.() || (capacitorPlatform && capacitorPlatform !== "web"));
+  if (isNativeCapacitor) {
+    return "https://api.momentumascent.com";
+  }
   if (window.location.protocol === "file:") {
-    const capacitorPlatform = window.Capacitor?.getPlatform?.();
-    const isNativeCapacitor = Boolean(window.Capacitor?.isNativePlatform?.() || (capacitorPlatform && capacitorPlatform !== "web"));
     return isNativeCapacitor ? "https://api.momentumascent.com" : "http://localhost:8787";
   }
   const host = (window.location.hostname || "").toLowerCase();
