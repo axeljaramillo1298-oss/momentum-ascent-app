@@ -53,6 +53,21 @@
           </form>
         </article>
 
+        <article class="card checkin-share-card">
+          <div class="checkin-share-header">
+            <div>
+              <h3>Tu foto con sello Momentum</h3>
+              <p>Genera una card visual para guardar o compartir con tu racha, tu nota y el look de la app.</p>
+            </div>
+            <div class="checkin-share-actions">
+              <a id="checkin-share-download" class="primary hidden-field" href="#" download>Descargar</a>
+              <button id="checkin-share-native" class="ghost hidden-field" type="button">Compartir</button>
+            </div>
+          </div>
+          <div id="checkin-share-empty" class="checkin-share-empty">Sube una foto o guarda un check-in para generar tu card visual.</div>
+          <canvas id="checkin-share-canvas" class="checkin-share-canvas" width="900" height="1600" style="display:none;"></canvas>
+        </article>
+
         <article class="card">
           <h3>Historial reciente</h3>
           <div id="user-checkin-list" class="admin-list"></div>

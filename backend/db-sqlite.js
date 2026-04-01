@@ -1173,7 +1173,16 @@ function grantSubscription(payload) {
     startAt = now;
     endAt = addDaysIso(durationDays);
   }
-  ensureUser({ email: userId, name: safeStr(payload?.name) || "User", role: "user", plan: planLabel });
+  const existing = getUserStmt.get(userId);
+  ensureUser({
+    email: userId,
+    name: safeStr(payload?.name) || existing?.name || "User",
+    role: safeStr(existing?.role) || "user",
+    plan: planLabel,
+    whatsapp: safeStr(existing?.whatsapp),
+    goal: safeStr(existing?.goal),
+    checkinSchedule: safeStr(existing?.checkin_schedule),
+  });
   upsertSubscriptionStmt.run(userId, planId, planLabel, JSON.stringify(extras), status, startAt, endAt, now);
   updateUserPlanStmt.run(planLabel, now, userId);
   return getSubscription(userId);

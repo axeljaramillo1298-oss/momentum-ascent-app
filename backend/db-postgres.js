@@ -1099,7 +1099,15 @@ async function grantSubscription(payload) {
     end.setDate(end.getDate() + durationDays);
     endAt = end.toISOString();
   }
-  await ensureUserRecord(userId, { name: safeStr(payload?.name) || "User", role: "user", plan: planLabel });
+  const existing = await getUserByEmail(userId);
+  await ensureUserRecord(userId, {
+    name: safeStr(payload?.name) || existing?.name || "User",
+    role: safeStr(existing?.role) || "user",
+    plan: planLabel,
+    whatsapp: safeStr(existing?.whatsapp),
+    goal: safeStr(existing?.goal),
+    checkinSchedule: safeStr(existing?.checkin_schedule || existing?.checkinSchedule),
+  });
   await pool.query(
     `
     INSERT INTO subscriptions (user_id, plan_id, plan_label, extras_json, status, start_at, end_at, updated_at)

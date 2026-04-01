@@ -50,6 +50,10 @@ const showBrandSplash = () => {
   if (!(isAppOpen || isLoginPage)) {
     return;
   }
+  if (sessionStorage.getItem("discipline_brand_splash_seen") === "1") {
+    return;
+  }
+  sessionStorage.setItem("discipline_brand_splash_seen", "1");
   const splash = document.createElement("div");
   splash.className = "brand-splash";
   splash.innerHTML = `
@@ -61,8 +65,8 @@ const showBrandSplash = () => {
   `;
   document.body.appendChild(splash);
   requestAnimationFrame(() => splash.classList.add("show"));
-  setTimeout(() => splash.classList.add("hide"), 4200);
-  setTimeout(() => splash.remove(), 5200);
+  setTimeout(() => splash.classList.add("hide"), 1200);
+  setTimeout(() => splash.remove(), 1700);
 };
 
 applyBranding();
@@ -161,7 +165,7 @@ const renderHomeV2ThemeContent = () => {
     setText("home-v2-item-2", "✔ Check-in enviado");
     setText("home-v2-item-3", "✓ Nutricion OK");
     setText("home-v2-item-4", "✓ Rutina 30 min");
-    setText("home-v2-device-btn", "Enviar progreso");
+    setText("home-v2-device-btn", "Empezar onboarding");
     return;
   }
   title.innerHTML = "NO TE MOTIVAMOS.<br />TE PRESIONAMOS<br />PARA QUE CUMPLAS.";
@@ -173,7 +177,7 @@ const renderHomeV2ThemeContent = () => {
   setText("home-v2-item-2", "⏰ Check-in pendiente");
   setText("home-v2-item-3", "🥗 Nutricion OK");
   setText("home-v2-item-4", "✅ Entrenamiento 30m");
-  setText("home-v2-device-btn", "Enviar check-in");
+  setText("home-v2-device-btn", "Empezar onboarding");
 };
 
 document.addEventListener("theme:changed", renderHomeV2ThemeContent);
@@ -294,6 +298,10 @@ const SUBSCRIPTION_CACHE_KEY = "discipline_subscription_cache_v1";
 const QA_DEMO_KEY = "discipline_qa_demo_v1";
 const GOD_TOKEN_KEY = "discipline_god_token_v1";
 const GOD_EXPIRES_KEY = "discipline_god_expires_v1";
+const USER_TOKEN_KEY = "discipline_user_token_v1";
+const USER_EXPIRES_KEY = "discipline_user_expires_v1";
+const ADMIN_TOKEN_KEY = "discipline_admin_token_v1";
+const ADMIN_EXPIRES_KEY = "discipline_admin_expires_v1";
 const BILLING_TARGET_CACHE_KEY = "discipline_billing_target_v1";
 const USER_SYNC_META_KEY = "discipline_user_sync_meta_v1";
 const USER_SYNC_COOLDOWN_MS = 60 * 1000;
@@ -401,7 +409,7 @@ function buildSelectionFromUserRecord(user) {
   const planId = mapLegacyPlanToId(user.planId || user.plan || user.planLabel || "");
   const extras = normalizePlanSelection({ id: planId, label: user.planLabel || user.plan || "", extras: user.planExtras || {} }).extras;
   const status = String(user.subscriptionStatus || user.status || "").trim().toLowerCase();
-  const hasPlanSignal = planId !== "free" || status === "active" || status === "pending" || Object.values(extras).some((value) => Boolean(value));
+  const hasPlanSignal = status === "active" || status === "pending";
   if (!hasPlanSignal) {
     return null;
   }
@@ -537,7 +545,8 @@ function getEffectivePlanSelection() {
 
 function getSubscriptionPlanSelection(subscription = getCurrentSubscription()) {
   const planId = String(subscription?.planId || "").trim().toLowerCase();
-  if (!planId || planId === "free") {
+  const status = String(subscription?.status || "").trim().toLowerCase();
+  if (!planId || planId === "free" || (status !== "active" && status !== "pending")) {
     return null;
   }
   return normalizePlanSelection({
@@ -819,12 +828,16 @@ const apiRequest = async (path, options = {}) => {
   try {
     const activeUserEmail = String(localStorage.getItem(CURRENT_USER_KEY) || "").trim().toLowerCase();
     const godToken = String(localStorage.getItem(GOD_TOKEN_KEY) || "").trim();
+    const userToken = String(localStorage.getItem(USER_TOKEN_KEY) || "").trim();
+    const adminToken = String(localStorage.getItem(ADMIN_TOKEN_KEY) || "").trim();
     const response = await fetch(apiUrl(path), {
       method: options.method || "GET",
       headers: {
         "Content-Type": "application/json",
         ...(activeUserEmail ? { "x-user-email": activeUserEmail } : {}),
         ...(godToken ? { "x-god-token": godToken } : {}),
+        ...(userToken ? { "x-user-token": userToken } : {}),
+        ...(adminToken ? { "x-admin-token": adminToken } : {}),
         ...(options.headers || {}),
       },
       body: options.body ? JSON.stringify(options.body) : undefined,
@@ -1039,6 +1052,52 @@ const hasActiveGodSession = () => {
   return true;
 };
 
+const hasActiveUserSession = () => {
+  const token = String(localStorage.getItem(USER_TOKEN_KEY) || "").trim();
+  if (!token) {
+    return false;
+  }
+  const expiresRaw = String(localStorage.getItem(USER_EXPIRES_KEY) || "").trim();
+  const expiresAt = Date.parse(expiresRaw);
+  if (!expiresRaw || !Number.isFinite(expiresAt)) {
+    return true;
+  }
+  if (Date.now() > expiresAt) {
+    localStorage.removeItem(USER_TOKEN_KEY);
+    localStorage.removeItem(USER_EXPIRES_KEY);
+    return false;
+  }
+  return true;
+};
+
+const hasActiveAdminSession = () => {
+  const token = String(localStorage.getItem(ADMIN_TOKEN_KEY) || "").trim();
+  if (!token) {
+    return false;
+  }
+  const expiresRaw = String(localStorage.getItem(ADMIN_EXPIRES_KEY) || "").trim();
+  const expiresAt = Date.parse(expiresRaw);
+  if (!expiresRaw || !Number.isFinite(expiresAt)) {
+    return true;
+  }
+  if (Date.now() > expiresAt) {
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
+    localStorage.removeItem(ADMIN_EXPIRES_KEY);
+    return false;
+  }
+  return true;
+};
+
+const clearAdminSession = () => {
+  localStorage.removeItem(ADMIN_TOKEN_KEY);
+  localStorage.removeItem(ADMIN_EXPIRES_KEY);
+};
+
+const clearUserSession = () => {
+  localStorage.removeItem(USER_TOKEN_KEY);
+  localStorage.removeItem(USER_EXPIRES_KEY);
+};
+
 const clearGodSession = () => {
   localStorage.removeItem(GOD_TOKEN_KEY);
   localStorage.removeItem(GOD_EXPIRES_KEY);
@@ -1046,11 +1105,14 @@ const clearGodSession = () => {
 
 const getRoleMode = () => {
   const current = getCurrentUser();
-  if (current?.role === "admin" && hasActiveGodSession()) {
+  if (current?.role === "admin" && (hasActiveAdminSession() || hasActiveGodSession())) {
     return "admin";
   }
   if (current && current?.role !== "admin" && hasActiveGodSession()) {
     clearGodSession();
+  }
+  if (current && current?.role !== "admin" && hasActiveAdminSession()) {
+    clearAdminSession();
   }
   return current?.role === "admin" ? "admin" : "user";
 };
@@ -1086,7 +1148,7 @@ const lockAdminIfNeeded = () => {
     }
     return;
   }
-  if (isAdminPage && hasActiveGodSession()) {
+  if (isAdminPage && (hasActiveGodSession() || hasActiveAdminSession())) {
     return;
   }
   if (!isAdminPage || getRoleMode() === "admin") {
@@ -1404,6 +1466,14 @@ const syncUserWithBackend = async (payload) => {
   if (response?.ok || response?.error === "rate_limited") {
     syncMeta[email] = { signature, at: now };
     localStorage.setItem(USER_SYNC_META_KEY, JSON.stringify(syncMeta));
+  }
+  if (response?.ok && response?.userSession?.token) {
+    localStorage.setItem(USER_TOKEN_KEY, String(response.userSession.token || ""));
+    localStorage.setItem(USER_EXPIRES_KEY, String(response.userSession.expiresAt || ""));
+  }
+  if (response?.ok && response?.adminSession?.token) {
+    localStorage.setItem(ADMIN_TOKEN_KEY, String(response.adminSession.token || ""));
+    localStorage.setItem(ADMIN_EXPIRES_KEY, String(response.adminSession.expiresAt || ""));
   }
   if (response?.error === "rate_limited") {
     return {
@@ -2188,6 +2258,124 @@ const renderUserCheckinList = () => {
     : `<div class="admin-item"><p>Sin fotos aun.</p></div>`;
 };
 
+const roundCanvasRect = (ctx, x, y, width, height, radius) => {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + width, y, x + width, y + height, radius);
+  ctx.arcTo(x + width, y + height, x, y + height, radius);
+  ctx.arcTo(x, y + height, x, y, radius);
+  ctx.arcTo(x, y, x + width, y, radius);
+  ctx.closePath();
+};
+
+const wrapCanvasText = (ctx, text, x, y, maxWidth, lineHeight) => {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  let line = "";
+  let currentY = y;
+  words.forEach((word) => {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      ctx.fillText(line, x, currentY);
+      line = word;
+      currentY += lineHeight;
+      return;
+    }
+    line = test;
+  });
+  if (line) {
+    ctx.fillText(line, x, currentY);
+  }
+};
+
+const drawCheckinShareCard = (entry) => {
+  const canvas = document.getElementById("checkin-share-canvas");
+  const download = document.getElementById("checkin-share-download");
+  const shareBtn = document.getElementById("checkin-share-native");
+  const empty = document.getElementById("checkin-share-empty");
+  if (!canvas || !download) {
+    return;
+  }
+  if (!entry?.image) {
+    canvas.style.display = "none";
+    download.classList.add("hidden-field");
+    shareBtn?.classList.add("hidden-field");
+    empty?.classList.remove("hidden-field");
+    return;
+  }
+  empty?.classList.add("hidden-field");
+  canvas.style.display = "block";
+  download.classList.remove("hidden-field");
+  shareBtn?.classList.remove("hidden-field");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    return;
+  }
+  const image = new Image();
+  image.onload = () => {
+    const width = canvas.width;
+    const height = canvas.height;
+    const scale = Math.max(width / image.width, height / image.height);
+    const drawWidth = image.width * scale;
+    const drawHeight = image.height * scale;
+    const offsetX = (width - drawWidth) / 2;
+    const offsetY = (height - drawHeight) / 2;
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+
+    const overlay = ctx.createLinearGradient(0, 0, 0, height);
+    overlay.addColorStop(0, "rgba(7,10,18,0.15)");
+    overlay.addColorStop(0.55, "rgba(7,10,18,0.38)");
+    overlay.addColorStop(1, "rgba(6,9,16,0.94)");
+    ctx.fillStyle = overlay;
+    ctx.fillRect(0, 0, width, height);
+
+    const accent = ctx.createRadialGradient(width * 0.78, height * 0.16, 20, width * 0.78, height * 0.16, 220);
+    accent.addColorStop(0, "rgba(255,110,62,0.92)");
+    accent.addColorStop(1, "rgba(255,110,62,0)");
+    ctx.fillStyle = accent;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = "#f7f1ea";
+    ctx.font = "700 26px Arial";
+    ctx.fillText("MOMENTUM ASCENT", 42, 62);
+    ctx.font = "600 16px Arial";
+    ctx.fillStyle = "rgba(247,241,234,0.75)";
+    ctx.fillText("DISCIPLINA VISUAL", 42, 88);
+
+    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    roundCanvasRect(ctx, 30, height - 320, width - 60, 246, 28);
+    ctx.fill();
+
+    const state = readJsonObject(DISCIPLINE_STATE_KEY);
+    const streak = Number(state.streak || 0);
+    const xp = Number(state.xp || 0);
+    const plan = getVisiblePlanSelection();
+    const stamp = entry.createdAt
+      ? new Date(entry.createdAt).toLocaleDateString("es-MX", { day: "numeric", month: "short" })
+      : new Date().toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "800 54px Arial";
+    ctx.fillText("HOY CUMPLI.", 44, height - 236);
+    ctx.font = "600 19px Arial";
+    ctx.fillStyle = "rgba(244,247,255,0.92)";
+    wrapCanvasText(ctx, String(entry.note || "Check-in completado."), 44, height - 188, width - 92, 28);
+
+    ctx.font = "700 16px Arial";
+    ctx.fillStyle = "#ff7b4d";
+    ctx.fillText(`Racha ${streak} dias`, 44, height - 84);
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.fillText(`XP ${xp}`, 212, height - 84);
+    ctx.fillText(String(plan?.label || "Momentum"), 44, height - 52);
+    ctx.fillText(stamp, width - 132, height - 52);
+
+    const dataUrl = canvas.toDataURL("image/png");
+    download.href = dataUrl;
+    download.download = `momentum-checkin-${Date.now()}.png`;
+  };
+  image.src = entry.image;
+};
+
 const initUserCheckinPage = () => {
   const form = document.getElementById("user-checkin-form");
   const fileInput = document.getElementById("user-checkin-file");
@@ -2207,6 +2395,37 @@ const initUserCheckinPage = () => {
   };
 
   let selectedImageData = "";
+
+  const bindNativeShare = () => {
+    const shareBtn = document.getElementById("checkin-share-native");
+    const canvas = document.getElementById("checkin-share-canvas");
+    if (!shareBtn || shareBtn.dataset.bound === "1") {
+      return;
+    }
+    shareBtn.dataset.bound = "1";
+    shareBtn.addEventListener("click", async () => {
+      if (!navigator.share || !canvas) {
+        showToast("Tu navegador no soporta compartir desde aqui.", "info");
+        return;
+      }
+      try {
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png", 0.95));
+        if (!blob) {
+          throw new Error("share_blob_failed");
+        }
+        const file = new File([blob], `momentum-checkin-${Date.now()}.png`, { type: "image/png" });
+        await navigator.share({
+          files: [file],
+          title: "Momentum Ascent",
+          text: "Check-in completado en Momentum Ascent.",
+        });
+      } catch (error) {
+        if (String(error?.name || "") !== "AbortError") {
+          showToast("No se pudo compartir la imagen.", "error");
+        }
+      }
+    });
+  };
 
   const readFileAsDataUrl = (file) =>
     new Promise((resolve, reject) => {
@@ -2260,9 +2479,25 @@ const initUserCheckinPage = () => {
       selectedImageData = String(reader.result || "");
       preview.src = selectedImageData;
       preview.style.display = "block";
+      drawCheckinShareCard({
+        image: selectedImageData,
+        note: noteInput?.value?.trim() || "Check-in de hoy",
+        createdAt: new Date().toISOString(),
+      });
       setFeedback("Foto lista para subir.", "success");
     };
     reader.readAsDataURL(file);
+  });
+
+  noteInput.addEventListener("input", () => {
+    if (!selectedImageData && !preview.getAttribute("src")) {
+      return;
+    }
+    drawCheckinShareCard({
+      image: selectedImageData || preview.getAttribute("src") || "",
+      note: noteInput.value.trim() || "Check-in de hoy",
+      createdAt: new Date().toISOString(),
+    });
   });
 
   form.addEventListener("submit", async (event) => {
@@ -2296,6 +2531,7 @@ const initUserCheckinPage = () => {
       createdAt: new Date().toISOString(),
     });
     saveJsonArray(CHECKIN_PHOTOS_KEY, items.slice(-15)); // max 15 fotos para no llenar localStorage
+    drawCheckinShareCard(items[items.length - 1]);
     form.reset();
     selectedImageData = "";
     preview.removeAttribute("src");
@@ -2306,6 +2542,8 @@ const initUserCheckinPage = () => {
   });
 
   renderUserCheckinList();
+  drawCheckinShareCard(getCheckinPhotosForUser(getCurrentUser()?.id || "").slice(-1)[0]);
+  bindNativeShare();
 };
 
 const renderAdminKpis = () => {
@@ -3506,9 +3744,6 @@ function initPlanSelectionPage() {
         endAt: null,
         updatedAt: new Date().toISOString(),
       };
-      if (current?.id) {
-        setCurrentSubscription(pendingSub);
-      }
       if (current?.email) {
         try {
           await syncUserWithBackend({
@@ -3526,15 +3761,22 @@ function initPlanSelectionPage() {
             method: "transfer",
             proofTarget: billing.whatsapp || defaultBillingTarget.whatsapp,
           });
+          if (!paymentRemote?.ok) {
+            throw new Error(String(paymentRemote?.error || "payment_request_failed"));
+          }
+          if (current?.id) {
+            setCurrentSubscription(pendingSub);
+          }
           await syncCurrentSubscriptionFromApi();
           if (paymentRemote?.payment?.existing) {
             setFeedback("Ya tenias una solicitud pendiente para este plan. Reutilizamos esa misma solicitud.", "success");
           } else {
             setFeedback("Solicitud enviada. Queda pendiente hasta validacion de un admin.", "success");
           }
-        } catch {
-          // fallback local
-          setFeedback("Solicitud guardada localmente. Verifica la conexion antes de reenviar.", "success");
+        } catch (error) {
+          setFeedback("No se pudo registrar la solicitud de pago. Verifica la conexion e intenta otra vez.", "error");
+          console.warn("[payments/request] error:", String(error?.message || error));
+          return;
         }
       }
       setTimeout(() => {
@@ -4157,6 +4399,10 @@ function applyPlanNavVisibility() {
 
 const USER_SESSION_KEYS = [
   CURRENT_USER_KEY,
+  USER_TOKEN_KEY,
+  USER_EXPIRES_KEY,
+  ADMIN_TOKEN_KEY,
+  ADMIN_EXPIRES_KEY,
   GOD_TOKEN_KEY,
   GOD_EXPIRES_KEY,
   SUBSCRIPTION_CACHE_KEY,
@@ -4171,9 +4417,11 @@ const USER_SESSION_KEYS = [
 
 const logoutCurrentUser = async () => {
   const godToken = String(localStorage.getItem(GOD_TOKEN_KEY) || "").trim();
-  if (godToken) {
+  const userToken = String(localStorage.getItem(USER_TOKEN_KEY) || "").trim();
+  const adminToken = String(localStorage.getItem(ADMIN_TOKEN_KEY) || "").trim();
+  if (godToken || adminToken || userToken) {
     try {
-      await apiPost("/god/logout", {});
+      await apiPost("/auth/logout", {});
     } catch {
       // ignorar si falla
     }
@@ -5358,6 +5606,18 @@ if (loginForm) {
       // Guardar usuario en local solo después de validación exitosa
       hydrateUserCacheFromApi(remote?.user);
       const resolvedRole = remote?.user?.role === "admin" ? "admin" : "user";
+      if (remote?.userSession?.token) {
+        localStorage.setItem(USER_TOKEN_KEY, String(remote.userSession.token || ""));
+        localStorage.setItem(USER_EXPIRES_KEY, String(remote.userSession.expiresAt || ""));
+      } else {
+        clearUserSession();
+      }
+      if (resolvedRole === "admin" && remote?.adminSession?.token) {
+        localStorage.setItem(ADMIN_TOKEN_KEY, String(remote.adminSession.token || ""));
+        localStorage.setItem(ADMIN_EXPIRES_KEY, String(remote.adminSession.expiresAt || ""));
+      } else {
+        clearAdminSession();
+      }
       if (resolvedRole !== "admin") {
         clearGodSession();
       }
@@ -5775,6 +6035,12 @@ function buildPlanStatusHtml(caps) {
       notes: "Todo desbloqueado: IA + coach humano + ajustes premium y prioridad.",
       active: caps.plan.id === "coach_humano",
     },
+    {
+      title: "Retos",
+      price: "$29 / 30 dias",
+      notes: "Retos con cumplimiento, ranking, seguimiento y extras opcionales.",
+      active: caps.plan.id === "retos",
+    },
   ];
 
   const currentExtras = [...requestedExtras];
@@ -5810,7 +6076,7 @@ function buildPlanStatusHtml(caps) {
   const enabledCount = accessRows.filter((r) => r.cls === "green").length;
   const pendingCount = accessRows.filter((r) => r.cls === "pending").length;
   const blockedCount = accessRows.filter((r) => r.cls === "red").length;
-  const planLevel = caps.plan.id === "coach_humano" ? "MAXIMO" : caps.plan.id === "ai_coach" ? "PRO" : "BASE";
+  const planLevel = caps.plan.id === "coach_humano" ? "MAXIMO" : caps.plan.id === "ai_coach" ? "PRO" : caps.plan.id === "retos" ? "RETO" : "BASE";
 
   return {
     header: `

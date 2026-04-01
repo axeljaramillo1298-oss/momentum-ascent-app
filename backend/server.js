@@ -47,6 +47,7 @@ const WHATSAPP_VERIFY_TOKEN = String(process.env.WHATSAPP_VERIFY_TOKEN || "").tr
 const GOD_MODE_USER = String(process.env.GOD_MODE_USER || "").trim();
 const GOD_MODE_PASS = String(process.env.GOD_MODE_PASS || "").trim();
 const GOD_MODE_SESSION_HOURS = Math.max(1, Number(process.env.GOD_MODE_SESSION_HOURS || 24));
+const ADMIN_SESSION_HOURS = Math.max(1, Number(process.env.ADMIN_SESSION_HOURS || 12));
 const ADMIN_EMAILS = new Set(
   String(process.env.ADMIN_EMAILS || "")
     .split(",")
@@ -73,7 +74,12 @@ app.use(express.json({ limit: "2mb" }));
 
 const getRequestEmail = (req) => String(req.headers["x-user-email"] || "").trim().toLowerCase();
 const getGodToken = (req) => String(req.headers["x-god-token"] || "").trim();
+const getAdminToken = (req) => String(req.headers["x-admin-token"] || "").trim();
+const getUserToken = (req) => String(req.headers["x-user-token"] || "").trim();
 const GOD_SESSIONS = new Map();
+const ADMIN_SESSIONS = new Map();
+const USER_SESSIONS = new Map();
+const USER_SESSION_HOURS = Math.max(1, Number(process.env.USER_SESSION_HOURS || 24));
 
 // Rate limiting en memoria: max 10 intentos por IP en 15 min
 const RATE_LIMIT_MAP = new Map();
@@ -124,6 +130,44 @@ const isGodRequest = (req) => {
   const session = GOD_SESSIONS.get(token);
   return Boolean(session && session.expiresAt > Date.now());
 };
+const cleanupAdminSessions = () => {
+  const now = Date.now();
+  for (const [token, session] of ADMIN_SESSIONS.entries()) {
+    if (!session?.expiresAt || session.expiresAt <= now) {
+      ADMIN_SESSIONS.delete(token);
+    }
+  }
+};
+const getAdminSession = (req) => {
+  cleanupAdminSessions();
+  const token = getAdminToken(req);
+  if (!token) return null;
+  const session = ADMIN_SESSIONS.get(token);
+  if (!session || session.expiresAt <= Date.now()) {
+    ADMIN_SESSIONS.delete(token);
+    return null;
+  }
+  return session;
+};
+const cleanupUserSessions = () => {
+  const now = Date.now();
+  for (const [token, session] of USER_SESSIONS.entries()) {
+    if (!session?.expiresAt || session.expiresAt <= now) {
+      USER_SESSIONS.delete(token);
+    }
+  }
+};
+const getUserSession = (req) => {
+  cleanupUserSessions();
+  const token = getUserToken(req);
+  if (!token) return null;
+  const session = USER_SESSIONS.get(token);
+  if (!session || session.expiresAt <= Date.now()) {
+    USER_SESSIONS.delete(token);
+    return null;
+  }
+  return session;
+};
 
 const defaultBillingTarget = {
   bankName: "BBVA",
@@ -155,8 +199,7 @@ const requireAdmin = async (req, res, next) => {
   if (isGodRequest(req)) {
     return next();
   }
-  const email = getRequestEmail(req);
-  if (await isAdminEmail(email)) {
+  if (getAdminSession(req)) {
     return next();
   }
   return res.status(403).json({ ok: false, error: "admin_only" });
@@ -179,15 +222,14 @@ const requireGod = (req, res, next) => {
 
 const canActAsAdmin = async (req) => {
   if (isGodRequest(req)) return true;
-  const email = getRequestEmail(req);
-  return isAdminEmail(email);
+  return Boolean(getAdminSession(req));
 };
 
 const requireSelfOrAdminByResolver = (resolver) => async (req, res, next) => {
   if (await canActAsAdmin(req)) {
     return next();
   }
-  const actor = getRequestEmail(req);
+  const actor = normalizeEmail(getUserSession(req)?.email || "");
   const target = String(resolver(req) || "").trim().toLowerCase();
   if (actor && target && actor === target) {
     return next();
@@ -348,6 +390,25 @@ app.post("/auth/login", async (req, res) => {
       ...payload,
       role: resolvedRole,
     });
+    cleanupUserSessions();
+    const userToken = crypto.randomBytes(32).toString("hex");
+    const userExpiresAt = Date.now() + USER_SESSION_HOURS * 60 * 60 * 1000;
+    USER_SESSIONS.set(userToken, {
+      email,
+      role: resolvedRole,
+      expiresAt: userExpiresAt,
+    });
+    let adminSession = null;
+    if (resolvedRole === "admin") {
+      cleanupAdminSessions();
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = Date.now() + ADMIN_SESSION_HOURS * 60 * 60 * 1000;
+      ADMIN_SESSIONS.set(token, { email, expiresAt });
+      adminSession = {
+        token,
+        expiresAt: new Date(expiresAt).toISOString(),
+      };
+    }
     let onboardingProfile = null;
     try {
       const candidates = email ? await searchUsers(email) : [];
@@ -405,9 +466,34 @@ app.post("/auth/login", async (req, res) => {
         onboardingAnswers,
       },
       metrics,
+      userSession: {
+        token: userToken,
+        expiresAt: new Date(userExpiresAt).toISOString(),
+      },
+      adminSession,
     });
   } catch (error) {
     res.status(400).json({ ok: false, error: String(error.message || "login_failed") });
+  }
+});
+
+app.post("/auth/logout", async (req, res) => {
+  try {
+    const userToken = getUserToken(req);
+    if (userToken) {
+      USER_SESSIONS.delete(userToken);
+    }
+    const adminToken = getAdminToken(req);
+    if (adminToken) {
+      ADMIN_SESSIONS.delete(adminToken);
+    }
+    const godToken = getGodToken(req);
+    if (godToken) {
+      GOD_SESSIONS.delete(godToken);
+    }
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: String(error.message || "logout_failed") });
   }
 });
 
