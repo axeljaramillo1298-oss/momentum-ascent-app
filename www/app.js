@@ -1517,6 +1517,47 @@ const splitPlanBlocks = (text) =>
     .map((line) => line.trim())
     .filter(Boolean);
 
+// ── weekly helpers for routine cards ─────────────────────────────
+const RWEEK_DAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+
+const parseWeekDays = (text) => {
+  if (!text) return null;
+  const positions = [];
+  const rx = /d[íi]a\s*(\d+)\s*[:\-–]/gi;
+  let m;
+  while ((m = rx.exec(text)) !== null) {
+    positions.push({ day: parseInt(m[1]), end: m.index + m[0].length, idx: m.index });
+  }
+  if (positions.length < 2) return null;
+  const result = {};
+  for (let i = 0; i < positions.length; i++) {
+    const content = text.slice(positions[i].end, positions[i + 1] ? positions[i + 1].idx : undefined).trim();
+    result[positions[i].day] = content;
+  }
+  return result;
+};
+
+const getWeekNumFromMeta = (meta) => {
+  if (!meta) return null;
+  const sem = meta.match(/semana\s*(\d+)/i);
+  if (sem) return parseInt(sem[1]);
+  const d = meta.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (d) {
+    const date = new Date(parseInt(d[3]), parseInt(d[2]) - 1, parseInt(d[1]));
+    const jan1 = new Date(date.getFullYear(), 0, 1);
+    return Math.ceil(((date - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+  }
+  return null;
+};
+
+const getCurrentWeekNum = () => {
+  const now = new Date();
+  const jan1 = new Date(now.getFullYear(), 0, 1);
+  return Math.ceil(((now - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+};
+
+const getTodayDow = () => { const d = new Date().getDay(); return d === 0 ? 7 : d; };
+
 // ── visual helpers for routine cards ─────────────────────────────
 const getRoutineVisual = (text) => {
   const t = (text || "").toLowerCase();
@@ -1563,6 +1604,54 @@ const buildFeaturedAssignmentCard = ({ type = "Rutina", title = "", body = "", m
   const muscleBar = muscles.length
     ? `<div class="rcard-muscle-bar">${muscles.map((m) => `<span class="rcard-muscle-pill">${m}</span>`).join("")}</div>`
     : "";
+
+  const weekDays = parseWeekDays(body);
+  const weekNum = getWeekNumFromMeta(meta + " " + title) || getCurrentWeekNum();
+  const todayDow = getTodayDow();
+
+  let weekHtml = "";
+  if (weekDays) {
+    const tabsHtml = RWEEK_DAYS.map((name, i) => {
+      const dn = i + 1;
+      const isActive = dn === todayDow;
+      const isRest = !weekDays[dn];
+      return `<button class="rwd-tab${isActive ? " rwd-tab-active" : ""}${isRest ? " rwd-tab-rest" : ""}" type="button" data-rwd-day="${dn}">${name}</button>`;
+    }).join("");
+    const panesHtml = RWEEK_DAYS.map((_, i) => {
+      const dn = i + 1;
+      const content = weekDays[dn] || "";
+      const dayVis = getRoutineVisual(content);
+      return `<div class="rwd-pane${dn === todayDow ? " rwd-pane-active" : ""}" data-rwd-pane="${dn}">
+        ${content
+          ? `<div class="rwd-day-vis"><span>${dayVis.icon}</span><span class="rwd-day-cat">${dayVis.label}</span></div><p class="rwd-content">${escHtml(content)}</p>`
+          : `<p class="rwd-rest-msg">😴 Descanso activo — recupera y prepárate</p>`}
+      </div>`;
+    }).join("");
+    weekHtml = `
+      <div class="rwd-wrap" data-rwd-active="${todayDow}">
+        <div class="rwd-header">
+          <span class="rwd-week-badge">SEMANA ${weekNum}</span>
+          <div class="rwd-tabs">${tabsHtml}</div>
+        </div>
+        <div class="rwd-panes">${panesHtml}</div>
+      </div>`;
+  } else {
+    const stripHtml = RWEEK_DAYS.map((name, i) => {
+      const dn = i + 1;
+      const isToday = dn === todayDow;
+      const isRest = dn >= 6;
+      return `<div class="rwd-strip-day${isToday ? " rwd-strip-today" : ""}">
+        <span class="rwd-strip-name">${name}</span>
+        <span class="rwd-strip-icon">${isRest ? "😴" : isToday ? vis.icon : "💪"}</span>
+      </div>`;
+    }).join("");
+    weekHtml = `
+      <div class="rwd-static-wrap">
+        <span class="rwd-week-badge">SEMANA ${weekNum}</span>
+        <div class="rwd-strip">${stripHtml}</div>
+      </div>`;
+  }
+
   return `
     <article class="featured-assignment-card ${escHtml(accent)}">
       <div class="featured-assignment-glow"></div>
@@ -1573,9 +1662,10 @@ const buildFeaturedAssignmentCard = ({ type = "Rutina", title = "", body = "", m
           ${muscleBar}
         </div>
       </div>
+      ${weekHtml}
       <div class="featured-assignment-head">
         <span class="featured-assignment-kicker">${escHtml(type)}</span>
-        <span class="featured-assignment-chip">Listo para hoy</span>
+        <span class="featured-assignment-chip">Semana ${weekNum}</span>
       </div>
       <h3>${escHtml(title || type)}</h3>
       <p class="featured-assignment-intro">${escHtml(intro)}</p>
@@ -1644,34 +1734,57 @@ const renderUserRoutinesPage = async () => {
       </article>
     `);
   } else {
-    cards.push(
-      ...visibleRoutines
-        .slice()
-        .reverse()
-        .map((r) => {
-          const vis = getRoutineVisual((r.target || "") + " " + (r.title || ""));
-          const muscles = extractMuscles((r.target || "") + " " + (r.title || ""));
-          const muscleBar = muscles.length
-            ? `<div class="rcard-muscle-bar">${muscles.map((m) => `<span class="rcard-muscle-pill">${m}</span>`).join("")}</div>`
-            : "";
-          return `
-            <article class="entry-card rcard">
-              <div class="rcard-thumb" style="background:${vis.grad}">
-                <span class="rcard-thumb-icon">${vis.icon}</span>
-                <span class="rcard-thumb-cat">${vis.label}</span>
-              </div>
-              <div class="rcard-body">
-                <h3>${escHtml(r.title)}</h3>
-                <p>${escHtml(r.target)}</p>
-                ${muscleBar}
-                <span class="reg-hint">${escHtml(r.duration)}</span>
-              </div>
-            </article>
-          `;
-        })
-    );
+    // Group public routines by week number
+    const byWeek = {};
+    visibleRoutines.slice().reverse().forEach((r) => {
+      const wm = (r.title || "").match(/semana\s*(\d+)/i);
+      const wk = wm ? parseInt(wm[1]) : 0;
+      if (!byWeek[wk]) byWeek[wk] = [];
+      byWeek[wk].push(r);
+    });
+    const sortedWeeks = Object.keys(byWeek).sort((a, b) => Number(a) - Number(b));
+    sortedWeeks.forEach((wk) => {
+      if (Number(wk) > 0) {
+        cards.push(`<div class="rweek-header"><span>SEMANA ${wk}</span></div>`);
+      }
+      byWeek[wk].forEach((r) => {
+        const vis = getRoutineVisual((r.target || "") + " " + (r.title || ""));
+        const muscles = extractMuscles((r.target || "") + " " + (r.title || ""));
+        const muscleBar = muscles.length
+          ? `<div class="rcard-muscle-bar">${muscles.map((m) => `<span class="rcard-muscle-pill">${m}</span>`).join("")}</div>`
+          : "";
+        cards.push(`
+          <article class="entry-card rcard">
+            <div class="rcard-thumb" style="background:${vis.grad}">
+              <span class="rcard-thumb-icon">${vis.icon}</span>
+              <span class="rcard-thumb-cat">${vis.label}</span>
+            </div>
+            <div class="rcard-body">
+              <h3>${escHtml(r.title)}</h3>
+              <p>${escHtml(r.target)}</p>
+              ${muscleBar}
+              <span class="reg-hint">${escHtml(r.duration)}</span>
+            </div>
+          </article>
+        `);
+      });
+    });
   }
   container.innerHTML = cards.join("");
+
+  // Event delegation for weekly day tabs
+  if (!container.dataset.rwdBound) {
+    container.dataset.rwdBound = "1";
+    container.addEventListener("click", (e) => {
+      const tab = e.target.closest("[data-rwd-day]");
+      if (!tab) return;
+      const wrap = tab.closest(".rwd-wrap");
+      if (!wrap) return;
+      const day = tab.dataset.rwdDay;
+      wrap.querySelectorAll(".rwd-tab").forEach((t) => t.classList.toggle("rwd-tab-active", t.dataset.rwdDay === day));
+      wrap.querySelectorAll(".rwd-pane").forEach((p) => p.classList.toggle("rwd-pane-active", p.dataset.rwdPane === day));
+    });
+  }
 };
 
 const renderUserProgressPage = async () => {

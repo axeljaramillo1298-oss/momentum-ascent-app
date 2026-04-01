@@ -13088,6 +13088,155 @@ body.user-panel-premium #today-yes:hover {
    ================================================================ */
 
 /* ================================================================
+   ROUTINE WEEKLY VIEW — tabs, strip, week headers
+   ================================================================ */
+
+/* Week badge (appears on both interactive and static views) */
+.rwd-week-badge {
+  display: inline-block;
+  font-size: 0.60rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #ff3b30;
+  border: 1px solid rgba(255,59,48,0.35);
+  border-radius: 100px;
+  padding: 0.2rem 0.7rem;
+  flex-shrink: 0;
+}
+
+/* Interactive day tabs */
+.rwd-wrap { margin: 0; }
+.rwd-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1.2rem 0.5rem;
+  flex-wrap: wrap;
+}
+.rwd-tabs {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.rwd-tab {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.38);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 100px;
+  padding: 0.28rem 0.65rem;
+  cursor: pointer;
+  transition: color 0.18s, background 0.18s, border-color 0.18s;
+}
+.rwd-tab:hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.08); }
+.rwd-tab-active {
+  color: #fff;
+  background: rgba(255,59,48,0.22);
+  border-color: rgba(255,59,48,0.5);
+}
+.rwd-tab-rest { opacity: 0.45; }
+
+/* Day content panes */
+.rwd-panes { padding: 0 1.2rem 1rem; }
+.rwd-pane { display: none; }
+.rwd-pane-active { display: block; }
+.rwd-day-vis {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.4rem;
+}
+.rwd-day-cat {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+.rwd-content {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.75);
+  margin: 0;
+}
+.rwd-rest-msg {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.35);
+  margin: 0;
+  padding: 0.5rem 0;
+}
+
+/* Static 7-day strip (when routine has no day structure) */
+.rwd-static-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1.2rem 0.6rem;
+  flex-wrap: wrap;
+}
+.rwd-strip {
+  display: flex;
+  gap: 0.4rem;
+  flex: 1;
+  justify-content: space-between;
+}
+.rwd-strip-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  flex: 1;
+  min-width: 36px;
+}
+.rwd-strip-today {
+  background: rgba(255,59,48,0.12);
+  border-color: rgba(255,59,48,0.35);
+}
+.rwd-strip-name {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.38);
+}
+.rwd-strip-today .rwd-strip-name { color: #ff3b30; }
+.rwd-strip-icon { font-size: 1rem; line-height: 1; }
+
+/* Week section headers for public routines */
+.rweek-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  margin-top: 0.5rem;
+}
+.rweek-header::before,
+.rweek-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,59,48,0.18);
+}
+.rweek-header span {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255,59,48,0.65);
+  flex-shrink: 0;
+}
+
+/* ================================================================
    ROUTINE CARDS — visual thumbs + muscle pills
    ================================================================ */
 
