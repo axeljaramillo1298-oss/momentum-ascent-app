@@ -2961,11 +2961,16 @@ function initPlanSelectionPage() {
 
   const renderSummary = () => {
     if (!summary) return;
-    const selected = getPlanSelection();
+    const subscription = getCurrentSubscription();
+    const selected = getSubscriptionPlanSelection(subscription) || getPlanSelection();
     const extras = readExtras();
-    const extraLines = [];
-    if (extras.diet_basic) extraLines.push("Dieta Basica (+$12/mes)");
-    if (extras.diet_plus) extraLines.push("Dieta Pro (+$24/mes)");
+    const activeExtras = subscription?.planId && subscription.planId !== "free" ? formatPlanExtrasList(subscription.extras || {}) : [];
+    const extraLines = activeExtras.length
+      ? activeExtras
+      : [
+          ...(extras.diet_basic ? ["Dieta Basica (+$12/mes)"] : []),
+          ...(extras.diet_plus ? ["Dieta Pro (+$24/mes)"] : []),
+        ];
     const billingRaw = localStorage.getItem(BILLING_TARGET_CACHE_KEY);
     let billing = defaultBillingTarget;
     if (billingRaw) {
@@ -6818,7 +6823,7 @@ const initOnboardingSummary = async () => {
     extras: getPlanSelection().extras,
   });
 
-  const extras = getVisiblePlanExtras(subscription);
+  const extras = formatPlanExtrasList(selectedPlan.extras || {});
 
   const planEl = document.getElementById("onb-summary-plan");
   const extrasEl = document.getElementById("onb-summary-extras");
