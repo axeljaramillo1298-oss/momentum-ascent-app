@@ -1523,12 +1523,31 @@ const RWEEK_DAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 const parseWeekDays = (text) => {
   if (!text) return null;
   const positions = [];
-  const rx = /d[íi]a\s*(\d+)\s*[:\-–]/gi;
+  const numericRx = /d[íi]a\s*(\d+)\s*[:\-–]/gi;
+  const namedRx = /\b(lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)\s*[:\-–]/gi;
+  const dayMap = {
+    lunes: 1,
+    martes: 2,
+    miercoles: 3,
+    miércoles: 3,
+    jueves: 4,
+    viernes: 5,
+    sabado: 6,
+    sábado: 6,
+    domingo: 7,
+  };
   let m;
-  while ((m = rx.exec(text)) !== null) {
-    positions.push({ day: parseInt(m[1]), end: m.index + m[0].length, idx: m.index });
+  while ((m = numericRx.exec(text)) !== null) {
+    positions.push({ day: parseInt(m[1], 10), end: m.index + m[0].length, idx: m.index });
+  }
+  while ((m = namedRx.exec(text)) !== null) {
+    const rawDay = String(m[1] || "").trim().toLowerCase();
+    const day = dayMap[rawDay];
+    if (!day) continue;
+    positions.push({ day, end: m.index + m[0].length, idx: m.index });
   }
   if (positions.length < 2) return null;
+  positions.sort((a, b) => a.idx - b.idx);
   const result = {};
   for (let i = 0; i < positions.length; i++) {
     const content = text.slice(positions[i].end, positions[i + 1] ? positions[i + 1].idx : undefined).trim();
@@ -1608,11 +1627,15 @@ const extractMuscles = (text) => {
 };
 
 const buildFeaturedAssignmentCard = ({ type = "Rutina", title = "", body = "", meta = "", accent = "routine", weekKey = "" }) => {
-  const lines = splitPlanBlocks(body);
-  const intro = lines[0] || body || "";
+  const weekDays = parseWeekDays(body);
+  const todayDow = getTodayDow();
+  const activeDayText = weekDays?.[todayDow] || "";
+  const displayBody = activeDayText || body;
+  const lines = splitPlanBlocks(displayBody);
+  const intro = lines[0] || displayBody || "";
   const highlights = lines.slice(1, 5);
-  const muscles = extractMuscles(body);
-  const vis = getRoutineVisual(body + " " + title);
+  const muscles = extractMuscles(displayBody);
+  const vis = getRoutineVisual(`${displayBody} ${title}`);
   const ctaHref = accent === "diet" ? "user-dieta.html" : "user-hoy.html";
   const ctaLabel = accent === "diet" ? "Abrir nutricion" : "Ir al check-in de hoy";
   const pulseLabel = accent === "diet" ? "Come con estructura" : "Entrena sin improvisar";
@@ -1622,9 +1645,7 @@ const buildFeaturedAssignmentCard = ({ type = "Rutina", title = "", body = "", m
     ? `<div class="rcard-muscle-bar">${muscles.map((m) => `<span class="rcard-muscle-pill">${m}</span>`).join("")}</div>`
     : "";
 
-  const weekDays = parseWeekDays(body);
   const weekNum = getWeekNumFromMeta(`${weekKey} ${meta} ${title}`) || getCurrentWeekNum();
-  const todayDow = getTodayDow();
 
   let weekHtml = "";
   if (weekDays) {
