@@ -345,21 +345,73 @@ function mapLegacyPlanToId(value) {
   return "free";
 }
 
+const toBoolFlag = (value) => {
+  if (value === true || value === 1) return true;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "true" || normalized === "1" || normalized === "on" || normalized === "yes";
+  }
+  return false;
+};
+
+const toFiniteNumber = (value, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+function normalizePlanExtras(extrasRaw = {}) {
+  const raw = extrasRaw && typeof extrasRaw === "object" ? extrasRaw : {};
+  const extras = { ...raw };
+  extras.diet_basic = toBoolFlag(raw.diet_basic);
+  extras.diet_plus = toBoolFlag(raw.diet_plus);
+  extras.contract_enabled = toBoolFlag(raw.contract_enabled ?? raw.contractEnabled);
+  extras.bet_mode = toBoolFlag(raw.bet_mode ?? raw.betMode);
+  extras.bet_amount = Math.max(0, toFiniteNumber(raw.bet_amount ?? raw.betAmount, 0));
+  extras.challenge_type = String(raw.challenge_type ?? raw.challengeType ?? "").trim();
+  extras.nutrition_plan = String(
+    raw.nutrition_plan ??
+      raw.nutritionPlan ??
+      (extras.diet_plus ? "pro" : extras.diet_basic ? "basic" : "")
+  ).trim();
+  extras.contract = extras.contract_enabled;
+  extras.bet = extras.bet_mode;
+  return extras;
+}
+
 function normalizePlanSelection(selection) {
-  const id = mapLegacyPlanToId(selection?.id || selection?.plan || selection?.label || selection);
+  const id = mapLegacyPlanToId(selection?.id || selection?.planId || selection?.plan || selection?.label || selection);
   const planMeta = PLAN_CATALOG[id] || PLAN_CATALOG.free;
-  const extrasRaw = selection?.extras && typeof selection.extras === "object" ? selection.extras : {};
-  const extras = {
-    diet_basic: Boolean(extrasRaw.diet_basic),
-    diet_plus: Boolean(extrasRaw.diet_plus),
-  };
+  const extras = normalizePlanExtras(selection?.extras || selection?.planExtras || {});
+  const customLabel = String(selection?.planLabel || selection?.label || "").trim();
+  const derivedLabel = customLabel || (id === "retos" && extras.challenge_type ? `Retos • ${extras.challenge_type}` : "");
   return {
     id: planMeta.id,
-    label: planMeta.label,
+    label: derivedLabel || planMeta.label,
     price: planMeta.price,
     includes: [...planMeta.includes],
     extras,
     updatedAt: new Date().toISOString(),
+  };
+}
+
+function buildSelectionFromUserRecord(user) {
+  if (!user || typeof user !== "object") {
+    return null;
+  }
+  const planId = mapLegacyPlanToId(user.planId || user.plan || user.planLabel || "");
+  const extras = normalizePlanSelection({ id: planId, label: user.planLabel || user.plan || "", extras: user.planExtras || {} }).extras;
+  const status = String(user.subscriptionStatus || user.status || "").trim().toLowerCase();
+  const hasPlanSignal = planId !== "free" || status === "active" || status === "pending" || Object.values(extras).some((value) => Boolean(value));
+  if (!hasPlanSignal) {
+    return null;
+  }
+  return {
+    id: planId,
+    label: String(user.planLabel || user.plan || PLAN_CATALOG[planId]?.label || "Free").trim() || PLAN_CATALOG[planId]?.label || "Free",
+    price: PLAN_CATALOG[planId]?.price || PLAN_CATALOG.free.price,
+    includes: [...(PLAN_CATALOG[planId]?.includes || PLAN_CATALOG.free.includes)],
+    extras,
+    updatedAt: user.updatedAt || new Date().toISOString(),
   };
 }
 
@@ -433,7 +485,7 @@ function getCurrentSubscription() {
     writeSubscriptionCache(cache);
     return null;
   }
-  return entry;
+  return normalizeSubscriptionRecord(entry);
 }
 
 const SUBSCRIPTION_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hora
@@ -441,9 +493,14 @@ const SUBSCRIPTION_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hora
 function setCurrentSubscription(sub) {
   const current = getCurrentUser();
   if (!current?.id || !sub) return;
+  const normalized = normalizeSubscriptionRecord(sub);
   const cache = readSubscriptionCache();
-  cache[current.id] = { ...sub, _cachedAt: Date.now() };
+  cache[current.id] = {
+    ...normalized,
+    _cachedAt: Date.now(),
+  };
   writeSubscriptionCache(cache);
+  syncPlanStateFromSubscription(normalized);
 }
 
 function isSubscriptionActive(sub) {
@@ -471,7 +528,58 @@ function getEffectivePlanSelection() {
       extras: sub.extras || {},
     });
   }
+  const userSelection = buildSelectionFromUserRecord(getCurrentUser());
+  if (userSelection) {
+    return normalizePlanSelection(userSelection);
+  }
   return normalizePlanSelection("free");
+}
+
+function getSubscriptionPlanSelection(subscription = getCurrentSubscription()) {
+  const planId = String(subscription?.planId || "").trim().toLowerCase();
+  if (!planId || planId === "free") {
+    return null;
+  }
+  return normalizePlanSelection({
+    id: planId,
+    label: subscription?.planLabel || "Free",
+    extras: subscription?.extras || {},
+  });
+}
+
+function formatPlanExtrasList(extras = {}) {
+  const list = [];
+  if (extras.contract_enabled) list.push("Contrato activo");
+  if (extras.bet_mode) {
+    const betAmount = Number(extras.bet_amount || 0);
+    list.push(betAmount > 0 ? `Apuesta $${betAmount.toLocaleString("es-MX")}` : "Apuesta");
+  }
+  if (extras.diet_basic) list.push("Dieta Basica");
+  if (extras.diet_plus) list.push("Dieta Pro");
+  if (extras.challenge_type) list.push(`Reto ${String(extras.challenge_type).trim()}`);
+  if (!list.length && extras.nutrition_plan) list.push(`Nutricion ${String(extras.nutrition_plan).toUpperCase()}`);
+  return list.filter(Boolean);
+}
+
+function getVisiblePlanSelection() {
+  return getSubscriptionPlanSelection() || getPlanSelection();
+}
+
+function getVisiblePlanExtras(subscription = getCurrentSubscription()) {
+  const subPlan = getSubscriptionPlanSelection(subscription);
+  if (subPlan) {
+    return formatPlanExtrasList(subPlan.extras);
+  }
+  const draft = getRegDraft();
+  const draftExtras = String(draft.extras_plan || "")
+    .split("|")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .filter((item) => item !== "Ninguno");
+  if (draftExtras.length) {
+    return draftExtras;
+  }
+  return formatPlanExtrasList(getPlanSelection().extras);
 }
 
 function persistPlanSelection(input) {
@@ -514,18 +622,25 @@ function getPlanCapabilities(selection = getEffectivePlanSelection()) {
   const plan = normalizePlanSelection(selection);
   const extras = plan.extras || {};
   const paid = plan.id !== "free";
-  const challengeCore = plan.id === "retos" || plan.id === "coach_humano";
+  const challengeType = String(extras.challenge_type || "").trim();
+  const contractEnabled = Boolean(extras.contract_enabled) || plan.id === "coach_humano" || plan.id === "retos";
+  const betMode = Boolean(extras.bet_mode);
+  const challengeCore = plan.id === "retos" || plan.id === "coach_humano" || Boolean(challengeType) || betMode || contractEnabled;
   const humanSupport = plan.id === "coach_humano";
   const aiAdaptive = plan.id === "ai_coach" || plan.id === "coach_humano";
   const personalRoutine = plan.id === "ai_coach" || plan.id === "coach_humano";
-  const dietAccess = humanSupport || extras.diet_basic || extras.diet_plus;
-  const dietPersonalized = humanSupport || extras.diet_plus;
+  const dietAccess = humanSupport || extras.diet_basic || extras.diet_plus || extras.nutrition_plan === "basic" || extras.nutrition_plan === "pro";
+  const dietPersonalized = humanSupport || extras.diet_plus || extras.nutrition_plan === "pro";
   return {
     plan,
     paid,
     aiAdaptive,
     humanSupport,
     challengeCore,
+    challengeType,
+    contractEnabled,
+    betMode,
+    betAmount: Number(extras.bet_amount || 0),
     personalRoutine,
     dietAccess,
     dietPersonalized,
@@ -1308,6 +1423,7 @@ const renderUserRoutinesPage = async () => {
   if (!container) {
     return;
   }
+  await syncCurrentSubscriptionFromApi().catch(() => null);
   const caps = getPlanCapabilities();
   let routines = readJsonArray(ADMIN_ROUTINES_KEY);
   const assignments = readJsonObject(USER_ASSIGNMENTS_KEY);
@@ -1347,24 +1463,25 @@ const renderUserRoutinesPage = async () => {
       .join("");
   }
 
-  if (personal?.routine && caps.personalRoutine) {
+  const canShowAssignedRoutine = Boolean(personal?.routine) && (caps.personalRoutine || caps.challengeCore || isSubscriptionActive(getCurrentSubscription()));
+  if (canShowAssignedRoutine) {
     container.insertAdjacentHTML(
       "afterbegin",
       `
       <article class="entry-card">
-        <h3>Tu rutina personalizada</h3>
+        <h3>${caps.challengeType ? "Tu rutina de reto" : "Tu rutina personalizada"}</h3>
         <p>${personal.routine}</p>
         <span class="reg-hint">Asignada por tu coach • ${new Date(personal.updatedAt).toLocaleDateString("es-MX")}</span>
       </article>
     `
     );
-  } else if (personal?.routine && !caps.personalRoutine) {
+  } else if (personal?.routine && !canShowAssignedRoutine) {
     container.insertAdjacentHTML(
       "afterbegin",
       `
       <article class="entry-card">
         <h3>Rutina personalizada bloqueada</h3>
-        <p>Tu plan actual no incluye personalizacion por coach. Cambia a Coach IA o Coach + Humano.</p>
+        <p>Tu asignacion existe, pero tu acceso premium no esta activo todavia.</p>
       </article>
     `
     );
@@ -1497,6 +1614,7 @@ const renderUserDietPage = async () => {
   if (!planList) {
     return;
   }
+  await syncCurrentSubscriptionFromApi().catch(() => null);
   const caps = getPlanCapabilities();
   const quickWater = document.getElementById("diet-quick-water");
   const quickKcal = document.getElementById("diet-quick-300");
@@ -1544,15 +1662,16 @@ const renderUserDietPage = async () => {
         .join("")
     : `<div class="admin-item"><p>Sin plan cargado por nutricionista.</p></div>`;
 
-  if (personal?.diet && caps.dietPersonalized) {
+  const canShowAssignedDiet = Boolean(personal?.diet) && (caps.dietPersonalized || caps.challengeCore || isSubscriptionActive(getCurrentSubscription()));
+  if (canShowAssignedDiet) {
     planList.insertAdjacentHTML(
       "afterbegin",
-      `<div class="admin-item"><strong>Tu dieta personalizada</strong><p>${escHtml(personal.diet)}</p><p>${escHtml(personal.message || "")}</p></div>`
+      `<div class="admin-item"><strong>${caps.challengeType ? "Tu dieta de reto" : "Tu dieta personalizada"}</strong><p>${escHtml(personal.diet)}</p><p>${escHtml(personal.message || "")}</p></div>`
     );
-  } else if (personal?.diet && !caps.dietPersonalized) {
+  } else if (personal?.diet && !canShowAssignedDiet) {
     planList.insertAdjacentHTML(
       "afterbegin",
-      `<div class="admin-item"><strong>Dieta personalizada bloqueada</strong><p>Tienes Dieta Basica activa. Sube a Dieta Pro para recibir un plan personalizado.</p></div>`
+      `<div class="admin-item"><strong>Dieta personalizada bloqueada</strong><p>Tu asignacion existe, pero tu acceso premium no esta activo todavia.</p></div>`
     );
   }
 
@@ -2044,6 +2163,10 @@ const renderAdminInsights = async () => {
 };
 
 const initAdminPanel = () => {
+  const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
+  if (page !== "admin.html") {
+    return;
+  }
   const routineForm = document.getElementById("admin-routine-form");
   const nutritionForm = document.getElementById("admin-nutrition-form");
   const routineFeedback = document.getElementById("admin-routine-feedback");
@@ -4967,19 +5090,13 @@ function applyTodayPlanVisibility(caps) {
 }
 
 function buildPlanStatusHtml(caps) {
-  const requested = getPlanSelection();
   const draft = getRegDraft();
   const subscription = getCurrentSubscription();
+  const requested = getVisiblePlanSelection();
   const subscriptionStatus = String(subscription?.status || "inactive").toLowerCase();
   const expired = subscriptionStatus === "active" && !isSubscriptionActive(subscription);
   const planRequestedPaid = requested.id !== "free";
-  const rawExtras = String(draft.extras_plan || "");
-  const requestedExtras = rawExtras
-    .split("|")
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .filter((item) => item !== "Ninguno");
-  const hasExtra = (name) => requestedExtras.includes(name);
+  const requestedExtras = getVisiblePlanExtras(subscription);
   const statusLabel =
     expired
       ? "Vencida"
@@ -5013,45 +5130,49 @@ function buildPlanStatusHtml(caps) {
     },
     {
       title: "Retos + ranking",
-      detail: "Misiones competitivas, tabla y seguimiento por resultados.",
+      detail: caps.challengeCore
+        ? `Misiones competitivas, tabla y seguimiento por resultados${caps.challengeType ? ` • ${caps.challengeType}` : ""}.`
+        : "Misiones competitivas, tabla y seguimiento por resultados.",
       status: caps.challengeCore ? "Activo" : "Bloqueado",
       cls: caps.challengeCore ? "green" : "red",
     },
     {
       title: "Contrato",
-      detail: "Reglas de cumplimiento estricto y penalizacion por fallos.",
-      status: "Disponible",
-      cls: "yellow",
+      detail: caps.contractEnabled
+        ? "Contrato activo. Regla firme y penalizacion habilitada."
+        : "Reglas de cumplimiento estricto y penalizacion por fallos.",
+      status: caps.contractEnabled ? "Activo" : "Opcional",
+      cls: caps.contractEnabled ? "green" : "yellow",
     },
     {
       title: "Competencia",
-      detail: hasExtra("Competencia")
+      detail: caps.challengeCore
         ? activeNow
           ? "Activo"
           : "Solicitado, pendiente de validacion"
         : "No solicitado",
-      status: hasExtra("Competencia") ? (activeNow ? "Activo" : "Pendiente") : "Opcional",
-      cls: hasExtra("Competencia") ? (activeNow ? "green" : "pending") : "yellow",
+      status: caps.challengeCore ? (activeNow ? "Activo" : "Pendiente") : "Opcional",
+      cls: caps.challengeCore ? (activeNow ? "green" : "pending") : "yellow",
     },
     {
       title: "Apuesta",
-      detail: hasExtra("Apuesta")
+      detail: caps.betMode
         ? activeNow
-          ? "Activo segun condiciones y validacion"
-          : "Solicitado, pendiente de validacion"
+          ? `Activo${caps.betAmount ? ` • MXN $${caps.betAmount}` : ""}`
+          : `Solicitado${caps.betAmount ? ` • MXN $${caps.betAmount}` : ""}, pendiente de validacion`
         : "No solicitado",
-      status: hasExtra("Apuesta") ? (activeNow ? "Activo" : "Pendiente") : "Opcional",
-      cls: hasExtra("Apuesta") ? (activeNow ? "green" : "pending") : "yellow",
+      status: caps.betMode ? (activeNow ? "Activo" : "Pendiente") : "Opcional",
+      cls: caps.betMode ? (activeNow ? "green" : "pending") : "yellow",
     },
     {
       title: "Seguimiento",
-      detail: hasExtra("Seguimiento personalizado")
+      detail: requestedExtras.length
         ? activeNow
-          ? "Activo"
+          ? `Activo • ${requestedExtras.join(", ")}`
           : "Solicitado, pendiente de validacion"
         : "No solicitado",
-      status: hasExtra("Seguimiento personalizado") ? (activeNow ? "Activo" : "Pendiente") : "Opcional",
-      cls: hasExtra("Seguimiento personalizado") ? (activeNow ? "green" : "pending") : "yellow",
+      status: requestedExtras.length ? (activeNow ? "Activo" : "Pendiente") : "Opcional",
+      cls: requestedExtras.length ? (activeNow ? "green" : "pending") : "yellow",
     },
   ];
 
@@ -5076,9 +5197,9 @@ function buildPlanStatusHtml(caps) {
     },
   ];
 
-  const currentExtras = [];
-  if (caps.plan.extras?.diet_basic) currentExtras.push("Dieta Basica");
-  if (caps.plan.extras?.diet_plus) currentExtras.push("Dieta Pro");
+  const currentExtras = [...requestedExtras];
+  if (caps.plan.extras?.diet_basic && !currentExtras.includes("Dieta Basica")) currentExtras.unshift("Dieta Basica");
+  if (caps.plan.extras?.diet_plus && !currentExtras.includes("Dieta Pro")) currentExtras.unshift("Dieta Pro");
 
   const requestHint =
     !planRequestedPaid
@@ -5196,7 +5317,8 @@ function renderSecondaryPlanPanels() {
   });
 }
 
-function renderUserPlanPanel() {
+async function renderUserPlanPanel() {
+  await syncCurrentSubscriptionFromApi().catch(() => null);
   const host = document.getElementById("user-plan-panel");
   if (!host) {
     renderSecondaryPlanPanels();
@@ -6573,15 +6695,25 @@ const initOnboardingSummary = async () => {
     navigateToApp("onboarding-1.html", true);
     return;
   }
-  const selectedPlan = normalizePlanSelection({
+  const current = getCurrentUser();
+  let subscription = getCurrentSubscription();
+  if (current?.id) {
+    try {
+      const remote = await apiGet(`/subscriptions/${encodeURIComponent(current.id)}`);
+      if (remote?.subscription) {
+        subscription = remote.subscription;
+        setCurrentSubscription(subscription);
+      }
+    } catch {
+      subscription = getCurrentSubscription();
+    }
+  }
+  const selectedPlan = getSubscriptionPlanSelection(subscription) || normalizePlanSelection({
     id: draft.plan || getPlanSelection().id || "free",
     extras: getPlanSelection().extras,
   });
 
-  const extras = String(draft.extras_plan || "")
-    .split("|")
-    .map((item) => item.trim())
-    .filter(Boolean);
+  const extras = getVisiblePlanExtras(subscription);
 
   const planEl = document.getElementById("onb-summary-plan");
   const extrasEl = document.getElementById("onb-summary-extras");
@@ -6597,19 +6729,6 @@ const initOnboardingSummary = async () => {
   const ctaPrimary = document.querySelector(".onb-cta");
   const ctaSecondary = document.querySelector(".onb-login-link");
 
-  let subscription = getCurrentSubscription();
-  const current = getCurrentUser();
-  if (current?.id) {
-    try {
-      const remote = await apiGet(`/subscriptions/${encodeURIComponent(current.id)}`);
-      if (remote?.subscription) {
-        subscription = remote.subscription;
-        setCurrentSubscription(subscription);
-      }
-    } catch {
-      subscription = getCurrentSubscription();
-    }
-  }
   const activeNow = isSubscriptionActive(subscription);
   const pendingNow = selectedPlan.id !== "free" && String(subscription?.status || "").toLowerCase() === "pending";
 

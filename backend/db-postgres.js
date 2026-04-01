@@ -17,6 +17,28 @@ const DB_META = {
 const nowIso = () => new Date().toISOString();
 const safeStr = (value) => String(value || "").trim();
 const normalizeEmail = (value) => safeStr(value).toLowerCase();
+const parseJsonSafe = (raw, fallback = {}) => {
+  if (raw === null || raw === undefined || raw === "") return fallback;
+  if (typeof raw === "object") return raw;
+  try {
+    const parsed = JSON.parse(String(raw));
+    return parsed && typeof parsed === "object" ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+};
+const toJsonString = (value, fallback = {}) => {
+  if (value === null || value === undefined) return JSON.stringify(fallback);
+  if (typeof value === "string") {
+    try {
+      JSON.parse(value);
+      return value;
+    } catch {
+      return JSON.stringify(fallback);
+    }
+  }
+  return JSON.stringify(value);
+};
 
 const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS users (
@@ -396,7 +418,10 @@ async function searchUsers(rawSearch) {
     `,
     [needle]
   );
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    onboardingAnswers: parseJsonSafe(row.onboardingAnswers, {}),
+  }));
 }
 
 async function saveCheckin(payload) {
@@ -560,8 +585,7 @@ async function getAdminDashboard(dateKey) {
       name: row.name || "User",
       email: row.email || row.id,
       checkinSchedule: row.checkinSchedule || "",
-      onboardingAnswers:
-        row.onboardingAnswers && typeof row.onboardingAnswers === "object" ? row.onboardingAnswers : {},
+      onboardingAnswers: parseJsonSafe(row.onboardingAnswers, {}),
       streak: Number(row.streak || 0),
       totalDays: Number(row.totalDays || 0),
       completedDays: Number(row.completedDays || 0),
@@ -720,7 +744,7 @@ async function getSubscription(userId) {
     userId: row.userId,
     planId: row.planId || "free",
     planLabel: row.planLabel || "Free",
-    extras: row.extras || {},
+    extras: parseJsonSafe(row.extras, {}),
     status: row.status || "inactive",
     startAt: row.startAt || null,
     endAt: row.endAt || null,
@@ -756,7 +780,7 @@ async function createPaymentRequest(payload) {
     await pool.query(
       `
       INSERT INTO subscriptions (user_id, plan_id, plan_label, extras_json, status, start_at, end_at, updated_at)
-      VALUES ($1,$2,$3,$4,'pending',NULL,NULL,$5)
+      VALUES ($1,$2,$3,$4::jsonb,'pending',NULL,NULL,$5)
       ON CONFLICT (user_id) DO UPDATE SET
         plan_id = EXCLUDED.plan_id,
         plan_label = EXCLUDED.plan_label,
@@ -766,14 +790,14 @@ async function createPaymentRequest(payload) {
         end_at = EXCLUDED.end_at,
         updated_at = EXCLUDED.updated_at
       `,
-      [userId, planId, planLabel, extras, now]
+      [userId, planId, planLabel, toJsonString(extras, {}), now]
     );
     return {
       id: Number(existing.id),
       userId,
       planId,
       planLabel: existing.planLabel || planLabel,
-      extras: existing.extras || extras,
+      extras: parseJsonSafe(existing.extras, extras),
       method: existing.method || method,
       proofTarget: existing.proofTarget || proofTarget,
       status: existing.status || "pending",
@@ -785,15 +809,15 @@ async function createPaymentRequest(payload) {
   const result = await pool.query(
     `
     INSERT INTO payment_requests (user_id, plan_id, plan_label, extras_json, method, proof_target, status, reviewed_by, note, created_at, updated_at)
-    VALUES ($1,$2,$3,$4,$5,$6,'pending','','',$7,$7)
+    VALUES ($1,$2,$3,$4::jsonb,$5,$6,'pending','','',$7,$7)
     RETURNING id
     `,
-    [userId, planId, planLabel, extras, method, proofTarget, now]
+    [userId, planId, planLabel, toJsonString(extras, {}), method, proofTarget, now]
   );
   await pool.query(
     `
     INSERT INTO subscriptions (user_id, plan_id, plan_label, extras_json, status, start_at, end_at, updated_at)
-    VALUES ($1,$2,$3,$4,'pending',NULL,NULL,$5)
+    VALUES ($1,$2,$3,$4::jsonb,'pending',NULL,NULL,$5)
     ON CONFLICT (user_id) DO UPDATE SET
       plan_id = EXCLUDED.plan_id,
       plan_label = EXCLUDED.plan_label,
@@ -803,7 +827,7 @@ async function createPaymentRequest(payload) {
       end_at = EXCLUDED.end_at,
       updated_at = EXCLUDED.updated_at
     `,
-    [userId, planId, planLabel, extras, now]
+    [userId, planId, planLabel, toJsonString(extras, {}), now]
   );
   return {
     id: Number(result.rows[0].id),
@@ -836,7 +860,7 @@ async function listPendingPaymentRequests() {
   return result.rows.map((row) => ({
     ...row,
     id: Number(row.id),
-    extras: row.extras || {},
+    extras: parseJsonSafe(row.extras, {}),
   }));
 }
 
@@ -882,7 +906,7 @@ async function reviewPaymentRequest(payload) {
     await pool.query(
       `
       INSERT INTO subscriptions (user_id, plan_id, plan_label, extras_json, status, start_at, end_at, updated_at)
-      VALUES ($1,$2,$3,$4,'active',$5,$6,$5)
+      VALUES ($1,$2,$3,$4::jsonb,'active',$5,$6,$5)
       ON CONFLICT (user_id) DO UPDATE SET
         plan_id = EXCLUDED.plan_id,
         plan_label = EXCLUDED.plan_label,
@@ -892,7 +916,7 @@ async function reviewPaymentRequest(payload) {
         end_at = EXCLUDED.end_at,
         updated_at = EXCLUDED.updated_at
       `,
-      [req.userId, req.planId || "free", req.planLabel || "Free", req.extras || {}, now, end.toISOString()]
+      [req.userId, req.planId || "free", req.planLabel || "Free", toJsonString(req.extras || {}, {}), now, end.toISOString()]
     );
     await pool.query("UPDATE users SET plan = $1, updated_at = $2 WHERE id = $3", [req.planLabel || "Free", now, req.userId]);
   } else {
@@ -941,7 +965,7 @@ async function getUserPayments(userId) {
   return result.rows.map((row) => ({
     ...row,
     id: Number(row.id),
-    extras: row.extras || {},
+    extras: parseJsonSafe(row.extras, {}),
   }));
 }
 
@@ -996,7 +1020,7 @@ async function grantSubscription(payload) {
       end_at = EXCLUDED.end_at,
       updated_at = EXCLUDED.updated_at
     `,
-    [userId, planId, planLabel, extras, status, startAt, endAt, now]
+    [userId, planId, planLabel, toJsonString(extras, {}), status, startAt, endAt, now]
   );
   await pool.query("UPDATE users SET plan = $1, updated_at = $2 WHERE id = $3", [planLabel, now, userId]);
   return getSubscription(userId);
@@ -1014,7 +1038,7 @@ async function getAppSetting(key, fallback = {}) {
     `,
     [normalizedKey]
   );
-  return result.rows[0]?.value || fallback;
+  return parseJsonSafe(result.rows[0]?.value, fallback);
 }
 
 async function setAppSetting(key, value) {
@@ -1025,12 +1049,12 @@ async function setAppSetting(key, value) {
   await pool.query(
     `
     INSERT INTO app_settings (key, value_json, updated_at)
-    VALUES ($1,$2,$3)
+    VALUES ($1,$2::jsonb,$3)
     ON CONFLICT (key) DO UPDATE SET
       value_json = EXCLUDED.value_json,
       updated_at = EXCLUDED.updated_at
     `,
-    [normalizedKey, safeValue, now]
+    [normalizedKey, toJsonString(safeValue, {}), now]
   );
   return getAppSetting(normalizedKey, {});
 }
@@ -1054,10 +1078,10 @@ async function recordAiUsage(payload) {
     INSERT INTO ai_usage_logs (
       actor_email, target_user_ids_json, mode, provider, model, status, reason, prompt_chars, context_chars, created_at
     )
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+    VALUES ($1,$2::jsonb,$3,$4,$5,$6,$7,$8,$9,$10)
     RETURNING id
     `,
-    [actorEmail, targetUserIds, mode, provider, model, status, reason, promptChars, contextChars, createdAt]
+    [actorEmail, toJsonString(targetUserIds, []), mode, provider, model, status, reason, promptChars, contextChars, createdAt]
   );
   return {
     id: Number(result.rows[0]?.id || 0),
@@ -1097,7 +1121,9 @@ async function listAiUsageLogs(monthKey) {
   );
   return result.rows.map((row) => ({
     actorEmail: normalizeEmail(row.actorEmail),
-    targetUserIds: Array.isArray(row.targetUserIds) ? row.targetUserIds.map(normalizeEmail).filter(Boolean) : [],
+    targetUserIds: Array.isArray(row.targetUserIds)
+      ? row.targetUserIds.map(normalizeEmail).filter(Boolean)
+      : parseJsonSafe(row.targetUserIds, []).map(normalizeEmail).filter(Boolean),
     mode: row.mode || "admin_ai",
     provider: row.provider || "fallback",
     model: row.model || "",
@@ -1214,7 +1240,7 @@ async function upsertCoachFlow(payload) {
   await pool.query(
     `
     INSERT INTO coach_whatsapp_flows (user_id, phone, step, status, answers_json, updated_at)
-    VALUES ($1,$2,$3,$4,$5,$6)
+    VALUES ($1,$2,$3,$4,$5::jsonb,$6)
     ON CONFLICT (user_id) DO UPDATE SET
       phone = EXCLUDED.phone,
       step = EXCLUDED.step,
@@ -1222,7 +1248,7 @@ async function upsertCoachFlow(payload) {
       answers_json = EXCLUDED.answers_json,
       updated_at = EXCLUDED.updated_at
     `,
-    [userId, phone, step, status, answers, now]
+    [userId, phone, step, status, toJsonString(answers, {}), now]
   );
   return getCoachFlowByUser(userId);
 }
@@ -1246,7 +1272,7 @@ async function getCoachFlowByPhone(phone) {
     phone: row.phone,
     step: Number(row.step || 0),
     status: row.status || "active",
-    answers: row.answers || {},
+    answers: parseJsonSafe(row.answers, {}),
     updatedAt: row.updatedAt || null,
   };
 }
@@ -1270,7 +1296,7 @@ async function getCoachFlowByUser(userId) {
     phone: row.phone,
     step: Number(row.step || 0),
     status: row.status || "active",
-    answers: row.answers || {},
+    answers: parseJsonSafe(row.answers, {}),
     updatedAt: row.updatedAt || null,
   };
 }
@@ -1290,12 +1316,12 @@ async function saveOnboardingProfile(payload) {
   await pool.query(
     `
     INSERT INTO onboarding_profiles (user_id, answers_json, updated_at)
-    VALUES ($1,$2,$3)
+    VALUES ($1,$2::jsonb,$3)
     ON CONFLICT (user_id) DO UPDATE SET
       answers_json = EXCLUDED.answers_json,
       updated_at = EXCLUDED.updated_at
     `,
-    [userId, answers, now]
+    [userId, toJsonString(answers, {}), now]
   );
   return { userId, updatedAt: now };
 }
