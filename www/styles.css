@@ -1608,6 +1608,7 @@ body.theme-gated {
 
 .featured-assignment-card {
   position: relative;
+  grid-column: 1 / -1;
   padding: 28px;
   border-radius: 24px;
   overflow: hidden;
@@ -1620,6 +1621,17 @@ body.theme-gated {
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
   display: grid;
   gap: 16px;
+}
+
+.featured-assignment-noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.26;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,0.08), transparent 28%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 24px);
 }
 
 .featured-assignment-card.routine {
@@ -1692,6 +1704,7 @@ body.theme-gated {
   letter-spacing: 1px;
   line-height: 0.95;
   font-size: clamp(36px, 5vw, 56px);
+  max-width: 10ch;
 }
 
 .featured-assignment-intro {
@@ -1700,6 +1713,54 @@ body.theme-gated {
   line-height: 1.65;
   color: rgba(255, 255, 255, 0.9);
   max-width: 900px;
+}
+
+.featured-assignment-pulse {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.045);
+}
+
+.featured-assignment-pulse-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #ff6848;
+  box-shadow: 0 0 0 8px rgba(255,104,72,0.12);
+}
+
+.featured-assignment-pulse strong {
+  font-size: 12px;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  color: #ffe1d7;
+}
+
+.featured-assignment-mission {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255,95,60,0.12), rgba(255,255,255,0.035));
+  border: 1px solid rgba(255,120,92,0.16);
+}
+
+.featured-assignment-mission span {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255,188,170,0.78);
+}
+
+.featured-assignment-mission strong {
+  font-size: 15px;
+  line-height: 1.5;
+  color: #fff5f1;
 }
 
 .featured-assignment-points {
@@ -1749,6 +1810,106 @@ body.theme-gated {
   text-transform: uppercase;
 }
 
+.featured-assignment-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.featured-assignment-cta {
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 999px;
+  box-shadow: 0 16px 30px rgba(255, 90, 58, 0.28);
+  text-decoration: none;
+}
+
+.featured-assignment-note {
+  max-width: 380px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.66);
+}
+
+.routine-prime-section {
+  padding-top: 4px;
+}
+
+.routine-prime-shell {
+  display: grid;
+  grid-template-columns: 1.25fr 0.75fr;
+  gap: 18px;
+  padding: 22px 24px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 105, 76, 0.16);
+  background:
+    radial-gradient(500px 180px at 0% 0%, rgba(255, 90, 58, 0.16), transparent 70%),
+    linear-gradient(160deg, rgba(18, 20, 30, 0.92), rgba(10, 11, 18, 0.86));
+  box-shadow: 0 24px 60px rgba(0,0,0,0.28);
+}
+
+.routine-prime-kicker {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,214,204,0.78);
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.routine-prime-copy {
+  display: grid;
+  gap: 10px;
+}
+
+.routine-prime-copy h2 {
+  margin: 0;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(34px, 4vw, 52px);
+  line-height: 0.96;
+  letter-spacing: 0.8px;
+}
+
+.routine-prime-copy p {
+  margin: 0;
+  max-width: 760px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: rgba(255,255,255,0.72);
+}
+
+.routine-prime-rail {
+  display: grid;
+  gap: 10px;
+}
+
+.routine-prime-stat {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.035);
+}
+
+.routine-prime-stat span {
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: rgba(255,194,180,0.72);
+}
+
+.routine-prime-stat strong {
+  font-size: 18px;
+  color: #fff8f5;
+}
+
 @media (max-width: 768px) {
   .featured-assignment-card {
     padding: 22px 18px;
@@ -1761,6 +1922,21 @@ body.theme-gated {
 
   .featured-assignment-point {
     padding: 12px 14px;
+  }
+
+  .featured-assignment-actions {
+    align-items: stretch;
+  }
+
+  .featured-assignment-note,
+  .featured-assignment-cta {
+    width: 100%;
+    max-width: none;
+  }
+
+  .routine-prime-shell {
+    grid-template-columns: 1fr;
+    padding: 18px;
   }
 }
 

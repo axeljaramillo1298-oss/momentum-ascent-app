@@ -1613,6 +1613,11 @@ const buildFeaturedAssignmentCard = ({ type = "Rutina", title = "", body = "", m
   const highlights = lines.slice(1, 5);
   const muscles = extractMuscles(body);
   const vis = getRoutineVisual(body + " " + title);
+  const ctaHref = accent === "diet" ? "user-dieta.html" : "user-hoy.html";
+  const ctaLabel = accent === "diet" ? "Abrir nutricion" : "Ir al check-in de hoy";
+  const pulseLabel = accent === "diet" ? "Come con estructura" : "Entrena sin improvisar";
+  const missionLabel = accent === "diet" ? "Objetivo semanal" : "Mision semanal";
+  const missionValue = highlights[0] || intro || "Cumplir el bloque asignado completo.";
   const muscleBar = muscles.length
     ? `<div class="rcard-muscle-bar">${muscles.map((m) => `<span class="rcard-muscle-pill">${m}</span>`).join("")}</div>`
     : "";
@@ -1667,6 +1672,7 @@ const buildFeaturedAssignmentCard = ({ type = "Rutina", title = "", body = "", m
   return `
     <article class="featured-assignment-card ${escHtml(accent)}">
       <div class="featured-assignment-glow"></div>
+      <div class="featured-assignment-noise"></div>
       <div class="facard-visual" style="background:${vis.grad}">
         <span class="facard-visual-icon">${vis.icon}</span>
         <div class="facard-visual-right">
@@ -1679,8 +1685,16 @@ const buildFeaturedAssignmentCard = ({ type = "Rutina", title = "", body = "", m
         <span class="featured-assignment-kicker">${escHtml(type)}</span>
         <span class="featured-assignment-chip">Semana ${weekNum}</span>
       </div>
+      <div class="featured-assignment-pulse">
+        <span class="featured-assignment-pulse-dot"></span>
+        <strong>${escHtml(pulseLabel)}</strong>
+      </div>
       <h3>${escHtml(title || type)}</h3>
       <p class="featured-assignment-intro">${escHtml(intro)}</p>
+      <div class="featured-assignment-mission">
+        <span>${escHtml(missionLabel)}</span>
+        <strong>${escHtml(missionValue)}</strong>
+      </div>
       ${
         highlights.length
           ? `<div class="featured-assignment-points">${highlights
@@ -1691,6 +1705,10 @@ const buildFeaturedAssignmentCard = ({ type = "Rutina", title = "", body = "", m
       <div class="featured-assignment-footer">
         <strong>${escHtml(meta || "Asignado por tu coach")}</strong>
         <span>Ejecuta el bloque de hoy dentro de tu semana y registra check-in</span>
+      </div>
+      <div class="featured-assignment-actions">
+        <a class="primary featured-assignment-cta" href="${escHtml(ctaHref)}">${escHtml(ctaLabel)}</a>
+        <div class="featured-assignment-note">Semana ${weekNum} activa. Entra, ejecuta y cierra el dia.</div>
       </div>
     </article>
   `;
