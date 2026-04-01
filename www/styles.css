@@ -13088,6 +13088,103 @@ body.user-panel-premium #today-yes:hover {
    ================================================================ */
 
 /* ================================================================
+   ROUTINE CARDS — visual thumbs + muscle pills
+   ================================================================ */
+
+/* Public routine cards */
+.rcard { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.rcard-thumb {
+  position: relative;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  padding: 0 1.2rem;
+  gap: 1rem;
+  overflow: hidden;
+}
+.rcard-thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 60%);
+  pointer-events: none;
+}
+.rcard-thumb-icon {
+  font-size: 2.6rem;
+  line-height: 1;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 12px rgba(255,255,255,0.25));
+}
+.rcard-thumb-cat {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 100px;
+  padding: 0.25rem 0.75rem;
+}
+.rcard-body {
+  padding: 1rem 1.2rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+}
+.rcard-body h3 { margin: 0; font-size: 1rem; }
+.rcard-body p  { margin: 0; font-size: 0.85rem; color: var(--text-muted, rgba(255,255,255,0.55)); }
+
+/* Muscle pills */
+.rcard-muscle-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+.rcard-muscle-pill {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ffd166;
+  background: rgba(255,209,102,0.10);
+  border: 1px solid rgba(255,209,102,0.25);
+  border-radius: 100px;
+  padding: 0.2rem 0.6rem;
+}
+
+/* Featured assignment card — visual strip */
+.facard-visual {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.4rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px 16px 0 0;
+  margin: -1px -1px 0 -1px; /* bleed to card edges */
+}
+.facard-visual-icon {
+  font-size: 2.8rem;
+  line-height: 1;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 14px rgba(255,255,255,0.2));
+}
+.facard-visual-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.facard-visual-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+}
+.facard-visual .rcard-muscle-bar { margin-top: 0; }
+
+/* ================================================================
    MOMENTUM PULSE — rutinas gauge (rutinas-pulse.js)
    ================================================================ */
 .mp-section { padding-top: 0.5rem; }

@@ -1517,13 +1517,62 @@ const splitPlanBlocks = (text) =>
     .map((line) => line.trim())
     .filter(Boolean);
 
+// ── visual helpers for routine cards ─────────────────────────────
+const getRoutineVisual = (text) => {
+  const t = (text || "").toLowerCase();
+  if (/glut|posterior|pierna|sentadilla|peso muerto|hip thrust|leg/.test(t))
+    return { grad: "linear-gradient(140deg,#1a0010 0%,#2d0025 60%,#3d1040 100%)", icon: "🦵", label: "TREN INFERIOR" };
+  if (/cardio|correr|running|bicicleta|saltar|cuerda|aerob|trote/.test(t))
+    return { grad: "linear-gradient(140deg,#011a08 0%,#043d12 60%,#0a2e1a 100%)", icon: "🏃", label: "CARDIO" };
+  if (/hiit|circuito|intervalo|tabata|amrap|emom/.test(t))
+    return { grad: "linear-gradient(140deg,#1a0800 0%,#3d1500 60%,#2e1a00 100%)", icon: "⚡", label: "HIIT" };
+  if (/movilidad|estiramiento|yoga|flexib|stretching|foam/.test(t))
+    return { grad: "linear-gradient(140deg,#020a1a 0%,#06152e 60%,#0a1a3d 100%)", icon: "🧘", label: "MOVILIDAD" };
+  if (/pecho|press|banca|hombro|shoulder|brazo|tricep|bicep|curl|pull|jalón|remo/.test(t))
+    return { grad: "linear-gradient(140deg,#100018 0%,#220030 60%,#1a003d 100%)", icon: "💪", label: "TREN SUPERIOR" };
+  if (/fuerza|powerlifting|olimpico|barra|mancuerna|kettlebell/.test(t))
+    return { grad: "linear-gradient(140deg,#0a0818 0%,#18103a 60%,#221a4a 100%)", icon: "🏋️", label: "FUERZA" };
+  if (/funcional|atletismo|deporte|sport/.test(t))
+    return { grad: "linear-gradient(140deg,#0a1400 0%,#182800 60%,#223a00 100%)", icon: "🎯", label: "FUNCIONAL" };
+  return { grad: "linear-gradient(140deg,#0d0a14 0%,#1a1028 60%,#220e22 100%)", icon: "🔥", label: "ENTRENAMIENTO" };
+};
+
+const extractMuscles = (text) => {
+  const t = (text || "").toLowerCase();
+  const out = [];
+  if (/pecho|press banca|bench/.test(t))           out.push("PECHO");
+  if (/espalda|jalón|remo|pull-up|dominada/.test(t)) out.push("ESPALDA");
+  if (/hombro|shoulder|deltoid|press militar/.test(t)) out.push("HOMBROS");
+  if (/bicep|curl/.test(t))                        out.push("BÍCEPS");
+  if (/tricep|fondos|dips|extensión/.test(t))      out.push("TRÍCEPS");
+  if (/glut|hip thrust|patada/.test(t))            out.push("GLÚTEOS");
+  if (/cuadricep|sentadilla|squat|leg press/.test(t)) out.push("CUÁDRICEPS");
+  if (/isquio|peso muerto|deadlift|romanian/.test(t)) out.push("ISQUIOS");
+  if (/pantorrilla|calf|gemelo/.test(t))           out.push("PANTORRILLAS");
+  if (/abdomen|core|plancha|crunch|sit-up/.test(t)) out.push("CORE");
+  if (/full body|cuerpo completo|todo el cuerpo/.test(t)) return ["CUERPO COMPLETO"];
+  return out.slice(0, 5);
+};
+
 const buildFeaturedAssignmentCard = ({ type = "Rutina", title = "", body = "", meta = "", accent = "routine" }) => {
   const lines = splitPlanBlocks(body);
   const intro = lines[0] || body || "";
   const highlights = lines.slice(1, 5);
+  const muscles = extractMuscles(body);
+  const vis = getRoutineVisual(body + " " + title);
+  const muscleBar = muscles.length
+    ? `<div class="rcard-muscle-bar">${muscles.map((m) => `<span class="rcard-muscle-pill">${m}</span>`).join("")}</div>`
+    : "";
   return `
     <article class="featured-assignment-card ${escHtml(accent)}">
       <div class="featured-assignment-glow"></div>
+      <div class="facard-visual" style="background:${vis.grad}">
+        <span class="facard-visual-icon">${vis.icon}</span>
+        <div class="facard-visual-right">
+          <span class="facard-visual-label">${vis.label}</span>
+          ${muscleBar}
+        </div>
+      </div>
       <div class="featured-assignment-head">
         <span class="featured-assignment-kicker">${escHtml(type)}</span>
         <span class="featured-assignment-chip">Listo para hoy</span>
@@ -1599,15 +1648,27 @@ const renderUserRoutinesPage = async () => {
       ...visibleRoutines
         .slice()
         .reverse()
-        .map(
-          (r) => `
-          <article class="entry-card">
-            <h3>${escHtml(r.title)}</h3>
-            <p>${escHtml(r.target)}</p>
-            <span class="reg-hint">${escHtml(r.duration)}</span>
-          </article>
-        `
-        )
+        .map((r) => {
+          const vis = getRoutineVisual((r.target || "") + " " + (r.title || ""));
+          const muscles = extractMuscles((r.target || "") + " " + (r.title || ""));
+          const muscleBar = muscles.length
+            ? `<div class="rcard-muscle-bar">${muscles.map((m) => `<span class="rcard-muscle-pill">${m}</span>`).join("")}</div>`
+            : "";
+          return `
+            <article class="entry-card rcard">
+              <div class="rcard-thumb" style="background:${vis.grad}">
+                <span class="rcard-thumb-icon">${vis.icon}</span>
+                <span class="rcard-thumb-cat">${vis.label}</span>
+              </div>
+              <div class="rcard-body">
+                <h3>${escHtml(r.title)}</h3>
+                <p>${escHtml(r.target)}</p>
+                ${muscleBar}
+                <span class="reg-hint">${escHtml(r.duration)}</span>
+              </div>
+            </article>
+          `;
+        })
     );
   }
   container.innerHTML = cards.join("");
