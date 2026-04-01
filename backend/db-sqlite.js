@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS routines (
   title TEXT NOT NULL,
   target TEXT NOT NULL,
   duration TEXT NOT NULL,
+  week_key TEXT NOT NULL DEFAULT '',
   created_by TEXT DEFAULT 'admin',
   created_at TEXT NOT NULL
 );
@@ -63,6 +64,8 @@ CREATE TABLE IF NOT EXISTS assignments (
   routine TEXT DEFAULT '',
   diet TEXT DEFAULT '',
   message TEXT DEFAULT '',
+  week_key TEXT NOT NULL DEFAULT '',
+  assigned_for_week TEXT NOT NULL DEFAULT '',
   created_by TEXT DEFAULT 'admin',
   updated_at TEXT NOT NULL
 );
@@ -146,9 +149,35 @@ CREATE TABLE IF NOT EXISTS ai_usage_logs (
 );
 `);
 
+const assignmentColumns = db.prepare("PRAGMA table_info(assignments)").all().map((row) => String(row.name || "").toLowerCase());
+const routineColumns = db.prepare("PRAGMA table_info(routines)").all().map((row) => String(row.name || "").toLowerCase());
+if (!routineColumns.includes("week_key")) {
+  db.exec("ALTER TABLE routines ADD COLUMN week_key TEXT NOT NULL DEFAULT ''");
+}
+if (!assignmentColumns.includes("week_key")) {
+  db.exec("ALTER TABLE assignments ADD COLUMN week_key TEXT NOT NULL DEFAULT ''");
+}
+if (!assignmentColumns.includes("assigned_for_week")) {
+  db.exec("ALTER TABLE assignments ADD COLUMN assigned_for_week TEXT NOT NULL DEFAULT ''");
+}
+
 const nowIso = () => new Date().toISOString();
 const safeStr = (value) => String(value || "").trim();
 const normalizeEmail = (value) => safeStr(value).toLowerCase();
+const getWeekKey = (date = new Date()) => {
+  const utc = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const day = utc.getUTCDay() || 7;
+  utc.setUTCDate(utc.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((utc - yearStart) / 86400000) + 1) / 7);
+  return `${utc.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+};
+const getAssignedForWeek = (date = new Date()) => {
+  const utc = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const day = utc.getUTCDay() || 7;
+  utc.setUTCDate(utc.getUTCDate() - (day - 1));
+  return utc.toISOString().slice(0, 10);
+};
 
 const insertUserStmt = db.prepare(`
 INSERT INTO users (id, name, email, whatsapp, role, plan, goal, checkin_schedule, created_at, updated_at)
@@ -171,17 +200,26 @@ ON CONFLICT(user_id) DO NOTHING
 
 const getUserStmt = db.prepare("SELECT * FROM users WHERE id = ?");
 const getMetricsStmt = db.prepare("SELECT * FROM metrics WHERE user_id = ?");
-const getFeedRoutinesStmt = db.prepare("SELECT id, title, target, duration, created_at AS createdAt FROM routines ORDER BY created_at DESC");
+const getFeedRoutinesStmt = db.prepare("SELECT id, title, target, duration, week_key AS weekKey, created_at AS createdAt FROM routines ORDER BY created_at DESC");
 const getFeedPlansStmt = db.prepare("SELECT id, title, focus, note, created_at AS createdAt FROM nutrition_plans ORDER BY created_at DESC");
 const getAssignmentStmt = db.prepare(`
-SELECT user_id AS userId, mode, routine, diet, message, updated_at AS updatedAt
+SELECT user_id AS userId, mode, routine, diet, message, week_key AS weekKey, assigned_for_week AS assignedForWeek, updated_at AS updatedAt
 FROM assignments
 WHERE user_id = ?
 `);
 
 const insertRoutineStmt = db.prepare(`
-INSERT INTO routines (title, target, duration, created_by, created_at)
-VALUES (?, ?, ?, ?, ?)
+INSERT INTO routines (title, target, duration, week_key, created_by, created_at)
+VALUES (?, ?, ?, ?, ?, ?)
+`);
+const updateRoutineStmt = db.prepare(`
+UPDATE routines
+SET title = ?,
+    target = ?,
+    duration = ?,
+    created_by = ?,
+    created_at = ?
+WHERE id = ?
 `);
 
 const insertNutritionStmt = db.prepare(`
@@ -190,15 +228,32 @@ VALUES (?, ?, ?, ?, ?)
 `);
 
 const upsertAssignmentStmt = db.prepare(`
-INSERT INTO assignments (user_id, mode, routine, diet, message, created_by, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?)
+INSERT INTO assignments (user_id, mode, routine, diet, message, week_key, assigned_for_week, created_by, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(user_id) DO UPDATE SET
   mode = excluded.mode,
   routine = excluded.routine,
   diet = excluded.diet,
   message = excluded.message,
+  week_key = excluded.week_key,
+  assigned_for_week = excluded.assigned_for_week,
   created_by = excluded.created_by,
   updated_at = excluded.updated_at
+`);
+
+const getAssignmentWeekStmt = db.prepare(`
+SELECT week_key AS weekKey, assigned_for_week AS assignedForWeek
+FROM assignments
+WHERE user_id = ?
+LIMIT 1
+`);
+
+const getRoutineWeekStmt = db.prepare(`
+SELECT id, title, week_key AS weekKey
+FROM routines
+WHERE week_key = ?
+ORDER BY created_at DESC
+LIMIT 1
 `);
 
 const insertCheckinStmt = db.prepare(`
@@ -330,6 +385,8 @@ SELECT
   u.name AS userName,
   u.email AS userEmail,
   a.mode AS mode,
+  a.week_key AS weekKey,
+  a.assigned_for_week AS assignedForWeek,
   a.created_by AS createdBy
 FROM assignments a
 INNER JOIN users u ON u.id = a.user_id
@@ -345,6 +402,8 @@ SELECT
   u.name AS userName,
   u.email AS userEmail,
   a.mode AS mode,
+  a.week_key AS weekKey,
+  a.assigned_for_week AS assignedForWeek,
   a.created_by AS createdBy
 FROM assignments a
 INNER JOIN users u ON u.id = a.user_id
@@ -668,16 +727,30 @@ function saveRoutine(payload) {
   const target = safeStr(payload.target);
   const duration = safeStr(payload.duration);
   const createdBy = safeStr(payload.createdBy) || "admin";
+  const weekKey = safeStr(payload.weekKey) || getWeekKey();
+  const force = Boolean(payload.force);
   if (!title || !target || !duration) {
     throw new Error("routine_fields_required");
   }
+  const existing = getRoutineWeekStmt.get(weekKey);
+  if (existing && !force) {
+    throw new Error(`routine_already_exists_for_week:${weekKey}`);
+  }
   const now = nowIso();
-  const result = insertRoutineStmt.run(title, target, duration, createdBy, now);
+  let routineId;
+  if (existing && force) {
+    updateRoutineStmt.run(title, target, duration, createdBy, now, existing.id);
+    routineId = Number(existing.id);
+  } else {
+    const result = insertRoutineStmt.run(title, target, duration, weekKey, createdBy, now);
+    routineId = Number(result.lastInsertRowid);
+  }
   return {
-    id: Number(result.lastInsertRowid),
+    id: routineId,
     title,
     target,
     duration,
+    weekKey,
     createdBy,
     createdAt: now,
   };
@@ -713,21 +786,32 @@ function saveAssignments(payload) {
   const diet = safeStr(payload.diet);
   const message = safeStr(payload.message);
   const createdBy = safeStr(payload.createdBy) || "admin";
+  const weekKey = safeStr(payload.weekKey) || getWeekKey();
+  const assignedForWeek = safeStr(payload.assignedForWeek) || getAssignedForWeek();
+  const force = Boolean(payload.force);
   const now = nowIso();
 
   const updated = [];
   db.exec("BEGIN");
   try {
     for (const userId of userIds) {
+      ensureUser({ email: userId, name: "User", role: "user" });
       ensureMetricsStmt.run(userId, now);
-      upsertAssignmentStmt.run(userId, mode, routine, diet, message, createdBy, now);
+      const existing = getAssignmentWeekStmt.get(userId);
+      if (safeStr(existing?.weekKey) === weekKey && !force) {
+        throw new Error(`assignment_already_exists_for_week:${userId}:${weekKey}`);
+      }
+      upsertAssignmentStmt.run(userId, mode, routine, diet, message, weekKey, assignedForWeek, createdBy, now);
       updated.push({
         userId,
         mode,
         routine,
         diet,
         message,
+        weekKey,
+        assignedForWeek,
         updatedAt: now,
+        forceApplied: force,
       });
     }
     db.exec("COMMIT");

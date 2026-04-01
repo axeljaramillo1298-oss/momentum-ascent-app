@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS routines (
   title TEXT NOT NULL,
   target TEXT NOT NULL,
   duration TEXT NOT NULL,
+  week_key TEXT NOT NULL DEFAULT '',
   created_by TEXT DEFAULT 'admin',
   created_at TIMESTAMPTZ NOT NULL
 );
@@ -108,6 +109,8 @@ CREATE TABLE IF NOT EXISTS assignments (
   routine TEXT DEFAULT '',
   diet TEXT DEFAULT '',
   message TEXT DEFAULT '',
+  week_key TEXT NOT NULL DEFAULT '',
+  assigned_for_week TEXT NOT NULL DEFAULT '',
   created_by TEXT DEFAULT 'admin',
   updated_at TIMESTAMPTZ NOT NULL
 );
@@ -193,7 +196,26 @@ CREATE TABLE IF NOT EXISTS ai_usage_logs (
 
 async function initDb() {
   await pool.query(SCHEMA_SQL);
+  await pool.query("ALTER TABLE routines ADD COLUMN IF NOT EXISTS week_key TEXT NOT NULL DEFAULT ''");
+  await pool.query("ALTER TABLE assignments ADD COLUMN IF NOT EXISTS week_key TEXT NOT NULL DEFAULT ''");
+  await pool.query("ALTER TABLE assignments ADD COLUMN IF NOT EXISTS assigned_for_week TEXT NOT NULL DEFAULT ''");
   return DB_META;
+}
+
+function getWeekKey(date = new Date()) {
+  const utc = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const day = utc.getUTCDay() || 7;
+  utc.setUTCDate(utc.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((utc - yearStart) / 86400000) + 1) / 7);
+  return `${utc.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+}
+
+function getAssignedForWeek(date = new Date()) {
+  const utc = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const day = utc.getUTCDay() || 7;
+  utc.setUTCDate(utc.getUTCDate() - (day - 1));
+  return utc.toISOString().slice(0, 10);
 }
 
 async function ensureUserRecord(userId, opts = {}) {
@@ -282,23 +304,58 @@ async function saveRoutine(payload) {
   const target = safeStr(payload.target);
   const duration = safeStr(payload.duration);
   const createdBy = safeStr(payload.createdBy) || "admin";
+  const weekKey = safeStr(payload.weekKey) || getWeekKey();
+  const force = Boolean(payload.force);
   if (!title || !target || !duration) {
     throw new Error("routine_fields_required");
   }
   const now = nowIso();
-  const result = await pool.query(
+  const existing = await pool.query(
     `
-    INSERT INTO routines (title, target, duration, created_by, created_at)
-    VALUES ($1,$2,$3,$4,$5)
-    RETURNING id
+    SELECT id, title
+    FROM routines
+    WHERE week_key = $1
+    ORDER BY created_at DESC
+    LIMIT 1
     `,
-    [title, target, duration, createdBy, now]
+    [weekKey]
   );
+  if (existing.rows[0] && !force) {
+    throw new Error(`routine_already_exists_for_week:${weekKey}`);
+  }
+  let routineId = null;
+  if (existing.rows[0] && force) {
+    const updateRes = await pool.query(
+      `
+      UPDATE routines
+      SET title = $2,
+          target = $3,
+          duration = $4,
+          created_by = $5,
+          created_at = $6
+      WHERE id = $1
+      RETURNING id
+      `,
+      [existing.rows[0].id, title, target, duration, createdBy, now]
+    );
+    routineId = Number(updateRes.rows[0].id);
+  } else {
+    const result = await pool.query(
+      `
+      INSERT INTO routines (title, target, duration, week_key, created_by, created_at)
+      VALUES ($1,$2,$3,$4,$5,$6)
+      RETURNING id
+      `,
+      [title, target, duration, weekKey, createdBy, now]
+    );
+    routineId = Number(result.rows[0].id);
+  }
   return {
-    id: Number(result.rows[0].id),
+    id: routineId,
     title,
     target,
     duration,
+    weekKey,
     createdBy,
     createdAt: now,
   };
@@ -341,6 +398,9 @@ async function saveAssignments(payload) {
   const diet = safeStr(payload.diet);
   const message = safeStr(payload.message);
   const createdBy = safeStr(payload.createdBy) || "admin";
+  const weekKey = safeStr(payload.weekKey) || getWeekKey();
+  const assignedForWeek = safeStr(payload.assignedForWeek) || getAssignedForWeek();
+  const force = Boolean(payload.force);
   const now = nowIso();
 
   const client = await pool.connect();
@@ -364,21 +424,36 @@ async function saveAssignments(payload) {
         `,
         [userId, now]
       );
+      const existingRes = await client.query(
+        `
+        SELECT week_key AS "weekKey"
+        FROM assignments
+        WHERE user_id = $1
+        LIMIT 1
+        `,
+        [userId]
+      );
+      const existingWeekKey = safeStr(existingRes.rows[0]?.weekKey);
+      if (existingWeekKey === weekKey && !force) {
+        throw new Error(`assignment_already_exists_for_week:${userId}:${weekKey}`);
+      }
       await client.query(
         `
-        INSERT INTO assignments (user_id, mode, routine, diet, message, created_by, updated_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7)
+        INSERT INTO assignments (user_id, mode, routine, diet, message, week_key, assigned_for_week, created_by, updated_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
         ON CONFLICT (user_id) DO UPDATE SET
           mode = EXCLUDED.mode,
           routine = EXCLUDED.routine,
           diet = EXCLUDED.diet,
           message = EXCLUDED.message,
+          week_key = EXCLUDED.week_key,
+          assigned_for_week = EXCLUDED.assigned_for_week,
           created_by = EXCLUDED.created_by,
           updated_at = EXCLUDED.updated_at
         `,
-        [userId, mode, routine, diet, message, createdBy, now]
+        [userId, mode, routine, diet, message, weekKey, assignedForWeek, createdBy, now]
       );
-      updated.push({ userId, mode, routine, diet, message, updatedAt: now });
+      updated.push({ userId, mode, routine, diet, message, weekKey, assignedForWeek, updatedAt: now, forceApplied: force });
     }
     await client.query("COMMIT");
     return updated;
@@ -393,11 +468,11 @@ async function saveAssignments(payload) {
 async function getFeed(userId) {
   const id = normalizeEmail(userId);
   const [routines, plans, assignment] = await Promise.all([
-    pool.query("SELECT id, title, target, duration, created_at AS \"createdAt\" FROM routines ORDER BY created_at DESC"),
+    pool.query("SELECT id, title, target, duration, week_key AS \"weekKey\", created_at AS \"createdAt\" FROM routines ORDER BY created_at DESC"),
     pool.query("SELECT id, title, focus, note, created_at AS \"createdAt\" FROM nutrition_plans ORDER BY created_at DESC"),
     pool.query(
       `
-      SELECT user_id AS "userId", mode, routine, diet, message, updated_at AS "updatedAt"
+      SELECT user_id AS "userId", mode, routine, diet, message, week_key AS "weekKey", assigned_for_week AS "assignedForWeek", updated_at AS "updatedAt"
       FROM assignments
       WHERE user_id = $1
       `,
@@ -660,7 +735,7 @@ async function getAdminTimeline(userId, limit = 30) {
     ? pool.query(
         `
         SELECT a.updated_at AS at, 'assignment' AS type, u.id AS "userId", u.name AS "userName", u.email AS "userEmail",
-               a.mode, a.created_by AS "createdBy"
+               a.mode, a.week_key AS "weekKey", a.assigned_for_week AS "assignedForWeek", a.created_by AS "createdBy"
         FROM assignments a
         INNER JOIN users u ON u.id = a.user_id
         WHERE a.user_id = $1
@@ -672,7 +747,7 @@ async function getAdminTimeline(userId, limit = 30) {
     : pool.query(
         `
         SELECT a.updated_at AS at, 'assignment' AS type, u.id AS "userId", u.name AS "userName", u.email AS "userEmail",
-               a.mode, a.created_by AS "createdBy"
+               a.mode, a.week_key AS "weekKey", a.assigned_for_week AS "assignedForWeek", a.created_by AS "createdBy"
         FROM assignments a
         INNER JOIN users u ON u.id = a.user_id
         ORDER BY a.updated_at DESC

@@ -1541,6 +1541,8 @@ const getWeekNumFromMeta = (meta) => {
   if (!meta) return null;
   const sem = meta.match(/semana\s*(\d+)/i);
   if (sem) return parseInt(sem[1]);
+  const wk = meta.match(/\b\d{4}-w(\d{2})\b/i);
+  if (wk) return parseInt(wk[1]);
   const d = meta.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if (d) {
     const date = new Date(parseInt(d[3]), parseInt(d[2]) - 1, parseInt(d[1]));
@@ -1554,6 +1556,16 @@ const getCurrentWeekNum = () => {
   const now = new Date();
   const jan1 = new Date(now.getFullYear(), 0, 1);
   return Math.ceil(((now - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+};
+
+const getCurrentIsoWeekKey = () => {
+  const now = new Date();
+  const utc = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const day = utc.getUTCDay() || 7;
+  utc.setUTCDate(utc.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((utc - yearStart) / 86400000) + 1) / 7);
+  return `${utc.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
 };
 
 const getTodayDow = () => { const d = new Date().getDay(); return d === 0 ? 7 : d; };
@@ -1595,7 +1607,7 @@ const extractMuscles = (text) => {
   return out.slice(0, 5);
 };
 
-const buildFeaturedAssignmentCard = ({ type = "Rutina", title = "", body = "", meta = "", accent = "routine" }) => {
+const buildFeaturedAssignmentCard = ({ type = "Rutina", title = "", body = "", meta = "", accent = "routine", weekKey = "" }) => {
   const lines = splitPlanBlocks(body);
   const intro = lines[0] || body || "";
   const highlights = lines.slice(1, 5);
@@ -1606,7 +1618,7 @@ const buildFeaturedAssignmentCard = ({ type = "Rutina", title = "", body = "", m
     : "";
 
   const weekDays = parseWeekDays(body);
-  const weekNum = getWeekNumFromMeta(meta + " " + title) || getCurrentWeekNum();
+  const weekNum = getWeekNumFromMeta(`${weekKey} ${meta} ${title}`) || getCurrentWeekNum();
   const todayDow = getTodayDow();
 
   let weekHtml = "";
@@ -1678,7 +1690,7 @@ const buildFeaturedAssignmentCard = ({ type = "Rutina", title = "", body = "", m
       }
       <div class="featured-assignment-footer">
         <strong>${escHtml(meta || "Asignado por tu coach")}</strong>
-        <span>Ejecuta hoy y registra check-in</span>
+        <span>Ejecuta el bloque de hoy dentro de tu semana y registra check-in</span>
       </div>
     </article>
   `;
@@ -1716,21 +1728,22 @@ const renderUserRoutinesPage = async () => {
         body: personal.routine,
         meta: `Asignada por tu coach • ${new Date(personal.updatedAt).toLocaleDateString("es-MX")}`,
         accent: "routine",
+        weekKey: personal.weekKey || "",
       })
     );
   } else if (personal?.routine && !canShowAssignedRoutine) {
     cards.push(`
       <article class="entry-card">
-        <h3>Rutina personalizada bloqueada</h3>
-        <p>Tu asignacion existe, pero tu acceso premium no esta activo todavia.</p>
+        <h3>Rutina semanal bloqueada</h3>
+        <p>Tu asignacion semanal existe, pero tu acceso premium no esta activo todavia.</p>
       </article>
     `);
   }
   if (!visibleRoutines.length) {
     cards.push(`
       <article class="entry-card">
-        <h3>Sin rutinas publicadas</h3>
-        <p>Tu entrenador cargara rutinas desde el panel admin.</p>
+        <h3>Sin rutinas semanales publicadas</h3>
+        <p>Tu entrenador cargara bloques semanales desde el panel admin.</p>
       </article>
     `);
   } else {
@@ -1965,6 +1978,7 @@ const renderUserDietPage = async () => {
         body: personal.diet,
         meta: personal.message || "Ajustada para tu objetivo actual",
         accent: "diet",
+        weekKey: personal.weekKey || "",
       })
     );
   } else if (personal?.diet && !canShowAssignedDiet) {
@@ -2313,13 +2327,19 @@ const renderAdminLists = async () => {
   } catch (err) {
     console.warn("[api] fallback local:", err?.message || err);
   }
+  adminRoutineCache = Array.isArray(routines) ? routines.slice() : [];
+  updateAdminRoutineWeekUI(adminRoutineCache);
 
   if (routineList) {
     routineList.innerHTML = routines.length
       ? routines
           .slice()
           .reverse()
-          .map((r) => `<div class="admin-item"><strong>${escHtml(r.title)}</strong><p>${escHtml(r.target)} • ${escHtml(r.duration)}</p></div>`)
+          .map((r) => {
+            const weekNum = getRoutineWeekNumber(r);
+            const weekChip = weekNum ? `<span class="reg-hint">Semana ${weekNum}</span>` : `<span class="reg-hint">Sin semana detectada</span>`;
+            return `<div class="admin-item"><strong>${escHtml(r.title)}</strong><p>${escHtml(r.target)} • ${escHtml(r.duration)}</p><p>${weekChip}</p></div>`;
+          })
           .join("")
       : `<div class="admin-item"><p>Sin rutinas publicadas.</p></div>`;
   }
@@ -2374,6 +2394,65 @@ const buildRoutineContextSummary = (user) => {
   if (limitations) parts.push(`Limites: ${limitations}`);
   if (equipment.length) parts.push(`Equipo: ${equipment.slice(0, 2).join(", ")}`);
   return parts.join(" • ");
+};
+
+let adminRoutineCache = [];
+
+const getRoutineWeekNumber = (routine) => {
+  const meta = [routine?.weekKey, routine?.title, routine?.target, routine?.duration].filter(Boolean).join(" ");
+  return getWeekNumFromMeta(meta);
+};
+
+const getCurrentRoutineWeek = () => getCurrentWeekNum();
+
+const getCurrentWeekRoutine = (routines = adminRoutineCache) => {
+  const currentWeek = getCurrentRoutineWeek();
+  return (Array.isArray(routines) ? routines : []).find((routine) => getRoutineWeekNumber(routine) === currentWeek) || null;
+};
+
+const normalizeRoutineTitleForWeek = (title, weekNum) => {
+  const cleanTitle = String(title || "").trim();
+  if (!cleanTitle) return "";
+  const weekPrefix = new RegExp(`^semana\\s+${weekNum}\\b`, "i");
+  if (weekPrefix.test(cleanTitle)) {
+    return cleanTitle;
+  }
+  return `Semana ${weekNum} · ${cleanTitle}`;
+};
+
+const updateAdminRoutineWeekUI = (routines = adminRoutineCache) => {
+  const weekEl = document.getElementById("routine-current-week");
+  const statusEl = document.getElementById("routine-week-status");
+  const hintEl = document.getElementById("routine-week-hint");
+  const forceEl = document.getElementById("routine-force-week");
+  const currentWeek = getCurrentRoutineWeek();
+  const currentLabel = `Semana ${currentWeek}`;
+  const existing = getCurrentWeekRoutine(routines);
+
+  if (weekEl) weekEl.textContent = currentLabel;
+
+  if (forceEl) {
+    forceEl.disabled = !existing;
+    if (!existing) {
+      forceEl.checked = false;
+    }
+  }
+
+  if (statusEl) {
+    if (existing) {
+      statusEl.textContent = `Ya existe una rutina para ${currentLabel}: "${existing.title}".`;
+      statusEl.className = "today-note error";
+    } else {
+      statusEl.textContent = `No hay rutina cargada para ${currentLabel}.`;
+      statusEl.className = "today-note success";
+    }
+  }
+
+  if (hintEl) {
+    hintEl.textContent = existing
+      ? "Puedes forzar una nueva publicación solo si realmente necesitas reemplazar o republicar esta semana."
+      : "El toggle de fuerza se activa solo cuando ya existe una rutina en la semana actual.";
+  }
 };
 
 const renderAdminInsights = async () => {
@@ -2479,6 +2558,8 @@ const initAdminPanel = () => {
   const nutritionForm = document.getElementById("admin-nutrition-form");
   const routineFeedback = document.getElementById("admin-routine-feedback");
   const nutritionFeedback = document.getElementById("admin-nutrition-feedback");
+  const forceWeekRoutine = document.getElementById("routine-force-week");
+  updateAdminRoutineWeekUI(adminRoutineCache);
 
   if (routineForm) {
     routineForm.addEventListener("submit", async (event) => {
@@ -2486,6 +2567,10 @@ const initAdminPanel = () => {
       const title = document.getElementById("routine-title")?.value.trim();
       const target = document.getElementById("routine-target")?.value.trim();
       const duration = document.getElementById("routine-duration")?.value;
+      const currentWeek = getCurrentRoutineWeek();
+      const currentWeekRoutine = getCurrentWeekRoutine(adminRoutineCache);
+      const forceWeek = Boolean(forceWeekRoutine?.checked);
+      const normalizedTitle = normalizeRoutineTitleForWeek(title, currentWeek);
       if (!title || !target || !duration) {
         if (routineFeedback) {
           routineFeedback.className = "reg-feedback error";
@@ -2493,21 +2578,72 @@ const initAdminPanel = () => {
         }
         return;
       }
+      if (!currentWeekRoutine && forceWeek) {
+        if (routineFeedback) {
+          routineFeedback.className = "reg-feedback error";
+          routineFeedback.textContent = "No puedes forzar una rutina si no existe una previa para esta semana.";
+        }
+        return;
+      }
+      if (currentWeekRoutine && !forceWeek) {
+        if (routineFeedback) {
+          routineFeedback.className = "reg-feedback error";
+          routineFeedback.textContent = `Ya existe una rutina para la Semana ${currentWeek}. Activa force solo si necesitas publicar otra.`;
+        }
+        return;
+      }
       try {
-        await apiPost("/admin/routines", { title, target, duration, createdBy: "admin" });
+        const remote = await apiPost("/admin/routines", {
+          title: normalizedTitle,
+          target,
+          duration,
+          weekKey: getCurrentIsoWeekKey(),
+          force: forceWeek,
+          createdBy: "admin",
+        });
+        if (!remote?.ok) {
+          if (routineFeedback) {
+            routineFeedback.className = "reg-feedback error";
+            routineFeedback.textContent = String(remote?.error || "").includes("routine_already_exists_for_week")
+              ? `Ya existe una rutina para la Semana ${currentWeek}. Activa force solo si necesitas reemplazarla.`
+              : "No se pudo guardar la rutina en servidor.";
+          }
+          return;
+        }
       } catch {
         const routines = readJsonArray(ADMIN_ROUTINES_KEY);
-        routines.push({ title, target, duration, createdAt: new Date().toISOString() });
+        routines.push({
+          title: normalizedTitle,
+          target,
+          duration,
+          weekKey: getCurrentIsoWeekKey(),
+          createdAt: new Date().toISOString(),
+        });
         saveJsonArray(ADMIN_ROUTINES_KEY, routines);
       }
       routineForm.reset();
+      if (forceWeekRoutine) {
+        forceWeekRoutine.checked = false;
+        forceWeekRoutine.disabled = true;
+      }
+      adminRoutineCache = [
+        ...adminRoutineCache.filter((item) => String(item?.weekKey || "").trim() !== getCurrentIsoWeekKey()),
+        {
+          title: normalizedTitle,
+          target,
+          duration,
+          weekKey: getCurrentIsoWeekKey(),
+          createdAt: new Date().toISOString(),
+        },
+      ];
+      updateAdminRoutineWeekUI(adminRoutineCache);
       renderAdminLists();
       renderAdminInsights();
       renderUserRoutineFeed();
       showToast("💪 Rutina guardada correctamente.", "success");
       if (routineFeedback) {
         routineFeedback.className = "reg-feedback success";
-        routineFeedback.textContent = "Rutina guardada correctamente.";
+        routineFeedback.textContent = `Rutina guardada correctamente para Semana ${currentWeek}.`;
       }
     });
   }
@@ -2555,6 +2691,9 @@ const initAdminPanel = () => {
   const finalRoutine = document.getElementById("admin-final-routine");
   const finalDiet = document.getElementById("admin-final-diet");
   const finalMessage = document.getElementById("admin-final-message");
+  const assignmentWeek = document.getElementById("admin-assignment-week");
+  const assignmentForce = document.getElementById("admin-assignment-force");
+  const assignmentWeekStatus = document.getElementById("admin-assignment-week-status");
   const profileCard = document.getElementById("admin-user-profile-card");
   const profilePhotos = document.getElementById("admin-user-photos");
   const aiGenerate = document.getElementById("admin-ai-generate");
@@ -2571,6 +2710,11 @@ const initAdminPanel = () => {
   let primarySelectedUserId = "";
   let latestCoachUsers = [];
   let fileText = "";
+
+  const currentWeekKey = getCurrentIsoWeekKey();
+  if (assignmentWeek) {
+    assignmentWeek.value = currentWeekKey;
+  }
 
   const setToolsFeedback = (text, type = "") => {
     if (!toolsFeedback) {
@@ -2641,6 +2785,38 @@ const initAdminPanel = () => {
     if (current && safeUsers.some((u) => u.id === current)) {
       timelineUser.value = current;
     }
+  };
+
+  const refreshWeeklyAssignmentStatus = async () => {
+    if (!assignmentWeekStatus) {
+      return;
+    }
+    const picks = Array.from(selectedUsers);
+    if (!picks.length) {
+      assignmentWeekStatus.innerHTML = "<strong>Semana actual</strong><p>Selecciona usuarios para validar si ya tienen rutina cargada esta semana.</p>";
+      return;
+    }
+    const statuses = await Promise.all(
+      picks.slice(0, 6).map(async (userId) => {
+        try {
+          const remote = await apiGet(`/feed/${encodeURIComponent(userId)}`);
+          const assignment = remote?.assignment || null;
+          const sameWeek = String(assignment?.weekKey || "").trim() === currentWeekKey;
+          return { userId, sameWeek, at: assignment?.updatedAt || null };
+        } catch {
+          return { userId, sameWeek: false, at: null };
+        }
+      })
+    );
+    const alreadyLoaded = statuses.filter((item) => item.sameWeek);
+    if (!alreadyLoaded.length) {
+      assignmentWeekStatus.innerHTML = `<strong>Semana ${currentWeekKey}</strong><p>No hay rutina cargada todavia para esta semana en los usuarios seleccionados.</p>`;
+      return;
+    }
+    assignmentWeekStatus.innerHTML = `
+      <strong>Semana ${currentWeekKey}</strong>
+      <p>Ya existe rutina cargada esta semana para: ${alreadyLoaded.map((item) => item.userId).join(", ")}</p>
+    `;
   };
 
   const buildProfileContextText = (user, metrics, subscription) => {
@@ -2864,6 +3040,7 @@ const initAdminPanel = () => {
     renderTimelineUserOptions(users);
     renderAdminUserProfile();
     refreshAiUsage();
+    refreshWeeklyAssignmentStatus();
 
     userResults.querySelectorAll("[data-admin-user]").forEach((cb) => {
       cb.addEventListener("change", () => {
@@ -2880,6 +3057,7 @@ const initAdminPanel = () => {
         renderAdminTimeline();
         renderAdminUserProfile();
         refreshAiUsage();
+        refreshWeeklyAssignmentStatus();
       });
     });
   };
@@ -2890,6 +3068,7 @@ const initAdminPanel = () => {
     });
   }
   renderUserResults();
+  refreshWeeklyAssignmentStatus();
 
   if (timelineUser) {
     timelineUser.addEventListener("change", () => {
@@ -3029,6 +3208,7 @@ const initAdminPanel = () => {
           diet: diet || assignments[userId]?.diet || "",
           message: message || "",
           mode,
+          weekKey: currentWeekKey,
           updatedAt: now,
         };
       });
@@ -3040,16 +3220,30 @@ const initAdminPanel = () => {
           routine: routine || "",
           diet: diet || "",
           message: message || "",
+          weekKey: currentWeekKey,
+          force: Boolean(assignmentForce?.checked),
           sendWhatsapp: true,
           createdBy: "admin",
         });
+        if (!remote?.ok) {
+          const message = String(remote?.error || "");
+          if (assignFeedback) {
+            assignFeedback.textContent = message.includes("assignment_already_exists_for_week")
+              ? `Ya existe una rutina cargada para la semana ${currentWeekKey}. Marca "Sobrescribir esta semana" para reemplazarla.`
+              : "No se pudo confirmar la asignacion en servidor.";
+          }
+          return;
+        }
         const sent = Array.isArray(remote?.whatsapp) ? remote.whatsapp.filter((w) => w.ok).length : 0;
         if (assignFeedback) {
           assignFeedback.textContent = `Plan asignado correctamente. WhatsApp enviados: ${sent}.`;
         }
-      } catch {
+      } catch (error) {
         if (assignFeedback) {
-          assignFeedback.textContent = "Plan asignado localmente. No se pudo confirmar envio de WhatsApp.";
+          const message = String(error?.message || "");
+          assignFeedback.textContent = message.includes("assignment_already_exists_for_week")
+            ? `Ya existe una rutina cargada para la semana ${currentWeekKey}. Marca "Sobrescribir esta semana" para reemplazarla.`
+            : "Plan asignado localmente. No se pudo confirmar envio de WhatsApp.";
         }
       }
       renderUserRoutineFeed();
@@ -3057,6 +3251,7 @@ const initAdminPanel = () => {
       renderUserDietPage();
       renderAdminInsights();
       renderAdminTimeline();
+      refreshWeeklyAssignmentStatus();
     });
   }
 
@@ -3092,6 +3287,8 @@ const initAdminPanel = () => {
         routine: assignment.routine || "",
         diet: assignment.diet || "",
         message: assignment.message || finalMessage?.value?.trim() || "",
+        weekKey: currentWeekKey,
+        force: Boolean(assignmentForce?.checked),
         createdBy: "admin",
       };
 
@@ -3103,13 +3300,23 @@ const initAdminPanel = () => {
           diet: payload.diet,
           message: payload.message,
           mode: payload.mode,
+          weekKey: currentWeekKey,
           updatedAt: now,
         };
       });
       saveJsonObject(USER_ASSIGNMENTS_KEY, localAssignments);
 
       try {
-        await apiPost("/admin/assignments", payload);
+        const remote = await apiPost("/admin/assignments", payload);
+        if (!remote?.ok) {
+          setToolsFeedback(
+            String(remote?.error || "").includes("assignment_already_exists_for_week")
+              ? `Ya existe rutina para la semana ${currentWeekKey} en algun destino. Usa sobrescribir si quieres reemplazarla.`
+              : "No se pudo confirmar la duplicacion en servidor.",
+            "error"
+          );
+          return;
+        }
       } catch {
         // fallback local
       }
@@ -5505,7 +5712,7 @@ function buildPlanStatusHtml(caps) {
     {
       title: "Free",
       price: "$0 / mes",
-      notes: "Check-in diario, rutina base y seguimiento esencial.",
+      notes: "Check-in, rutina base y seguimiento esencial.",
       active: caps.plan.id === "free",
     },
     {

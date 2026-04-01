@@ -144,6 +144,16 @@
             <label>Mensaje final al usuario
               <textarea id="admin-final-message" placeholder="Mensaje de acompanamiento"></textarea>
             </label>
+            <div class="admin-assistant-grid">
+              <label>Semana objetivo
+                <input id="admin-assignment-week" type="text" readonly />
+              </label>
+              <label class="admin-checkline">
+                <input id="admin-assignment-force" type="checkbox" />
+                <span>Sobrescribir esta semana</span>
+              </label>
+            </div>
+            <div id="admin-assignment-week-status" class="admin-item admin-ai-output-box">Semana sin validar.</div>
             <button class="primary" type="button" id="admin-assign-plan">
               <span>OK</span> Asignar a seleccionados
             </button>
@@ -228,6 +238,18 @@
                 <option>60 min</option>
               </select>
             </label>
+            <div class="admin-week-note">
+              <div class="admin-week-note-head">
+                <strong>Semana actual</strong>
+                <span id="routine-current-week">-</span>
+              </div>
+              <p id="routine-week-status" class="today-note">Cargando estado de rutinas...</p>
+              <label class="admin-week-force">
+                <input id="routine-force-week" type="checkbox" />
+                Forzar publicacion aunque ya exista rutina de esta semana
+              </label>
+              <p id="routine-week-hint" class="reg-hint">Se publicara con etiqueta de semana actual.</p>
+            </div>
             <button class="primary" type="submit">Guardar rutina</button>
             <p class="reg-feedback" id="admin-routine-feedback" aria-live="polite"></p>
           </form>
