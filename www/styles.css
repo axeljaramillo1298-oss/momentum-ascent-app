@@ -13087,3 +13087,43 @@ body.user-panel-premium #today-yes:hover {
    FIN DESIGN v11
    ================================================================ */
 
+/* ================================================================
+   MOMENTUM PULSE — rutinas gauge (rutinas-pulse.js)
+   ================================================================ */
+.mp-section { padding-top: 0.5rem; }
+.mp-wrap {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,59,48,0.18);
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 0 40px rgba(255,59,48,0.08), 0 2px 32px rgba(0,0,0,0.5);
+}
+.mp-canvas { display: block; width: 100%; }
+.mp-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(1.5rem, 6vw, 4rem);
+  padding: 1.1rem 1.5rem 1.25rem;
+  border-top: 1px solid rgba(255,255,255,0.055);
+  background: rgba(0,0,0,0.25);
+}
+.mp-chip { text-align: center; }
+.mp-chip-label {
+  display: block;
+  font-size: 0.60rem;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+}
+.mp-chip-val {
+  display: block;
+  font-size: clamp(1.1rem, 4vw, 1.6rem);
+  font-weight: 800;
+  color: #ffd166;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
