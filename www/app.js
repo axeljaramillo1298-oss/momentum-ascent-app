@@ -741,7 +741,7 @@ const initHomeGodEntry = () => {
       localStorage.setItem(GOD_EXPIRES_KEY, String(remote?.expiresAt || ""));
       setFeedback("Acceso concedido. Abriendo panel...", "success");
       setTimeout(() => {
-        navigateToApp("admin.html#god-panel");
+        navigateToApp("god-panel.html");
       }, 350);
     } catch (error) {
       const message = String(error?.message || "");
@@ -844,7 +844,7 @@ const getRoleMode = () => {
   if (current?.role === "admin" && hasActiveGodSession()) {
     return "admin";
   }
-  if (current?.role !== "admin" && hasActiveGodSession()) {
+  if (current && current?.role !== "admin" && hasActiveGodSession()) {
     clearGodSession();
   }
   return current?.role === "admin" ? "admin" : "user";
@@ -875,8 +875,8 @@ const lockAdminIfNeeded = () => {
   const isAdminPage = path.endsWith("/admin.html") || path.endsWith("admin.html");
   const isGodPage = path.endsWith("/god-panel.html") || path.endsWith("god-panel.html");
   if (isGodPage) {
-    // god-panel.html requiere ser admin — el login de Modo Dios está dentro de esa página
-    if (getRoleMode() !== "admin") {
+    // god-panel.html permite acceso con sesion God aun sin currentUser admin en localStorage
+    if (getRoleMode() !== "admin" && !hasActiveGodSession()) {
       navigateToApp("app-inicio.html", true);
     }
     return;
