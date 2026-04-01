@@ -102,3 +102,17 @@ CREATE TABLE IF NOT EXISTS coach_whatsapp_flows (
   answers_json JSONB NOT NULL DEFAULT '{}'::jsonb,
   updated_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS ai_usage_logs (
+  id BIGSERIAL PRIMARY KEY,
+  actor_email TEXT NOT NULL,
+  target_user_ids_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+  mode TEXT NOT NULL DEFAULT 'admin_ai',
+  provider TEXT NOT NULL DEFAULT 'fallback',
+  model TEXT DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'served',
+  reason TEXT DEFAULT '',
+  prompt_chars INTEGER NOT NULL DEFAULT 0,
+  context_chars INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL
+);

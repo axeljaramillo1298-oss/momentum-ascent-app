@@ -130,6 +130,20 @@ CREATE TABLE IF NOT EXISTS app_settings (
   value_json TEXT NOT NULL DEFAULT '{}',
   updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS ai_usage_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  actor_email TEXT NOT NULL,
+  target_user_ids_json TEXT NOT NULL DEFAULT '[]',
+  mode TEXT NOT NULL DEFAULT 'admin_ai',
+  provider TEXT NOT NULL DEFAULT 'fallback',
+  model TEXT DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'served',
+  reason TEXT DEFAULT '',
+  prompt_chars INTEGER NOT NULL DEFAULT 0,
+  context_chars INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
 `);
 
 const nowIso = () => new Date().toISOString();
@@ -462,6 +476,31 @@ SELECT key, value_json AS valueJson, updated_at AS updatedAt
 FROM app_settings
 WHERE key = ?
 LIMIT 1
+`);
+
+const insertAiUsageStmt = db.prepare(`
+INSERT INTO ai_usage_logs (
+  actor_email, target_user_ids_json, mode, provider, model, status, reason, prompt_chars, context_chars, created_at
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
+
+const listAiUsageLogsStmt = db.prepare(`
+SELECT
+  actor_email AS actorEmail,
+  target_user_ids_json AS targetUserIdsJson,
+  mode,
+  provider,
+  model,
+  status,
+  reason,
+  prompt_chars AS promptChars,
+  context_chars AS contextChars,
+  created_at AS createdAt
+FROM ai_usage_logs
+WHERE substr(created_at, 1, 7) = ?
+ORDER BY created_at DESC
+LIMIT 5000
 `);
 
 const getSubscriptionStmt = db.prepare(`
@@ -1073,6 +1112,63 @@ function setAppSetting(key, value) {
   return getAppSetting(normalizedKey, {});
 }
 
+function recordAiUsage(payload) {
+  const actorEmail = normalizeEmail(payload?.actorEmail);
+  if (!actorEmail) throw new Error("actor_email_required");
+  const targetUserIds = Array.isArray(payload?.targetUserIds)
+    ? payload.targetUserIds.map(normalizeEmail).filter(Boolean)
+    : [];
+  const mode = safeStr(payload?.mode) || "admin_ai";
+  const provider = safeStr(payload?.provider) || "fallback";
+  const model = safeStr(payload?.model);
+  const status = safeStr(payload?.status) || "served";
+  const reason = safeStr(payload?.reason);
+  const promptChars = Math.max(0, Number(payload?.promptChars || 0));
+  const contextChars = Math.max(0, Number(payload?.contextChars || 0));
+  const createdAt = safeStr(payload?.createdAt) || nowIso();
+  const result = insertAiUsageStmt.run(
+    actorEmail,
+    JSON.stringify(targetUserIds),
+    mode,
+    provider,
+    model,
+    status,
+    reason,
+    promptChars,
+    contextChars,
+    createdAt
+  );
+  return {
+    id: Number(result.lastInsertRowid),
+    actorEmail,
+    targetUserIds,
+    mode,
+    provider,
+    model,
+    status,
+    reason,
+    promptChars,
+    contextChars,
+    createdAt,
+  };
+}
+
+function listAiUsageLogs(monthKey) {
+  const normalizedMonth = safeStr(monthKey) || nowIso().slice(0, 7);
+  return listAiUsageLogsStmt.all(normalizedMonth).map((row) => ({
+    actorEmail: normalizeEmail(row.actorEmail),
+    targetUserIds: parseJsonSafe(row.targetUserIdsJson, []).map(normalizeEmail).filter(Boolean),
+    mode: row.mode || "admin_ai",
+    provider: row.provider || "fallback",
+    model: row.model || "",
+    status: row.status || "served",
+    reason: row.reason || "",
+    promptChars: Number(row.promptChars || 0),
+    contextChars: Number(row.contextChars || 0),
+    createdAt: row.createdAt || null,
+  }));
+}
+
 function getAdminCsvReport(scope, userId) {
   const normalizedScope = safeStr(scope).toLowerCase() || "week";
   if (normalizedScope === "user") {
@@ -1232,6 +1328,8 @@ module.exports = {
   grantSubscription: async (payload) => grantSubscription(payload),
   getAppSetting: async (key, fallback) => getAppSetting(key, fallback),
   setAppSetting: async (key, value) => setAppSetting(key, value),
+  recordAiUsage: async (payload) => recordAiUsage(payload),
+  listAiUsageLogs: async (monthKey) => listAiUsageLogs(monthKey),
   getSubscription: async (userId) => getSubscription(userId),
   getUserPayments: async (userId) => getUserPayments(userId),
   getUserByEmail: async (email) => getUserByEmail(email),

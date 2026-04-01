@@ -37,6 +37,8 @@ const {
   saveSupportAlert,
   searchUsers,
   deleteUser,
+  recordAiUsage,
+  listAiUsageLogs,
 } = require("./db");
 
 const app = express();
@@ -77,6 +79,13 @@ const GOD_SESSIONS = new Map();
 const RATE_LIMIT_MAP = new Map();
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX = 10;
+const AI_MONTHLY_MAX_CALLS = Math.max(1, Number(process.env.OPENAI_MONTHLY_MAX_CALLS || 300));
+const AI_ADMIN_MONTHLY_MAX_CALLS = Math.max(1, Number(process.env.OPENAI_ADMIN_MONTHLY_MAX_CALLS || 120));
+const AI_TARGET_USER_MONTHLY_MAX_CALLS = Math.max(1, Number(process.env.OPENAI_TARGET_USER_MONTHLY_MAX_CALLS || 8));
+const AI_COOLDOWN_MS = Math.max(0, Number(process.env.OPENAI_COOLDOWN_MS || 45_000));
+const AI_MAX_USERS_PER_CALL = Math.max(1, Number(process.env.OPENAI_MAX_USERS_PER_CALL || 3));
+const AI_MAX_PROMPT_CHARS = Math.max(300, Number(process.env.OPENAI_MAX_PROMPT_CHARS || 700));
+const AI_MAX_CONTEXT_CHARS = Math.max(800, Number(process.env.OPENAI_MAX_CONTEXT_CHARS || 3500));
 const getClientIp = (req) =>
   String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "")
     .split(",")[0]
@@ -200,6 +209,81 @@ const requireSelfOrAdminByAnyBodyField = (fields = ["userId"]) =>
   });
 
 const toPlainObject = (value) => (value && typeof value === "object" && !Array.isArray(value) ? value : {});
+const nowIso = () => new Date().toISOString();
+const monthKeyNow = () => nowIso().slice(0, 7);
+const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
+const uniqueEmails = (items) => [...new Set((Array.isArray(items) ? items : []).map(normalizeEmail).filter(Boolean))];
+const isOpenAiServedLog = (row) => String(row?.provider || "").toLowerCase() === "openai" && String(row?.status || "") === "served";
+
+const getAiLimits = () => ({
+  monthlyMaxCalls: AI_MONTHLY_MAX_CALLS,
+  adminMonthlyMaxCalls: AI_ADMIN_MONTHLY_MAX_CALLS,
+  targetUserMonthlyMaxCalls: AI_TARGET_USER_MONTHLY_MAX_CALLS,
+  cooldownMs: AI_COOLDOWN_MS,
+  maxUsersPerCall: AI_MAX_USERS_PER_CALL,
+  maxPromptChars: AI_MAX_PROMPT_CHARS,
+  maxContextChars: AI_MAX_CONTEXT_CHARS,
+});
+
+const sanitizeAiPayload = (payload = {}) => {
+  const promptRaw = String(payload.prompt || "").trim();
+  const contextRaw = String(payload.context || "").trim();
+  const fileTextRaw = String(payload.fileText || "").trim();
+  return {
+    prompt: promptRaw.slice(0, AI_MAX_PROMPT_CHARS),
+    context: contextRaw.slice(0, AI_MAX_CONTEXT_CHARS),
+    fileText: fileTextRaw.slice(0, AI_MAX_CONTEXT_CHARS),
+    promptTrimmed: promptRaw.length > AI_MAX_PROMPT_CHARS,
+    contextTrimmed: contextRaw.length > AI_MAX_CONTEXT_CHARS || fileTextRaw.length > AI_MAX_CONTEXT_CHARS,
+  };
+};
+
+const summarizeAiUsage = ({ logs = [], actorEmail = "", targetUserIds = [] }) => {
+  const openAiLogs = logs.filter(isOpenAiServedLog);
+  const actor = normalizeEmail(actorEmail);
+  const actorLogs = actor ? openAiLogs.filter((row) => normalizeEmail(row.actorEmail) === actor) : [];
+  const actorLastAt = actorLogs
+    .map((row) => Date.parse(row.createdAt || ""))
+    .filter((ms) => Number.isFinite(ms))
+    .sort((a, b) => b - a)[0];
+  const now = Date.now();
+  const cooldownRemainingMs =
+    AI_COOLDOWN_MS > 0 && Number.isFinite(actorLastAt) ? Math.max(0, actorLastAt + AI_COOLDOWN_MS - now) : 0;
+
+  const targetCounts = new Map();
+  for (const row of openAiLogs) {
+    const rowTargets = uniqueEmails(row?.targetUserIds);
+    for (const targetId of rowTargets) {
+      targetCounts.set(targetId, Number(targetCounts.get(targetId) || 0) + 1);
+    }
+  }
+  const selected = uniqueEmails(targetUserIds);
+  const selectedTargetUsage = selected.map((userId) => ({ userId, count: Number(targetCounts.get(userId) || 0) }));
+  const selectedTargetMax = selectedTargetUsage.reduce((max, item) => Math.max(max, item.count), 0);
+
+  return {
+    monthKey: monthKeyNow(),
+    monthOpenAiCalls: openAiLogs.length,
+    actorMonthOpenAiCalls: actorLogs.length,
+    actorLastOpenAiCallAt: Number.isFinite(actorLastAt) ? new Date(actorLastAt).toISOString() : null,
+    cooldownRemainingMs,
+    selectedTargetUsage,
+    selectedTargetMax,
+    remainingGlobalCalls: Math.max(0, AI_MONTHLY_MAX_CALLS - openAiLogs.length),
+    remainingActorCalls: Math.max(0, AI_ADMIN_MONTHLY_MAX_CALLS - actorLogs.length),
+  };
+};
+
+const getAiQuotaReason = ({ summary, requestedUserCount = 0 }) => {
+  if (requestedUserCount > AI_MAX_USERS_PER_CALL) return "ai_user_limit_exceeded";
+  if (summary.monthOpenAiCalls >= AI_MONTHLY_MAX_CALLS) return "ai_global_monthly_limit_reached";
+  if (summary.actorMonthOpenAiCalls >= AI_ADMIN_MONTHLY_MAX_CALLS) return "ai_admin_monthly_limit_reached";
+  if (summary.cooldownRemainingMs > 0) return "ai_cooldown_active";
+  if (summary.selectedTargetUsage.some((item) => item.count >= AI_TARGET_USER_MONTHLY_MAX_CALLS)) {
+    return "ai_target_user_monthly_limit_reached";
+  }
+  return "";
+};
 
 const isWhatsAppOnboardingError = (value) => {
   const text = String(value?.message || value || "").toLowerCase();
@@ -576,18 +660,72 @@ app.post("/admin/assignments", requireAdmin, async (req, res) => {
   }
 });
 
+app.get("/admin/ai-usage", requireAdmin, async (req, res) => {
+  try {
+    const actorEmail = normalizeEmail(getRequestEmail(req) || (isGodRequest(req) ? "god_mode" : ""));
+    const targetUserIds = uniqueEmails(String(req.query.userIds || "").split(","));
+    const logs = await listAiUsageLogs(monthKeyNow());
+    const summary = summarizeAiUsage({ logs, actorEmail, targetUserIds });
+    res.json({ ok: true, usage: summary, limits: getAiLimits() });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "ai_usage_failed") });
+  }
+});
+
 app.post("/admin/ai-plan", requireAdmin, async (req, res) => {
   try {
     const payload = req.body || {};
-    const userIds = Array.isArray(payload.userIds)
-      ? payload.userIds.map((id) => String(id || "").trim().toLowerCase()).filter(Boolean)
-      : [];
+    const actorEmail = normalizeEmail(getRequestEmail(req) || (isGodRequest(req) ? "god_mode" : ""));
+    const sanitized = sanitizeAiPayload(payload);
+    const requestedUserIds = uniqueEmails(payload.userIds);
+    const userIds = requestedUserIds.slice(0, AI_MAX_USERS_PER_CALL);
+    const usageLogs = await listAiUsageLogs(monthKeyNow());
+    const usageSummary = summarizeAiUsage({ logs: usageLogs, actorEmail, targetUserIds: userIds });
 
     const users = [];
-    for (const userId of userIds.slice(0, 10)) {
+    for (const userId of userIds) {
       const found = await searchUsers(userId);
       const user = found.find((u) => String(u.id || u.email || "").trim().toLowerCase() === userId);
       if (user) users.push(user);
+    }
+
+    const quotaReason = getAiQuotaReason({
+      summary: usageSummary,
+      requestedUserCount: requestedUserIds.length,
+    });
+    const limits = getAiLimits();
+    if (quotaReason) {
+      const plan = buildFallbackPlan({
+        users,
+        prompt: sanitized.prompt,
+        context: sanitized.context || sanitized.fileText,
+        mode: payload.mode,
+      });
+      await recordAiUsage({
+        actorEmail,
+        targetUserIds: userIds,
+        mode: String(payload.mode || "admin_ai"),
+        provider: "fallback",
+        model: "",
+        status: "blocked",
+        reason: quotaReason,
+        promptChars: sanitized.prompt.length,
+        contextChars: Math.max(sanitized.context.length, sanitized.fileText.length),
+        createdAt: nowIso(),
+      });
+      return res.json({
+        ok: true,
+        plan,
+        aiMeta: {
+          provider: "fallback",
+          model: null,
+          reason: quotaReason,
+          limits,
+          usage: usageSummary,
+          promptTrimmed: sanitized.promptTrimmed,
+          contextTrimmed: sanitized.contextTrimmed,
+        },
+      });
     }
 
     let plan;
@@ -595,29 +733,74 @@ app.post("/admin/ai-plan", requireAdmin, async (req, res) => {
       provider: "fallback",
       model: null,
       reason: "unknown",
+      limits,
+      usage: usageSummary,
+      promptTrimmed: sanitized.promptTrimmed,
+      contextTrimmed: sanitized.contextTrimmed,
     };
     try {
       plan = await generateAiPlan({
         ...payload,
+        prompt: sanitized.prompt,
+        context: sanitized.context,
+        fileText: sanitized.fileText,
         users,
+      });
+      const usageEntry = {
+        actorEmail,
+        targetUserIds: userIds,
+        mode: String(payload.mode || "admin_ai"),
+        provider: plan?.provider || "openai",
+        model: plan?.model || "",
+        status: "served",
+        reason: "",
+        promptChars: sanitized.prompt.length,
+        contextChars: Math.max(sanitized.context.length, sanitized.fileText.length),
+        createdAt: nowIso(),
+      };
+      await recordAiUsage(usageEntry);
+      const nextUsageSummary = summarizeAiUsage({
+        logs: [...usageLogs, usageEntry],
+        actorEmail,
+        targetUserIds: userIds,
       });
       aiMeta = {
         provider: plan?.provider || "openai",
         model: plan?.model || null,
         reason: null,
+        limits,
+        usage: nextUsageSummary,
+        promptTrimmed: sanitized.promptTrimmed,
+        contextTrimmed: sanitized.contextTrimmed,
       };
     } catch (err) {
       const reason = String(err?.message || err || "openai_error");
       console.warn("[backend] ai-plan fallback:", reason);
+      await recordAiUsage({
+        actorEmail,
+        targetUserIds: userIds,
+        mode: String(payload.mode || "admin_ai"),
+        provider: "fallback",
+        model: "",
+        status: "fallback",
+        reason,
+        promptChars: sanitized.prompt.length,
+        contextChars: Math.max(sanitized.context.length, sanitized.fileText.length),
+        createdAt: nowIso(),
+      });
       aiMeta = {
         provider: "fallback",
         model: null,
         reason,
+        limits,
+        usage: usageSummary,
+        promptTrimmed: sanitized.promptTrimmed,
+        contextTrimmed: sanitized.contextTrimmed,
       };
       plan = buildFallbackPlan({
         users,
-        prompt: payload.prompt,
-        context: payload.context || payload.fileText,
+        prompt: sanitized.prompt,
+        context: sanitized.context || sanitized.fileText,
         mode: payload.mode,
       });
     }

@@ -135,6 +135,20 @@ CREATE TABLE IF NOT EXISTS app_settings (
   value_json JSONB NOT NULL DEFAULT '{}'::jsonb,
   updated_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS ai_usage_logs (
+  id BIGSERIAL PRIMARY KEY,
+  actor_email TEXT NOT NULL,
+  target_user_ids_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+  mode TEXT NOT NULL DEFAULT 'admin_ai',
+  provider TEXT NOT NULL DEFAULT 'fallback',
+  model TEXT DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'served',
+  reason TEXT DEFAULT '',
+  prompt_chars INTEGER NOT NULL DEFAULT 0,
+  context_chars INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL
+);
 `;
 
 async function initDb() {
@@ -1021,6 +1035,80 @@ async function setAppSetting(key, value) {
   return getAppSetting(normalizedKey, {});
 }
 
+async function recordAiUsage(payload) {
+  const actorEmail = normalizeEmail(payload?.actorEmail);
+  if (!actorEmail) throw new Error("actor_email_required");
+  const targetUserIds = Array.isArray(payload?.targetUserIds)
+    ? payload.targetUserIds.map(normalizeEmail).filter(Boolean)
+    : [];
+  const mode = safeStr(payload?.mode) || "admin_ai";
+  const provider = safeStr(payload?.provider) || "fallback";
+  const model = safeStr(payload?.model);
+  const status = safeStr(payload?.status) || "served";
+  const reason = safeStr(payload?.reason);
+  const promptChars = Math.max(0, Number(payload?.promptChars || 0));
+  const contextChars = Math.max(0, Number(payload?.contextChars || 0));
+  const createdAt = safeStr(payload?.createdAt) || nowIso();
+  const result = await pool.query(
+    `
+    INSERT INTO ai_usage_logs (
+      actor_email, target_user_ids_json, mode, provider, model, status, reason, prompt_chars, context_chars, created_at
+    )
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+    RETURNING id
+    `,
+    [actorEmail, targetUserIds, mode, provider, model, status, reason, promptChars, contextChars, createdAt]
+  );
+  return {
+    id: Number(result.rows[0]?.id || 0),
+    actorEmail,
+    targetUserIds,
+    mode,
+    provider,
+    model,
+    status,
+    reason,
+    promptChars,
+    contextChars,
+    createdAt,
+  };
+}
+
+async function listAiUsageLogs(monthKey) {
+  const normalizedMonth = safeStr(monthKey) || nowIso().slice(0, 7);
+  const result = await pool.query(
+    `
+    SELECT actor_email AS "actorEmail",
+           target_user_ids_json AS "targetUserIds",
+           mode,
+           provider,
+           model,
+           status,
+           reason,
+           prompt_chars AS "promptChars",
+           context_chars AS "contextChars",
+           created_at AS "createdAt"
+    FROM ai_usage_logs
+    WHERE TO_CHAR(created_at AT TIME ZONE 'UTC', 'YYYY-MM') = $1
+    ORDER BY created_at DESC
+    LIMIT 5000
+    `,
+    [normalizedMonth]
+  );
+  return result.rows.map((row) => ({
+    actorEmail: normalizeEmail(row.actorEmail),
+    targetUserIds: Array.isArray(row.targetUserIds) ? row.targetUserIds.map(normalizeEmail).filter(Boolean) : [],
+    mode: row.mode || "admin_ai",
+    provider: row.provider || "fallback",
+    model: row.model || "",
+    status: row.status || "served",
+    reason: row.reason || "",
+    promptChars: Number(row.promptChars || 0),
+    contextChars: Number(row.contextChars || 0),
+    createdAt: row.createdAt || null,
+  }));
+}
+
 async function getAdminCsvReport(scope, userId) {
   const normalizedScope = safeStr(scope).toLowerCase() || "week";
   if (normalizedScope === "user") {
@@ -1256,6 +1344,8 @@ module.exports = {
   grantSubscription,
   getAppSetting,
   setAppSetting,
+  recordAiUsage,
+  listAiUsageLogs,
   getSubscription,
   getUserPayments,
   getUserByEmail,

@@ -1,5 +1,9 @@
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 const OPENAI_TIMEOUT_MS = Math.max(5_000, Number(process.env.OPENAI_TIMEOUT_MS || 25_000));
+const OPENAI_MAX_OUTPUT_TOKENS = Math.max(250, Number(process.env.OPENAI_MAX_OUTPUT_TOKENS || 900));
+const OPENAI_MAX_PROMPT_CHARS = Math.max(300, Number(process.env.OPENAI_MAX_PROMPT_CHARS || 700));
+const OPENAI_MAX_CONTEXT_CHARS = Math.max(800, Number(process.env.OPENAI_MAX_CONTEXT_CHARS || 3500));
+const OPENAI_MAX_USERS_PER_CALL = Math.max(1, Number(process.env.OPENAI_MAX_USERS_PER_CALL || 3));
 const { detectSportFallback, buildFallbackPlanForSport } = require("./sport-routine-fallbacks");
 
 const safeStr = (value) => String(value || "").trim();
@@ -46,6 +50,7 @@ const extractJsonObject = (raw) => {
 const createOpenAiBody = (model, systemPrompt, userPrompt) => ({
   model,
   temperature: 0.4,
+  max_tokens: OPENAI_MAX_OUTPUT_TOKENS,
   response_format: { type: "json_object" },
   messages: [
     { role: "system", content: systemPrompt },
@@ -90,10 +95,10 @@ async function generateAiPlan(payload = {}) {
     .split(",")
     .map((v) => safeStr(v))
     .filter(Boolean);
-  const prompt = safeStr(payload.prompt);
-  const context = safeStr(payload.context || payload.fileText);
+  const prompt = safeStr(payload.prompt).slice(0, OPENAI_MAX_PROMPT_CHARS);
+  const context = safeStr(payload.context || payload.fileText).slice(0, OPENAI_MAX_CONTEXT_CHARS);
   const mode = safeStr(payload.mode) || "admin_ai";
-  const users = Array.isArray(payload.users) ? payload.users : [];
+  const users = Array.isArray(payload.users) ? payload.users.slice(0, OPENAI_MAX_USERS_PER_CALL) : [];
 
   if (!apiKey) throw new Error("openai_key_missing");
 

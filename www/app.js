@@ -2117,6 +2117,7 @@ const initAdminPanel = () => {
   const aiPrompt = document.getElementById("admin-ai-prompt");
   const aiContext = document.getElementById("admin-ai-context");
   const aiFile = document.getElementById("admin-ai-file");
+  const aiUsage = document.getElementById("admin-ai-usage");
   const aiOutput = document.getElementById("admin-ai-output");
   const finalRoutine = document.getElementById("admin-final-routine");
   const finalDiet = document.getElementById("admin-final-diet");
@@ -2144,6 +2145,55 @@ const initAdminPanel = () => {
     }
     toolsFeedback.className = `reg-feedback ${type}`.trim();
     toolsFeedback.textContent = text;
+  };
+
+  const quotaReasonLabel = (reason) => {
+    const normalized = String(reason || "").trim().toLowerCase();
+    if (normalized === "ai_global_monthly_limit_reached") return "Se alcanzo el limite global mensual de OpenAI.";
+    if (normalized === "ai_admin_monthly_limit_reached") return "Este admin ya alcanzo su cuota mensual de OpenAI.";
+    if (normalized === "ai_target_user_monthly_limit_reached") return "Uno o mas usuarios ya alcanzaron su cuota mensual de planes IA.";
+    if (normalized === "ai_cooldown_active") return "Espera unos segundos antes de volver a generar.";
+    if (normalized === "ai_user_limit_exceeded") return "Genera para maximo 3 usuarios a la vez.";
+    return normalized || "Sin detalle";
+  };
+
+  const renderAiUsage = (usage, limits) => {
+    if (!aiUsage) {
+      return;
+    }
+    const safeUsage = usage && typeof usage === "object" ? usage : {};
+    const safeLimits = limits && typeof limits === "object" ? limits : {};
+    const globalUsed = Number(safeUsage.monthOpenAiCalls || 0);
+    const globalMax = Number(safeLimits.monthlyMaxCalls || 0);
+    const actorUsed = Number(safeUsage.actorMonthOpenAiCalls || 0);
+    const actorMax = Number(safeLimits.adminMonthlyMaxCalls || 0);
+    const cooldownMs = Number(safeUsage.cooldownRemainingMs || 0);
+    const targetUsage = Array.isArray(safeUsage.selectedTargetUsage) ? safeUsage.selectedTargetUsage : [];
+    const targetMax = Number(safeLimits.targetUserMonthlyMaxCalls || 0);
+    const targetLine = targetUsage.length
+      ? targetUsage.map((it) => `${it.userId}: ${Number(it.count || 0)}/${targetMax}`).join(" • ")
+      : "Sin usuarios seleccionados";
+    aiUsage.innerHTML = `
+      <strong>Uso IA del mes</strong>
+      <p>Global: ${globalUsed}/${globalMax || "-"} • Admin: ${actorUsed}/${actorMax || "-"}</p>
+      <p>Cooldown: ${cooldownMs > 0 ? `${Math.ceil(cooldownMs / 1000)}s` : "Listo"}</p>
+      <p>Usuarios: ${escHtml(targetLine)}</p>
+    `;
+  };
+
+  const refreshAiUsage = async () => {
+    try {
+      const ids = Array.from(selectedUsers).join(",");
+      const path = ids ? `/admin/ai-usage?userIds=${encodeURIComponent(ids)}` : "/admin/ai-usage";
+      const remote = await apiGet(path);
+      if (remote?.ok) {
+        renderAiUsage(remote.usage, remote.limits);
+      }
+    } catch {
+      if (aiUsage) {
+        aiUsage.innerHTML = `<strong>Uso IA del mes</strong><p>No se pudo cargar el consumo actual.</p>`;
+      }
+    }
   };
 
   const renderTimelineUserOptions = (users) => {
@@ -2378,6 +2428,7 @@ const initAdminPanel = () => {
 
     renderTimelineUserOptions(users);
     renderAdminUserProfile();
+    refreshAiUsage();
 
     userResults.querySelectorAll("[data-admin-user]").forEach((cb) => {
       cb.addEventListener("change", () => {
@@ -2393,6 +2444,7 @@ const initAdminPanel = () => {
         }
         renderAdminTimeline();
         renderAdminUserProfile();
+        refreshAiUsage();
       });
     });
   };
@@ -2416,6 +2468,7 @@ const initAdminPanel = () => {
       renderAdminTimeline();
     });
   }
+  refreshAiUsage();
 
   if (aiFile) {
     aiFile.addEventListener("change", () => {
@@ -2461,6 +2514,16 @@ const initAdminPanel = () => {
       fileText,
       mode,
     });
+    if (!remote?.ok) {
+      return {
+        plan: null,
+        aiMeta: {
+          provider: "fallback",
+          model: null,
+          reason: String(remote?.error || "ai_plan_failed"),
+        },
+      };
+    }
     return {
       plan: remote?.plan || null,
       aiMeta: remote?.aiMeta || null,
@@ -2490,11 +2553,18 @@ const initAdminPanel = () => {
         const provider = String(aiMeta?.provider || plan?.provider || "local");
         const model = String(aiMeta?.model || "").trim();
         const reason = String(aiMeta?.reason || "").trim();
+        const usage = aiMeta?.usage || null;
+        const limits = aiMeta?.limits || null;
+        renderAiUsage(usage, limits);
+        const trimLine =
+          aiMeta?.promptTrimmed || aiMeta?.contextTrimmed
+            ? `<p class="today-note">Se recorto el contexto para controlar costo.</p>`
+            : "";
         const providerLine =
           provider === "openai"
             ? `<p class="today-note">Proveedor: OpenAI${model ? ` • Modelo: ${model}` : ""}</p>`
-            : `<p class="today-note">Proveedor: Fallback${reason ? ` • Motivo: ${reason}` : ""}</p>`;
-        aiOutput.innerHTML = `<strong>Respuesta IA</strong>${providerLine}<p>${plan.routineText}</p><p>${plan.dietText}</p>`;
+            : `<p class="today-note">Proveedor: Fallback${reason ? ` • Motivo: ${quotaReasonLabel(reason)}` : ""}</p>`;
+        aiOutput.innerHTML = `<strong>Respuesta IA</strong>${providerLine}${trimLine}<p>${plan.routineText}</p><p>${plan.dietText}</p>`;
       }
       if (finalRoutine) finalRoutine.value = plan.routineText;
       if (finalDiet) finalDiet.value = plan.dietText;
