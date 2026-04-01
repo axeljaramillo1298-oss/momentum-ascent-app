@@ -2992,6 +2992,12 @@ function initGodModePanel() {
   const planId = document.getElementById("god-plan-id");
   const planLabel = document.getElementById("god-plan-label");
   const planDays = document.getElementById("god-plan-days");
+  const challengeType = document.getElementById("god-challenge-type");
+  const betAmount = document.getElementById("god-bet-amount");
+  const contractEnabled = document.getElementById("god-contract-enabled");
+  const betEnabled = document.getElementById("god-bet-enabled");
+  const extraDietBasic = document.getElementById("god-extra-diet-basic");
+  const extraDietPlus = document.getElementById("god-extra-diet-plus");
   const bankName = document.getElementById("god-bank-name");
   const bankHolder = document.getElementById("god-bank-holder");
   const bankClabe = document.getElementById("god-bank-clabe");
@@ -3023,6 +3029,32 @@ function initGodModePanel() {
     if (normalized === "ai_coach") return "Coach IA";
     if (normalized === "retos") return "Retos";
     return "Free";
+  };
+
+  const syncGodPlanLabel = () => {
+    if (!planLabel) return;
+    const selectedPlan = String(planId?.value || "free").toLowerCase();
+    const challenge = challengeType?.value?.trim() || "";
+    if (selectedPlan === "retos" && challenge) {
+      planLabel.value = `Retos • ${challenge}`;
+      return;
+    }
+    if (!planLabel.value.trim() || planLabel.dataset.auto === "1") {
+      planLabel.value = planLabelById(selectedPlan);
+    }
+  };
+
+  const buildGodExtras = () => {
+    const selectedPlan = String(planId?.value || "free").toLowerCase();
+    return {
+      diet_basic: Boolean(extraDietBasic?.checked),
+      diet_plus: Boolean(extraDietPlus?.checked),
+      nutrition_plan: extraDietPlus?.checked ? "pro" : extraDietBasic?.checked ? "basic" : "",
+      contract_enabled: Boolean(contractEnabled?.checked),
+      bet_mode: Boolean(betEnabled?.checked),
+      bet_amount: Math.max(0, Number(betAmount?.value || 0)),
+      challenge_type: selectedPlan === "retos" ? String(challengeType?.value || "").trim() : "",
+    };
   };
 
   const hasGod = () => {
@@ -3250,6 +3282,7 @@ function initGodModePanel() {
         planLabel: planLabel?.value?.trim() || planLabelById(planId?.value),
         durationDays: Number(planDays?.value || 30),
         status: "active",
+        extras: buildGodExtras(),
       };
       try {
         await apiPost("/god/users/grant-plan", payload);
@@ -3302,6 +3335,30 @@ function initGodModePanel() {
     });
   }
 
+  if (planId && !planId.dataset.bound) {
+    planId.dataset.bound = "1";
+    planId.addEventListener("change", () => {
+      if (planLabel) planLabel.dataset.auto = "1";
+      syncGodPlanLabel();
+    });
+  }
+
+  if (challengeType && !challengeType.dataset.bound) {
+    challengeType.dataset.bound = "1";
+    challengeType.addEventListener("input", () => {
+      if (planLabel) planLabel.dataset.auto = "1";
+      syncGodPlanLabel();
+    });
+  }
+
+  if (planLabel && !planLabel.dataset.bound) {
+    planLabel.dataset.bound = "1";
+    planLabel.dataset.auto = "1";
+    planLabel.addEventListener("input", () => {
+      planLabel.dataset.auto = "0";
+    });
+  }
+
   if (usersList && !usersList.dataset.bound) {
     usersList.dataset.bound = "1";
     usersList.addEventListener("click", async (event) => {
@@ -3313,6 +3370,12 @@ function initGodModePanel() {
       if (action === "fill") {
         if (targetUser) targetUser.value = userId;
         if (targetRole) targetRole.value = btn.dataset.godRole === "admin" ? "admin" : "user";
+        if (planId) planId.value = mapLegacyPlanToId(btn.dataset.godPlan || "free");
+        if (planLabel) {
+          planLabel.value = btn.dataset.godPlan || planLabelById(planId?.value);
+          planLabel.dataset.auto = "1";
+        }
+        syncGodPlanLabel();
         return;
       }
       if (action === "role-admin" || action === "role-user") {
@@ -3334,6 +3397,15 @@ function initGodModePanel() {
             planLabel: "Coach + Humano",
             durationDays: 30,
             status: "active",
+            extras: {
+              diet_basic: false,
+              diet_plus: true,
+              nutrition_plan: "pro",
+              contract_enabled: false,
+              bet_mode: false,
+              bet_amount: 0,
+              challenge_type: "",
+            },
           });
           setFeedback(userFeedback, `Plan Coach + Humano otorgado a ${userId}.`, "success");
           await loadGodUsers(usersSearch?.value || "");
@@ -3360,6 +3432,7 @@ function initGodModePanel() {
   }
 
   paintStatus();
+  syncGodPlanLabel();
   refreshBilling();
   loadGodUsers();
 }

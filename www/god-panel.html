@@ -123,6 +123,16 @@
                 </label>
                 <label>Nombre visible del plan<input id="god-plan-label" type="text" placeholder="Coach + Humano" /></label>
                 <label>Dias activos<input id="god-plan-days" type="number" min="1" value="30" /></label>
+                <label>Tipo de reto<input id="god-challenge-type" type="text" placeholder="Ej. 21 dias, fuerza, cardio, mental, mixto" /></label>
+                <label>Monto apuesta<input id="god-bet-amount" type="number" min="0" value="0" placeholder="0" /></label>
+                <div class="role-actions">
+                  <label class="agree-row"><input id="god-contract-enabled" type="checkbox" /><span>Contrato activo</span></label>
+                  <label class="agree-row"><input id="god-bet-enabled" type="checkbox" /><span>Modo apuesta</span></label>
+                </div>
+                <div class="role-actions">
+                  <label class="agree-row"><input id="god-extra-diet-basic" type="checkbox" /><span>Dieta Basica</span></label>
+                  <label class="agree-row"><input id="god-extra-diet-plus" type="checkbox" /><span>Dieta Pro</span></label>
+                </div>
                 <button class="primary" type="button" id="god-grant-plan-btn">Otorgar o actualizar plan</button>
                 <button class="ghost" type="button" id="god-delete-user-btn">Eliminar usuario</button>
                 <p class="reg-feedback" id="god-user-feedback" aria-live="polite"></p>
