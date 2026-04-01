@@ -367,6 +367,8 @@ app.post("/auth/login", async (req, res) => {
         onboarding = await startCoachOnboardingForUser(user, {
           getCoachFlowByUser,
           upsertCoachFlow,
+          saveOnboardingProfile,
+          searchUsers,
         });
       } catch (err) {
         const normalized = normalizeWhatsAppOnboardingResult(err);
@@ -511,6 +513,8 @@ app.post("/coach/onboarding/start", requireSelfOrAdminByAnyBodyField(["email", "
       result = await startCoachOnboardingForUser(user, {
         getCoachFlowByUser,
         upsertCoachFlow,
+        saveOnboardingProfile,
+        searchUsers,
       });
     } catch (err) {
       const normalized = normalizeWhatsAppOnboardingResult(err);
@@ -559,6 +563,8 @@ app.post("/whatsapp/webhook", async (req, res) => {
             await handleIncomingCoachMessage(msg, {
               getCoachFlowByPhone,
               upsertCoachFlow,
+              saveOnboardingProfile,
+              searchUsers,
             });
           }
         }

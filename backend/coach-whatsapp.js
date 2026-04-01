@@ -36,6 +36,48 @@ const buildWelcome = (name) => {
   return `Hola ${clean}. Soy tu coach de Momentum Ascent. Aqui no hay excusas, hay ejecucion diaria.`;
 };
 
+const buildCoachProfilePatch = (existingAnswers = {}, coachAnswers = {}) => {
+  const base = existingAnswers && typeof existingAnswers === "object" && !Array.isArray(existingAnswers) ? existingAnswers : {};
+  const goal = safeStr(coachAnswers.goal);
+  const schedule = safeStr(coachAnswers.schedule);
+  const experience = safeStr(coachAnswers.experience);
+  const limitations = safeStr(coachAnswers.limitations);
+  return {
+    ...base,
+    ...(goal ? { objetivo: goal } : {}),
+    ...(schedule ? { horario: schedule, tiempo: schedule } : {}),
+    ...(experience ? { nivel: experience } : {}),
+    ...(limitations ? { lesiones: limitations } : {}),
+    coach_whatsapp_goal: goal || base.coach_whatsapp_goal || "",
+    coach_whatsapp_schedule: schedule || base.coach_whatsapp_schedule || "",
+    coach_whatsapp_experience: experience || base.coach_whatsapp_experience || "",
+    coach_whatsapp_limitations: limitations || base.coach_whatsapp_limitations || "",
+    coach_whatsapp_completed: Boolean(goal || schedule || experience || limitations || base.coach_whatsapp_completed),
+    coach_whatsapp_updated_at: new Date().toISOString(),
+  };
+};
+
+async function persistCoachAnswersToProfile(userId, coachAnswers, db) {
+  if (!userId || !db?.saveOnboardingProfile) return null;
+  let existingAnswers = {};
+  if (db.searchUsers) {
+    try {
+      const candidates = await db.searchUsers(userId);
+      const match = Array.isArray(candidates)
+        ? candidates.find((item) => safeStr(item?.id || item?.email).toLowerCase() === safeStr(userId).toLowerCase())
+        : null;
+      if (match?.onboardingAnswers && typeof match.onboardingAnswers === "object") {
+        existingAnswers = match.onboardingAnswers;
+      }
+    } catch {
+      existingAnswers = {};
+    }
+  }
+  const mergedAnswers = buildCoachProfilePatch(existingAnswers, coachAnswers);
+  await db.saveOnboardingProfile({ email: userId, answers: mergedAnswers });
+  return mergedAnswers;
+}
+
 async function sendOnboardingKickoff(user) {
   const cfg = getWhatsAppConfig();
   const phone = normalizePhone(user?.whatsapp);
@@ -82,6 +124,7 @@ async function startCoachOnboardingForUser(user, db) {
     status: "active",
     answers: existing?.answers || {},
   });
+  await persistCoachAnswersToProfile(userId, existing?.answers || {}, db);
 
   const sent = await sendOnboardingKickoff(user);
   const providerIssues = sent.some((item) => item && item.skipped && item.reason === "whatsapp_unavailable");
@@ -118,6 +161,7 @@ async function handleIncomingCoachMessage(message, db) {
     status: completed ? "completed" : "active",
     answers,
   });
+  const mergedProfile = await persistCoachAnswersToProfile(flow.userId, answers, db);
 
   if (completed) {
     const summary = [
@@ -130,14 +174,14 @@ async function handleIncomingCoachMessage(message, db) {
       to: from,
       body: `Formulario completo. Perfecto. Tu plan se ajustara con esto:\n${summary}\nHoy inicias. Sin pausa.`,
     });
-    return { ok: true, completed: true, userId: flow.userId, answers };
+    return { ok: true, completed: true, userId: flow.userId, answers, onboardingAnswers: mergedProfile || {} };
   }
 
   await sendWhatsAppText({
     to: from,
     body: `${QUESTIONS[nextStep].text}\nResponde claro y breve.`,
   });
-  return { ok: true, completed: false, step: nextStep, userId: flow.userId, answers };
+  return { ok: true, completed: false, step: nextStep, userId: flow.userId, answers, onboardingAnswers: mergedProfile || {} };
 }
 
 module.exports = {

@@ -1929,6 +1929,7 @@ const buildRoutineContextSummary = (user) => {
   const level = String(answers.nivel || "").trim();
   const place = String(answers.lugar || "").trim();
   const time = String(answers.tiempo || "").trim();
+  const limitations = String(answers.coach_whatsapp_limitations || answers.lesiones || "").trim();
   const sportRaw = String(answers.deporte || "").trim();
   const sport = sportRaw === "Otro" ? String(answers.deporte_otro || "Otro").trim() : sportRaw;
   const tone = String(answers.tono || "").trim();
@@ -1943,6 +1944,7 @@ const buildRoutineContextSummary = (user) => {
   if (place) parts.push(`Lugar: ${place}`);
   if (time) parts.push(`Tiempo: ${time}`);
   if (tone) parts.push(`Tono: ${tone}`);
+  if (limitations) parts.push(`Limites: ${limitations}`);
   if (equipment.length) parts.push(`Equipo: ${equipment.slice(0, 2).join(", ")}`);
   return parts.join(" • ");
 };
@@ -2222,6 +2224,7 @@ const initAdminPanel = () => {
       `Deporte: ${answers.deporte_otro || answers.deporte || "-"}`,
       `Lugar: ${answers.lugar || "-"}`,
       `Tiempo disponible: ${answers.tiempo || "-"}`,
+      `Limitaciones: ${answers.coach_whatsapp_limitations || answers.lesiones || "-"}`,
       `WhatsApp: ${user?.whatsapp || "-"}`,
       `Racha: ${metrics?.streak ?? "-"}`,
       `Cumplimiento: ${metrics?.totalDays ? Math.round((Number(metrics.completedDays || 0) * 100) / Math.max(1, Number(metrics.totalDays || 0))) : 0}%`,
@@ -2280,6 +2283,7 @@ const initAdminPanel = () => {
           <p>Meta: ${escHtml(answers.objetivo || baseUser.goal || baseUser.objetivo || "Sin definir")}</p>
           <p>Horario: ${escHtml(baseUser.horario || baseUser.checkinSchedule || answers.horario || "Sin definir")}</p>
           <p>Perfil: ${escHtml(answers.perfil || baseUser.perfil || "Sin definir")}</p>
+          <p>Nivel: ${escHtml(answers.nivel || answers.coach_whatsapp_experience || "Sin definir")} • Limitaciones: ${escHtml(answers.coach_whatsapp_limitations || answers.lesiones || "Sin definir")}</p>
           <p>Racha: ${escHtml(String(metrics?.streak ?? "-"))} • Cumplimiento: ${escHtml(String(compliance))}% • Fallos: ${escHtml(String(metrics?.failures ?? "-"))}</p>
           <div class="role-actions">
             ${whatsappLink ? `<a class="ghost" href="${escHtml(whatsappLink)}" target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>` : ""}
