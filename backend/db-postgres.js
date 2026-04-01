@@ -27,6 +27,24 @@ const parseJsonSafe = (raw, fallback = {}) => {
     return fallback;
   }
 };
+const parseJsonArraySafe = (raw, fallback = []) => {
+  if (raw === null || raw === undefined || raw === "") return fallback;
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed && typeof parsed === "object") return Object.values(parsed);
+      return fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  if (typeof raw === "object") {
+    return Object.values(raw);
+  }
+  return fallback;
+};
 const toJsonString = (value, fallback = {}) => {
   if (value === null || value === undefined) return JSON.stringify(fallback);
   if (typeof value === "string") {
@@ -1123,7 +1141,7 @@ async function listAiUsageLogs(monthKey) {
     actorEmail: normalizeEmail(row.actorEmail),
     targetUserIds: Array.isArray(row.targetUserIds)
       ? row.targetUserIds.map(normalizeEmail).filter(Boolean)
-      : parseJsonSafe(row.targetUserIds, []).map(normalizeEmail).filter(Boolean),
+      : parseJsonArraySafe(row.targetUserIds, []).map(normalizeEmail).filter(Boolean),
     mode: row.mode || "admin_ai",
     provider: row.provider || "fallback",
     model: row.model || "",
