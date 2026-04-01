@@ -7314,6 +7314,27 @@ const initDynamicOnboarding = () => {
     });
   });
 
+  const syncCurrentDomIntoState = () => {
+    inputs.forEach((input) => {
+      const key = input.dataset.onbInput;
+      if (!key) return;
+      state[key] = String(input.value || "").trim();
+    });
+    optionsByKey.forEach((conf, key) => {
+      const selectedValues = conf.options
+        .filter((opt) => opt.classList.contains("selected"))
+        .map((opt) => String(opt.dataset.onbValue || "").trim())
+        .filter(Boolean);
+      state[key] = conf.type === "multi" ? selectedValues : selectedValues[0] || "";
+    });
+    checks.forEach((check) => {
+      const key = check.dataset.onbCheck;
+      if (!key) return;
+      state[key] = Boolean(check.checked);
+    });
+    saveOnbpState(state);
+  };
+
   const syncOnbpConditionalFields = () => {
     const sportWrap = document.getElementById("onbp-deporte-otro-wrap");
     if (sportWrap) {
@@ -7343,6 +7364,7 @@ const initDynamicOnboarding = () => {
   });
 
   const getValidationIssue = () => {
+    syncCurrentDomIntoState();
     for (const [key, conf] of optionsByKey.entries()) {
       if (conf.group.dataset.onbRequired !== "true") {
         continue;
