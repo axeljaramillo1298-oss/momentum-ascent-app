@@ -210,9 +210,9 @@ footer p{font-size:11px;color:rgba(240,237,232,.2);letter-spacing:.04em}
 
 /* REVEALS */
 @keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
-.reveal{opacity:0;transform:translateY(28px);transition:opacity .75s ease,transform .75s ease}
-.reveal.vis{opacity:1;transform:none}
-.rd1{transition-delay:.1s}.rd2{transition-delay:.2s}.rd3{transition-delay:.3s}.rd4{transition-delay:.4s}
+.reveal{animation:fadeUp .8s ease both}
+.reveal.vis{animation:none;opacity:1;transform:none}
+.rd1{animation-delay:.12s}.rd2{animation-delay:.24s}.rd3{animation-delay:.36s}.rd4{animation-delay:.48s}
 
 /* V11 KEYFRAMES */
 @keyframes glowP11{0%,100%{opacity:.55}50%{opacity:1}}
@@ -474,7 +474,6 @@ camera.position.set(0,0,12);
 function resize(){const w=hero.offsetWidth,h=hero.offsetHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}
 resize();window.addEventListener('resize',resize);
 const key=new THREE.DirectionalLight(0xFF6030,3.5);key.position.set(6,8,10);key.castShadow=true;key.shadow.mapSize.set(2048,2048);scene.add(key);
-scene.add(Object.assign(new THREE.DirectionalLight(0x2040FF,1.2),{position:{set:()=>{}}}).position.set(-8,3,5)||new THREE.DirectionalLight(0x2040FF,1.2));
 const fill=new THREE.DirectionalLight(0x2040FF,1.2);fill.position.set(-8,3,5);scene.add(fill);
 const rim=new THREE.DirectionalLight(0xFF2200,2.0);rim.position.set(0,-5,-8);scene.add(rim);
 scene.add(new THREE.AmbientLight(0x101015,2.5));
