@@ -152,39 +152,10 @@ const removeThemeGate = () => {
   }
 };
 
-const buildThemeGate = () => {
-  const gate = document.createElement("div");
-  gate.id = "gender-gate";
-  gate.className = "gender-gate";
-  gate.innerHTML = `
-    <div class="gender-card">
-      <p class="gender-label">Personaliza tu experiencia</p>
-      <h2>¿Eres hombre o mujer?</h2>
-      <p>Selecciona una vista para adaptar color, estilo y ambiente visual.</p>
-      <div class="gender-actions">
-        <button class="primary" type="button" data-gender="male">Hombre</button>
-        <button class="ghost" type="button" data-gender="female">Mujer</button>
-      </div>
-    </div>
-  `;
-
-  gate.querySelectorAll("[data-gender]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const selected = btn.dataset.gender;
-      localStorage.setItem(THEME_KEY, selected);
-      applyTheme(selected);
-      removeThemeGate();
-    });
-  });
-
-  document.body.appendChild(gate);
-};
-
 const openThemeSelector = () => {
-  document.body.classList.add("theme-gated");
-  if (!document.getElementById("gender-gate")) {
-    buildThemeGate();
-  }
+  localStorage.setItem(THEME_KEY, "male");
+  removeThemeGate();
+  applyTheme("male");
 };
 
 const ensureThemePicker = () => {
@@ -295,15 +266,6 @@ const initMobileMenu = () => {
 };
 
 initMobileMenu();
-
-document.addEventListener("click", (event) => {
-  const trigger = event.target.closest("[data-action='theme']");
-  if (!trigger) {
-    return;
-  }
-  event.preventDefault();
-  openThemeSelector();
-});
 
 const ROLE_KEY = "discipline_role_mode";
 const ADMIN_ROUTINES_KEY = "discipline_admin_routines_v1";
@@ -954,6 +916,12 @@ const initHomeGodEntry = () => {
   };
 
   fab.addEventListener("click", open);
+  document.querySelectorAll("[data-home-god-open]").forEach((trigger) => {
+    trigger.addEventListener("click", (event) => {
+      event.preventDefault();
+      open();
+    });
+  });
   closeBtn?.addEventListener("click", close);
   modal.addEventListener("click", (event) => {
     if (event.target === modal) {
@@ -3639,12 +3607,65 @@ const initSportsHistoryPage = () => {
 
 const initSportsAdminPanel = () => {
   const syncBtn = document.getElementById("sports-sync-btn");
+  const refreshBtn = document.getElementById("sports-refresh-admin-btn");
+  const generateMissingBtn = document.getElementById("sports-generate-missing-btn");
   const eventsHost = document.getElementById("sports-events-table");
   const picksHost = document.getElementById("sports-admin-picks");
   const logsHost = document.getElementById("sports-sync-status");
-  if (!syncBtn || !eventsHost || !picksHost || !logsHost) return;
+  const summaryHost = document.getElementById("sports-admin-summary");
+  const providerEl = document.getElementById("sports-admin-provider");
+  const lastSyncEl = document.getElementById("sports-admin-last-sync");
+  const aiStateEl = document.getElementById("sports-admin-ai-state");
+  const feedbackHost = document.getElementById("sports-admin-action-feedback");
+  if (!syncBtn || !eventsHost || !picksHost || !logsHost || !summaryHost) return;
 
   let latestEvents = [];
+  let latestPicks = [];
+  let latestLogs = [];
+
+  const setFeedback = (title, text, type = "") => {
+    if (!feedbackHost) return;
+    feedbackHost.className = `sports-admin-feedback ${type}`.trim();
+    feedbackHost.innerHTML = `
+      <strong>${escHtml(title || "Estado operativo")}</strong>
+      <p>${escHtml(text || "")}</p>
+    `;
+  };
+
+  const renderSummary = () => {
+    const picksToday = latestPicks.filter((pick) => String(pick.eventDate || "").slice(0, 10) === new Date().toISOString().slice(0, 10));
+    const avgConfidence = picksToday.length
+      ? Math.round(picksToday.reduce((sum, item) => sum + Number(item.confidence || 0), 0) / picksToday.length)
+      : 0;
+    const withPick = latestEvents.filter((event) => event?.latestPick).length;
+    summaryHost.innerHTML = `
+      <article class="sports-summary-card">
+        <strong>${latestEvents.length}</strong>
+        <span>Eventos activos</span>
+      </article>
+      <article class="sports-summary-card">
+        <strong>${withPick}</strong>
+        <span>Eventos con pick</span>
+      </article>
+      <article class="sports-summary-card">
+        <strong>${avgConfidence}%</strong>
+        <span>Confianza media del dia</span>
+      </article>
+    `;
+
+    const latestLog = latestLogs[0] || null;
+    if (providerEl) {
+      providerEl.textContent = String(latestLog?.sourceApi || latestEvents[0]?.sourceApi || "mock").toUpperCase();
+    }
+    if (lastSyncEl) {
+      lastSyncEl.textContent = latestLog?.createdAt
+        ? new Date(latestLog.createdAt).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })
+        : "Sin sync";
+    }
+    if (aiStateEl) {
+      aiStateEl.textContent = withPick ? `${withPick} pick(s)` : "Pendiente";
+    }
+  };
 
   const renderEvents = () => {
     if (!latestEvents.length) {
@@ -3658,33 +3679,61 @@ const initSportsAdminPanel = () => {
             <span>${escHtml(event.league || event.sport || "-")}</span>
             <span>${escHtml(`${event.homeTeam || "Local"} vs ${event.awayTeam || "Visita"}`)}</span>
             <span>${new Date(event.eventDate || Date.now()).toLocaleString("es-MX")}</span>
-            <span>${escHtml(event.status || "scheduled")}</span>
             <span>
-              <button class="ghost sports-generate-btn" type="button" data-event-id="${Number(event.id)}">Generar pick IA</button>
+              ${
+                event?.latestPick
+                  ? `<span class="sports-table-pick-state">
+                      <strong>${escHtml(event.latestPick.pick || "Pick listo")}</strong>
+                      <small>${Number(event.latestPick.confidence || 0)}% • ${escHtml(event.latestPick.riskLevel || "MEDIO")}</small>
+                    </span>`
+                  : `<span class="sports-table-pick-state is-empty"><strong>Sin pick</strong><small>${escHtml(event.status || "scheduled")}</small></span>`
+              }
+            </span>
+            <span class="sports-table-actions">
+              <button class="ghost sports-generate-btn" type="button" data-event-id="${Number(event.id)}">Generar</button>
+              <button class="ghost sports-force-btn" type="button" data-event-id="${Number(event.id)}">Forzar</button>
             </span>
           </div>
         `
       )
       .join("");
 
+    const bindGenerate = async (btn, force) => {
+      const eventId = btn.getAttribute("data-event-id");
+      btn.disabled = true;
+      const previousLabel = btn.textContent;
+      btn.textContent = force ? "Forzando..." : "Generando...";
+      try {
+        const remote = await apiPost(`/api/picks/generate/${eventId}`, { force });
+        if (!remote?.ok) {
+          throw new Error(remote?.error || "pick_generation_failed");
+        }
+        setFeedback(
+          remote?.cached ? "Pick reutilizado" : "Pick generado",
+          remote?.cached
+            ? "Se reutilizo un pick reciente para evitar costo innecesario."
+            : `Se genero ${remote?.pick?.pick || "un pick"} con confianza ${Number(remote?.pick?.confidence || 0)}%.`,
+          "success"
+        );
+        await loadAll();
+      } catch (error) {
+        setFeedback("Error IA", "No se pudo generar el pick para este evento.", "error");
+        showToast("No se pudo generar pick.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = previousLabel;
+      }
+    };
+
     eventsHost.querySelectorAll(".sports-generate-btn").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        const eventId = btn.getAttribute("data-event-id");
-        btn.disabled = true;
-        btn.textContent = "Generando...";
-        try {
-          const remote = await apiPost(`/api/picks/generate/${eventId}`, { force: false });
-          if (!remote?.ok) {
-            throw new Error(remote?.error || "pick_generation_failed");
-          }
-          await loadPicks();
-          await loadLogs();
-        } catch (error) {
-          showToast("No se pudo generar pick.", "error");
-        } finally {
-          btn.disabled = false;
-          btn.textContent = "Generar pick IA";
-        }
+        await bindGenerate(btn, false);
+      });
+    });
+
+    eventsHost.querySelectorAll(".sports-force-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        await bindGenerate(btn, true);
       });
     });
   };
@@ -3697,25 +3746,33 @@ const initSportsAdminPanel = () => {
 
   const loadPicks = async () => {
     const remote = await apiGet("/api/picks/history?limit=12");
-    renderSportsPickCards(picksHost, Array.isArray(remote?.picks) ? remote.picks : []);
+    latestPicks = Array.isArray(remote?.picks) ? remote.picks : [];
+    renderSportsPickCards(picksHost, latestPicks);
   };
 
   const loadLogs = async () => {
     const remote = await apiGet("/api/sports/sync/logs?limit=6");
-    const logs = Array.isArray(remote?.logs) ? remote.logs : [];
-    logsHost.innerHTML = logs.length
-      ? logs
+    latestLogs = Array.isArray(remote?.logs) ? remote.logs : [];
+    logsHost.innerHTML = latestLogs.length
+      ? latestLogs
           .map(
-            (log) => `
-              <div class="sports-log-item">
-                <strong>${escHtml(log.status || "ok")}</strong>
-                <span>${escHtml(log.sourceApi || "mock")} • ${escHtml(log.endpoint || "/today")}</span>
-                <p>${escHtml(log.message || "")}</p>
-              </div>
-            `
-          )
+             (log) => `
+              <div class="sports-log-item ${String(log.status || "").toLowerCase() === "error" ? "error" : ""}">
+                 <strong>${escHtml(log.status || "ok")}</strong>
+                 <span>${escHtml(log.sourceApi || "mock")} • ${escHtml(log.endpoint || "/today")}</span>
+                 <p>${escHtml(log.message || "")}</p>
+                 <small>${log.createdAt ? new Date(log.createdAt).toLocaleString("es-MX") : ""}</small>
+               </div>
+             `
+           )
           .join("")
       : `<div class="sports-log-item"><strong>Sin sincronizaciones</strong><p>Usa el botón para traer eventos del día.</p></div>`;
+    renderSummary();
+  };
+
+  const loadAll = async () => {
+    await Promise.all([loadEvents(), loadPicks(), loadLogs()]);
+    renderSummary();
   };
 
   syncBtn.addEventListener("click", async () => {
@@ -3724,10 +3781,11 @@ const initSportsAdminPanel = () => {
     try {
       const remote = await apiPost("/api/sports/sync", {});
       if (!remote?.ok) throw new Error(remote?.error || "sports_sync_failed");
-      await loadEvents();
-      await loadLogs();
+      setFeedback("Sync completado", `Se actualizaron ${Number(remote?.count || 0)} evento(s) en la base local.`, "success");
+      await loadAll();
       showToast("Eventos sincronizados.", "success");
     } catch (error) {
+      setFeedback("Error de sync", "No se pudo sincronizar eventos desde la fuente configurada.", "error");
       showToast("No se pudo sincronizar eventos.", "error");
     } finally {
       syncBtn.disabled = false;
@@ -3735,14 +3793,49 @@ const initSportsAdminPanel = () => {
     }
   });
 
-  loadEvents().catch(() => {
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", async () => {
+      setFeedback("Actualizando panel", "Recargando eventos, picks y bitacora operativa.");
+      try {
+        await loadAll();
+      } catch {
+        setFeedback("Error de carga", "No se pudo refrescar el panel completo.", "error");
+      }
+    });
+  }
+
+  if (generateMissingBtn) {
+    generateMissingBtn.addEventListener("click", async () => {
+      const pendingEvents = latestEvents.filter((event) => !event?.latestPick).slice(0, 6);
+      if (!pendingEvents.length) {
+        setFeedback("Sin pendientes", "Todos los eventos visibles ya tienen pick generado.", "success");
+        return;
+      }
+      generateMissingBtn.disabled = true;
+      generateMissingBtn.textContent = "Generando...";
+      let generated = 0;
+      for (const event of pendingEvents) {
+        try {
+          const remote = await apiPost(`/api/picks/generate/${Number(event.id)}`, { force: false });
+          if (remote?.ok) {
+            generated += 1;
+          }
+        } catch {
+          // continuar con el resto
+        }
+      }
+      await loadAll().catch(() => {});
+      generateMissingBtn.disabled = false;
+      generateMissingBtn.textContent = "Generar picks faltantes";
+      setFeedback("Lote IA completado", `Se procesaron ${generated} evento(s) faltantes con el motor IA.`, generated ? "success" : "error");
+    });
+  }
+
+  loadAll().catch(() => {
     eventsHost.innerHTML = `<div class="sports-table-empty">No se pudo cargar eventos.</div>`;
-  });
-  loadPicks().catch(() => {
     picksHost.innerHTML = `<div class="sports-table-empty">No se pudo cargar picks.</div>`;
-  });
-  loadLogs().catch(() => {
     logsHost.innerHTML = `<div class="sports-log-item"><strong>Error</strong><p>No se pudo cargar la bitácora.</p></div>`;
+    setFeedback("Panel no disponible", "Fallo la carga inicial del dashboard admin.", "error");
   });
 };
 

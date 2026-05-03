@@ -27,43 +27,123 @@
           <h1>PANEL DE PICKS</h1>
           <p class="subhead">Sincroniza eventos deportivos, consulta el estado de la fuente y genera picks con IA solo cuando sea necesario.</p>
           <p class="sports-disclaimer">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</p>
+          <div class="sports-hero-actions">
+            <a class="primary" href="#sports-admin-panel">Abrir operacion</a>
+            <a class="ghost" href="user-hoy.html">Ver dashboard usuario</a>
+          </div>
         </div>
       </div>
     </header>
 
     <main id="sports-admin-panel" class="section sports-admin-shell">
+      <section class="sports-summary-grid" id="sports-admin-summary">
+        <article class="sports-summary-card">
+          <strong>0</strong>
+          <span>Eventos activos</span>
+        </article>
+        <article class="sports-summary-card">
+          <strong>0</strong>
+          <span>Picks de hoy</span>
+        </article>
+        <article class="sports-summary-card">
+          <strong>0%</strong>
+          <span>Confianza media</span>
+        </article>
+      </section>
+
       <section class="sports-admin-grid">
-        <article class="card sports-admin-card">
+        <article class="card sports-admin-card sports-admin-ops-card">
           <div class="sports-section-head">
-            <h2>Sincronizacion</h2>
-            <span>Trae eventos del dia desde API real o mocks locales</span>
+            <h2>Operacion</h2>
+            <span>Sincroniza la fuente y dispara IA solo en eventos necesarios</span>
           </div>
           <div class="sports-admin-actions">
             <button class="primary" type="button" id="sports-sync-btn">Sincronizar eventos deportivos</button>
+            <button class="ghost" type="button" id="sports-refresh-admin-btn">Actualizar panel</button>
+            <button class="ghost" type="button" id="sports-generate-missing-btn">Generar picks faltantes</button>
+          </div>
+          <div class="sports-admin-mini-grid" id="sports-admin-ops-grid">
+            <article class="sports-mini-card">
+              <span>Proveedor</span>
+              <strong id="sports-admin-provider">mock</strong>
+              <p>Origen activo para eventos y stats</p>
+            </article>
+            <article class="sports-mini-card">
+              <span>Ultimo estado</span>
+              <strong id="sports-admin-last-sync">Sin sync</strong>
+              <p>Bitacora de sincronizacion reciente</p>
+            </article>
+            <article class="sports-mini-card">
+              <span>Motor IA</span>
+              <strong id="sports-admin-ai-state">Listo</strong>
+              <p>Cachea picks recientes para evitar costo extra</p>
+            </article>
+          </div>
+          <div id="sports-admin-action-feedback" class="sports-admin-feedback">
+            <strong>Estado operativo</strong>
+            <p>Panel listo para sincronizar y generar picks.</p>
+          </div>
+        </article>
+
+        <article class="card sports-admin-card">
+          <div class="sports-section-head">
+            <h2>Picks recientes</h2>
+            <span>Salida del motor IA con contexto y riesgo</span>
+          </div>
+          <div id="sports-admin-picks" class="sports-picks-list compact"></div>
+        </article>
+      </section>
+
+      <section class="sports-admin-grid sports-admin-grid-secondary">
+        <article class="card sports-admin-card">
+          <div class="sports-section-head">
+            <h2>Bitacora de sync</h2>
+            <span>Ultimos eventos de sincronizacion y mensajes del sistema</span>
           </div>
           <div id="sports-sync-status" class="sports-log-list"></div>
         </article>
 
         <article class="card sports-admin-card">
           <div class="sports-section-head">
-            <h2>Picks generados</h2>
-            <span>Historial operativo reciente</span>
+            <h2>Pipeline IA</h2>
+            <span>Como fluye la operacion desde la fuente hasta el pick</span>
           </div>
-          <div id="sports-admin-picks" class="sports-picks-list compact"></div>
+          <div class="sports-admin-pipeline">
+            <article class="sports-pipeline-step">
+              <span>1</span>
+              <strong>Sync de eventos</strong>
+              <p>API real o mock llena la base del dia.</p>
+            </article>
+            <article class="sports-pipeline-step">
+              <span>2</span>
+              <strong>Stats y contexto</strong>
+              <p>Se recuperan stats guardadas o se refrescan bajo demanda.</p>
+            </article>
+            <article class="sports-pipeline-step">
+              <span>3</span>
+              <strong>Claude / IA</strong>
+              <p>Genera pick, mercado, confianza y riesgo en JSON estricto.</p>
+            </article>
+            <article class="sports-pipeline-step">
+              <span>4</span>
+              <strong>Persistencia</strong>
+              <p>El pick queda en historial y alimenta el dashboard del usuario.</p>
+            </article>
+          </div>
         </article>
       </section>
 
       <section class="sports-admin-events">
         <div class="sports-section-head">
           <h2>Eventos disponibles</h2>
-          <span>Genera picks bajo demanda para evitar costos innecesarios</span>
+          <span>Estado del partido, pick actual y acciones manuales por evento</span>
         </div>
         <div class="sports-table-card">
           <div class="sports-table-head sports-table-head-admin">
             <span>Liga</span>
             <span>Partido</span>
             <span>Fecha</span>
-            <span>Estado</span>
+            <span>Pick</span>
             <span>Accion</span>
           </div>
           <div id="sports-events-table"></div>

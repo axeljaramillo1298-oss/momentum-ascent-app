@@ -10316,6 +10316,129 @@ body.theme-female .up-nav-active {
   box-shadow: 0 0 14px rgba(234, 127, 176, 0.15) !important;
 }
 
+/* ── USER TOP NAV: DARK TAB BAR ───────────────────────────────── */
+body.user-panel-premium:not(.theme-female) .user-panel-top {
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+body.user-panel-premium:not(.theme-female) .user-panel-nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 18px;
+  padding: 0 0 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body.user-panel-premium:not(.theme-female) .user-panel-nav .logo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding-left: 34px;
+  color: rgba(232, 238, 248, 0.88);
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+body.user-panel-premium:not(.theme-female) .user-panel-nav .logo::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  border: 1px solid rgba(255, 107, 53, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+}
+
+body.user-panel-premium:not(.theme-female) .user-panel-nav .logo::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff6b35, #ff3b30);
+  box-shadow: 0 0 14px rgba(255, 91, 77, 0.42);
+}
+
+body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 0;
+}
+
+body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions .ghost,
+body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions .up-nav-link {
+  min-height: 34px;
+  padding: 0 16px;
+  border: 0 !important;
+  border-radius: 4px;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: rgba(255,255,255,0.44) !important;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions .ghost:hover,
+body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions .up-nav-link:hover {
+  background: rgba(255,255,255,0.04) !important;
+  color: rgba(255,255,255,0.88) !important;
+  transform: none;
+}
+
+body.user-panel-premium:not(.theme-female) .user-panel-nav .up-nav-active,
+body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions .up-nav-active {
+  background: linear-gradient(180deg, #ff6b35 0%, #ff5a1f 100%) !important;
+  color: #fff !important;
+  border: 0 !important;
+  box-shadow: 0 8px 22px rgba(255, 91, 77, 0.26) !important;
+}
+
+body.user-panel-premium:not(.theme-female) .user-panel-nav [data-action="theme"] {
+  display: none !important;
+}
+
+@media (max-width: 980px) {
+  body.user-panel-premium:not(.theme-female) .user-panel-nav {
+    gap: 10px;
+    padding-bottom: 10px;
+  }
+
+  body.user-panel-premium:not(.theme-female) .user-panel-nav .logo {
+    font-size: 13px;
+    padding-left: 30px;
+  }
+
+  body.user-panel-premium:not(.theme-female) .user-panel-nav .logo::before {
+    width: 24px;
+    height: 24px;
+  }
+
+  body.user-panel-premium:not(.theme-female) .user-panel-nav .logo::after {
+    width: 8px;
+    height: 8px;
+  }
+}
+
 /* ================================================================
    FIN DESIGN v3
    ================================================================ */
@@ -13597,6 +13720,10 @@ body.user-panel-premium #today-yes:hover {
   gap: 22px;
 }
 
+.sports-admin-grid-secondary {
+  margin-top: 22px;
+}
+
 .sports-main-column,
 .sports-side-column {
   display: grid;
@@ -13608,6 +13735,78 @@ body.user-panel-premium #today-yes:hover {
   background:
     radial-gradient(circle at top right, rgba(255, 59, 48, 0.12), transparent 34%),
     rgba(255,255,255,0.04);
+}
+
+.sports-admin-ops-card {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 95, 66, 0.14), transparent 36%),
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03)),
+    rgba(9, 12, 20, 0.92);
+}
+
+.sports-admin-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.sports-mini-card {
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  padding: 16px;
+  display: grid;
+  gap: 6px;
+}
+
+.sports-mini-card span {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(191, 202, 225, 0.68);
+}
+
+.sports-mini-card strong {
+  font-family: "Bebas Neue", sans-serif;
+  letter-spacing: 1px;
+  font-size: 28px;
+  color: #f3efe7;
+}
+
+.sports-mini-card p {
+  margin: 0;
+  color: rgba(205, 214, 233, 0.72);
+  line-height: 1.45;
+}
+
+.sports-admin-feedback {
+  margin-top: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.035);
+  padding: 16px 18px;
+}
+
+.sports-admin-feedback strong {
+  display: block;
+  color: #f4efe7;
+  letter-spacing: 0.04em;
+}
+
+.sports-admin-feedback p {
+  margin: 8px 0 0;
+  color: rgba(205, 214, 233, 0.8);
+}
+
+.sports-admin-feedback.success {
+  border-color: rgba(86, 190, 132, 0.42);
+  background: rgba(31, 87, 54, 0.18);
+}
+
+.sports-admin-feedback.error {
+  border-color: rgba(255, 95, 84, 0.4);
+  background: rgba(102, 25, 25, 0.2);
 }
 
 .sports-side-list {
@@ -13823,6 +14022,11 @@ body.user-panel-premium #today-yes:hover {
   background: rgba(255,255,255,0.035);
 }
 
+.sports-log-item.error {
+  border-color: rgba(255, 95, 84, 0.35);
+  background: rgba(102, 25, 25, 0.16);
+}
+
 .sports-log-item strong {
   text-transform: uppercase;
   font-size: 12px;
@@ -13835,6 +14039,78 @@ body.user-panel-premium #today-yes:hover {
   display: block;
   margin: 6px 0 0;
   color: rgba(205, 214, 233, 0.78);
+}
+
+.sports-log-item small {
+  display: block;
+  margin-top: 8px;
+  color: rgba(176, 188, 214, 0.55);
+  font-size: 11px;
+}
+
+.sports-table-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.sports-table-pick-state {
+  display: grid;
+  gap: 2px;
+}
+
+.sports-table-pick-state strong {
+  color: #f7f2e9;
+  font-size: 13px;
+}
+
+.sports-table-pick-state small {
+  color: rgba(191, 202, 225, 0.68);
+  font-size: 11px;
+}
+
+.sports-table-pick-state.is-empty strong {
+  color: rgba(255, 214, 166, 0.92);
+}
+
+.sports-admin-pipeline {
+  display: grid;
+  gap: 12px;
+}
+
+.sports-pipeline-step {
+  position: relative;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  padding: 16px 16px 16px 58px;
+}
+
+.sports-pipeline-step span {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #b41f19, #ff6b35);
+  color: #fff;
+  font-weight: 800;
+}
+
+.sports-pipeline-step strong {
+  display: block;
+  color: #f5efe6;
+  margin-bottom: 6px;
+}
+
+.sports-pipeline-step p {
+  margin: 0;
+  color: rgba(205, 214, 233, 0.74);
+  line-height: 1.5;
 }
 
 .risk-low {
@@ -13854,6 +14130,10 @@ body.user-panel-premium #today-yes:hover {
   .sports-admin-grid,
   .sports-summary-grid,
   .sports-analysis-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sports-admin-mini-grid {
     grid-template-columns: 1fr;
   }
 
