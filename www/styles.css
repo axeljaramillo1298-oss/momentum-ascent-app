@@ -3758,9 +3758,9 @@ body.user-panel-premium:not(.theme-female) .nav-actions .ghost {
 }
 
 body.user-panel-premium:not(.theme-female) .nav-actions .ghost[href*="user-hoy"] {
-  background: linear-gradient(90deg, rgba(255, 79, 66, 0.25), rgba(255, 109, 84, 0.22));
-  border-color: rgba(255, 100, 84, 0.72);
-  color: #fff2ef;
+  background: rgba(10, 16, 31, 0.86);
+  border-color: rgba(255, 92, 77, 0.35);
+  color: #dce5f8;
 }
 
 body.user-panel-premium:not(.theme-female) .today-actions .primary,
