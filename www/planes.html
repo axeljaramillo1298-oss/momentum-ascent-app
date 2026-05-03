@@ -5,6 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Membresia | Momentum Ascent</title>
     <link rel="stylesheet" href="styles.css" />
+    <style>
+      /* 4-column comparison for planes page */
+      .comparison-row{grid-template-columns:1.5fr 0.75fr 0.85fr 0.85fr}
+      @media(max-width:640px){.comparison-row{grid-template-columns:1.1fr 0.55fr 0.65fr 0.65fr;font-size:12px;padding:10px 8px}}
+      @media(max-width:420px){.comparison-row{grid-template-columns:1fr 0.5fr 0.6fr 0.6fr;font-size:11px;padding:9px 6px}}
+      .apex-col{color:#f5c04a;font-weight:700}
+      .comparison-row.header .apex-col{background:rgba(245,192,74,.12);border-radius:6px;padding:2px 8px}
+      .apex-badge{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;background:linear-gradient(135deg,#f5c04a,#ff6b35);color:#0a0a0a;padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle}
+      .plans-grid-3{grid-template-columns:repeat(3,1fr)}
+      @media(max-width:900px){.plans-grid-3{grid-template-columns:1fr}}
+      .price-card.apex{border-color:rgba(245,192,74,.4);background:linear-gradient(135deg,rgba(245,192,74,.06),rgba(255,107,53,.04))}
+      .price-card.apex h3{color:#f5c04a}
+      .price-card.apex .price{background:linear-gradient(135deg,#f5c04a,#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+      .bankroll-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#f5c04a;background:rgba(245,192,74,.1);border:1px solid rgba(245,192,74,.25);border-radius:20px;padding:3px 10px;margin-top:2px}
+    </style>
   </head>
   <body>
     <div class="noise"></div>
@@ -44,44 +59,55 @@
       </section>
 
       <section class="section comparison" id="comparacion" data-role-hide="admin">
-        <div class="section-title"><h2>Comparativo por plan</h2><p>Escala de acceso: Free, AI Picks, Premium y Comunidad.</p></div>
+        <div class="section-title"><h2>Comparativo por plan</h2><p>Escala de acceso: Free, AI Picks y Apex.</p></div>
         <div class="comparison-table premium-boost">
-          <div class="comparison-row header"><span>Feature</span><span>Free</span><span class="premium-col">AI Picks</span></div>
-          <div class="comparison-row"><span>Picks del dia</span><span>Si</span><span class="premium-col">Si</span></div>
-          <div class="comparison-row"><span>Analisis IA</span><span>Basico</span><span class="premium-col">Extendido</span></div>
-          <div class="comparison-row"><span>Historial</span><span>Limitado</span><span class="premium-col">Ampliado</span></div>
-          <div class="comparison-row"><span>Eventos cubiertos</span><span>Top del dia</span><span class="premium-col">Cobertura ampliada</span></div>
-          <div class="comparison-row"><span>Comunidad / premium</span><span>No</span><span class="premium-col">Si</span></div>
+          <div class="comparison-row header"><span>Feature</span><span>Free</span><span class="premium-col">AI Picks</span><span class="apex-col">Apex</span></div>
+          <div class="comparison-row"><span>Picks del dia</span><span>Si</span><span class="premium-col">Si</span><span class="apex-col">Si</span></div>
+          <div class="comparison-row"><span>Analisis IA</span><span>No</span><span class="premium-col">Extendido</span><span class="apex-col">Full IA</span></div>
+          <div class="comparison-row"><span>Historial</span><span>Limitado</span><span class="premium-col">Ampliado</span><span class="apex-col">Todo</span></div>
+          <div class="comparison-row"><span>Eventos cubiertos</span><span>Top del dia</span><span class="premium-col">Cobertura ampliada</span><span class="apex-col">Todos</span></div>
+          <div class="comparison-row"><span>Comunidad</span><span>No</span><span class="premium-col">Si</span><span class="apex-col">Si</span></div>
+          <div class="comparison-row"><span>Control de bank</span><span>No</span><span class="premium-col">No</span><span class="apex-col">Si</span></div>
         </div>
       </section>
 
       <section class="section pricing" id="planes" data-role-hide="admin">
         <div class="section-title"><h2>Planes activos</h2><p>Selecciona tu plan y solicita activacion por transferencia.</p></div>
-        <div class="pricing-grid plans-grid-4">
+        <div class="pricing-grid plans-grid-3">
           <div class="price-card" data-tilt>
             <h3>Free</h3>
             <p class="price">$0 / mes</p>
-            <ul><li>Picks del dia</li><li>Historial basico</li><li>Vista general</li></ul>
+            <ul>
+              <li>Picks del dia</li>
+              <li>Historial basico</li>
+              <li>Vista general</li>
+            </ul>
             <button class="ghost full" type="button" data-plan-select="free">Elegir Free</button>
           </div>
           <div class="price-card highlight" data-tilt>
-            <div class="badge">Nuevo</div>
+            <div class="badge">Popular</div>
             <h3>AI Picks</h3>
             <p class="price">$19 / mes</p>
-            <ul><li>Analisis IA ampliado</li><li>Mas picks por jornada</li><li>Historial extendido</li></ul>
+            <ul>
+              <li>Analisis IA Extendido</li>
+              <li>Mas picks por jornada</li>
+              <li>Historial ampliado</li>
+              <li>Comunidad incluida</li>
+            </ul>
             <button class="primary full" type="button" data-plan-select="ai_coach">Elegir AI Picks</button>
           </div>
-          <div class="price-card" data-tilt>
-            <h3>Premium</h3>
-            <p class="price">$59 / mes</p>
-            <ul><li>Picks premium</li><li>Cobertura ampliada</li><li>Prioridad operativa</li></ul>
-            <button class="ghost full" type="button" data-plan-select="coach_humano">Elegir Premium</button>
-          </div>
-          <div class="price-card" data-tilt>
-            <h3>Comunidad</h3>
-            <p class="price">$29 / 30 dias</p>
-            <ul><li>Ranking semanal</li><li>Picks compartidos</li><li>Sistema squad</li></ul>
-            <button class="ghost full" type="button" data-plan-select="retos">Elegir Comunidad</button>
+          <div class="price-card apex" data-tilt>
+            <div class="badge">Top</div>
+            <h3>Apex</h3>
+            <p class="price">$49 / mes</p>
+            <ul>
+              <li>Analisis IA Full</li>
+              <li>Historial completo</li>
+              <li>Todos los eventos</li>
+              <li>Comunidad incluida</li>
+              <li><span class="bankroll-badge">&#9654; Control de bank</span></li>
+            </ul>
+            <button class="primary full" type="button" data-plan-select="apex">Elegir Apex</button>
           </div>
         </div>
         <article class="card plan-extras-card">
