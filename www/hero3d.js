@@ -22,8 +22,8 @@
   var balls = [
     {
       kind: "soccer",
-      x: 150,
-      y: 16,
+      x: 6,
+      y: 10,
       z: 160,
       radius: 92,
       drift: 18,
@@ -33,8 +33,8 @@
     },
     {
       kind: "basketball",
-      x: 292,
-      y: -160,
+      x: 168,
+      y: -126,
       z: 30,
       radius: 54,
       drift: 16,
@@ -44,8 +44,8 @@
     },
     {
       kind: "tennis",
-      x: -28,
-      y: -198,
+      x: -156,
+      y: -142,
       z: -60,
       radius: 34,
       drift: 12,
@@ -55,8 +55,8 @@
     },
     {
       kind: "baseball",
-      x: 328,
-      y: 116,
+      x: 178,
+      y: 122,
       z: -44,
       radius: 38,
       drift: 10,
@@ -88,8 +88,8 @@
     canvas.style.width = width + "px";
     canvas.style.height = height + "px";
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    scene.cx = width * 0.69;
-    scene.cy = height * 0.49;
+    scene.cx = width * 0.52;
+    scene.cy = height * 0.5;
     scene.floorY = height * 0.76;
   }
 
