@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Momentum Ascent &ndash; Picks Deportivos con IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#FF4500;
+  --orange2:#FF6B2B;
+  --dark:#03040d;
+  --dark2:#0a0a0d;
+  --surface:rgba(255,255,255,0.03);
+  --border:rgba(255,255,255,0.06);
+  --text:#f0ede8;
+  --muted:rgba(240,237,232,0.4);
+}
+html{scroll-behavior:smooth}
+body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;overflow-x:hidden;cursor:none}
+
+/* CURSOR */
+#cur{position:fixed;top:0;left:0;z-index:9999;width:10px;height:10px;background:var(--orange);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);transition:width .15s,height .15s;mix-blend-mode:screen}
+#cur-r{position:fixed;top:0;left:0;z-index:9998;width:36px;height:36px;border:1.5px solid rgba(255,69,0,.5);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);transition:transform .16s ease,width .2s,height .2s,border-color .2s}
+
+/* NAV — sin modificar */
+nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 52px;height:62px;background:rgba(6,6,8,.75);backdrop-filter:blur(28px) saturate(180%);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:17px;letter-spacing:.1em;text-transform:uppercase}
+.nav-logo span{color:var(--orange)}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{font-size:12px;font-weight:500;letter-spacing:.08em;color:var(--muted);text-decoration:none;text-transform:uppercase;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.btn-nav{background:var(--orange);color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:13px;letter-spacing:.12em;text-transform:uppercase;padding:9px 22px;border:none;border-radius:3px;cursor:none;position:relative;overflow:hidden;transition:box-shadow .2s,transform .15s}
+.btn-nav::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.18) 0%,transparent 55%)}
+.btn-nav:hover{box-shadow:0 0 28px rgba(255,69,0,.55);transform:translateY(-1px)}
+
+/* TICKER */
+.ticker{position:relative;z-index:3;height:42px;background:linear-gradient(90deg,#FF4500,#FF6B2B);display:flex;align-items:center;overflow:hidden;margin-top:62px}
+.ticker-badge{flex-shrink:0;padding:0 18px;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:12px;letter-spacing:.18em;text-transform:uppercase;background:rgba(0,0,0,.3);height:100%;display:flex;align-items:center;border-right:1px solid rgba(0,0,0,.25);gap:6px}
+.ticker-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:#fff;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.ticker-scroll{flex:1;overflow:hidden}
+.ticker-track{display:flex;white-space:nowrap;animation:tick 30s linear infinite}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.t-item{padding:0 28px;font-size:12.5px;font-weight:600;letter-spacing:.04em;color:rgba(255,255,255,.92);display:flex;align-items:center;gap:6px}
+.t-item::after{content:'·';opacity:.4}
+.t-odd{font-weight:900;color:#fff}
+
+/* HERO */
+.hero{position:relative;min-height:calc(100vh - 104px);display:flex;align-items:center;overflow:hidden}
+
+/* Atmospheric overlays v11 */
+.hero::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 65% 55% at 6% -5%,rgba(255,59,48,.28) 0%,transparent 58%),
+    radial-gradient(ellipse 45% 38% at 94% 20%,rgba(245,192,74,.10) 0%,transparent 52%),
+    radial-gradient(ellipse 70% 45% at 50% 108%,rgba(255,59,48,.10) 0%,transparent 58%)}
+.hero::after{content:'';position:absolute;right:5%;top:50%;transform:translateY(-50%);width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(255,59,48,.16) 0%,rgba(245,192,74,.05) 40%,transparent 68%);pointer-events:none;filter:blur(36px);animation:glowP11 4s ease-in-out infinite;z-index:1}
+
+#three-canvas{position:absolute;inset:0;z-index:2;pointer-events:none}
+
+.hero-grid-floor{position:absolute;bottom:0;left:0;right:0;height:380px;z-index:2;pointer-events:none;
+  background:linear-gradient(rgba(255,69,0,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,69,0,.1) 1px,transparent 1px);
+  background-size:56px 56px;
+  transform:perspective(500px) rotateX(70deg);transform-origin:bottom center;
+  mask-image:linear-gradient(to top,rgba(0,0,0,.7) 0%,transparent 75%)}
+
+.hero-vlight{position:absolute;top:0;left:50%;transform:translateX(-50%);width:700px;height:100%;z-index:2;pointer-events:none;
+  background:conic-gradient(from 180deg at 50% -5%,transparent 70deg,rgba(255,69,0,.05) 90deg,rgba(255,100,0,.09) 100deg,rgba(255,69,0,.05) 110deg,transparent 140deg)}
+
+.hero-content{position:relative;z-index:10;padding:60px 52px;max-width:640px;flex:0 0 auto}
+
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:10.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--orange);margin-bottom:22px;opacity:0;animation:fadeUp .6s .2s forwards}
+.hero-eyebrow .dot{width:6px;height:6px;border-radius:50%;background:#ff3b30;box-shadow:0 0 8px rgba(255,59,48,.9),0 0 16px rgba(255,59,48,.4);animation:glowP11 1.8s ease-in-out infinite;flex-shrink:0}
+
+.hero-h1{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(68px,8.5vw,118px);line-height:.88;text-transform:uppercase;letter-spacing:-.015em;opacity:0;animation:fadeUp .7s .35s forwards}
+.hero-h1 .line{display:block;overflow:hidden}
+.hero-h1 .line span{display:block;animation:lineUp .7s both}
+.hero-h1 .line:nth-child(1) span{animation-delay:.3s}
+.hero-h1 .line:nth-child(2) span{animation-delay:.4s}
+.hero-h1 .line:nth-child(3) span{animation-delay:.5s}
+.hero-h1 .line:nth-child(4) span{animation-delay:.6s}
+.hero-h1 .line:nth-child(5) span{animation-delay:.7s}
+@keyframes lineUp{from{transform:translateY(110%);opacity:0}to{transform:translateY(0);opacity:1}}
+
+.accent-text{
+  background:linear-gradient(135deg,#ff6b35 20%,#f5c04a 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 20px rgba(255,69,0,.38));
+  position:relative;display:inline-block
+}
+.accent-text::before{
+  content:attr(data-t);
+  position:absolute;top:0;left:0;
+  background:linear-gradient(180deg,rgba(255,255,255,.28) 0%,transparent 40%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  pointer-events:none
+}
+
+.hero-sub{margin-top:24px;font-size:16px;color:rgba(210,225,255,.65);max-width:420px;line-height:1.7;font-weight:300;opacity:0;animation:fadeUp .6s .75s forwards}
+
+.hero-ctas{display:flex;gap:14px;align-items:center;margin-top:36px;opacity:0;animation:fadeUp .6s .9s forwards}
+
+/* Buttons v11 */
+.btn-primary{background:linear-gradient(135deg,#c42820 0%,#ff3b30 40%,#ff6b35 72%,#f5c04a 100%);background-size:200% 100%;color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px;letter-spacing:.1em;text-transform:uppercase;padding:15px 34px;border:1px solid rgba(255,180,120,.2);border-radius:14px;cursor:none;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(255,59,48,.5),inset 0 1px 0 rgba(255,255,255,.14);transition:transform .2s,box-shadow .2s,filter .2s}
+.btn-primary::after{content:'';position:absolute;top:-50%;left:-70%;width:35%;height:200%;background:rgba(255,255,255,.22);transform:skewX(-20deg);animation:sheen 2.8s infinite 1.2s}
+@keyframes sheen{0%{left:-70%}100%{left:170%}}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 14px 48px rgba(255,59,48,.68),inset 0 1px 0 rgba(255,255,255,.18);filter:brightness(1.06)}
+
+.btn-ghost{background:transparent;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:.1em;text-transform:uppercase;padding:15px 26px;border:1px solid rgba(255,255,255,.1);border-radius:14px;cursor:none;transition:color .2s,border-color .2s,background .2s,transform .2s}
+.btn-ghost:hover{color:var(--text);border-color:rgba(255,59,48,.4);background:rgba(255,59,48,.06);transform:translateY(-2px)}
+
+.hero-disc{margin-top:24px;font-size:10.5px;color:rgba(240,237,232,.2);letter-spacing:.05em;opacity:0;animation:fadeUp .5s 1.1s forwards}
+
+/* FLOAT CHIPS v11 */
+.float-chip{position:absolute;display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;background:rgba(10,12,28,.82);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);font-size:12px;font-weight:700;color:rgba(220,235,255,.88);letter-spacing:.2px;white-space:nowrap;z-index:20;pointer-events:none}
+.fc-inner{display:flex;flex-direction:column;gap:1px}
+.fval{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px;color:#ff6b35;line-height:1}
+.flbl{font-size:9.5px;color:rgba(180,200,240,.6);font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+.fc1{right:3.5%;top:16%;animation:driftChip 5s ease-in-out infinite;border-color:rgba(255,107,53,.28)}
+.fc2{right:29%;bottom:16%;animation:driftChip2 6s ease-in-out infinite;border-color:rgba(245,192,74,.22)}
+.fc2 .fval{color:#f5c04a}
+
+/* PICKS CARD */
+.picks-wrap{position:absolute;right:3%;top:50%;transform:translateY(-50%);z-index:20;opacity:0;animation:cardEntrance .9s 1.1s cubic-bezier(.22,1,.36,1) forwards}
+@keyframes cardEntrance{from{opacity:0;transform:translateY(-44%) scale(.95) perspective(1000px) rotateY(-18deg) rotateX(5deg)}to{opacity:1;transform:translateY(-50%) perspective(1000px) rotateY(-12deg) rotateX(2deg)}}
+
+.picks-card{
+  width:348px;background:rgba(10,10,14,.88);border-radius:14px;border:1px solid rgba(255,255,255,.09);padding:0;overflow:hidden;
+  backdrop-filter:blur(30px) saturate(150%);
+  box-shadow:0 50px 100px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.04),inset 0 1px 0 rgba(255,255,255,.08),-24px 24px 70px rgba(255,69,0,.07);
+  animation:cardFloat 7s ease-in-out 2s infinite
+}
+@keyframes cardFloat{0%,100%{transform:translateY(0) perspective(1000px) rotateY(-12deg) rotateX(2deg)}50%{transform:translateY(-10px) perspective(1000px) rotateY(-9deg) rotateX(1deg)}}
+
+.card-top{background:linear-gradient(135deg,rgba(255,69,0,.15),rgba(255,69,0,.04));padding:20px 22px 16px;border-bottom:1px solid rgba(255,255,255,.06);position:relative;overflow:hidden}
+.card-top::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(255,69,0,.15),transparent 70%);pointer-events:none}
+.card-top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.card-brand{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(240,237,232,.35)}
+.card-live{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);background:rgba(255,69,0,.1);border:1px solid rgba(255,69,0,.25);padding:3px 8px;border-radius:20px}
+.card-live::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--orange);animation:blink 1s infinite}
+.card-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:21px;text-transform:uppercase;letter-spacing:.04em;line-height:1.1;margin-top:2px}
+
+.card-body{padding:18px 22px}
+.card-meta{display:flex;gap:22px;margin-bottom:16px}
+.meta-lbl{font-size:8.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.meta-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:26px;line-height:1}
+.meta-val.yellow{color:#F59E0B}
+.meta-val.green{color:#4ADE80}
+
+.card-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);margin:14px 0}
+
+.pick-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:12.5px;font-weight:500;position:relative;overflow:hidden;cursor:none;transition:background .2s;border-radius:4px}
+.pick-row:last-child{border-bottom:none}
+.pick-row:hover{background:rgba(255,255,255,.025);padding-left:8px}
+.pdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;position:relative}
+.pdot::after{content:'';position:absolute;inset:-3px;border-radius:50%;opacity:.3;animation:ring-pulse 2s infinite}
+.pd-g{background:#4ADE80;box-shadow:0 0 8px rgba(74,222,128,.6)}.pd-g::after{border:1px solid #4ADE80}
+.pd-o{background:var(--orange);box-shadow:0 0 8px rgba(255,69,0,.6)}.pd-o::after{border:1px solid var(--orange)}
+.pd-y{background:#F59E0B;box-shadow:0 0 8px rgba(245,158,11,.6)}.pd-y::after{border:1px solid #F59E0B}
+.pd-r{background:#F87171;box-shadow:0 0 8px rgba(248,113,113,.5)}.pd-r::after{border:1px solid #F87171}
+@keyframes ring-pulse{0%,100%{transform:scale(1);opacity:.3}50%{transform:scale(1.8);opacity:0}}
+
+.pick-badge{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(240,237,232,.3);background:rgba(255,255,255,.05);padding:2px 7px;border-radius:20px}
+
+.confidence-bar{margin-top:14px}
+.conf-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.conf-pct{color:#F59E0B;font-weight:800}
+.bar-track{height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--orange),#F59E0B);width:74%;box-shadow:0 0 8px rgba(255,69,0,.4);animation:barGrow 1.2s 1.5s both}
+@keyframes barGrow{from{width:0}to{width:74%}}
+
+.card-footer{padding:16px 22px 18px;border-top:1px solid rgba(255,255,255,.05)}
+.picks-btn{width:100%;background:linear-gradient(135deg,#c42820,#ff3b30,#ff6b35);color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:14px;letter-spacing:.12em;text-transform:uppercase;padding:13px;border:1px solid rgba(255,180,120,.18);border-radius:10px;cursor:none;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(255,59,48,.48),inset 0 1px 0 rgba(255,255,255,.14);transition:transform .15s,box-shadow .2s}
+.picks-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.18),transparent 50%)}
+.picks-btn::after{content:'';position:absolute;top:-50%;left:-70%;width:35%;height:200%;background:rgba(255,255,255,.2);transform:skewX(-20deg);animation:sheen 2.5s infinite 2s}
+.picks-btn:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(255,59,48,.62),inset 0 1px 0 rgba(255,255,255,.2)}
+.card-caption{margin-top:10px;font-size:9.5px;color:rgba(240,237,232,.25);text-align:center;letter-spacing:.04em;line-height:1.5}
+
+/* STATS */
+.stats{position:relative;z-index:2;display:flex;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:rgba(255,255,255,.015)}
+.s-item{flex:1;padding:38px 20px;display:flex;flex-direction:column;align-items:center;border-right:1px solid var(--border);position:relative;overflow:hidden;cursor:none;transition:background .3s}
+.s-item:last-child{border-right:none}
+.s-item::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--orange),transparent);transform:scaleX(0);transform-origin:center;transition:transform .5s ease}
+.s-item:hover{background:rgba(255,69,0,.025)}
+.s-item:hover::after{transform:scaleX(1)}
+.s-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:54px;line-height:1;letter-spacing:-.02em}
+.s-val .u{font-size:30px;color:var(--orange)}
+.s-lbl{font-size:10.5px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-top:5px;text-align:center}
+
+/* SECTION */
+.sec{position:relative;z-index:2;padding:96px 52px}
+.sec-eyebrow{display:flex;align-items:center;gap:10px;font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--orange);margin-bottom:18px}
+.sec-eyebrow::before{content:'';width:28px;height:1px;background:var(--orange)}
+.sec-h2{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:clamp(38px,5vw,62px);text-transform:uppercase;letter-spacing:-.01em;line-height:.93;margin-bottom:56px}
+.sec-h2 em{font-style:italic;color:var(--orange)}
+
+/* FEATURES */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+.feat-card{background:var(--dark2);padding:38px 34px;position:relative;overflow:hidden;cursor:none;transition:background .3s}
+.feat-card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at var(--gx,50%) var(--gy,50%),rgba(255,69,0,.07) 0%,transparent 55%);opacity:0;transition:opacity .35s}
+.feat-card:hover{background:rgba(14,14,20,1)}
+.feat-card:hover::before{opacity:1}
+.feat-number{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:52px;line-height:1;color:rgba(255,69,0,.12);position:absolute;top:20px;right:24px;letter-spacing:-.02em;pointer-events:none;transition:color .3s}
+.feat-card:hover .feat-number{color:rgba(255,69,0,.22)}
+.feat-icon-wrap{width:46px;height:46px;border:1px solid rgba(255,69,0,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:22px;position:relative;transition:border-color .3s,box-shadow .3s}
+.feat-card:hover .feat-icon-wrap{border-color:rgba(255,69,0,.45);box-shadow:0 0 20px rgba(255,69,0,.15)}
+.feat-icon-wrap svg{width:20px;height:20px;stroke:var(--orange);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.feat-h3{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+.feat-p{font-size:13.5px;color:var(--muted);line-height:1.68}
+.feat-tag{display:inline-block;margin-top:18px;font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);border:1px solid rgba(255,69,0,.22);padding:3px 9px;border-radius:20px;transition:background .2s,border-color .2s}
+.feat-card:hover .feat-tag{background:rgba(255,69,0,.08);border-color:rgba(255,69,0,.4)}
+
+/* STEPS v11 — glassmorphism */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;position:relative}
+.steps::before{content:'';position:absolute;top:27px;left:12%;right:12%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,69,0,.5) 25%,rgba(255,69,0,.5) 75%,transparent);z-index:0}
+.step{padding:30px 22px 26px;text-align:center;border-radius:22px;background:rgba(255,255,255,.03);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.07);box-shadow:0 8px 32px rgba(0,0,0,.32);transition:all .35s cubic-bezier(.23,1,.32,1);position:relative;overflow:hidden}
+.step::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.09),transparent)}
+.step:hover{background:rgba(255,255,255,.055);border-color:rgba(255,59,48,.32);box-shadow:0 24px 60px rgba(255,59,48,.14),0 0 0 1px rgba(255,59,48,.14);transform:translateY(-7px) scale(1.01)}
+.step-n{width:54px;height:54px;border-radius:50%;margin:0 auto 22px;background:linear-gradient(135deg,rgba(255,59,48,.95),rgba(245,192,74,.75));border:none;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;color:#fff;position:relative;z-index:1;box-shadow:0 4px 18px rgba(255,59,48,.48);transition:box-shadow .3s,transform .3s}
+.step:hover .step-n{box-shadow:0 8px 28px rgba(255,59,48,.65);transform:scale(1.1)}
+.step-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:17px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px}
+.step-p{font-size:13px;color:var(--muted);line-height:1.65}
+
+/* CTA */
+.cta{position:relative;z-index:2;padding:110px 52px;text-align:center;overflow:hidden}
+.cta-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 50%,rgba(255,69,0,.07) 0%,transparent 70%);pointer-events:none}
+.cta-h2{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(48px,7vw,92px);text-transform:uppercase;line-height:.9;margin-bottom:22px;letter-spacing:4px;
+  background:linear-gradient(90deg,rgba(255,255,255,.12),rgba(255,255,255,.78) 28%,rgba(255,255,255,.12) 68%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:220% 100%;
+  animation:shimV11 7s ease infinite}
+.cta-h2 em{font-style:italic;-webkit-text-fill-color:var(--orange);color:var(--orange);text-shadow:0 0 40px rgba(255,69,0,.4)}
+.cta-p{font-size:17px;color:var(--muted);max-width:460px;margin:0 auto 44px;line-height:1.65;font-weight:300}
+.cta-btns{display:flex;gap:14px;justify-content:center}
+
+/* FOOTER */
+footer{position:relative;z-index:2;border-top:1px solid var(--border);padding:38px 52px;display:flex;align-items:center;justify-content:space-between}
+.f-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.f-logo span{color:var(--orange)}
+footer p{font-size:11px;color:rgba(240,237,232,.2);letter-spacing:.04em}
+
+/* REVEALS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .75s ease,transform .75s ease}
+.reveal.vis{opacity:1;transform:none}
+.rd1{transition-delay:.1s}.rd2{transition-delay:.2s}.rd3{transition-delay:.3s}.rd4{transition-delay:.4s}
+
+/* scan on feat cards */
+.feat-card::after{content:'';position:absolute;top:-100%;left:0;right:0;height:50%;background:linear-gradient(transparent,rgba(255,255,255,.012),transparent);animation:scan 9s linear infinite;pointer-events:none}
+@keyframes scan{0%{top:-50%}100%{top:150%}}
+
+/* V11 KEYFRAMES */
+@keyframes glowP11{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes shimV11{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes driftChip{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-10px) rotate(1deg)}}
+@keyframes driftChip2{0%,100%{transform:translateY(-6px) rotate(1deg)}50%{transform:translateY(5px) rotate(-1deg)}}
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="cur-r"></div>
+
+<!-- NAV — sin modificar -->
+<nav>
+  <div class="nav-logo"><span>Momentum</span> Ascent</div>
+  <div class="nav-links">
+    <a href="#">Picks</a>
+    <a href="#">Estad&iacute;sticas</a>
+    <a href="#">Historial</a>
+    <a href="#">Planes</a>
+    <button class="btn-nav" style="background-color: rgb(177, 176, 175)">&#9654; Entrar</button>
+  </div>
+</nav>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-badge">&#9889; En vivo</div>
+  <div class="ticker-scroll">
+    <div class="ticker-track">
+      <div class="t-item">Real Madrid vs Barcelona &nbsp;<span class="t-odd">1.85</span></div>
+      <div class="t-item">NBA &middot; Lakers vs Celtics &nbsp;<span class="t-odd">2.10</span></div>
+      <div class="t-item">NFL &middot; Chiefs vs Eagles &nbsp;<span class="t-odd">1.70</span></div>
+      <div class="t-item">Champions &middot; PSG vs Bayern &nbsp;<span class="t-odd">3.20</span></div>
+      <div class="t-item">MLB &middot; Yankees vs Dodgers &nbsp;<span class="t-odd">1.95</span></div>
+      <div class="t-item">UFC 312 &middot; Main Event &nbsp;<span class="t-odd">1.60</span></div>
+      <div class="t-item">Premier &middot; Arsenal vs City &nbsp;<span class="t-odd">2.40</span></div>
+      <div class="t-item">Real Madrid vs Barcelona &nbsp;<span class="t-odd">1.85</span></div>
+      <div class="t-item">NBA &middot; Lakers vs Celtics &nbsp;<span class="t-odd">2.10</span></div>
+      <div class="t-item">NFL &middot; Chiefs vs Eagles &nbsp;<span class="t-odd">1.70</span></div>
+      <div class="t-item">Champions &middot; PSG vs Bayern &nbsp;<span class="t-odd">3.20</span></div>
+      <div class="t-item">MLB &middot; Yankees vs Dodgers &nbsp;<span class="t-odd">1.95</span></div>
+      <div class="t-item">UFC 312 &middot; Main Event &nbsp;<span class="t-odd">1.60</span></div>
+      <div class="t-item">Premier &middot; Arsenal vs City &nbsp;<span class="t-odd">2.40</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <canvas id="three-canvas"></canvas>
+  <div class="hero-grid-floor"></div>
+  <div class="hero-vlight"></div>
+
+  <!-- CONTENT -->
+  <div class="hero-content">
+    <div class="hero-eyebrow"><span class="dot"></span>DATOS &middot; IA &middot; CONTEXTO EN TIEMPO REAL</div>
+    <h1 class="hero-h1">
+      <span class="line"><span>PICKS</span></span>
+      <span class="line"><span>DEPOR</span></span>
+      <span class="line"><span>TIVOS</span></span>
+      <span class="line"><span>CON IA Y</span></span>
+      <span class="line"><span class="accent-text" data-t="AN&Aacute;LISIS">AN&Aacute;LISIS</span></span>
+      <span class="line"><span class="accent-text" data-t="REAL.">REAL.</span></span>
+    </h1>
+    <p class="hero-sub">Eventos del d&iacute;a, datos estad&iacute;sticos y picks informativos generados por IA. Cuotas y contexto en tiempo real.</p>
+    <div class="hero-ctas">
+      <button class="btn-primary">Ver picks de hoy</button>
+      <button class="btn-ghost">Crear cuenta</button>
+      <button class="btn-ghost" style="padding:15px 18px">Ver historial</button>
+    </div>
+    <p class="hero-disc">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</p>
+  </div>
+
+  <!-- FLOAT CHIPS v11 -->
+  <div class="float-chip fc1">
+    <div class="fc-inner">
+      <span class="fval">74%</span>
+      <span class="flbl">Confianza IA</span>
+    </div>
+  </div>
+  <div class="float-chip fc2">
+    <div class="fc-inner">
+      <span class="fval">1.4K+</span>
+      <span class="flbl">Picks / mes</span>
+    </div>
+  </div>
+
+  <!-- PICKS CARD -->
+  <div class="picks-wrap">
+    <div class="picks-card">
+      <div class="card-top">
+        <div class="card-top-row">
+          <span class="card-brand">Momentum Ascent</span>
+          <span class="card-live">Sistema vivo</span>
+        </div>
+        <div class="card-title">Momentum Ascent Picks</div>
+      </div>
+      <div class="card-body">
+        <div class="card-meta">
+          <div class="meta-col">
+            <div class="meta-lbl">Picks</div>
+            <div class="meta-val green" id="pc">12</div>
+          </div>
+          <div class="meta-col">
+            <div class="meta-lbl">Riesgo</div>
+            <div class="meta-val yellow">MEDIO</div>
+          </div>
+          <div class="meta-col">
+            <div class="meta-lbl">Deportes</div>
+            <div class="meta-val">8</div>
+          </div>
+        </div>
+        <div class="card-divider"></div>
+        <div class="pick-row"><div class="pdot pd-g"></div>Partido top del d&iacute;a<span class="pick-badge">F&uacute;tbol</span></div>
+        <div class="pick-row"><div class="pdot pd-o"></div>Mercado sugerido<span class="pick-badge">NBA</span></div>
+        <div class="pick-row"><div class="pdot pd-y"></div>An&aacute;lisis estad&iacute;stico<span class="pick-badge">NFL</span></div>
+        <div class="pick-row"><div class="pdot pd-r"></div>Riesgo clasificado<span class="pick-badge">UFC</span></div>
+        <div class="confidence-bar">
+          <div class="conf-row"><span>Confianza promedio</span><span class="conf-pct">74%</span></div>
+          <div class="bar-track"><div class="bar-fill"></div></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="picks-btn">Abrir picks de hoy</button>
+        <p class="card-caption">IA deportiva &middot; Base de datos en vivo &middot; Orbiting del panel central</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="s-item reveal"><div class="s-val" data-t="1400">0<span class="u">+</span></div><div class="s-lbl">Eventos por mes</div></div>
+  <div class="s-item reveal rd1"><div class="s-val" data-t="74"><span class="n">0</span><span class="u">%</span></div><div class="s-lbl">Confianza promedio</div></div>
+  <div class="s-item reveal rd2"><div class="s-val" data-t="12">0<span class="u"></span></div><div class="s-lbl">Deportes cubiertos</div></div>
+  <div class="s-item reveal rd3"><div class="s-val">24<span class="u">h</span></div><div class="s-lbl">Actualizaci&oacute;n diaria</div></div>
+</div>
+
+<!-- FEATURES -->
+<section class="sec">
+  <div class="sec-eyebrow">Plataforma</div>
+  <h2 class="sec-h2 reveal">Lo que nos hace<br><em>diferentes</em></h2>
+  <div class="feat-grid">
+    <div class="feat-card reveal">
+      <span class="feat-number">01</span>
+      <div class="feat-icon-wrap"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+      <div class="feat-h3">Inteligencia Artificial</div>
+      <div class="feat-p">Motor de IA entrenado con millones de eventos deportivos. Picks con contexto estad&iacute;stico en tiempo real.</div>
+      <span class="feat-tag">Motor propio</span>
+    </div>
+    <div class="feat-card reveal rd1">
+      <span class="feat-number">02</span>
+      <div class="feat-icon-wrap"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3"/><path d="M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg></div>
+      <div class="feat-h3">Datos en Vivo</div>
+      <div class="feat-p">Integraci&oacute;n con feeds deportivos globales. Cuotas, alineaciones, clima y lesiones procesados autom&aacute;ticamente.</div>
+      <span class="feat-tag">Tiempo real</span>
+    </div>
+    <div class="feat-card reveal rd2">
+      <span class="feat-number">03</span>
+      <div class="feat-icon-wrap"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
+      <div class="feat-h3">Historial Auditado</div>
+      <div class="feat-p">Cada pick queda registrado con resultado verificable. Transparencia total en el rendimiento hist&oacute;rico.</div>
+      <span class="feat-tag">100% verificable</span>
+    </div>
+    <div class="feat-card reveal rd3">
+      <span class="feat-number">04</span>
+      <div class="feat-icon-wrap"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      <div class="feat-h3">Clasificaci&oacute;n de Riesgo</div>
+      <div class="feat-p">Cada pick incluye nivel de confianza, riesgo y an&aacute;lisis del mercado para decisiones informadas.</div>
+      <span class="feat-tag">Pick inteligente</span>
+    </div>
+    <div class="feat-card reveal rd1">
+      <span class="feat-number">05</span>
+      <div class="feat-icon-wrap"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg></div>
+      <div class="feat-h3">12 Deportes</div>
+      <div class="feat-p">F&uacute;tbol, NFL, NBA, MLB, NHL, UFC, Tenis y m&aacute;s. Cobertura global de las ligas m&aacute;s importantes.</div>
+      <span class="feat-tag">Cobertura global</span>
+    </div>
+    <div class="feat-card reveal rd2">
+      <span class="feat-number">06</span>
+      <div class="feat-icon-wrap"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+      <div class="feat-h3">Panel Personalizado</div>
+      <div class="feat-p">Filtra por deporte, riesgo, confianza m&iacute;nima o mercado espec&iacute;fico. Tu flujo, a tu medida.</div>
+      <span class="feat-tag">Configurable</span>
+    </div>
+  </div>
+</section>
+
+<!-- STEPS -->
+<section class="sec" style="background:rgba(255,255,255,.01);border-top:1px solid var(--border)">
+  <div class="sec-eyebrow">Proceso</div>
+  <h2 class="sec-h2 reveal">&iquest;C&oacute;mo <em>funciona?</em></h2>
+  <div class="steps">
+    <div class="step reveal"><div class="step-n">01</div><div class="step-t">Ingesta de Datos</div><div class="step-p">El sistema recopila datos de m&aacute;s de 500 fuentes deportivas en tiempo real cada d&iacute;a.</div></div>
+    <div class="step reveal rd1"><div class="step-n">02</div><div class="step-t">An&aacute;lisis IA</div><div class="step-p">El motor procesa contexto, estad&iacute;sticas hist&oacute;ricas y cuotas del mercado para cada evento.</div></div>
+    <div class="step reveal rd2"><div class="step-n">03</div><div class="step-t">Pick Generado</div><div class="step-p">Se genera un pick con mercado sugerido, nivel de confianza y justificaci&oacute;n estad&iacute;stica.</div></div>
+    <div class="step reveal rd3"><div class="step-n">04</div><div class="step-t">Resultado Auditado</div><div class="step-p">Cada predicci&oacute;n queda registrada con resultado verificable en el historial p&uacute;blico.</div></div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="cta-bg"></div>
+  <div style="position:relative;z-index:1">
+    <div class="sec-eyebrow" style="justify-content:center;margin-bottom:14px">Empieza hoy</div>
+    <h2 class="cta-h2 reveal">DATOS QUE<br><em>IMPORTAN.</em></h2>
+    <p class="cta-p reveal">Accede a los picks del d&iacute;a, an&aacute;lisis estad&iacute;stico y el historial completo de predicciones.</p>
+    <div class="cta-btns reveal">
+      <button class="btn-primary" style="font-size:17px;padding:18px 44px">Ver picks de hoy</button>
+      <button class="btn-ghost" style="font-size:15px;padding:18px 30px">Ver planes</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="f-logo"><span>Momentum</span> Ascent</div>
+  <p>Contenido informativo. No garantiza ganancias. +18. Apuesta con responsabilidad.</p>
+  <p>&copy; 2026 Momentum Ascent</p>
+</footer>
+
+<!-- THREE.JS SCENE -->
+<script>
+(function(){
+'use strict';
+
+// ─── CURSOR ────────────────────────────────────────────────
+const cur = document.getElementById('cur');
+const curR = document.getElementById('cur-r');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX; my=e.clientY;
+  cur.style.left=mx+'px'; cur.style.top=my+'px';
+});
+(function animR(){
+  rx+=(mx-rx)*.13; ry+=(my-ry)*.13;
+  curR.style.left=rx+'px'; curR.style.top=ry+'px';
+  requestAnimationFrame(animR);
+})();
+document.querySelectorAll('button,a,.feat-card,.s-item,.pick-row').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.style.width='20px';cur.style.height='20px';curR.style.width='56px';curR.style.height='56px';curR.style.borderColor='rgba(255,69,0,.9)'});
+  el.addEventListener('mouseleave',()=>{cur.style.width='10px';cur.style.height='10px';curR.style.width='36px';curR.style.height='36px';curR.style.borderColor='rgba(255,69,0,.5)'});
+});
+
+// ─── THREE.JS BALLS ──────────────────────────────────────
+const canvas = document.getElementById('three-canvas');
+const hero = document.querySelector('.hero');
+
+const renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
+camera.position.set(0, 0, 12);
+
+function resize(){
+  const w=hero.offsetWidth, h=hero.offsetHeight;
+  renderer.setSize(w,h);
+  camera.aspect=w/h;
+  camera.updateProjectionMatrix();
+}
+resize();
+window.addEventListener('resize',resize);
+
+// ─── LIGHTING ──────────────────────────────────────────
+const key = new THREE.DirectionalLight(0xFF6030, 3.5);
+key.position.set(6, 8, 10);
+key.castShadow = true;
+key.shadow.mapSize.set(2048,2048);
+key.shadow.camera.near = 0.1;
+key.shadow.camera.far = 100;
+scene.add(key);
+
+const fill = new THREE.DirectionalLight(0x2040FF, 1.2);
+fill.position.set(-8, 3, 5);
+scene.add(fill);
+
+const rim = new THREE.DirectionalLight(0xFF2200, 2.0);
+rim.position.set(0, -5, -8);
+scene.add(rim);
+
+const amb = new THREE.AmbientLight(0x101015, 2.5);
+scene.add(amb);
+
+const pt1 = new THREE.PointLight(0xFF4500, 2.5, 30);
+pt1.position.set(2, 1, 8);
+scene.add(pt1);
+
+const pt2 = new THREE.PointLight(0x0040FF, 1.5, 20);
+pt2.position.set(-5, 2, 4);
+scene.add(pt2);
+
+// ─── TEXTURE HELPERS ────────────────────────────────────
+function makeCanvas(size, fn){
+  const c=document.createElement('canvas'); c.width=c.height=size;
+  fn(c.getContext('2d'),size);
+  return new THREE.CanvasTexture(c);
+}
+
+// ─── SOCCER BALL ────────────────────────────────────────
+function makeSoccerTex(size){
+  return makeCanvas(size,(ctx,s)=>{
+    const grad=ctx.createRadialGradient(s*.35,s*.3,0,s*.5,s*.5,s*.5);
+    grad.addColorStop(0,'#ffffff');
+    grad.addColorStop(.4,'#e8e8e8');
+    grad.addColorStop(.8,'#b0b0b0');
+    grad.addColorStop(1,'#606060');
+    ctx.fillStyle=grad; ctx.fillRect(0,0,s,s);
+    ctx.fillStyle='#111111';
+    const penta=(cx,cy,r,rot=0)=>{
+      ctx.beginPath();
+      for(let i=0;i<5;i++){
+        const a=rot+i*(Math.PI*2/5)-Math.PI/2;
+        const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
+        i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.closePath(); ctx.fill();
+    };
+    const hex=(cx,cy,r)=>{
+      ctx.beginPath();
+      for(let i=0;i<6;i++){
+        const a=i*(Math.PI/3);
+        const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
+        i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.closePath(); ctx.fill();
+    };
+    ctx.fillStyle='rgba(0,0,0,0.85)';
+    penta(s/2,s/2,s*.18);
+    penta(s/2,s*.12,s*.11,Math.PI/5);
+    penta(s*.8,s*.3,s*.1,0);
+    penta(s*.78,s*.72,s*.1,Math.PI/5);
+    penta(s*.22,s*.72,s*.1,0);
+    penta(s*.2,s*.3,s*.1,Math.PI/5);
+    ctx.fillStyle='rgba(0,0,0,0.5)';
+    hex(s*.5,s*.5,s*.15);
+    ctx.strokeStyle='rgba(0,0,0,0.3)'; ctx.lineWidth=s*.012;
+    for(let i=0;i<6;i++){
+      const a=i*(Math.PI/3);
+      ctx.beginPath();
+      ctx.moveTo(s/2+s*.18*Math.cos(a-Math.PI/6), s/2+s*.18*Math.sin(a-Math.PI/6));
+      ctx.lineTo(s/2+s*.42*Math.cos(a), s/2+s*.42*Math.sin(a));
+      ctx.stroke();
+    }
+  });
+}
+
+// ─── BASKETBALL TEX ────────────────────────────────────
+function makeBasketTex(size){
+  return makeCanvas(size,(ctx,s)=>{
+    const grad=ctx.createRadialGradient(s*.35,s*.3,0,s*.5,s*.5,s*.5);
+    grad.addColorStop(0,'#FF8C00');
+    grad.addColorStop(.35,'#E06000');
+    grad.addColorStop(.7,'#B84500');
+    grad.addColorStop(1,'#5C2200');
+    ctx.fillStyle=grad; ctx.fillRect(0,0,s,s);
+    const noise=(x,y)=>Math.sin(x*23.7)*Math.cos(y*17.3)*Math.sin((x+y)*11.1);
+    for(let i=0;i<s;i+=3){
+      for(let j=0;j<s;j+=3){
+        const n=noise(i/s,j/s);
+        if(Math.abs(n)>0.85){
+          ctx.fillStyle=`rgba(0,0,0,${Math.abs(n)*.15})`;
+          ctx.beginPath();
+          ctx.arc(i+1,j+1,1.2,0,Math.PI*2);
+          ctx.fill();
+        }
+      }
+    }
+    ctx.strokeStyle='rgba(0,0,0,0.88)'; ctx.lineWidth=s*.022; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(s/2,s*.02); ctx.lineTo(s/2,s*.98); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(s*.02,s/2); ctx.lineTo(s*.98,s/2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(s*.5,s*.5,s*.32,-Math.PI*.6,Math.PI*.6); ctx.stroke();
+    ctx.beginPath(); ctx.arc(s*.5,s*.5,s*.32,Math.PI*.4,Math.PI*1.6); ctx.stroke();
+    const sheen=ctx.createRadialGradient(s*.35,s*.28,0,s*.35,s*.28,s*.35);
+    sheen.addColorStop(0,'rgba(255,200,100,0.25)');
+    sheen.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=sheen; ctx.fillRect(0,0,s,s);
+  });
+}
+
+// ─── TENNIS TEX ────────────────────────────────────────
+function makeTennisTex(size){
+  return makeCanvas(size,(ctx,s)=>{
+    const grad=ctx.createRadialGradient(s*.35,s*.3,0,s*.5,s*.5,s*.5);
+    grad.addColorStop(0,'#D8FF22');
+    grad.addColorStop(.4,'#AACC00');
+    grad.addColorStop(.8,'#7A9600');
+    grad.addColorStop(1,'#3a4a00');
+    ctx.fillStyle=grad; ctx.fillRect(0,0,s,s);
+    for(let i=0;i<2000;i++){
+      const x=Math.random()*s, y=Math.random()*s;
+      const a=Math.random()*Math.PI*2;
+      const l=Math.random()*4+1;
+      ctx.strokeStyle=`rgba(255,255,255,${Math.random()*.07})`;
+      ctx.lineWidth=.5;
+      ctx.beginPath();
+      ctx.moveTo(x,y);
+      ctx.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);
+      ctx.stroke();
+    }
+    ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=s*.03;
+    ctx.beginPath();
+    ctx.moveTo(s*.5,s*.05);
+    ctx.bezierCurveTo(s*.75,s*.2,s*.75,s*.8,s*.5,s*.95);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(s*.5,s*.05);
+    ctx.bezierCurveTo(s*.25,s*.2,s*.25,s*.8,s*.5,s*.95);
+    ctx.stroke();
+  });
+}
+
+// ─── AMERICAN FOOTBALL TEX ──────────────────────────────
+function makeFootballTex(size){
+  return makeCanvas(size,(ctx,s)=>{
+    const grad=ctx.createRadialGradient(s*.35,s*.3,0,s*.5,s*.5,s*.5);
+    grad.addColorStop(0,'#A0600A');
+    grad.addColorStop(.45,'#7A4400');
+    grad.addColorStop(.8,'#4A2600');
+    grad.addColorStop(1,'#1a0a00');
+    ctx.fillStyle=grad; ctx.fillRect(0,0,s,s);
+    for(let i=0;i<1500;i++){
+      ctx.strokeStyle=`rgba(0,0,0,${Math.random()*.1})`;
+      ctx.lineWidth=.4;
+      ctx.beginPath();
+      const x=Math.random()*s, y=Math.random()*s;
+      ctx.arc(x,y,Math.random()*3+.5,0,Math.PI*2);
+      ctx.stroke();
+    }
+    ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=s*.025;
+    ctx.beginPath(); ctx.moveTo(s*.5,s*.25); ctx.lineTo(s*.5,s*.75); ctx.stroke();
+    for(let i=0;i<5;i++){
+      const y=s*.32+i*s*.1;
+      ctx.beginPath(); ctx.moveTo(s*.38,y); ctx.lineTo(s*.62,y); ctx.stroke();
+    }
+    ctx.lineWidth=s*.035;
+    ctx.strokeStyle='rgba(255,255,255,0.4)';
+    ctx.beginPath(); ctx.arc(s*.5,s*.5,s*.38,-Math.PI*.5,Math.PI*.5); ctx.stroke();
+    ctx.beginPath(); ctx.arc(s*.5,s*.5,s*.38,Math.PI*.5,Math.PI*1.5); ctx.stroke();
+  });
+}
+
+// ─── BASEBALL TEX ──────────────────────────────────────
+function makeBaseballTex(size){
+  return makeCanvas(size,(ctx,s)=>{
+    const grad=ctx.createRadialGradient(s*.35,s*.3,0,s*.5,s*.5,s*.5);
+    grad.addColorStop(0,'#FFFAF4');
+    grad.addColorStop(.5,'#F5EEE4');
+    grad.addColorStop(.85,'#DDD0BE');
+    grad.addColorStop(1,'#A89070');
+    ctx.fillStyle=grad; ctx.fillRect(0,0,s,s);
+    ctx.strokeStyle='#CC2200'; ctx.lineWidth=s*.018; ctx.lineCap='round';
+    for(let i=0;i<12;i++){
+      const t=i/11;
+      const y=s*(0.2+t*0.6);
+      const x=s*(0.18+Math.sin(t*Math.PI)*0.12);
+      const x2=x+s*.055, y2=y+s*.04;
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x2,y2); ctx.stroke();
+    }
+    for(let i=0;i<12;i++){
+      const t=i/11;
+      const y=s*(0.2+t*0.6);
+      const x=s*(0.82-Math.sin(t*Math.PI)*0.12);
+      const x2=x-s*.055, y2=y+s*.04;
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x2,y2); ctx.stroke();
+    }
+  });
+}
+
+// ─── CREATE BALLS ──────────────────────────────────────
+function makeBall(texFn, rx, ry, rz, isElipse=false){
+  const geo = new THREE.SphereGeometry(1, 64, 64);
+  const mat = new THREE.MeshStandardMaterial({
+    map: texFn(512),
+    roughness: 0.35,
+    metalness: 0.05,
+    envMapIntensity: 1.0
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  if(isElipse) mesh.scale.set(1.4, 1, 1);
+  mesh.castShadow = true;
+  mesh.position.set(rx, ry, rz);
+  scene.add(mesh);
+  return mesh;
+}
+
+const soccer   = makeBall(makeSoccerTex,    1.2,  0.3,  2.0);
+const basket   = makeBall(makeBasketTex,    3.8,  1.8, -0.5);
+const tennis   = makeBall(makeTennisTex,   -0.8,  2.2,  0.5);
+const football = makeBall(makeFootballTex,  3.2, -1.6,  1.0, true);
+const baseball = makeBall(makeBaseballTex,  0.5, -1.8, -0.5);
+
+soccer.scale.setScalar(1.15);
+basket.scale.setScalar(0.95);
+tennis.scale.setScalar(0.65);
+football.scale.set(1.3, 0.9, 0.9);
+baseball.scale.setScalar(0.6);
+
+const shadowGeo = new THREE.PlaneGeometry(20, 20);
+const shadowMat = new THREE.ShadowMaterial({opacity: 0.35});
+const shadowPlane = new THREE.Mesh(shadowGeo, shadowMat);
+shadowPlane.rotation.x = -Math.PI/2;
+shadowPlane.position.y = -3.5;
+shadowPlane.receiveShadow = true;
+scene.add(shadowPlane);
+
+// Environment map
+const pmremGen = new THREE.PMREMGenerator(renderer);
+pmremGen.compileEquirectangularShader();
+const envCanvas = document.createElement('canvas');
+envCanvas.width = 256; envCanvas.height = 128;
+const envCtx = envCanvas.getContext('2d');
+const envGrad = envCtx.createLinearGradient(0, 0, 0, 128);
+envGrad.addColorStop(0, '#1a0a00');
+envGrad.addColorStop(0.3, '#0a0510');
+envGrad.addColorStop(0.6, '#050210');
+envGrad.addColorStop(1, '#000000');
+envCtx.fillStyle = envGrad;
+envCtx.fillRect(0, 0, 256, 128);
+const ogGrad = envCtx.createRadialGradient(64, 40, 0, 64, 40, 80);
+ogGrad.addColorStop(0, 'rgba(255,80,0,0.4)');
+ogGrad.addColorStop(1, 'rgba(0,0,0,0)');
+envCtx.fillStyle = ogGrad;
+envCtx.fillRect(0, 0, 256, 128);
+const envTexture = new THREE.CanvasTexture(envCanvas);
+envTexture.mapping = THREE.EquirectangularReflectionMapping;
+const envTex = pmremGen.fromEquirectangular(envTexture).texture;
+scene.environment = envTex;
+envTexture.dispose();
+
+// ─── PARTICLES ──────────────────────────────────────────
+const partCount = 180;
+const partGeo = new THREE.BufferGeometry();
+const partPos = new Float32Array(partCount * 3);
+const partSizes = new Float32Array(partCount);
+const partVel = [];
+for(let i=0; i<partCount; i++){
+  partPos[i*3]   = (Math.random()-0.5)*18;
+  partPos[i*3+1] = (Math.random()-0.5)*12;
+  partPos[i*3+2] = (Math.random()-0.5)*8;
+  partSizes[i]   = Math.random() * 3 + 0.5;
+  partVel.push({
+    vx:(Math.random()-.5)*.004,
+    vy:Math.random()*.006+.001,
+    vz:(Math.random()-.5)*.003
+  });
+}
+partGeo.setAttribute('position', new THREE.BufferAttribute(partPos, 3));
+partGeo.setAttribute('size', new THREE.BufferAttribute(partSizes, 1));
+
+const partMat = new THREE.PointsMaterial({
+  color: 0xFF4500, size: 0.06, sizeAttenuation: true,
+  transparent: true, opacity: 0.55,
+  blending: THREE.AdditiveBlending, depthWrite: false
+});
+const particles = new THREE.Points(partGeo, partMat);
+scene.add(particles);
+
+const partGeo2 = new THREE.BufferGeometry();
+const partPos2 = new Float32Array(partCount * 3);
+for(let i=0; i<partCount; i++){
+  partPos2[i*3]   = (Math.random()-0.5)*18;
+  partPos2[i*3+1] = (Math.random()-0.5)*12;
+  partPos2[i*3+2] = (Math.random()-0.5)*8;
+}
+partGeo2.setAttribute('position', new THREE.BufferAttribute(partPos2, 3));
+const partMat2 = new THREE.PointsMaterial({
+  color: 0xffffff, size: 0.03, sizeAttenuation:true,
+  transparent:true, opacity:0.2, blending:THREE.AdditiveBlending, depthWrite:false
+});
+scene.add(new THREE.Points(partGeo2, partMat2));
+
+// ─── MOUSE INTERACTION ──────────────────────────────────
+let mouseX = 0, mouseY = 0;
+let targetMX = 0, targetMY = 0;
+document.addEventListener('mousemove', e=>{
+  targetMX = (e.clientX / window.innerWidth - 0.5) * 2;
+  targetMY = (e.clientY / window.innerHeight - 0.5) * 2;
+});
+
+const floatData = [
+  {phase:0,    speed:1.1, amp:0.22, rotSpeed:{x:.0035,y:.0055,z:.002}},
+  {phase:1.2,  speed:0.9, amp:0.18, rotSpeed:{x:.005,y:.003,z:.004}},
+  {phase:2.4,  speed:1.3, amp:0.14, rotSpeed:{x:.002,y:.007,z:.003}},
+  {phase:0.7,  speed:0.8, amp:0.20, rotSpeed:{x:.006,y:.004,z:.005}},
+  {phase:3.1,  speed:1.0, amp:0.16, rotSpeed:{x:.004,y:.006,z:.002}},
+];
+const balls3d = [soccer, basket, tennis, football, baseball];
+const basePos = balls3d.map(b=>({x:b.position.x, y:b.position.y, z:b.position.z}));
+
+// ─── ANIMATE ───────────────────────────────────────────
+const clock = new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  mouseX += (targetMX - mouseX) * 0.04;
+  mouseY += (targetMY - mouseY) * 0.04;
+
+  camera.position.x += (mouseX * 1.2 - camera.position.x) * 0.02;
+  camera.position.y += (-mouseY * 0.8 - camera.position.y) * 0.02;
+  camera.lookAt(2, 0, 0);
+
+  balls3d.forEach((ball, i)=>{
+    const fd = floatData[i];
+    const bp = basePos[i];
+    const f = Math.sin(t * fd.speed + fd.phase);
+    ball.position.y = bp.y + f * fd.amp;
+    ball.position.x = bp.x + Math.cos(t * fd.speed * .7 + fd.phase) * fd.amp * .5;
+    ball.rotation.x += fd.rotSpeed.x;
+    ball.rotation.y += fd.rotSpeed.y;
+    ball.rotation.z += fd.rotSpeed.z;
+    ball.position.x += mouseX * (0.3 + i * 0.08);
+    ball.position.y -= mouseY * (0.2 + i * 0.05);
+  });
+
+  pt1.position.x = Math.sin(t * .5) * 3;
+  pt1.position.y = Math.cos(t * .4) * 2;
+  pt1.intensity = 2.2 + Math.sin(t * 1.2) * 0.5;
+
+  const pos = partGeo.attributes.position.array;
+  for(let i=0; i<partCount; i++){
+    pos[i*3]   += partVel[i].vx;
+    pos[i*3+1] += partVel[i].vy;
+    pos[i*3+2] += partVel[i].vz;
+    if(pos[i*3+1] > 7) pos[i*3+1] = -6;
+  }
+  partGeo.attributes.position.needsUpdate = true;
+
+  renderer.render(scene, camera);
+}
+animate();
+
+// ─── SCROLL REVEAL ─────────────────────────────────────
+const revEls = document.querySelectorAll('.reveal');
+const ro = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('vis') });
+},{threshold:.1});
+revEls.forEach(el=>ro.observe(el));
+
+// ─── COUNTER ANIMATION ─────────────────────────────────
+function animCount(el, to, ms=1800){
+  let s=null, inner=el.querySelector('.n')||el;
+  const unit=el.querySelector('.u');
+  const unitHTML=unit?unit.outerHTML:'';
+  if(!el.querySelector('.n')){
+    const sp=document.createElement('span'); sp.className='n';
+    el.innerHTML=''; el.appendChild(sp);
+    el.insertAdjacentHTML('beforeend',unitHTML);
+    inner=sp;
+  }
+  const step=ts=>{
+    if(!s)s=ts;
+    const p=Math.min((ts-s)/ms,1);
+    const ease=1-Math.pow(1-p,3);
+    inner.textContent=Math.round(ease*to);
+    if(p<1)requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+const cntObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(!e.isIntersecting)return;
+    const el=e.target, t=+el.dataset.t;
+    if(t)animCount(el,t);
+    cntObs.unobserve(el);
+  });
+},{threshold:.5});
+document.querySelectorAll('[data-t]').forEach(el=>cntObs.observe(el));
+
+// ─── PICKS LIVE COUNTER ────────────────────────────────
+let pn=12;
+setInterval(()=>{
+  if(Math.random()>.65){
+    pn=Math.max(8,Math.min(18,pn+(Math.random()>.5?1:-1)));
+    const el=document.getElementById('pc');
+    if(el){
+      el.style.transition='transform .2s,color .2s';
+      el.style.transform='scale(1.35)';
+      el.style.color='#FF4500';
+      el.textContent=pn;
+      setTimeout(()=>{el.style.transform='';el.style.color=''},280);
+    }
+  }
+},3500);
+
+// ─── FEAT CARD TILT ────────────────────────────────────
+document.querySelectorAll('.feat-card').forEach(c=>{
+  c.addEventListener('mousemove',e=>{
+    const r=c.getBoundingClientRect();
+    const cx=(e.clientX-r.left)/r.width;
+    const cy=(e.clientY-r.top)/r.height;
+    c.style.transform=`perspective(700px) rotateX(${(cy-.5)*-6}deg) rotateY(${(cx-.5)*8}deg) translateY(-4px)`;
+    c.style.setProperty('--gx',cx*100+'%');
+    c.style.setProperty('--gy',cy*100+'%');
+  });
+  c.addEventListener('mouseleave',()=>{ c.style.transform=''; });
+});
+
+})();
+</script>
+</body>
+</html>
