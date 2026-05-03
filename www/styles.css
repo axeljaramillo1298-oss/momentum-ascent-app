@@ -10372,6 +10372,9 @@ body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions {
   justify-content: center;
   justify-self: center;
   gap: 12px;
+  position: relative;
+  width: 100%;
+  padding-right: 84px;
   margin-left: 0;
 }
 
@@ -10407,7 +10410,11 @@ body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions .up-nav-
 }
 
 body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions .logout-btn {
-  margin-left: auto;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 0;
 }
 
 body.user-panel-premium:not(.theme-female) .user-panel-nav [data-action="theme"] {
@@ -10438,12 +10445,15 @@ body.user-panel-premium:not(.theme-female) .user-panel-nav [data-action="theme"]
   body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions {
     justify-self: auto;
     gap: 6px;
+    width: auto;
+    padding-right: 0;
     overflow-x: auto;
     scrollbar-width: none;
   }
 
   body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions .logout-btn {
-    margin-left: 0;
+    position: static;
+    transform: none;
   }
 
   body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions::-webkit-scrollbar {
