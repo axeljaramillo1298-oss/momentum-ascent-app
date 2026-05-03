@@ -312,9 +312,9 @@ const PLAN_CATALOG = {
   },
   coach_humano: {
     id: "coach_humano",
-    label: "Premium",
-    price: "$59 / mes",
-    includes: ["Cobertura ampliada", "Picks premium", "Prioridad operativa"],
+    label: "Apex",
+    price: "$49 / mes",
+    includes: ["Analisis IA full", "Historial completo", "Cobertura total", "Control de bank"],
   },
   retos: {
     id: "retos",
@@ -329,6 +329,7 @@ function mapLegacyPlanToId(value) {
     .trim()
     .toLowerCase();
   if (!raw) return "free";
+  if (raw.includes("apex")) return "coach_humano";
   if (raw.includes("premium")) return "coach_humano";
   if (raw.includes("coach + humano") || raw.includes("coach humano")) return "coach_humano";
   if (raw.includes("coach ia") || raw.includes("ia coach") || raw.includes("solo ia") || raw.includes("ai picks")) return "ai_coach";
@@ -4161,8 +4162,8 @@ function initGodModePanel() {
 
   const planLabelById = (id) => {
     const normalized = String(id || "").toLowerCase();
-    if (normalized === "coach_humano") return "Coach + Humano";
-    if (normalized === "ai_coach") return "Coach IA";
+    if (normalized === "coach_humano") return "Apex";
+    if (normalized === "ai_coach") return "AI Picks";
     if (normalized === "retos") return "Retos";
     return "Free";
   };
@@ -6253,15 +6254,15 @@ function buildPlanStatusHtml(caps) {
       active: caps.plan.id === "free",
     },
     {
-      title: "Coach IA",
+      title: "AI Picks",
       price: "$19 / mes",
-      notes: "IA adaptativa + rutina inteligente + mejor progresion.",
+      notes: "Analisis IA ampliado, mas picks y mejor contexto por jornada.",
       active: caps.plan.id === "ai_coach",
     },
     {
-      title: "Coach + Humano (Maximo)",
-      price: "$59 / mes",
-      notes: "Todo desbloqueado: IA + coach humano + ajustes premium y prioridad.",
+      title: "Apex",
+      price: "$49 / mes",
+      notes: "Analisis IA full, historial completo, cobertura total y control de bank.",
       active: caps.plan.id === "coach_humano",
     },
   ];
@@ -6286,14 +6287,14 @@ function buildPlanStatusHtml(caps) {
   const salesCopy =
     caps.plan.id === "coach_humano"
       ? {
-          title: "Plan Maximo activo",
-          desc: "Ya tienes IA + coach humano + prioridad de seguimiento. Enfocate en ejecutar.",
+          title: "Plan Apex activo",
+          desc: "Ya tienes la capa mas completa: IA full, historial total y control operativo ampliado.",
           cta: "Gestionar plan",
         }
       : {
-          title: "Desbloquea resultados mas rapidos",
-          desc: "Activa Coach + Humano para revision 1:1, ajustes premium y mejor adherencia diaria.",
-          cta: "Subir a plan maximo",
+          title: "Desbloquea la capa mas completa",
+          desc: "Activa Apex para abrir IA full, historial completo y cobertura total.",
+          cta: "Subir a Apex",
         };
 
   const enabledCount = accessRows.filter((r) => r.cls === "green").length;

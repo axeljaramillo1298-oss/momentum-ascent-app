@@ -6,87 +6,201 @@
     <title>Membresia | Momentum Ascent</title>
     <link rel="stylesheet" href="styles.css" />
     <style>
-      /* ===== COMPARISON TABLE — 4 columns ===== */
-      .comparison-row{grid-template-columns:1.6fr 0.7fr 0.88fr 0.88fr}
-      .comparison-row span{display:flex;align-items:center}
-      .comparison-row span:not(:first-child){justify-content:center;text-align:center}
-      @media(max-width:720px){.comparison-row{grid-template-columns:1.2fr 0.55fr 0.72fr 0.72fr;font-size:12px;padding:10px 8px}}
-      @media(max-width:460px){.comparison-row{grid-template-columns:1fr 0.45fr 0.62fr 0.62fr;font-size:11px;padding:8px 5px}}
+      .plans-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+        align-items: stretch;
+      }
 
-      /* Header row */
-      .comparison-row.header{background:#0a0a0c;padding-top:18px;padding-bottom:18px}
-      .comparison-row.header .premium-col{
-        background:rgba(255,69,0,.11);border-radius:8px;padding:5px 14px;
-        color:#ff6b35;font-weight:700;font-size:13px;justify-content:center}
-      .comparison-row.header .apex-col{
-        background:linear-gradient(135deg,rgba(245,192,74,.15),rgba(255,107,53,.06));
-        border:1px solid rgba(245,192,74,.25);border-radius:8px;padding:5px 14px;
-        color:#f5c04a;font-weight:800;font-size:13px;justify-content:center}
+      .comparison-table-clean {
+        display: grid;
+        gap: 1px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        overflow: hidden;
+      }
 
-      /* Value symbols */
-      .ck{color:#4ade80;font-size:16px;font-weight:900;line-height:1}
-      .cx{color:rgba(240,237,232,.15);font-size:18px;font-weight:300}
-      .vl-o{font-size:12px;font-weight:700;color:#ff6b35}
-      .vl-g{font-size:12px;font-weight:700;color:#f5c04a}
-      .vl-m{font-size:11px;color:rgba(240,237,232,.3);font-style:italic}
+      .comparison-row-clean {
+        display: grid;
+        grid-template-columns: 1.6fr 0.8fr 1fr 1fr;
+        gap: 0;
+        background: rgba(8, 10, 18, 0.96);
+        padding: 14px 16px;
+        align-items: center;
+      }
 
-      /* Exclusive row — Control de bank */
-      .row-excl{background:linear-gradient(90deg,transparent,rgba(245,192,74,.05),transparent) !important;border-top:1px solid rgba(245,192,74,.14) !important}
-      .row-excl>span:first-child{color:#f5c04a;font-weight:600;gap:7px}
-      .row-excl>span:first-child::before{content:'★';font-size:10px;color:#f5c04a;flex-shrink:0}
+      .comparison-row-clean span {
+        display: flex;
+        align-items: center;
+      }
 
-      /* ===== PRICING GRID ===== */
-      .plans-grid-3{grid-template-columns:repeat(3,1fr);align-items:stretch}
-      @media(max-width:960px){.plans-grid-3{grid-template-columns:1fr;max-width:420px;margin:0 auto}}
+      .comparison-row-clean span:not(:first-child) {
+        justify-content: center;
+        text-align: center;
+      }
 
-      /* Badges — show above card */
-      .pricing-grid{overflow:visible !important}
-      .price-card{overflow:visible !important;position:relative}
-      .price-card .badge{
-        position:absolute;top:-13px;left:50%;transform:translateX(-50%);
-        font-size:9px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;
-        padding:4px 16px;border-radius:20px;white-space:nowrap;z-index:5}
-      .price-card.highlight .badge{
-        background:linear-gradient(135deg,#c42820,#ff3b30,#ff6b35);color:#fff;
-        box-shadow:0 4px 18px rgba(255,59,48,.55)}
+      .comparison-row-clean.header {
+        background: rgba(10, 12, 20, 0.98);
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 12px;
+      }
 
-      /* Apex card — dark gold premium */
-      .price-card.apex{
-        background:linear-gradient(160deg,#100d02,#0c0a00);
-        border:1.5px solid rgba(245,192,74,.34);
-        box-shadow:0 0 0 1px rgba(245,192,74,.06),0 24px 64px rgba(245,192,74,.09),inset 0 1px 0 rgba(245,192,74,.1);
-        overflow:visible !important;position:relative}
-      .price-card.apex::before{
-        content:'';position:absolute;top:-1px;left:12%;right:12%;height:2px;
-        background:linear-gradient(90deg,transparent,#f5c04a 35%,#ff8c42 65%,transparent);
-        border-radius:2px}
-      .price-card.apex .badge{
-        background:linear-gradient(135deg,#7a5200,#f5c04a,#ffd97a);color:#0a0700;
-        box-shadow:0 4px 18px rgba(245,192,74,.45);font-weight:900}
-      .price-card.apex h3{
-        background:linear-gradient(135deg,#f5c04a,#ffd97a);
-        -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-      .price-card.apex .price{
-        background:linear-gradient(135deg,#f5c04a 20%,#ff9842 100%);
-        -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+      .comparison-row-clean .premium-col {
+        color: #ff6b35;
+      }
 
-      /* Feature list items */
-      .price-card ul{list-style:none;padding:0;margin:0}
-      .price-card ul li{display:flex;align-items:flex-start;gap:9px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
-      .price-card ul li:last-child{border-bottom:none}
-      .li-ic{flex-shrink:0;font-size:11px;margin-top:3px;font-weight:900}
-      .price-card:not(.highlight):not(.apex) .li-ic{color:rgba(240,237,232,.35)}
-      .price-card.highlight .li-ic{color:rgba(255,255,255,.85)}
-      .price-card.apex .li-ic{color:#f5c04a}
+      .comparison-row-clean .apex-col {
+        color: #f5c04a;
+      }
 
-      /* Bankroll exclusive highlight */
-      .bank-item{
-        margin-top:12px;padding:10px 14px;
-        background:rgba(245,192,74,.07);border:1px solid rgba(245,192,74,.24);border-radius:10px;
-        display:flex;align-items:center;gap:9px;
-        font-size:13px;font-weight:700;color:#f5c04a;letter-spacing:.03em;
-        box-shadow:0 0 20px rgba(245,192,74,.05)}
-      .bank-item::before{content:'◈';font-size:16px;color:#f5c04a;flex-shrink:0}
+      .comparison-symbol-ok {
+        color: #4ade80;
+        font-weight: 900;
+      }
+
+      .comparison-symbol-off {
+        color: rgba(240, 237, 232, 0.28);
+      }
+
+      .comparison-note {
+        color: rgba(240, 237, 232, 0.72);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .price-card ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .price-card ul li {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 7px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .price-card ul li:last-child {
+        border-bottom: 0;
+      }
+
+      .li-ic {
+        color: #ff6b35;
+        font-size: 12px;
+        font-weight: 900;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .price-card.apex {
+        background: linear-gradient(160deg, #100d02, #0c0a00);
+        border: 1.5px solid rgba(245, 192, 74, 0.34);
+        box-shadow: 0 0 0 1px rgba(245, 192, 74, 0.06), 0 24px 64px rgba(245, 192, 74, 0.09), inset 0 1px 0 rgba(245, 192, 74, 0.1);
+        position: relative;
+        overflow: visible !important;
+      }
+
+      .price-card.apex::before {
+        content: "";
+        position: absolute;
+        top: -1px;
+        left: 12%;
+        right: 12%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #f5c04a 35%, #ff8c42 65%, transparent);
+        border-radius: 2px;
+      }
+
+      .price-card .badge {
+        position: absolute;
+        top: -13px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        padding: 4px 16px;
+        border-radius: 20px;
+        white-space: nowrap;
+        z-index: 5;
+      }
+
+      .price-card.highlight .badge {
+        background: linear-gradient(135deg, #c42820, #ff3b30, #ff6b35);
+        color: #fff;
+        box-shadow: 0 4px 18px rgba(255, 59, 48, 0.55);
+      }
+
+      .price-card.apex .badge {
+        background: linear-gradient(135deg, #7a5200, #f5c04a, #ffd97a);
+        color: #0a0700;
+        box-shadow: 0 4px 18px rgba(245, 192, 74, 0.45);
+      }
+
+      .bank-item {
+        margin-top: 12px;
+        padding: 10px 14px;
+        background: rgba(245, 192, 74, 0.07);
+        border: 1px solid rgba(245, 192, 74, 0.24);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #f5c04a;
+      }
+
+      .bank-item::before {
+        content: "◆";
+        font-size: 16px;
+        color: #f5c04a;
+        flex-shrink: 0;
+      }
+
+      .feature-grid-clean {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .feature-card-clean {
+        padding: 18px;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .feature-card-clean h3 {
+        margin: 0 0 8px;
+      }
+
+      .feature-card-clean p {
+        margin: 0;
+        color: rgba(240, 237, 232, 0.68);
+      }
+
+      @media (max-width: 980px) {
+        .plans-grid-3,
+        .feature-grid-clean {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .comparison-row-clean {
+          grid-template-columns: 1.2fr 0.7fr 0.9fr 0.9fr;
+          padding: 12px 10px;
+          font-size: 12px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -97,7 +211,7 @@
         <div class="logo">MOMENTUM ASCENT</div>
         <div class="nav-actions">
           <a class="ghost" href="index.html">Inicio</a>
-          <a class="ghost" href="https://app.momentumascent.com/admin.html" data-role-only="admin">Admin</a>
+          <a class="ghost" href="admin.html" data-role-only="admin">Admin</a>
           <a class="primary" href="user-hoy.html">Picks</a>
         </div>
       </nav>
@@ -105,77 +219,94 @@
         <div class="hero-copy">
           <p class="eyebrow">Membresia</p>
           <h1>Planes y precios</h1>
-          <p class="subhead">Desbloquea picks premium, histórico ampliado, mayor cobertura de eventos y herramientas operativas adicionales.</p>
+          <p class="subhead">Desbloquea picks premium, historico ampliado, mayor cobertura de eventos y herramientas operativas adicionales.</p>
           <p class="sports-disclaimer">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</p>
         </div>
       </div>
     </header>
 
     <main>
-      <section class="section training-showcase home-clips" id="miniclips" data-role-hide="admin">
-        <div class="section-title"><h2>Vista premium</h2><p>Beneficios pensados para usuarios que quieren más cobertura, más contexto y más historial.</p></div>
-        <div class="workout-carousel" data-carousel>
-          <button class="ghost carousel-nav" data-carousel-prev type="button">Anterior</button>
-          <div class="carousel-track" data-carousel-track>
-            <article class="media-card"><video class="clip-video" autoplay muted loop playsinline controls preload="metadata"><source src="https://assets.mixkit.co/videos/preview/mixkit-man-doing-push-ups-on-the-floor-4050-large.mp4" type="video/mp4" /></video><h3>Picks del dia</h3><p>Dashboard con picks listos para lectura rápida.</p></article>
-            <article class="media-card"><video class="clip-video" autoplay muted loop playsinline controls preload="metadata"><source src="https://assets.mixkit.co/videos/preview/mixkit-woman-doing-exercises-with-dumbbells-4194-large.mp4" type="video/mp4" /></video><h3>Analisis IA</h3><p>Confianza, riesgo y explicación breve por mercado.</p></article>
-            <article class="media-card"><video class="clip-video" autoplay muted loop playsinline controls preload="metadata"><source src="https://assets.mixkit.co/videos/preview/mixkit-young-woman-doing-yoga-in-a-park-4548-large.mp4" type="video/mp4" /></video><h3>Historial</h3><p>Memoria operativa para revisar tendencias del MVP.</p></article>
-            <article class="media-card"><video class="clip-video" autoplay muted loop playsinline controls preload="metadata"><source src="https://assets.mixkit.co/videos/preview/mixkit-athlete-jogging-on-a-dirt-road-4072-large.mp4" type="video/mp4" /></video><h3>Cobertura</h3><p>Más ligas, más eventos y herramientas premium.</p></article>
-          </div>
-          <button class="ghost carousel-nav" data-carousel-next type="button">Siguiente</button>
+      <section class="section" data-role-hide="admin">
+        <div class="section-title">
+          <h2>Que desbloquea cada plan</h2>
+          <p>Beneficios pensados para usuarios que quieren mas cobertura, mas contexto y mas historial.</p>
+        </div>
+        <div class="feature-grid-clean">
+          <article class="feature-card-clean">
+            <h3>Picks del dia</h3>
+            <p>Dashboard con picks listos para lectura rapida y mejor prioridad sobre eventos top.</p>
+          </article>
+          <article class="feature-card-clean">
+            <h3>Analisis IA</h3>
+            <p>Confianza, riesgo y explicacion breve por mercado con una capa de contexto adicional.</p>
+          </article>
+          <article class="feature-card-clean">
+            <h3>Historial</h3>
+            <p>Memoria operativa para revisar tendencias, picks previos y consistencia del modelo.</p>
+          </article>
+          <article class="feature-card-clean">
+            <h3>Cobertura</h3>
+            <p>Mas ligas, mas eventos y herramientas premium para operar con mayor orden.</p>
+          </article>
         </div>
       </section>
 
       <section class="section comparison" id="comparacion" data-role-hide="admin">
-        <div class="section-title"><h2>Comparativo por plan</h2><p>Escala de acceso: Free, AI Picks y Apex.</p></div>
-        <div class="comparison-table premium-boost">
-          <div class="comparison-row header">
+        <div class="section-title">
+          <h2>Comparativo por plan</h2>
+          <p>Escala de acceso: Free, AI Picks y Apex.</p>
+        </div>
+        <div class="comparison-table-clean">
+          <div class="comparison-row-clean header">
             <span>Feature</span>
             <span>Free</span>
             <span class="premium-col">AI Picks</span>
             <span class="apex-col">Apex</span>
           </div>
-          <div class="comparison-row">
+          <div class="comparison-row-clean">
             <span>Picks del dia</span>
-            <span><span class="ck">✓</span></span>
-            <span class="premium-col"><span class="ck">✓</span></span>
-            <span class="apex-col"><span class="ck">✓</span></span>
+            <span class="comparison-symbol-ok">✓</span>
+            <span class="comparison-symbol-ok">✓</span>
+            <span class="comparison-symbol-ok">✓</span>
           </div>
-          <div class="comparison-row">
+          <div class="comparison-row-clean">
             <span>Analisis IA</span>
-            <span><span class="cx">—</span></span>
-            <span class="premium-col"><span class="vl-o">Extendido</span></span>
-            <span class="apex-col"><span class="vl-g">Full IA</span></span>
+            <span class="comparison-symbol-off">-</span>
+            <span class="comparison-note">Extendido</span>
+            <span class="comparison-note apex-col">Full IA</span>
           </div>
-          <div class="comparison-row">
+          <div class="comparison-row-clean">
             <span>Historial</span>
-            <span><span class="vl-m">Limitado</span></span>
-            <span class="premium-col"><span class="vl-o">Ampliado</span></span>
-            <span class="apex-col"><span class="vl-g">Todo</span></span>
+            <span class="comparison-note">Limitado</span>
+            <span class="comparison-note premium-col">Ampliado</span>
+            <span class="comparison-note apex-col">Completo</span>
           </div>
-          <div class="comparison-row">
+          <div class="comparison-row-clean">
             <span>Eventos cubiertos</span>
-            <span><span class="vl-m">Top del dia</span></span>
-            <span class="premium-col"><span class="vl-o">Ampliada</span></span>
-            <span class="apex-col"><span class="vl-g">Todos</span></span>
+            <span class="comparison-note">Top del dia</span>
+            <span class="comparison-note premium-col">Ampliada</span>
+            <span class="comparison-note apex-col">Total</span>
           </div>
-          <div class="comparison-row">
+          <div class="comparison-row-clean">
             <span>Comunidad</span>
-            <span><span class="cx">—</span></span>
-            <span class="premium-col"><span class="ck">✓</span></span>
-            <span class="apex-col"><span class="ck">✓</span></span>
+            <span class="comparison-symbol-off">-</span>
+            <span class="comparison-symbol-ok">✓</span>
+            <span class="comparison-symbol-ok">✓</span>
           </div>
-          <div class="comparison-row row-excl">
+          <div class="comparison-row-clean">
             <span>Control de bank</span>
-            <span><span class="cx">—</span></span>
-            <span class="premium-col"><span class="cx">—</span></span>
-            <span class="apex-col"><span class="ck">✓</span></span>
+            <span class="comparison-symbol-off">-</span>
+            <span class="comparison-symbol-off">-</span>
+            <span class="comparison-symbol-ok">✓</span>
           </div>
         </div>
       </section>
 
       <section class="section pricing" id="planes" data-role-hide="admin">
-        <div class="section-title"><h2>Planes activos</h2><p>Selecciona tu plan y solicita activacion por transferencia.</p></div>
+        <div class="section-title">
+          <h2>Planes activos</h2>
+          <p>Selecciona tu plan y solicita activacion por transferencia.</p>
+        </div>
         <div class="pricing-grid plans-grid-3">
           <div class="price-card" data-tilt>
             <h3>Free</h3>
@@ -187,32 +318,35 @@
             </ul>
             <button class="ghost full" type="button" data-plan-select="free">Elegir Free</button>
           </div>
+
           <div class="price-card highlight" data-tilt>
             <div class="badge">Popular</div>
             <h3>AI Picks</h3>
             <p class="price">$19 / mes</p>
             <ul>
-              <li><span class="li-ic">✓</span>Analisis IA Extendido</li>
+              <li><span class="li-ic">✓</span>Analisis IA extendido</li>
               <li><span class="li-ic">✓</span>Mas picks por jornada</li>
               <li><span class="li-ic">✓</span>Historial ampliado</li>
               <li><span class="li-ic">✓</span>Comunidad incluida</li>
             </ul>
             <button class="primary full" type="button" data-plan-select="ai_coach">Elegir AI Picks</button>
           </div>
+
           <div class="price-card apex" data-tilt>
             <div class="badge">Apex</div>
             <h3>Apex</h3>
             <p class="price">$49 / mes</p>
             <ul>
-              <li><span class="li-ic">✓</span>Analisis IA Full</li>
+              <li><span class="li-ic">✓</span>Analisis IA full</li>
               <li><span class="li-ic">✓</span>Historial completo</li>
               <li><span class="li-ic">✓</span>Todos los eventos</li>
               <li><span class="li-ic">✓</span>Comunidad incluida</li>
             </ul>
             <div class="bank-item">Control de bank</div>
-            <button class="primary full" type="button" data-plan-select="apex" style="margin-top:18px">Elegir Apex</button>
+            <button class="primary full" type="button" data-plan-select="coach_humano" style="margin-top: 18px">Elegir Apex</button>
           </div>
         </div>
+
         <article class="card plan-extras-card">
           <h3>Extras premium</h3>
           <p>Activalos segun tu configuracion de plan.</p>
@@ -222,6 +356,7 @@
           </div>
           <div id="plan-selection-summary" class="admin-item"></div>
         </article>
+
         <article class="card transfer-demo-card">
           <h3>Datos de pago (transferencia bancaria)</h3>
           <p><strong>Banco:</strong> <span id="planes-pay-bank">Cargando...</span></p>
@@ -235,11 +370,14 @@
       </section>
 
       <section class="section testimonials" id="testimonios" data-role-hide="admin">
-        <div class="section-title"><h2>Notas importantes</h2><p>La plataforma no promete ganancias ni resultados garantizados.</p></div>
+        <div class="section-title">
+          <h2>Notas importantes</h2>
+          <p>La plataforma no promete ganancias ni resultados garantizados.</p>
+        </div>
         <div class="testimonial-grid">
-          <div class="quote"><p>"Úsalo como contenido informativo y criterio adicional, no como garantía."</p><span>- Nota operativa</span></div>
-          <div class="quote"><p>"La confianza es una estimación, no una certeza."</p><span>- Riesgo y gestión</span></div>
-          <div class="quote"><p>"Apuesta con responsabilidad y evita sobreexposición."</p><span>- Momentum Ascent</span></div>
+          <div class="quote"><p>"Usalo como contenido informativo y criterio adicional, no como garantia."</p><span>- Nota operativa</span></div>
+          <div class="quote"><p>"La confianza es una estimacion, no una certeza."</p><span>- Riesgo y gestion</span></div>
+          <div class="quote"><p>"Apuesta con responsabilidad y evita sobreexposicion."</p><span>- Momentum Ascent</span></div>
         </div>
       </section>
 
@@ -247,7 +385,7 @@
         <article class="card">
           <h3>Operacion centralizada</h3>
           <p>La gestion de eventos, sincronizacion y generacion de picks ya vive en el panel admin dedicado.</p>
-          <a class="primary" href="https://app.momentumascent.com/admin.html">Abrir Admin Sports</a>
+          <a class="primary" href="admin.html">Abrir Admin Sports</a>
         </article>
       </section>
     </main>
