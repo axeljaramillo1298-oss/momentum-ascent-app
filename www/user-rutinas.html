@@ -1,90 +1,313 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Analisis | Momentum Ascent</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body class="user-panel-premium sports-dashboard-page">
-    <main class="user-panel-shell sports-dashboard-shell">
-      <header class="user-panel-top sports-dashboard-top">
-        <nav class="user-panel-nav">
-          <div class="logo">MOMENTUM ASCENT</div>
-          <div class="nav-actions">
-            <a class="ghost up-nav-link" href="user-hoy.html">Picks</a>
-            <a class="ghost up-nav-link up-nav-active" href="user-rutinas.html">Analisis</a>
-            <a class="ghost up-nav-link" href="user-progreso.html">Historial</a>
-            <a class="ghost up-nav-link" href="planes.html">Premium</a>
-            <a class="ghost up-nav-link" href="user-checkin.html">Cuenta</a>
-            <button class="ghost" type="button" data-action="theme">Cambiar vista</button>
-          </div>
-        </nav>
-        <div class="user-panel-hero sports-dashboard-hero">
-          <p class="eyebrow">STAT + AI LAYER</p>
-          <h1>ANALISIS DEL DIA</h1>
-          <p class="subhead">Lectura rápida por evento: mercado sugerido, nivel de riesgo, confianza estimada y razonamiento breve.</p>
-          <p class="sports-disclaimer">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</p>
-        </div>
-      </header>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Análisis | Momentum Ascent</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#FF4500;
+  --orange2:#FF6B2B;
+  --dark:#060608;
+  --dark2:#0a0a0d;
+  --dark3:#0e0e12;
+  --surface:rgba(255,255,255,0.03);
+  --border:rgba(255,255,255,0.07);
+  --text:#f0ede8;
+  --muted:rgba(240,237,232,0.4);
+  --green:#4ADE80;
+  --red:#F87171;
+  --yellow:#F59E0B;
+}
+html{scroll-behavior:smooth}
+body{background:var(--dark)!important;color:var(--text);font-family:'Barlow',sans-serif;overflow-x:hidden;min-height:100vh}
 
-      <section class="section sports-dashboard-section">
-        <div class="sports-dashboard-grid">
-          <section class="sports-main-column">
-            <div class="sports-section-head">
-              <h2>Desglose por pick</h2>
-              <span>Explicaciones pensadas para consumo rápido</span>
-            </div>
-            <div id="sports-analysis-cards" class="sports-analysis-grid"></div>
-          </section>
+/* BG CANVAS */
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
 
-          <aside class="sports-side-column">
-            <article class="card sports-side-card">
-              <h3>Marco de lectura</h3>
-              <ul class="sports-side-list">
-                <li><strong>Confianza alta:</strong> más soporte estadístico, no certeza.</li>
-                <li><strong>Riesgo alto:</strong> mayor volatilidad o menos datos.</li>
-                <li><strong>Mercado:</strong> la forma concreta de la recomendación.</li>
-                <li><strong>Análisis:</strong> explica por qué la IA sugiere ese ángulo.</li>
-              </ul>
-            </article>
+/* MAIN */
+main{position:relative;z-index:2;padding-top:0}
 
-            <article class="card sports-side-card">
-              <h3>Objetivo de esta vista</h3>
-              <ul class="sports-side-list">
-                <li>Entender cada pick antes de usarlo.</li>
-                <li>Evitar llamadas innecesarias a IA por cada carga.</li>
-                <li>Separar el análisis del dashboard principal.</li>
-              </ul>
-            </article>
-          </aside>
-        </div>
-      </section>
-    </main>
+/* HERO STRIP */
+.page-hero{position:relative;padding:36px 52px 0;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:300px;background:radial-gradient(ellipse 60% 80% at 20% 20%,rgba(80,20,120,.18) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 80% 40%,rgba(255,69,0,.05) 0%,transparent 70%);pointer-events:none}
 
-    <nav class="bottom-nav" aria-label="Navegacion principal">
-      <a class="bottom-nav-item" href="user-hoy.html">
-        <span class="bottom-nav-icon">🎯</span>
-        <span>Picks</span>
-      </a>
-      <a class="bottom-nav-item bottom-nav-active" href="user-rutinas.html">
-        <span class="bottom-nav-icon">🧠</span>
-        <span>Analisis</span>
-      </a>
-      <a class="bottom-nav-item" href="user-progreso.html">
-        <span class="bottom-nav-icon">📚</span>
-        <span>Historial</span>
-      </a>
-      <a class="bottom-nav-item" href="planes.html">
-        <span class="bottom-nav-icon">💎</span>
-        <span>Premium</span>
-      </a>
-      <a class="bottom-nav-item" href="user-checkin.html">
-        <span class="bottom-nav-icon">👤</span>
-        <span>Cuenta</span>
-      </a>
+.page-eyebrow{font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px;opacity:0;animation:fadeUp .5s .1s forwards}
+.page-eyebrow::before{content:'';width:20px;height:1px;background:var(--muted)}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(56px,7vw,96px);text-transform:uppercase;letter-spacing:-.02em;line-height:.9;opacity:0;animation:fadeUp .6s .2s forwards}
+.page-desc{margin-top:14px;font-size:14px;color:var(--muted);max-width:420px;line-height:1.65;font-weight:300;opacity:0;animation:fadeUp .5s .35s forwards}
+
+/* STATS CARDS */
+.stats-row{display:flex;gap:2px;margin-top:36px;opacity:0;animation:fadeUp .6s .45s forwards;flex-wrap:wrap}
+.stat-card{background:rgba(255,255,255,.035);border:1px solid var(--border);padding:20px 28px;min-width:140px;position:relative;overflow:hidden;transition:border-color .3s,background .3s}
+.stat-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent,var(--orange),transparent);transform:scaleX(0);transform-origin:center;transition:transform .4s}
+.stat-card:hover{background:rgba(255,69,0,.04);border-color:rgba(255,69,0,.2)}
+.stat-card:hover::before{transform:scaleX(1)}
+.sc-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:44px;line-height:1;letter-spacing:-.02em}
+.sc-val.orange{color:var(--orange)}
+.sc-val.green{color:var(--green)}
+.sc-val.yellow{color:var(--yellow)}
+.sc-lbl{font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.sc-sub{font-size:11px;color:rgba(240,237,232,.25);margin-top:2px}
+
+.disc{margin-top:18px;font-size:10px;color:var(--orange);letter-spacing:.04em;opacity:0;animation:fadeUp .4s .6s forwards}
+
+/* CONTENT AREA */
+.content{padding:40px 52px 120px}
+
+/* SECTION LABEL */
+.section-label{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;opacity:0;animation:fadeUp .5s .65s forwards}
+.section-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:22px;text-transform:uppercase;letter-spacing:.04em}
+.section-sub{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* ANALYSIS CARDS GRID */
+.sports-analysis-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:40px}
+
+/* ANALYSIS CARD — override styles.css with premium design */
+.sports-analysis-card{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:8px;padding:22px;display:flex;flex-direction:column;gap:12px;transition:background .2s,border-color .2s;position:relative;overflow:hidden}
+.sports-analysis-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--orange),transparent);transform:scaleX(0);transform-origin:left;transition:transform .35s}
+.sports-analysis-card:hover{background:rgba(255,69,0,.035);border-color:rgba(255,69,0,.22)}
+.sports-analysis-card:hover::before{transform:scaleX(1)}
+
+.sports-analysis-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* League pill */
+.sports-league-pill{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid rgba(255,255,255,.15);color:rgba(240,237,232,.6);background:rgba(255,255,255,.04)}
+
+/* Risk pills */
+.sports-risk-pill{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid}
+.risk-low{color:var(--green);border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.07)}
+.risk-medium{color:var(--yellow);border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.07)}
+.risk-high{color:var(--red);border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.07)}
+
+/* Match title */
+.sports-analysis-card h3{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:20px;letter-spacing:.01em;text-transform:uppercase;line-height:1.1;color:var(--text)}
+
+/* Pick/market/confidence lines */
+.sports-analysis-pick{font-size:13px;color:rgba(240,237,232,.75);line-height:1.5}
+.sports-analysis-pick strong{color:var(--text);font-weight:600}
+
+/* Confidence value highlight */
+.sports-analysis-pick strong + *,
+.conf-highlight{color:var(--orange)}
+
+/* Analysis text */
+.sports-pick-analysis{font-size:12.5px;color:var(--muted);line-height:1.65;border-top:1px solid var(--border);padding-top:12px;font-weight:300}
+
+/* Disclaimer */
+.sports-disclaimer{font-size:10px;color:rgba(240,237,232,.2);letter-spacing:.03em;margin-top:2px}
+
+/* Empty state */
+.sports-empty-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:60px 20px;text-align:center;color:var(--muted);grid-column:1/-1}
+.sports-empty-card strong{display:block;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:22px;text-transform:uppercase;letter-spacing:.05em;color:rgba(240,237,232,.35);margin-bottom:8px}
+.sports-empty-card p{font-size:13px}
+
+/* UTILS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+.reveal.vis{opacity:1;transform:none}
+
+/* NAV */
+.user-panel-top{position:relative;z-index:200;padding:12px 16px}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .page-hero{padding:28px 20px 0}
+  .content{padding:28px 20px 120px}
+  .stats-row{gap:1px}
+  .stat-card{padding:16px 20px;min-width:120px}
+  .sc-val{font-size:34px}
+  .sports-analysis-grid{grid-template-columns:1fr}
+}
+  </style>
+</head>
+<body class="user-panel-premium sports-dashboard-page">
+
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- NAV -->
+  <header class="user-panel-top sports-dashboard-top">
+    <nav class="user-panel-nav">
+      <div class="logo">MOMENTUM ASCENT</div>
+      <div class="nav-actions">
+        <a class="ghost up-nav-link" href="user-hoy.html">Picks</a>
+        <a class="ghost up-nav-link up-nav-active" href="user-rutinas.html">Analisis</a>
+        <a class="ghost up-nav-link" href="user-progreso.html">Historial</a>
+        <a class="ghost up-nav-link" href="planes.html">Premium</a>
+        <a class="ghost up-nav-link" href="user-checkin.html">Cuenta</a>
+        <button class="ghost" type="button" data-action="theme">Cambiar vista</button>
+      </div>
     </nav>
+  </header>
 
-    <script src="app.js"></script>
-  </body>
+  <main>
+
+    <!-- PAGE HERO -->
+    <div class="page-hero">
+      <div class="page-eyebrow">Stat + AI Layer</div>
+      <h1 class="page-title">Análisis del Día</h1>
+      <p class="page-desc">Lectura rápida por evento: mercado sugerido, nivel de riesgo, confianza estimada y razonamiento breve.</p>
+
+      <!-- STATS -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="sc-val green" id="stat-picks">—</div>
+          <div class="sc-lbl">Picks hoy</div>
+          <div class="sc-sub">Generados por IA</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-val orange" id="stat-conf">—</div>
+          <div class="sc-lbl">Confianza media</div>
+          <div class="sc-sub">Promedio del día</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-val yellow" id="stat-low">—</div>
+          <div class="sc-lbl">Riesgo bajo</div>
+          <div class="sc-sub">Alta confianza</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-val" style="color:var(--red)" id="stat-high">—</div>
+          <div class="sc-lbl">Riesgo alto</div>
+          <div class="sc-sub">Mayor volatilidad</div>
+        </div>
+      </div>
+
+      <div class="disc">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+      <div class="section-label">
+        <span class="section-title">Desglose por pick</span>
+        <span class="section-sub">Explicaciones para consumo rápido</span>
+      </div>
+      <div id="sports-analysis-cards" class="sports-analysis-grid"></div>
+    </div>
+
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navegacion principal">
+    <a class="bottom-nav-item" href="user-hoy.html">
+      <span class="bottom-nav-icon">🎯</span>
+      <span>Picks</span>
+    </a>
+    <a class="bottom-nav-item bottom-nav-active" href="user-rutinas.html">
+      <span class="bottom-nav-icon">🧠</span>
+      <span>Analisis</span>
+    </a>
+    <a class="bottom-nav-item" href="user-progreso.html">
+      <span class="bottom-nav-icon">📚</span>
+      <span>Historial</span>
+    </a>
+    <a class="bottom-nav-item" href="planes.html">
+      <span class="bottom-nav-icon">💎</span>
+      <span>Premium</span>
+    </a>
+    <a class="bottom-nav-item" href="user-checkin.html">
+      <span class="bottom-nav-icon">👤</span>
+      <span>Cuenta</span>
+    </a>
+  </nav>
+
+  <script src="app.js"></script>
+  <script>
+(function(){
+'use strict';
+
+// --- BG THREE.JS PARTICLES (same as historial) ---
+const bgCanvas = document.getElementById('bg-canvas');
+if(bgCanvas && window.THREE){
+  const renderer = new THREE.WebGLRenderer({canvas:bgCanvas,alpha:true,antialias:false});
+  renderer.setPixelRatio(1);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,.1,100);
+  camera.position.z = 5;
+  function resizeBg(){renderer.setSize(window.innerWidth,window.innerHeight);camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix()}
+  resizeBg();
+  window.addEventListener('resize',resizeBg);
+
+  const N = 200;
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(N*3);
+  const vel = [];
+  for(let i=0;i<N;i++){
+    pos[i*3]=(Math.random()-.5)*20;
+    pos[i*3+1]=(Math.random()-.5)*14;
+    pos[i*3+2]=(Math.random()-.5)*6;
+    vel.push({vx:(Math.random()-.5)*.003,vy:Math.random()*.004+.001});
+  }
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const mat = new THREE.PointsMaterial({color:0xFF4500,size:.04,sizeAttenuation:true,transparent:true,opacity:.4,blending:THREE.AdditiveBlending,depthWrite:false});
+  scene.add(new THREE.Points(geo,mat));
+
+  const geo2 = new THREE.BufferGeometry();
+  const pos2 = new Float32Array(N*3);
+  for(let i=0;i<N;i++){pos2[i*3]=(Math.random()-.5)*20;pos2[i*3+1]=(Math.random()-.5)*14;pos2[i*3+2]=(Math.random()-.5)*6}
+  geo2.setAttribute('position',new THREE.BufferAttribute(pos2,3));
+  scene.add(new THREE.Points(geo2,new THREE.PointsMaterial({color:0xffffff,size:.025,sizeAttenuation:true,transparent:true,opacity:.12,blending:THREE.AdditiveBlending,depthWrite:false})));
+
+  let tMX=0,tMY=0,cMX=0,cMY=0;
+  document.addEventListener('mousemove',e=>{tMX=(e.clientX/window.innerWidth-.5)*2;tMY=(e.clientY/window.innerHeight-.5)*2});
+  (function bgLoop(){
+    requestAnimationFrame(bgLoop);
+    cMX+=(tMX-cMX)*.03;cMY+=(tMY-cMY)*.03;
+    camera.position.x=cMX*.8;camera.position.y=-cMY*.5;
+    const p=geo.attributes.position.array;
+    for(let i=0;i<N;i++){p[i*3]+=vel[i].vx;p[i*3+1]+=vel[i].vy;if(p[i*3+1]>7)p[i*3+1]=-6}
+    geo.attributes.position.needsUpdate=true;
+    renderer.render(scene,camera);
+  })();
+}
+
+// --- REVEAL ON SCROLL ---
+const revEls = document.querySelectorAll('.reveal');
+if(revEls.length){
+  const ro = new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('vis')})},{threshold:.08});
+  revEls.forEach(el=>ro.observe(el));
+}
+
+// --- UPDATE STAT CARDS after analysis cards are populated ---
+const host = document.getElementById('sports-analysis-cards');
+if(host){
+  const obs = new MutationObserver(()=>{
+    const cards = host.querySelectorAll('.sports-analysis-card');
+    const count = cards.length;
+    if(!count) return;
+
+    let totalConf = 0, lowRisk = 0, highRisk = 0, confCount = 0;
+    cards.forEach(card=>{
+      // extract confidence from text
+      const confEl = card.querySelector('.sports-analysis-pick:nth-of-type(3)');
+      if(confEl){
+        const m = confEl.textContent.match(/(\d+)%/);
+        if(m){totalConf += parseInt(m[1],10); confCount++;}
+      }
+      // extract risk
+      if(card.querySelector('.risk-low')) lowRisk++;
+      if(card.querySelector('.risk-high')) highRisk++;
+    });
+
+    const pickEl = document.getElementById('stat-picks');
+    const confEl2 = document.getElementById('stat-conf');
+    const lowEl = document.getElementById('stat-low');
+    const highEl = document.getElementById('stat-high');
+
+    if(pickEl) pickEl.textContent = count;
+    if(confEl2) confEl2.textContent = confCount ? Math.round(totalConf/confCount)+'%' : '—';
+    if(lowEl) lowEl.textContent = lowRisk;
+    if(highEl) highEl.textContent = highRisk;
+
+    obs.disconnect();
+  });
+  obs.observe(host,{childList:true,subtree:false});
+}
+
+})();
+  </script>
+
+</body>
 </html>
