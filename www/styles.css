@@ -10406,6 +10406,10 @@ body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions .up-nav-
   box-shadow: 0 8px 22px rgba(255, 91, 77, 0.26) !important;
 }
 
+body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions .logout-btn {
+  margin-left: auto;
+}
+
 body.user-panel-premium:not(.theme-female) .user-panel-nav [data-action="theme"] {
   display: none !important;
 }
@@ -10436,6 +10440,10 @@ body.user-panel-premium:not(.theme-female) .user-panel-nav [data-action="theme"]
     gap: 6px;
     overflow-x: auto;
     scrollbar-width: none;
+  }
+
+  body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions .logout-btn {
+    margin-left: 0;
   }
 
   body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions::-webkit-scrollbar {
