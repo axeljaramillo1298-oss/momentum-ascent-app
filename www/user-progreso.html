@@ -3,124 +3,74 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Progreso | Momentum Ascent</title>
+    <title>Historial | Momentum Ascent</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="user-panel-premium">
-    <main class="user-panel-shell">
-      <header class="user-panel-top">
+  <body class="user-panel-premium sports-dashboard-page">
+    <main class="user-panel-shell sports-dashboard-shell">
+      <header class="user-panel-top sports-dashboard-top">
         <nav class="user-panel-nav">
           <div class="logo">MOMENTUM ASCENT</div>
           <div class="nav-actions">
-            <a class="ghost up-nav-link" href="user-hoy.html" data-nav="hoy">Hoy</a>
-            <a class="ghost up-nav-link" href="user-rutinas.html" data-nav="rutinas">Rutinas</a>
-            <a class="ghost up-nav-link up-nav-active" href="user-progreso.html" data-nav="progreso">Progreso</a>
-            <a class="ghost up-nav-link" href="user-dieta.html" data-nav="nutricion">Nutricion</a>
-            <a class="ghost up-nav-link" href="user-checkin.html" data-nav="perfil">Perfil</a>
+            <a class="ghost up-nav-link" href="user-hoy.html">Picks</a>
+            <a class="ghost up-nav-link" href="user-rutinas.html">Analisis</a>
+            <a class="ghost up-nav-link up-nav-active" href="user-progreso.html">Historial</a>
+            <a class="ghost up-nav-link" href="planes.html">Premium</a>
+            <a class="ghost up-nav-link" href="user-checkin.html">Perfil</a>
             <button class="ghost" type="button" data-action="theme">Cambiar vista</button>
           </div>
         </nav>
-        <div class="user-panel-hero">
-          <p class="eyebrow">MOMENTUM INDEX</p>
-          <h1>TU PROGRESO</h1>
-          <p class="subhead">Racha, cumplimiento, respuesta y tendencia semanal.</p>
+        <div class="user-panel-hero sports-dashboard-hero">
+          <p class="eyebrow">PICKS ARCHIVE</p>
+          <h1>HISTORIAL</h1>
+          <p class="subhead">Registro de picks generados para construir memoria operativa y revisar consistencia de mercados, riesgo y confianza.</p>
+          <div class="sports-summary-grid" id="sports-history-summary"></div>
+          <p class="sports-disclaimer">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</p>
         </div>
       </header>
 
-      <section class="section" style="padding-bottom:0;">
-        <div class="progress-level-card">
-          <div class="section-header-row" style="margin-bottom:14px;">
-            <h3>Progresion de nivel</h3>
-            <div id="progress-level-bar" style="flex:1;margin-left:16px;"></div>
+      <section class="section sports-dashboard-section">
+        <div class="sports-table-card">
+          <div class="sports-table-head">
+            <span>Partido</span>
+            <span>Market</span>
+            <span>Pick</span>
+            <span>Conf.</span>
+            <span>Riesgo</span>
           </div>
-          <div class="progress-level-steps" id="progress-level-steps"></div>
+          <div id="sports-history-table"></div>
         </div>
-      </section>
 
-      <section class="section admin-grid">
-        <article class="card" id="user-plan-progress-panel"></article>
-        <article class="card">
-          <h3>KPIs personales</h3>
-          <ul class="stat-list">
-            <li><span>Racha actual</span><strong id="user-progress-streak">-</strong></li>
-            <li><span>Mejor racha historica</span><strong id="user-progress-best-streak">-</strong></li>
-            <li><span>Nivel</span><strong id="user-progress-level">-</strong></li>
-            <li><span>XP total</span><strong id="user-progress-xp">-</strong></li>
-            <li><span>Ascent Index</span><strong id="user-progress-ascent-index">-</strong></li>
-            <li><span>Cumplimiento</span><strong id="user-progress-compliance">-</strong></li>
-            <li><span>Promedio respuesta</span><strong id="user-progress-response">-</strong></li>
-          </ul>
-        </article>
-        <article class="card">
-          <h3>Semana</h3>
-          <ul class="stat-list">
-            <li><span>Cumplimiento 7 dias</span><strong id="user-progress-weekly">-</strong></li>
-            <li><span>Activos vs fallados</span><strong id="user-progress-active-failed">-</strong></li>
-            <li><span>Progreso mensual</span><strong id="user-progress-monthly">-</strong></li>
-            <li><span>Discipline Score</span><strong id="user-progress-discipline-score">-</strong></li>
-            <li><span>Dia critico</span><strong id="user-progress-critical">-</strong></li>
-            <li><span>Hora fuerte</span><strong id="user-progress-hour">-</strong></li>
-          </ul>
-        </article>
-        <article class="card">
-          <h3>Tendencia</h3>
-          <div id="user-progress-bars" class="progress-bars"></div>
-        </article>
-      </section>
-
-      <section class="section admin-grid">
-        <article class="card">
-          <h3>Objetivo personalizado</h3>
-          <div id="goal-personalized-panel" class="admin-list"></div>
-        </article>
-        <article class="card">
-          <h3>Plan y extras activos</h3>
-          <div id="premium-status-panel" class="admin-list"></div>
-        </article>
-      </section>
-
-      <section class="section" style="padding-bottom:0;">
-        <div class="level-bar-card">
-          <div class="section-header-row">
-            <h3>Ranking semanal</h3>
-            <span style="font-size:11px;color:var(--muted);">Top 5 • ranking local</span>
+        <section class="sports-history-section">
+          <div class="sports-section-head">
+            <h2>Notas del historial</h2>
+            <span>Contexto acumulado del MVP</span>
           </div>
-          <div id="progress-gaming-ranking" class="gaming-ranking-list"></div>
-        </div>
-      </section>
-
-      <section class="section admin-grid">
-        <article class="card">
-          <h3>Tarjeta para compartir</h3>
-          <p class="today-note">Formato 9:16 para TikTok / historias.</p>
-          <canvas id="share-card-canvas" width="540" height="960" class="share-canvas"></canvas>
-          <div class="role-actions">
-            <button class="ghost" type="button" id="share-card-refresh">Actualizar tarjeta</button>
-            <a class="primary" id="share-card-download" download="disciplina-story.png">Descargar PNG</a>
-          </div>
-        </article>
-        <article class="card">
-          <h3>Squad feed</h3>
-          <div id="squad-feed" class="admin-list"></div>
-        </article>
+          <div id="sports-history-notes" class="sports-analysis-grid"></div>
+        </section>
       </section>
     </main>
 
     <nav class="bottom-nav" aria-label="Navegacion principal">
       <a class="bottom-nav-item" href="user-hoy.html">
-        <span class="bottom-nav-icon">HO</span><span>Hoy</span>
+        <span class="bottom-nav-icon">🎯</span>
+        <span>Picks</span>
       </a>
       <a class="bottom-nav-item" href="user-rutinas.html">
-        <span class="bottom-nav-icon">RT</span><span>Rutinas</span>
+        <span class="bottom-nav-icon">🧠</span>
+        <span>Analisis</span>
       </a>
       <a class="bottom-nav-item bottom-nav-active" href="user-progreso.html">
-        <span class="bottom-nav-icon">PR</span><span>Progreso</span>
+        <span class="bottom-nav-icon">📚</span>
+        <span>Historial</span>
       </a>
-      <a class="bottom-nav-item" href="user-dieta.html">
-        <span class="bottom-nav-icon">NU</span><span>Nutricion</span>
+      <a class="bottom-nav-item" href="planes.html">
+        <span class="bottom-nav-icon">💎</span>
+        <span>Premium</span>
       </a>
       <a class="bottom-nav-item" href="user-checkin.html">
-        <span class="bottom-nav-icon">PF</span><span>Perfil</span>
+        <span class="bottom-nav-icon">👤</span>
+        <span>Perfil</span>
       </a>
     </nav>
 

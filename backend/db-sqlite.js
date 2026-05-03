@@ -147,6 +147,50 @@ CREATE TABLE IF NOT EXISTS ai_usage_logs (
   context_chars INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS sports_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  external_id TEXT NOT NULL UNIQUE,
+  sport TEXT NOT NULL,
+  league TEXT NOT NULL,
+  home_team TEXT NOT NULL,
+  away_team TEXT NOT NULL,
+  event_date TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'scheduled',
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS event_stats (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id INTEGER NOT NULL REFERENCES sports_events(id) ON DELETE CASCADE,
+  source_api TEXT NOT NULL,
+  stats_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ai_picks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id INTEGER NOT NULL REFERENCES sports_events(id) ON DELETE CASCADE,
+  pick TEXT NOT NULL,
+  market TEXT NOT NULL,
+  confidence INTEGER NOT NULL DEFAULT 0,
+  analysis TEXT NOT NULL DEFAULT '',
+  risk_level TEXT NOT NULL DEFAULT 'MEDIO',
+  model_used TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'generated',
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS api_sync_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  source_api TEXT NOT NULL,
+  endpoint TEXT NOT NULL,
+  status TEXT NOT NULL,
+  message TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL
+);
 `);
 
 const assignmentColumns = db.prepare("PRAGMA table_info(assignments)").all().map((row) => String(row.name || "").toLowerCase());
@@ -682,6 +726,212 @@ SELECT user_id AS userId, phone, step, status, answers_json AS answersJson, upda
 FROM coach_whatsapp_flows
 WHERE user_id = ?
 LIMIT 1
+`);
+
+const upsertSportsEventStmt = db.prepare(`
+INSERT INTO sports_events (
+  external_id, sport, league, home_team, away_team, event_date, status, raw_json, created_at, updated_at
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(external_id) DO UPDATE SET
+  sport = excluded.sport,
+  league = excluded.league,
+  home_team = excluded.home_team,
+  away_team = excluded.away_team,
+  event_date = excluded.event_date,
+  status = excluded.status,
+  raw_json = excluded.raw_json,
+  updated_at = excluded.updated_at
+`);
+
+const getSportsEventByExternalIdStmt = db.prepare(`
+SELECT
+  id,
+  external_id AS externalId,
+  sport,
+  league,
+  home_team AS homeTeam,
+  away_team AS awayTeam,
+  event_date AS eventDate,
+  status,
+  raw_json AS rawJson,
+  created_at AS createdAt,
+  updated_at AS updatedAt
+FROM sports_events
+WHERE external_id = ?
+LIMIT 1
+`);
+
+const getSportsEventByIdStmt = db.prepare(`
+SELECT
+  id,
+  external_id AS externalId,
+  sport,
+  league,
+  home_team AS homeTeam,
+  away_team AS awayTeam,
+  event_date AS eventDate,
+  status,
+  raw_json AS rawJson,
+  created_at AS createdAt,
+  updated_at AS updatedAt
+FROM sports_events
+WHERE id = ?
+LIMIT 1
+`);
+
+const getSportsEventsByDateStmt = db.prepare(`
+SELECT
+  id,
+  external_id AS externalId,
+  sport,
+  league,
+  home_team AS homeTeam,
+  away_team AS awayTeam,
+  event_date AS eventDate,
+  status,
+  raw_json AS rawJson,
+  created_at AS createdAt,
+  updated_at AS updatedAt
+FROM sports_events
+WHERE substr(event_date, 1, 10) = ?
+ORDER BY event_date ASC
+`);
+
+const getRecentSportsEventsStmt = db.prepare(`
+SELECT
+  id,
+  external_id AS externalId,
+  sport,
+  league,
+  home_team AS homeTeam,
+  away_team AS awayTeam,
+  event_date AS eventDate,
+  status,
+  raw_json AS rawJson,
+  created_at AS createdAt,
+  updated_at AS updatedAt
+FROM sports_events
+ORDER BY event_date DESC, updated_at DESC
+LIMIT ?
+`);
+
+const insertEventStatsStmt = db.prepare(`
+INSERT INTO event_stats (event_id, source_api, stats_json, created_at)
+VALUES (?, ?, ?, ?)
+`);
+
+const getLatestEventStatsStmt = db.prepare(`
+SELECT
+  id,
+  event_id AS eventId,
+  source_api AS sourceApi,
+  stats_json AS statsJson,
+  created_at AS createdAt
+FROM event_stats
+WHERE event_id = ?
+ORDER BY created_at DESC, id DESC
+LIMIT 1
+`);
+
+const insertAiPickStmt = db.prepare(`
+INSERT INTO ai_picks (
+  event_id, pick, market, confidence, analysis, risk_level, model_used, status, created_at
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
+
+const getLatestAiPickForEventStmt = db.prepare(`
+SELECT
+  p.id,
+  p.event_id AS eventId,
+  e.external_id AS externalId,
+  e.sport,
+  e.league,
+  e.home_team AS homeTeam,
+  e.away_team AS awayTeam,
+  e.event_date AS eventDate,
+  p.pick,
+  p.market,
+  p.confidence,
+  p.analysis,
+  p.risk_level AS riskLevel,
+  p.model_used AS modelUsed,
+  p.status,
+  p.created_at AS createdAt
+FROM ai_picks p
+INNER JOIN sports_events e ON e.id = p.event_id
+WHERE p.event_id = ?
+ORDER BY p.created_at DESC, p.id DESC
+LIMIT 1
+`);
+
+const getPicksByDateStmt = db.prepare(`
+SELECT
+  p.id,
+  p.event_id AS eventId,
+  e.external_id AS externalId,
+  e.sport,
+  e.league,
+  e.home_team AS homeTeam,
+  e.away_team AS awayTeam,
+  e.event_date AS eventDate,
+  e.status AS eventStatus,
+  p.pick,
+  p.market,
+  p.confidence,
+  p.analysis,
+  p.risk_level AS riskLevel,
+  p.model_used AS modelUsed,
+  p.status,
+  p.created_at AS createdAt
+FROM ai_picks p
+INNER JOIN sports_events e ON e.id = p.event_id
+WHERE substr(e.event_date, 1, 10) = ?
+ORDER BY e.event_date ASC, p.created_at DESC
+`);
+
+const getPickHistoryStmt = db.prepare(`
+SELECT
+  p.id,
+  p.event_id AS eventId,
+  e.external_id AS externalId,
+  e.sport,
+  e.league,
+  e.home_team AS homeTeam,
+  e.away_team AS awayTeam,
+  e.event_date AS eventDate,
+  e.status AS eventStatus,
+  p.pick,
+  p.market,
+  p.confidence,
+  p.analysis,
+  p.risk_level AS riskLevel,
+  p.model_used AS modelUsed,
+  p.status,
+  p.created_at AS createdAt
+FROM ai_picks p
+INNER JOIN sports_events e ON e.id = p.event_id
+ORDER BY p.created_at DESC
+LIMIT ?
+`);
+
+const insertApiSyncLogStmt = db.prepare(`
+INSERT INTO api_sync_logs (source_api, endpoint, status, message, created_at)
+VALUES (?, ?, ?, ?, ?)
+`);
+
+const getApiSyncLogsStmt = db.prepare(`
+SELECT
+  id,
+  source_api AS sourceApi,
+  endpoint,
+  status,
+  message,
+  created_at AS createdAt
+FROM api_sync_logs
+ORDER BY created_at DESC, id DESC
+LIMIT ?
 `);
 
 function ensureUser(payload) {
@@ -1383,6 +1633,197 @@ function deleteUser(userId) {
   };
 }
 
+function parseJsonSafeArray(raw, fallback = []) {
+  try {
+    const parsed = JSON.parse(String(raw || ""));
+    return Array.isArray(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function parseSportsEvent(row) {
+  if (!row) return null;
+  return {
+    id: Number(row.id),
+    externalId: row.externalId,
+    sport: row.sport,
+    league: row.league,
+    homeTeam: row.homeTeam,
+    awayTeam: row.awayTeam,
+    eventDate: row.eventDate,
+    status: row.status,
+    rawJson: parseJsonSafe(row.rawJson, {}),
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+function parseEventStats(row) {
+  if (!row) return null;
+  return {
+    id: Number(row.id),
+    eventId: Number(row.eventId),
+    sourceApi: row.sourceApi,
+    statsJson: parseJsonSafe(row.statsJson, {}),
+    createdAt: row.createdAt,
+  };
+}
+
+function parseAiPick(row) {
+  if (!row) return null;
+  return {
+    id: Number(row.id),
+    eventId: Number(row.eventId),
+    externalId: row.externalId,
+    sport: row.sport,
+    league: row.league,
+    homeTeam: row.homeTeam,
+    awayTeam: row.awayTeam,
+    eventDate: row.eventDate,
+    eventStatus: row.eventStatus || "",
+    pick: row.pick,
+    market: row.market,
+    confidence: Number(row.confidence || 0),
+    analysis: row.analysis || "",
+    riskLevel: row.riskLevel || "MEDIO",
+    modelUsed: row.modelUsed || "",
+    status: row.status || "generated",
+    createdAt: row.createdAt,
+  };
+}
+
+function upsertSportsEvent(payload) {
+  const now = nowIso();
+  const externalId = safeStr(payload.externalId);
+  if (!externalId) throw new Error("external_id_required");
+  upsertSportsEventStmt.run(
+    externalId,
+    safeStr(payload.sport) || "football",
+    safeStr(payload.league) || "General",
+    safeStr(payload.homeTeam),
+    safeStr(payload.awayTeam),
+    safeStr(payload.eventDate) || now,
+    safeStr(payload.status) || "scheduled",
+    JSON.stringify(payload.rawJson && typeof payload.rawJson === "object" ? payload.rawJson : {}),
+    now,
+    now
+  );
+  return getSportsEventByExternalId(externalId);
+}
+
+function getSportsEventByExternalId(externalId) {
+  return parseSportsEvent(getSportsEventByExternalIdStmt.get(safeStr(externalId)));
+}
+
+function getSportsEventById(id) {
+  return parseSportsEvent(getSportsEventByIdStmt.get(Number(id || 0)));
+}
+
+function getSportsEventsByDate(dateKey) {
+  const normalized = safeStr(dateKey) || nowIso().slice(0, 10);
+  return getSportsEventsByDateStmt.all(normalized).map(parseSportsEvent);
+}
+
+function listRecentSportsEvents(limit = 50) {
+  return getRecentSportsEventsStmt.all(Math.max(1, Math.min(200, Number(limit || 50)))).map(parseSportsEvent);
+}
+
+function saveEventStats(payload) {
+  const eventId = Number(payload.eventId || 0);
+  if (!eventId) throw new Error("event_id_required");
+  const now = nowIso();
+  const result = insertEventStatsStmt.run(
+    eventId,
+    safeStr(payload.sourceApi) || "mock",
+    JSON.stringify(payload.statsJson && typeof payload.statsJson === "object" ? payload.statsJson : {}),
+    now
+  );
+  return {
+    id: Number(result.lastInsertRowid),
+    eventId,
+    sourceApi: safeStr(payload.sourceApi) || "mock",
+    statsJson: payload.statsJson && typeof payload.statsJson === "object" ? payload.statsJson : {},
+    createdAt: now,
+  };
+}
+
+function getLatestEventStats(eventId) {
+  return parseEventStats(getLatestEventStatsStmt.get(Number(eventId || 0)));
+}
+
+function saveAiPick(payload) {
+  const eventId = Number(payload.eventId || 0);
+  if (!eventId) throw new Error("event_id_required");
+  const now = safeStr(payload.createdAt) || nowIso();
+  const result = insertAiPickStmt.run(
+    eventId,
+    safeStr(payload.pick),
+    safeStr(payload.market),
+    Math.max(0, Math.min(100, Number(payload.confidence || 0))),
+    safeStr(payload.analysis),
+    safeStr(payload.riskLevel) || "MEDIO",
+    safeStr(payload.modelUsed),
+    safeStr(payload.status) || "generated",
+    now
+  );
+  return {
+    id: Number(result.lastInsertRowid),
+    eventId,
+    pick: safeStr(payload.pick),
+    market: safeStr(payload.market),
+    confidence: Math.max(0, Math.min(100, Number(payload.confidence || 0))),
+    analysis: safeStr(payload.analysis),
+    riskLevel: safeStr(payload.riskLevel) || "MEDIO",
+    modelUsed: safeStr(payload.modelUsed),
+    status: safeStr(payload.status) || "generated",
+    createdAt: now,
+  };
+}
+
+function getLatestAiPickForEvent(eventId) {
+  return parseAiPick(getLatestAiPickForEventStmt.get(Number(eventId || 0)));
+}
+
+function listPicksByDate(dateKey) {
+  const normalized = safeStr(dateKey) || nowIso().slice(0, 10);
+  return getPicksByDateStmt.all(normalized).map(parseAiPick);
+}
+
+function listPickHistory(limit = 100) {
+  return getPickHistoryStmt.all(Math.max(1, Math.min(500, Number(limit || 100)))).map(parseAiPick);
+}
+
+function logApiSync(payload) {
+  const now = nowIso();
+  const result = insertApiSyncLogStmt.run(
+    safeStr(payload.sourceApi) || "mock",
+    safeStr(payload.endpoint) || "/today",
+    safeStr(payload.status) || "ok",
+    safeStr(payload.message),
+    now
+  );
+  return {
+    id: Number(result.lastInsertRowid),
+    sourceApi: safeStr(payload.sourceApi) || "mock",
+    endpoint: safeStr(payload.endpoint) || "/today",
+    status: safeStr(payload.status) || "ok",
+    message: safeStr(payload.message),
+    createdAt: now,
+  };
+}
+
+function listApiSyncLogs(limit = 20) {
+  return getApiSyncLogsStmt.all(Math.max(1, Math.min(100, Number(limit || 20)))).map((row) => ({
+    id: Number(row.id),
+    sourceApi: row.sourceApi,
+    endpoint: row.endpoint,
+    status: row.status,
+    message: row.message || "",
+    createdAt: row.createdAt,
+  }));
+}
+
 const DB_META = {
   client: "sqlite",
   path: DB_PATH,
@@ -1426,4 +1867,17 @@ module.exports = {
   getAdminDashboard: async (dateKey) => getAdminDashboard(dateKey),
   getAdminTimeline: async (userId, limit) => getAdminTimeline(userId, limit),
   getAdminCsvReport: async (scope, userId) => getAdminCsvReport(scope, userId),
+  upsertSportsEvent: async (payload) => upsertSportsEvent(payload),
+  getSportsEventByExternalId: async (externalId) => getSportsEventByExternalId(externalId),
+  getSportsEventById: async (id) => getSportsEventById(id),
+  getSportsEventsByDate: async (dateKey) => getSportsEventsByDate(dateKey),
+  listRecentSportsEvents: async (limit) => listRecentSportsEvents(limit),
+  saveEventStats: async (payload) => saveEventStats(payload),
+  getLatestEventStats: async (eventId) => getLatestEventStats(eventId),
+  saveAiPick: async (payload) => saveAiPick(payload),
+  getLatestAiPickForEvent: async (eventId) => getLatestAiPickForEvent(eventId),
+  listPicksByDate: async (dateKey) => listPicksByDate(dateKey),
+  listPickHistory: async (limit) => listPickHistory(limit),
+  logApiSync: async (payload) => logApiSync(payload),
+  listApiSyncLogs: async (limit) => listApiSyncLogs(limit),
 };

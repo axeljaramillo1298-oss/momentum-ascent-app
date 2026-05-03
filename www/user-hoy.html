@@ -1,213 +1,107 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Hoy | User</title>
+    <title>Picks de Hoy | Momentum Ascent</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="user-panel-premium">
-    <main class="user-panel-shell">
-      <header class="user-panel-top">
+  <body class="user-panel-premium sports-dashboard-page">
+    <main class="user-panel-shell sports-dashboard-shell">
+      <header class="user-panel-top sports-dashboard-top">
         <nav class="user-panel-nav">
           <div class="logo">MOMENTUM ASCENT</div>
           <div class="nav-actions">
-            <a class="ghost up-nav-link up-nav-active" href="user-hoy.html" data-nav="hoy">Hoy</a>
-            <a class="ghost up-nav-link" href="user-rutinas.html" data-nav="rutinas">Rutinas</a>
-            <a class="ghost up-nav-link" href="user-progreso.html" data-nav="progreso">Progreso</a>
-            <a class="ghost up-nav-link" href="user-dieta.html" data-nav="nutricion">Nutricion</a>
-            <a class="ghost up-nav-link" href="user-checkin.html" data-nav="perfil">Perfil</a>
+            <a class="ghost up-nav-link up-nav-active" href="user-hoy.html">Picks</a>
+            <a class="ghost up-nav-link" href="user-rutinas.html">Analisis</a>
+            <a class="ghost up-nav-link" href="user-progreso.html">Historial</a>
+            <a class="ghost up-nav-link" href="planes.html">Membresia</a>
+            <a class="ghost up-nav-link" href="user-checkin.html">Perfil</a>
             <button class="ghost" type="button" data-action="theme">Cambiar vista</button>
           </div>
         </nav>
-        <div class="user-panel-hero">
-          <p class="eyebrow">MOMENTUM INDEX</p>
-          <h1>CONTROL DE HOY</h1>
-          <p class="subhead">Check-in de hoy con limite de 10 minutos. La rutina semanal vive en Rutinas; aqui solo cierras el dia.</p>
+        <div class="user-panel-hero sports-dashboard-hero">
+          <p class="eyebrow">AI PICKS DASHBOARD</p>
+          <h1>PICKS DEL DIA</h1>
+          <p class="subhead">Eventos del dia, recomendacion sugerida, nivel de confianza y analisis breve generado con IA.</p>
           <p class="user-greeting" id="user-greeting"></p>
+          <div class="sports-summary-grid" id="sports-picks-summary"></div>
+          <div class="sports-hero-actions">
+            <button class="primary" type="button" id="sports-refresh-picks">Actualizar picks</button>
+            <a class="ghost" href="user-progreso.html">Ver historial</a>
+          </div>
+          <p class="sports-disclaimer">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</p>
         </div>
       </header>
 
-      <section class="section today-loop">
+      <section class="section sports-dashboard-section">
+        <div class="sports-dashboard-grid">
+          <section class="sports-main-column">
+            <div class="sports-section-head">
+              <h2>Recomendaciones activas</h2>
+              <span>Basadas en datos guardados, estadisticas y analisis IA</span>
+            </div>
+            <div class="sports-picks-list" id="sports-picks-list"></div>
+          </section>
 
-        <!-- TRIPLE CHECK-IN (3 habits = streak) -->
-        <div class="today-triple-wrap" style="margin-bottom:14px;">
-          <div class="triple-checkin-title">Check-in de hoy — 3 habitos</div>
-          <div class="triple-checkin-container"></div>
+          <aside class="sports-side-column">
+            <article class="card sports-side-card">
+              <h3>Metodologia MVP</h3>
+              <ul class="sports-side-list">
+                <li>API deportiva o datos mock realistas.</li>
+                <li>Eventos persistidos en base de datos.</li>
+                <li>Generacion IA bajo demanda para evitar costo innecesario.</li>
+                <li>Historial acumulado para seguir nutriendo contexto.</li>
+              </ul>
+            </article>
+
+            <article class="card sports-side-card">
+              <h3>Lectura rapida</h3>
+              <ul class="sports-side-list">
+                <li><strong>Pick:</strong> mercado sugerido por la IA.</li>
+                <li><strong>Confianza:</strong> porcentaje estimado, no certeza.</li>
+                <li><strong>Riesgo:</strong> BAJO, MEDIO o ALTO.</li>
+                <li><strong>Analisis:</strong> explicacion breve y entendible.</li>
+              </ul>
+            </article>
+          </aside>
         </div>
 
-        <div class="today-grid">
-          <article class="card today-main">
-            <div class="today-main-inner">
-              <div class="today-ring-wrap">
-                <svg class="today-ring" viewBox="0 0 100 100" aria-hidden="true">
-                  <circle class="today-ring-bg" cx="50" cy="50" r="42" />
-                  <circle class="today-ring-fill" id="today-ring-fill" cx="50" cy="50" r="42" />
-                </svg>
-                <div class="today-ring-center">
-                  <strong id="today-countdown">10:00</strong>
-                  <span>restante</span>
-                </div>
-              </div>
-              <div class="today-main-content">
-                <h3 id="today-question">Check-in de hoy. Cumpliste?</h3>
-                <p class="today-date" id="today-date">Hoy</p>
-                <p class="today-status-line" id="today-status">Estado: Pendiente</p>
-                <p class="today-pressure" id="today-pressure"></p>
-                <p class="today-note" id="user-next-checkin">Proximo check-in: -</p>
-                <div class="today-actions">
-                  <button class="primary today-btn-yes" id="today-yes" type="button">✅ Si, cumpli</button>
-                  <button class="ghost today-btn-no" id="today-no" type="button">❌ No cumpli</button>
-                </div>
-                <button class="ghost today-btn-reset" id="today-reset-window" type="button">↺ Reiniciar ventana</button>
-              </div>
+        <section class="sports-history-section">
+          <div class="sports-section-head">
+            <h2>Historial reciente</h2>
+            <span>Ultimos picks generados para referencia</span>
+          </div>
+          <div class="sports-table-card">
+            <div class="sports-table-head">
+              <span>Partido</span>
+              <span>Market</span>
+              <span>Pick</span>
+              <span>Conf.</span>
+              <span>Riesgo</span>
             </div>
-          </article>
-
-          <article class="card today-stats">
-            <h3>Disciplina</h3>
-            <div class="stat-tiles">
-              <div class="stat-tile stat-tile--fire">
-                <span class="stat-tile-icon">🔥</span>
-                <strong id="today-streak">-</strong>
-                <span>Racha</span>
-              </div>
-              <div class="stat-tile stat-tile--trophy">
-                <span class="stat-tile-icon">🏆</span>
-                <strong id="today-best-streak">-</strong>
-                <span>Mejor racha</span>
-              </div>
-              <div class="stat-tile stat-tile--star">
-                <span class="stat-tile-icon">⭐</span>
-                <strong id="today-xp">-</strong>
-                <span>XP</span>
-              </div>
-              <div class="stat-tile stat-tile--check">
-                <span class="stat-tile-icon">✅</span>
-                <strong id="today-compliance">-</strong>
-                <span>Cumplimiento</span>
-              </div>
-              <div class="stat-tile stat-tile--index">
-                <span class="stat-tile-icon">📈</span>
-                <strong id="today-ascent-index">-</strong>
-                <span>Ascent Index</span>
-              </div>
-              <div class="stat-tile stat-tile--level">
-                <span class="stat-tile-icon">🎖️</span>
-                <strong id="today-level" class="stat-tile-small">-</strong>
-                <span>Nivel</span>
-              </div>
-            </div>
-
-            <div class="today-coach-row">
-              <label class="today-coach-label">Modo coach
-                <select id="coach-mode">
-                  <option value="normal">Normal</option>
-                  <option value="disciplina">Disciplina</option>
-                  <option value="castigo">Castigo</option>
-                  <option value="adaptive">AI Adaptive</option>
-                </select>
-              </label>
-              <label class="agree-row"><input type="checkbox" id="mode-contract" /><span>Modo contrato</span></label>
-            </div>
-
-            <div class="stat-tiles stat-tiles--sm">
-              <div class="stat-tile">
-                <strong id="weekly-rate">-</strong>
-                <span>Cumpl. 7d</span>
-              </div>
-              <div class="stat-tile">
-                <strong id="today-response">-</strong>
-                <span>Resp. prom.</span>
-              </div>
-              <div class="stat-tile stat-tile--warn">
-                <strong id="today-penalty">-</strong>
-                <span>Castigo</span>
-              </div>
-            </div>
-
-            <p id="today-unstoppable" class="today-note"></p>
-            <p id="reengage-message" class="today-note"></p>
-            <p id="mirror-message" class="today-note"></p>
-            <div id="smart-reminders" class="admin-list"></div>
-            <!-- hidden refs used by JS -->
-            <span id="weekly-critical" hidden></span>
-            <span id="weekly-hour" hidden></span>
-          </article>
-        </div>
-
-        <div class="today-top-grid">
-          <article class="card" id="user-plan-panel"></article>
-          <article class="card">
-            <h3>Notificaciones</h3>
-            <div id="user-notifications" class="admin-list"></div>
-          </article>
-        </div>
-
-        <div class="mission-grid">
-          <article class="card" id="today-card-missions">
-            <h3>Acciones de hoy</h3>
-            <div id="daily-missions" class="mission-list"></div>
-          </article>
-          <article class="card" id="today-card-squad">
-            <h3>Reto Squad (14 dias)</h3>
-            <p class="today-note">Ranking privado de 5 personas. Si alguien falla, el grupo se entera.</p>
-            <div id="squad-ranking" class="admin-list"></div>
-          </article>
-          <article class="card" id="today-card-mindset">
-            <h3>Mentalidad</h3>
-            <p id="mindset-phrase" class="today-note">Frase del dia</p>
-            <div class="role-actions">
-              <button class="ghost" type="button" id="mindset-audio">Reproducir audio</button>
-              <button class="ghost" type="button" id="mindset-challenge">Completar mini reto</button>
-            </div>
-            <p id="mindset-status" class="reg-hint"></p>
-          </article>
-          <article class="card" id="today-card-ranking">
-            <div class="section-header-row">
-              <h3>Ranking semanal</h3>
-              <a class="see-all" href="user-progreso.html">Ver todo</a>
-            </div>
-            <div id="hoy-gaming-ranking" class="gaming-ranking-list"></div>
-            <div id="weekly-anon-ranking" class="admin-list" style="display:none;"></div>
-          </article>
-
-          <article class="card" style="padding:0;">
-            <div class="bet-status-card"></div>
-          </article>
-          <article class="card" id="today-card-nutrition">
-            <h3>Nutricion de hoy</h3>
-            <ul class="stat-list">
-              <li><span>Hidratacion</span><strong id="today-nutri-water">-</strong></li>
-              <li><span>Calorias</span><strong id="today-nutri-calories">-</strong></li>
-              <li><span>Dieta</span><strong id="today-nutri-diet">-</strong></li>
-              <li><span>Score</span><strong id="today-nutri-score">-</strong></li>
-            </ul>
-            <p id="today-nutri-hint" class="today-note"></p>
-            <div class="role-actions">
-              <a class="ghost" href="user-dieta.html">Abrir nutricion</a>
-            </div>
-          </article>
-        </div>
+            <div id="sports-picks-history"></div>
+          </div>
+        </section>
       </section>
     </main>
 
     <nav class="bottom-nav" aria-label="Navegacion principal">
       <a class="bottom-nav-item bottom-nav-active" href="user-hoy.html">
-        <span class="bottom-nav-icon">🏠</span>
-        <span>Hoy</span>
+        <span class="bottom-nav-icon">🎯</span>
+        <span>Picks</span>
       </a>
       <a class="bottom-nav-item" href="user-rutinas.html">
-        <span class="bottom-nav-icon">💪</span>
-        <span>Rutinas</span>
+        <span class="bottom-nav-icon">🧠</span>
+        <span>Analisis</span>
       </a>
       <a class="bottom-nav-item" href="user-progreso.html">
-        <span class="bottom-nav-icon">📈</span>
-        <span>Progreso</span>
+        <span class="bottom-nav-icon">📚</span>
+        <span>Historial</span>
       </a>
-      <a class="bottom-nav-item" href="user-dieta.html">
-        <span class="bottom-nav-icon">🥗</span>
-        <span>Nutricion</span>
+      <a class="bottom-nav-item" href="planes.html">
+        <span class="bottom-nav-icon">💎</span>
+        <span>Premium</span>
       </a>
       <a class="bottom-nav-item" href="user-checkin.html">
         <span class="bottom-nav-icon">👤</span>

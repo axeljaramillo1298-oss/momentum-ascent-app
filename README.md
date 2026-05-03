@@ -1,6 +1,6 @@
-# Fitnesapk
+# MOMENTUM ASCENT
 
-Base APK (Capacitor) + backend local para soportar las APIs de `www/app.js`.
+Base APK (Capacitor) + backend local para soportar la app web en `www/`, ahora adaptada como MVP de picks deportivos con IA.
 
 ## 1) Instalar dependencias
 
@@ -63,6 +63,16 @@ Abrir Android Studio:
 npx cap open android
 ```
 
+## Variables nuevas del MVP sports
+
+- `SPORTS_API_PROVIDER=mock|api-football|the-odds-api`
+- `SPORTS_API_KEY=...`
+- `SPORTS_API_BASE_URL=https://...`
+- `OPENAI_API_KEY=...`
+- `OPENAI_MODEL=gpt-4o-mini`
+
+Si no configuras API deportiva, el backend usa eventos mock realistas para desarrollo local.
+
 ## Endpoints implementados
 
 - `GET /health`
@@ -76,3 +86,9 @@ npx cap open android
 - `POST /checkins`
 - `GET /mindset/daily`
 - `GET /ranking/weekly`
+- `GET /api/sports/events/today`
+- `POST /api/sports/sync`
+- `GET /api/sports/sync/logs`
+- `POST /api/picks/generate/:eventId`
+- `GET /api/picks/today`
+- `GET /api/picks/history`

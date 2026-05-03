@@ -192,6 +192,50 @@ CREATE TABLE IF NOT EXISTS ai_usage_logs (
   context_chars INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS sports_events (
+  id BIGSERIAL PRIMARY KEY,
+  external_id TEXT NOT NULL UNIQUE,
+  sport TEXT NOT NULL,
+  league TEXT NOT NULL,
+  home_team TEXT NOT NULL,
+  away_team TEXT NOT NULL,
+  event_date TIMESTAMPTZ NOT NULL,
+  status TEXT NOT NULL DEFAULT 'scheduled',
+  raw_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS event_stats (
+  id BIGSERIAL PRIMARY KEY,
+  event_id BIGINT NOT NULL REFERENCES sports_events(id) ON DELETE CASCADE,
+  source_api TEXT NOT NULL,
+  stats_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ai_picks (
+  id BIGSERIAL PRIMARY KEY,
+  event_id BIGINT NOT NULL REFERENCES sports_events(id) ON DELETE CASCADE,
+  pick TEXT NOT NULL,
+  market TEXT NOT NULL,
+  confidence INTEGER NOT NULL DEFAULT 0,
+  analysis TEXT NOT NULL DEFAULT '',
+  risk_level TEXT NOT NULL DEFAULT 'MEDIO',
+  model_used TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'generated',
+  created_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS api_sync_logs (
+  id BIGSERIAL PRIMARY KEY,
+  source_api TEXT NOT NULL,
+  endpoint TEXT NOT NULL,
+  status TEXT NOT NULL,
+  message TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL
+);
 `;
 
 async function initDb() {
@@ -1444,6 +1488,298 @@ async function deleteUser(userId) {
   };
 }
 
+async function upsertSportsEvent(payload) {
+  const externalId = safeStr(payload.externalId);
+  if (!externalId) throw new Error("external_id_required");
+  const now = nowIso();
+  const result = await pool.query(
+    `
+    INSERT INTO sports_events (
+      external_id, sport, league, home_team, away_team, event_date, status, raw_json, created_at, updated_at
+    )
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,$9)
+    ON CONFLICT (external_id) DO UPDATE SET
+      sport = EXCLUDED.sport,
+      league = EXCLUDED.league,
+      home_team = EXCLUDED.home_team,
+      away_team = EXCLUDED.away_team,
+      event_date = EXCLUDED.event_date,
+      status = EXCLUDED.status,
+      raw_json = EXCLUDED.raw_json,
+      updated_at = EXCLUDED.updated_at
+    RETURNING id
+    `,
+    [
+      externalId,
+      safeStr(payload.sport) || "football",
+      safeStr(payload.league) || "General",
+      safeStr(payload.homeTeam),
+      safeStr(payload.awayTeam),
+      safeStr(payload.eventDate) || now,
+      safeStr(payload.status) || "scheduled",
+      toJsonString(payload.rawJson && typeof payload.rawJson === "object" ? payload.rawJson : {}, {}),
+      now,
+    ]
+  );
+  return getSportsEventById(Number(result.rows[0]?.id || 0));
+}
+
+async function getSportsEventByExternalId(externalId) {
+  const result = await pool.query(
+    `
+    SELECT id, external_id AS "externalId", sport, league, home_team AS "homeTeam", away_team AS "awayTeam",
+           event_date AS "eventDate", status, raw_json AS "rawJson", created_at AS "createdAt", updated_at AS "updatedAt"
+    FROM sports_events
+    WHERE external_id = $1
+    LIMIT 1
+    `,
+    [safeStr(externalId)]
+  );
+  const row = result.rows[0];
+  return row
+    ? {
+        ...row,
+        id: Number(row.id),
+        rawJson: parseJsonSafe(row.rawJson, {}),
+      }
+    : null;
+}
+
+async function getSportsEventById(id) {
+  const result = await pool.query(
+    `
+    SELECT id, external_id AS "externalId", sport, league, home_team AS "homeTeam", away_team AS "awayTeam",
+           event_date AS "eventDate", status, raw_json AS "rawJson", created_at AS "createdAt", updated_at AS "updatedAt"
+    FROM sports_events
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [Number(id || 0)]
+  );
+  const row = result.rows[0];
+  return row
+    ? {
+        ...row,
+        id: Number(row.id),
+        rawJson: parseJsonSafe(row.rawJson, {}),
+      }
+    : null;
+}
+
+async function getSportsEventsByDate(dateKey) {
+  const normalized = safeStr(dateKey) || nowIso().slice(0, 10);
+  const result = await pool.query(
+    `
+    SELECT id, external_id AS "externalId", sport, league, home_team AS "homeTeam", away_team AS "awayTeam",
+           event_date AS "eventDate", status, raw_json AS "rawJson", created_at AS "createdAt", updated_at AS "updatedAt"
+    FROM sports_events
+    WHERE TO_CHAR(event_date AT TIME ZONE 'UTC', 'YYYY-MM-DD') = $1
+    ORDER BY event_date ASC
+    `,
+    [normalized]
+  );
+  return result.rows.map((row) => ({
+    ...row,
+    id: Number(row.id),
+    rawJson: parseJsonSafe(row.rawJson, {}),
+  }));
+}
+
+async function listRecentSportsEvents(limit = 50) {
+  const result = await pool.query(
+    `
+    SELECT id, external_id AS "externalId", sport, league, home_team AS "homeTeam", away_team AS "awayTeam",
+           event_date AS "eventDate", status, raw_json AS "rawJson", created_at AS "createdAt", updated_at AS "updatedAt"
+    FROM sports_events
+    ORDER BY event_date DESC, updated_at DESC
+    LIMIT $1
+    `,
+    [Math.max(1, Math.min(200, Number(limit || 50)))]
+  );
+  return result.rows.map((row) => ({
+    ...row,
+    id: Number(row.id),
+    rawJson: parseJsonSafe(row.rawJson, {}),
+  }));
+}
+
+async function saveEventStats(payload) {
+  const eventId = Number(payload.eventId || 0);
+  if (!eventId) throw new Error("event_id_required");
+  const now = nowIso();
+  const result = await pool.query(
+    `
+    INSERT INTO event_stats (event_id, source_api, stats_json, created_at)
+    VALUES ($1,$2,$3::jsonb,$4)
+    RETURNING id
+    `,
+    [
+      eventId,
+      safeStr(payload.sourceApi) || "mock",
+      toJsonString(payload.statsJson && typeof payload.statsJson === "object" ? payload.statsJson : {}, {}),
+      now,
+    ]
+  );
+  return {
+    id: Number(result.rows[0]?.id || 0),
+    eventId,
+    sourceApi: safeStr(payload.sourceApi) || "mock",
+    statsJson: payload.statsJson && typeof payload.statsJson === "object" ? payload.statsJson : {},
+    createdAt: now,
+  };
+}
+
+async function getLatestEventStats(eventId) {
+  const result = await pool.query(
+    `
+    SELECT id, event_id AS "eventId", source_api AS "sourceApi", stats_json AS "statsJson", created_at AS "createdAt"
+    FROM event_stats
+    WHERE event_id = $1
+    ORDER BY created_at DESC, id DESC
+    LIMIT 1
+    `,
+    [Number(eventId || 0)]
+  );
+  const row = result.rows[0];
+  return row
+    ? {
+        ...row,
+        id: Number(row.id),
+        eventId: Number(row.eventId),
+        statsJson: parseJsonSafe(row.statsJson, {}),
+      }
+    : null;
+}
+
+async function saveAiPick(payload) {
+  const eventId = Number(payload.eventId || 0);
+  if (!eventId) throw new Error("event_id_required");
+  const now = safeStr(payload.createdAt) || nowIso();
+  const result = await pool.query(
+    `
+    INSERT INTO ai_picks (event_id, pick, market, confidence, analysis, risk_level, model_used, status, created_at)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+    RETURNING id
+    `,
+    [
+      eventId,
+      safeStr(payload.pick),
+      safeStr(payload.market),
+      Math.max(0, Math.min(100, Number(payload.confidence || 0))),
+      safeStr(payload.analysis),
+      safeStr(payload.riskLevel) || "MEDIO",
+      safeStr(payload.modelUsed),
+      safeStr(payload.status) || "generated",
+      now,
+    ]
+  );
+  return {
+    id: Number(result.rows[0]?.id || 0),
+    eventId,
+    pick: safeStr(payload.pick),
+    market: safeStr(payload.market),
+    confidence: Math.max(0, Math.min(100, Number(payload.confidence || 0))),
+    analysis: safeStr(payload.analysis),
+    riskLevel: safeStr(payload.riskLevel) || "MEDIO",
+    modelUsed: safeStr(payload.modelUsed),
+    status: safeStr(payload.status) || "generated",
+    createdAt: now,
+  };
+}
+
+async function getLatestAiPickForEvent(eventId) {
+  const result = await pool.query(
+    `
+    SELECT p.id, p.event_id AS "eventId", e.external_id AS "externalId", e.sport, e.league,
+           e.home_team AS "homeTeam", e.away_team AS "awayTeam", e.event_date AS "eventDate",
+           e.status AS "eventStatus", p.pick, p.market, p.confidence, p.analysis,
+           p.risk_level AS "riskLevel", p.model_used AS "modelUsed", p.status, p.created_at AS "createdAt"
+    FROM ai_picks p
+    INNER JOIN sports_events e ON e.id = p.event_id
+    WHERE p.event_id = $1
+    ORDER BY p.created_at DESC, p.id DESC
+    LIMIT 1
+    `,
+    [Number(eventId || 0)]
+  );
+  const row = result.rows[0];
+  return row ? { ...row, id: Number(row.id), eventId: Number(row.eventId), confidence: Number(row.confidence || 0) } : null;
+}
+
+async function listPicksByDate(dateKey) {
+  const normalized = safeStr(dateKey) || nowIso().slice(0, 10);
+  const result = await pool.query(
+    `
+    SELECT p.id, p.event_id AS "eventId", e.external_id AS "externalId", e.sport, e.league,
+           e.home_team AS "homeTeam", e.away_team AS "awayTeam", e.event_date AS "eventDate",
+           e.status AS "eventStatus", p.pick, p.market, p.confidence, p.analysis,
+           p.risk_level AS "riskLevel", p.model_used AS "modelUsed", p.status, p.created_at AS "createdAt"
+    FROM ai_picks p
+    INNER JOIN sports_events e ON e.id = p.event_id
+    WHERE TO_CHAR(e.event_date AT TIME ZONE 'UTC', 'YYYY-MM-DD') = $1
+    ORDER BY e.event_date ASC, p.created_at DESC
+    `,
+    [normalized]
+  );
+  return result.rows.map((row) => ({ ...row, id: Number(row.id), eventId: Number(row.eventId), confidence: Number(row.confidence || 0) }));
+}
+
+async function listPickHistory(limit = 100) {
+  const result = await pool.query(
+    `
+    SELECT p.id, p.event_id AS "eventId", e.external_id AS "externalId", e.sport, e.league,
+           e.home_team AS "homeTeam", e.away_team AS "awayTeam", e.event_date AS "eventDate",
+           e.status AS "eventStatus", p.pick, p.market, p.confidence, p.analysis,
+           p.risk_level AS "riskLevel", p.model_used AS "modelUsed", p.status, p.created_at AS "createdAt"
+    FROM ai_picks p
+    INNER JOIN sports_events e ON e.id = p.event_id
+    ORDER BY p.created_at DESC
+    LIMIT $1
+    `,
+    [Math.max(1, Math.min(500, Number(limit || 100)))]
+  );
+  return result.rows.map((row) => ({ ...row, id: Number(row.id), eventId: Number(row.eventId), confidence: Number(row.confidence || 0) }));
+}
+
+async function logApiSync(payload) {
+  const now = nowIso();
+  const result = await pool.query(
+    `
+    INSERT INTO api_sync_logs (source_api, endpoint, status, message, created_at)
+    VALUES ($1,$2,$3,$4,$5)
+    RETURNING id
+    `,
+    [
+      safeStr(payload.sourceApi) || "mock",
+      safeStr(payload.endpoint) || "/today",
+      safeStr(payload.status) || "ok",
+      safeStr(payload.message),
+      now,
+    ]
+  );
+  return {
+    id: Number(result.rows[0]?.id || 0),
+    sourceApi: safeStr(payload.sourceApi) || "mock",
+    endpoint: safeStr(payload.endpoint) || "/today",
+    status: safeStr(payload.status) || "ok",
+    message: safeStr(payload.message),
+    createdAt: now,
+  };
+}
+
+async function listApiSyncLogs(limit = 20) {
+  const result = await pool.query(
+    `
+    SELECT id, source_api AS "sourceApi", endpoint, status, message, created_at AS "createdAt"
+    FROM api_sync_logs
+    ORDER BY created_at DESC, id DESC
+    LIMIT $1
+    `,
+    [Math.max(1, Math.min(100, Number(limit || 20)))]
+  );
+  return result.rows.map((row) => ({ ...row, id: Number(row.id) }));
+}
+
 module.exports = {
   DB_META,
   initDb,
@@ -1474,6 +1810,19 @@ module.exports = {
   getCoachFlowByUser,
   saveOnboardingProfile,
   deleteUser,
+  upsertSportsEvent,
+  getSportsEventByExternalId,
+  getSportsEventById,
+  getSportsEventsByDate,
+  listRecentSportsEvents,
+  saveEventStats,
+  getLatestEventStats,
+  saveAiPick,
+  getLatestAiPickForEvent,
+  listPicksByDate,
+  listPickHistory,
+  logApiSync,
+  listApiSyncLogs,
   getAdminDashboard,
   getAdminTimeline,
   getAdminCsvReport,

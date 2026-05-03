@@ -4,6 +4,7 @@
   "private": true,
   "description": "APK wrapper for Fitnespag using Capacitor",
   "scripts": {
+    "start": "node backend/server.js",
     "backend": "node backend/server.js",
     "backend:dev": "node --watch backend/server.js",
     "backend:sqlite": "set DB_CLIENT=sqlite&& node backend/server.js",

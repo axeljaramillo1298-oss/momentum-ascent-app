@@ -3,136 +3,88 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Rutinas | Momentum Ascent</title>
+    <title>Analisis | Momentum Ascent</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="user-panel-premium">
-    <main class="user-panel-shell">
-      <header class="user-panel-top">
+  <body class="user-panel-premium sports-dashboard-page">
+    <main class="user-panel-shell sports-dashboard-shell">
+      <header class="user-panel-top sports-dashboard-top">
         <nav class="user-panel-nav">
           <div class="logo">MOMENTUM ASCENT</div>
           <div class="nav-actions">
-            <a class="ghost up-nav-link" href="user-hoy.html" data-nav="hoy">Hoy</a>
-            <a class="ghost up-nav-link up-nav-active" href="user-rutinas.html" data-nav="rutinas">Rutinas</a>
-            <a class="ghost up-nav-link" href="user-progreso.html" data-nav="progreso">Progreso</a>
-            <a class="ghost up-nav-link" href="user-dieta.html" data-nav="nutricion">Nutricion</a>
-            <a class="ghost up-nav-link" href="user-checkin.html" data-nav="perfil">Perfil</a>
+            <a class="ghost up-nav-link" href="user-hoy.html">Picks</a>
+            <a class="ghost up-nav-link up-nav-active" href="user-rutinas.html">Analisis</a>
+            <a class="ghost up-nav-link" href="user-progreso.html">Historial</a>
+            <a class="ghost up-nav-link" href="planes.html">Premium</a>
+            <a class="ghost up-nav-link" href="user-checkin.html">Perfil</a>
             <button class="ghost" type="button" data-action="theme">Cambiar vista</button>
           </div>
         </nav>
-        <div class="user-panel-hero">
-          <p class="eyebrow">MOMENTUM INDEX</p>
-          <h1>RUTINAS ACTIVAS</h1>
-          <p class="subhead">Rutina semanal del coach y recomendaciones automaticas segun tu cumplimiento.</p>
+        <div class="user-panel-hero sports-dashboard-hero">
+          <p class="eyebrow">STAT + AI LAYER</p>
+          <h1>ANALISIS DEL DIA</h1>
+          <p class="subhead">Lectura rápida por evento: mercado sugerido, nivel de riesgo, confianza estimada y razonamiento breve.</p>
+          <p class="sports-disclaimer">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</p>
         </div>
       </header>
 
-      <section class="section routine-prime-section">
-        <div class="routine-prime-shell">
-          <div class="routine-prime-copy">
-            <span class="routine-prime-kicker">Semana en foco</span>
-            <h2>No abras la rutina para pensar. Abrela para ejecutar.</h2>
-            <p>Tu bloque principal va primero, con una lectura más clara y una salida directa al check-in para que la pantalla se sienta como entrenamiento, no como archivo.</p>
-          </div>
-          <div class="routine-prime-rail">
-            <div class="routine-prime-stat">
-              <span>Orden</span>
-              <strong>Rutina primero</strong>
+      <section class="section sports-dashboard-section">
+        <div class="sports-dashboard-grid">
+          <section class="sports-main-column">
+            <div class="sports-section-head">
+              <h2>Desglose por pick</h2>
+              <span>Explicaciones pensadas para consumo rápido</span>
             </div>
-            <div class="routine-prime-stat">
-              <span>Meta</span>
-              <strong>Cumplir la semana</strong>
-            </div>
-            <div class="routine-prime-stat">
-              <span>Salida</span>
-              <strong>Entrena y reporta</strong>
-            </div>
-          </div>
-        </div>
-      </section>
+            <div id="sports-analysis-cards" class="sports-analysis-grid"></div>
+          </section>
 
-      <section class="section mp-section">
-        <div class="mp-wrap">
-          <canvas id="mp-canvas" class="mp-canvas"></canvas>
-          <div class="mp-footer">
-            <div class="mp-chip">
-              <span class="mp-chip-label">XP TOTAL</span>
-              <span class="mp-chip-val" id="mp-xp-val">—</span>
-            </div>
-            <div class="mp-chip">
-              <span class="mp-chip-label">RACHA</span>
-              <span class="mp-chip-val" id="mp-streak-val">—</span>
-            </div>
-            <div class="mp-chip">
-              <span class="mp-chip-label">CUMPLIMIENTO</span>
-              <span class="mp-chip-val" id="mp-compliance-val">—</span>
-            </div>
-          </div>
-        </div>
-      </section>
+          <aside class="sports-side-column">
+            <article class="card sports-side-card">
+              <h3>Marco de lectura</h3>
+              <ul class="sports-side-list">
+                <li><strong>Confianza alta:</strong> más soporte estadístico, no certeza.</li>
+                <li><strong>Riesgo alto:</strong> mayor volatilidad o menos datos.</li>
+                <li><strong>Mercado:</strong> la forma concreta de la recomendación.</li>
+                <li><strong>Análisis:</strong> explica por qué la IA sugiere ese ángulo.</li>
+              </ul>
+            </article>
 
-      <section class="section" style="padding-bottom:0;">
-        <div class="level-bar-card" id="user-level-bar">
-          <div class="level-bar-head">
-            <span class="level-badge">Nivel en carga...</span>
-          </div>
-          <div class="level-progress-track">
-            <div class="level-progress-fill" style="width:0%"></div>
-          </div>
+            <article class="card sports-side-card">
+              <h3>Objetivo de esta vista</h3>
+              <ul class="sports-side-list">
+                <li>Entender cada pick antes de usarlo.</li>
+                <li>Evitar llamadas innecesarias a IA por cada carga.</li>
+                <li>Separar el análisis del dashboard principal.</li>
+              </ul>
+            </article>
+          </aside>
         </div>
-      </section>
-
-      <section class="section">
-        <div class="section-title">
-          <h2>Tu rutina semanal primero</h2>
-          <p>Abre con tu bloque asignado de la semana y luego revisa ajustes, actividad y plantillas.</p>
-        </div>
-        <div class="entry-grid" id="user-routines-page-feed">
-          <article class="entry-card"><h3>Cargando rutinas...</h3></article>
-        </div>
-      </section>
-
-      <section class="section admin-grid">
-        <article class="card" id="user-plan-routines-panel"></article>
-        <article class="card">
-          <h3>Bloque de la semana</h3>
-          <p class="today-note">Mantiene tu racha aunque cambies el tipo de entrenamiento dentro de la misma semana.</p>
-          <div id="activity-modes" class="chip-grid"></div>
-        </article>
-        <article class="card">
-          <h3>Ajuste semanal IA</h3>
-          <div id="weekly-ai-adjustment" class="admin-list"></div>
-        </article>
-      </section>
-
-      <section class="section">
-        <div class="section-title">
-          <h2>Plantillas de rutina</h2>
-          <p>Paquetes listos para usar estilo creador.</p>
-        </div>
-        <div id="routine-templates" class="entry-grid"></div>
       </section>
     </main>
 
     <nav class="bottom-nav" aria-label="Navegacion principal">
       <a class="bottom-nav-item" href="user-hoy.html">
-        <span class="bottom-nav-icon">HO</span><span>Hoy</span>
+        <span class="bottom-nav-icon">🎯</span>
+        <span>Picks</span>
       </a>
       <a class="bottom-nav-item bottom-nav-active" href="user-rutinas.html">
-        <span class="bottom-nav-icon">RT</span><span>Rutinas</span>
+        <span class="bottom-nav-icon">🧠</span>
+        <span>Analisis</span>
       </a>
       <a class="bottom-nav-item" href="user-progreso.html">
-        <span class="bottom-nav-icon">PR</span><span>Progreso</span>
+        <span class="bottom-nav-icon">📚</span>
+        <span>Historial</span>
       </a>
-      <a class="bottom-nav-item" href="user-dieta.html">
-        <span class="bottom-nav-icon">NU</span><span>Nutricion</span>
+      <a class="bottom-nav-item" href="planes.html">
+        <span class="bottom-nav-icon">💎</span>
+        <span>Premium</span>
       </a>
       <a class="bottom-nav-item" href="user-checkin.html">
-        <span class="bottom-nav-icon">PF</span><span>Perfil</span>
+        <span class="bottom-nav-icon">👤</span>
+        <span>Perfil</span>
       </a>
     </nav>
 
     <script src="app.js"></script>
-    <script src="rutinas-pulse.js"></script>
   </body>
 </html>

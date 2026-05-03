@@ -35,6 +35,36 @@ const buildFallbackPlan = ({ users = [], prompt = "", context = "", mode = "admi
   };
 };
 
+const normalizeRiskLevel = (value) => {
+  const normalized = safeStr(value).toUpperCase();
+  if (normalized === "BAJO" || normalized === "MEDIO" || normalized === "ALTO") return normalized;
+  return "MEDIO";
+};
+
+const buildFallbackSportsPick = ({ event = {}, stats = {}, historicalContext = [] }) => {
+  const sport = safeStr(event.sport || "deporte");
+  const league = safeStr(event.league || "liga");
+  const home = safeStr(event.home_team || event.homeTeam || "Local");
+  const away = safeStr(event.away_team || event.awayTeam || "Visita");
+  const hasStats = stats && Object.keys(stats).length > 0;
+  const pick = sport === "basketball" ? `Over 221.5 puntos en ${home} vs ${away}` : `${home} o empate`;
+  const market = sport === "basketball" ? "total_points" : "double_chance";
+  const confidence = hasStats ? 64 : 42;
+  const analysis = hasStats
+    ? `${league}: ${home} vs ${away}. Se detecta contexto estadistico suficiente para una lectura conservadora del mercado ${market}.`
+    : `${league}: ${home} vs ${away}. Hay datos limitados, por eso la lectura se mantiene conservadora y con confianza baja.`;
+  return {
+    provider: "fallback",
+    model: "fallback-sports",
+    pick,
+    market,
+    confidence,
+    risk_level: hasStats ? "MEDIO" : "ALTO",
+    analysis: `${analysis} Historial consultado: ${Array.isArray(historicalContext) ? historicalContext.length : 0} referencia(s).`,
+    disclaimer: "Contenido informativo. No garantiza ganancias.",
+  };
+};
+
 const extractJsonObject = (raw) => {
   const text = safeStr(raw);
   const start = text.indexOf("{");
@@ -160,7 +190,82 @@ async function generateAiPlan(payload = {}) {
   };
 }
 
+async function generateSportsPick({ event = {}, stats = {}, historicalContext = [] } = {}) {
+  const apiKey = safeStr(process.env.OPENAI_API_KEY);
+  const model = safeStr(process.env.OPENAI_MODEL) || "gpt-4o-mini";
+  const fallbackModels = String(process.env.OPENAI_MODEL_FALLBACKS || "")
+    .split(",")
+    .map((v) => safeStr(v))
+    .filter(Boolean);
+
+  if (!apiKey) {
+    return buildFallbackSportsPick({ event, stats, historicalContext });
+  }
+
+  const systemPrompt = [
+    "Eres un analista de picks deportivos para un MVP informativo.",
+    "Debes responder SOLO JSON valido con esta estructura exacta:",
+    '{"pick":"...","market":"...","confidence":0,"risk_level":"BAJO | MEDIO | ALTO","analysis":"...","disclaimer":"Contenido informativo. No garantiza ganancias."}',
+    "No prometas ganancias.",
+    "No uses palabras como seguro, garantizado o apuesta garantizada.",
+    "Si hay pocos datos, reduce confidence y dilo claramente.",
+    "analysis debe ser breve, claro y entendible en espanol.",
+  ].join(" ");
+
+  const userPrompt = [
+    `Evento: ${safeStr(event.league)} | ${safeStr(event.home_team || event.homeTeam)} vs ${safeStr(event.away_team || event.awayTeam)}.`,
+    `Deporte: ${safeStr(event.sport)}.`,
+    `Fecha: ${safeStr(event.event_date || event.eventDate)}.`,
+    `Estado: ${safeStr(event.status)}.`,
+    `Stats JSON: ${JSON.stringify(stats || {}).slice(0, OPENAI_MAX_CONTEXT_CHARS)}`,
+    `Contexto historico: ${JSON.stringify(historicalContext || []).slice(0, OPENAI_MAX_CONTEXT_CHARS)}`,
+    "Elige un mercado razonable segun los datos disponibles.",
+  ].join("\n\n");
+
+  const modelsToTry = [model, ...fallbackModels.filter((m) => m !== model)];
+  let content = "";
+  let usedModel = model;
+  let lastError = null;
+  for (const candidateModel of modelsToTry) {
+    try {
+      const out = await callOpenAiOnce({
+        apiKey,
+        model: candidateModel,
+        systemPrompt,
+        userPrompt,
+      });
+      content = out.content;
+      usedModel = out.model;
+      lastError = null;
+      break;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (lastError) {
+    return buildFallbackSportsPick({ event, stats, historicalContext });
+  }
+
+  const parsed = extractJsonObject(content);
+  if (!parsed) {
+    return buildFallbackSportsPick({ event, stats, historicalContext });
+  }
+
+  return {
+    provider: "openai",
+    model: usedModel,
+    pick: safeStr(parsed.pick) || buildFallbackSportsPick({ event, stats, historicalContext }).pick,
+    market: safeStr(parsed.market) || "moneyline",
+    confidence: Math.max(0, Math.min(100, Number(parsed.confidence || 0))),
+    risk_level: normalizeRiskLevel(parsed.risk_level),
+    analysis: safeStr(parsed.analysis) || "Analisis no disponible.",
+    disclaimer: "Contenido informativo. No garantiza ganancias.",
+  };
+}
+
 module.exports = {
   generateAiPlan,
   buildFallbackPlan,
+  generateSportsPick,
 };

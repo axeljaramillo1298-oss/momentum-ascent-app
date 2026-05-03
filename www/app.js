@@ -152,28 +152,28 @@ const renderHomeV2ThemeContent = () => {
     if (node) node.textContent = value;
   };
   if (female) {
-    title.innerHTML = "DISCIPLINA CON<br />ESTILO.";
-    setText("home-v2-sub", "Tu coach inteligente te guia todos los dias. Rutina, nutricion y check-ins.");
-    setText("home-v2-cta-main", "Empezar guia");
-    setText("home-v2-cta-alt", "Ver demo");
-    setText("home-v2-dash-title", "Momentum Dashboard");
-    setText("home-v2-item-1", "💗 Racha: 10 dias");
-    setText("home-v2-item-2", "✔ Check-in enviado");
-    setText("home-v2-item-3", "✓ Nutricion OK");
-    setText("home-v2-item-4", "✓ Rutina 30 min");
-    setText("home-v2-device-btn", "Enviar progreso");
+    title.innerHTML = "PICKS CON IA.<br />SEÑAL CON<br />CONTEXTO.";
+    setText("home-v2-sub", "Analisis deportivo, eventos del dia y picks informativos impulsados por IA.");
+    setText("home-v2-cta-main", "Ver picks de hoy");
+    setText("home-v2-cta-alt", "Ver historial");
+    setText("home-v2-dash-title", "Momentum Ascent Picks");
+    setText("home-v2-item-1", "⚽ La Liga en vivo");
+    setText("home-v2-item-2", "📊 Confianza 74%");
+    setText("home-v2-item-3", "🧠 Analisis IA listo");
+    setText("home-v2-item-4", "🛡 Riesgo medio");
+    setText("home-v2-device-btn", "Abrir picks");
     return;
   }
-  title.innerHTML = "NO TE MOTIVAMOS.<br />TE PRESIONAMOS<br />PARA QUE CUMPLAS.";
-  setText("home-v2-sub", "Sistema de disciplina diaria con check-ins, nutricion y seguimiento.");
-  setText("home-v2-cta-main", "Empezar onboarding");
-  setText("home-v2-cta-alt", "Ver demo");
-  setText("home-v2-dash-title", "Momentum Dashboard");
-  setText("home-v2-item-1", "🔥 Racha: 14 dias");
-  setText("home-v2-item-2", "⏰ Check-in pendiente");
-  setText("home-v2-item-3", "🥗 Nutricion OK");
-  setText("home-v2-item-4", "✅ Entrenamiento 30m");
-  setText("home-v2-device-btn", "Enviar check-in");
+  title.innerHTML = "PICKS DEPORTIVOS<br />CON IA Y<br />ANALISIS REAL.";
+  setText("home-v2-sub", "Eventos del dia, datos estadisticos y picks informativos generados por IA.");
+  setText("home-v2-cta-main", "Ver picks de hoy");
+  setText("home-v2-cta-alt", "Ver historial");
+  setText("home-v2-dash-title", "Momentum Ascent Picks");
+  setText("home-v2-item-1", "⚽ Partido top del dia");
+  setText("home-v2-item-2", "📈 Mercado sugerido");
+  setText("home-v2-item-3", "🧠 Analisis estadistico");
+  setText("home-v2-item-4", "⚠ Riesgo clasificado");
+  setText("home-v2-device-btn", "Abrir picks");
 };
 
 document.addEventListener("theme:changed", renderHomeV2ThemeContent);
@@ -1085,7 +1085,7 @@ const lockAdminIfNeeded = () => {
   if (isGodPage) {
     // god-panel.html permite acceso con sesion God aun sin currentUser admin en localStorage
     if (getRoleMode() !== "admin" && !hasActiveGodSession()) {
-      navigateToApp("app-inicio.html", true);
+      navigateToApp("user-hoy.html", true);
     }
     return;
   }
@@ -1095,7 +1095,7 @@ const lockAdminIfNeeded = () => {
   if (!isAdminPage || getRoleMode() === "admin") {
     return;
   }
-  navigateToApp("app-inicio.html", true);
+  navigateToApp("user-hoy.html", true);
 };
 
 // Muestra el link de Modo Dios a todos los admins; el panel interno se bloquea sin sesión activa
@@ -1351,7 +1351,7 @@ const guardAuthScreensForLoggedUser = () => {
   }
   const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
   if (page === "registro.html") {
-    navigateToApp(getRoleMode() === "admin" ? "admin.html" : "app-inicio.html");
+    navigateToApp(getRoleMode() === "admin" ? "admin.html" : "user-hoy.html");
   }
 };
 
@@ -2605,6 +2605,10 @@ const initAdminPanel = () => {
   if (page !== "admin.html") {
     return;
   }
+  if (document.getElementById("sports-admin-panel")) {
+    initSportsAdminPanel();
+    return;
+  }
   const routineForm = document.getElementById("admin-routine-form");
   const nutritionForm = document.getElementById("admin-nutrition-form");
   const routineFeedback = document.getElementById("admin-routine-feedback");
@@ -3407,6 +3411,335 @@ const initAdminPanel = () => {
   renderAdminLists();
   renderAdminInsights();
   renderAdminTimeline();
+};
+
+const getRiskClass = (riskLevel) => {
+  const normalized = String(riskLevel || "").trim().toLowerCase();
+  if (normalized === "bajo") return "risk-low";
+  if (normalized === "alto") return "risk-high";
+  return "risk-medium";
+};
+
+const renderSportsPickCards = (host, picks = []) => {
+  if (!host) return;
+  if (!Array.isArray(picks) || !picks.length) {
+    host.innerHTML = `
+      <article class="sports-empty-card">
+        <strong>Sin picks generados por ahora</strong>
+        <p>Sincroniza eventos y genera picks desde admin para poblar el dashboard.</p>
+      </article>
+    `;
+    return;
+  }
+  host.innerHTML = picks
+    .map(
+      (pick) => `
+        <article class="sports-pick-card">
+          <div class="sports-pick-head">
+            <div>
+              <span class="sports-league-pill">${escHtml(pick.league || pick.sport || "Evento")}</span>
+              <h3>${escHtml(`${pick.homeTeam || "Local"} vs ${pick.awayTeam || "Visita"}`)}</h3>
+            </div>
+            <div class="sports-confidence-ring">
+              <strong>${Number(pick.confidence || 0)}%</strong>
+              <span>Confianza</span>
+            </div>
+          </div>
+          <div class="sports-pick-meta">
+            <span class="sports-market-pill">${escHtml(pick.market || "market")}</span>
+            <span class="sports-risk-pill ${getRiskClass(pick.riskLevel)}">${escHtml(pick.riskLevel || "MEDIO")}</span>
+            <span>${new Date(pick.eventDate || pick.createdAt || Date.now()).toLocaleString("es-MX")}</span>
+          </div>
+          <p class="sports-pick-selection">${escHtml(pick.pick || "")}</p>
+          <p class="sports-pick-analysis">${escHtml(pick.analysis || "")}</p>
+          <p class="sports-disclaimer">${escHtml(pick.disclaimer || "Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.")}</p>
+        </article>
+      `
+    )
+    .join("");
+};
+
+const renderSportsHistoryRows = (host, picks = []) => {
+  if (!host) return;
+  if (!Array.isArray(picks) || !picks.length) {
+    host.innerHTML = `<div class="sports-table-empty">Sin historial todavía.</div>`;
+    return;
+  }
+  host.innerHTML = picks
+    .map(
+      (pick) => `
+        <div class="sports-table-row">
+          <span>${escHtml(`${pick.homeTeam || "Local"} vs ${pick.awayTeam || "Visita"}`)}</span>
+          <span>${escHtml(pick.market || "-")}</span>
+          <span>${escHtml(pick.pick || "-")}</span>
+          <span>${Number(pick.confidence || 0)}%</span>
+          <span class="${getRiskClass(pick.riskLevel)}">${escHtml(pick.riskLevel || "MEDIO")}</span>
+        </div>
+      `
+    )
+    .join("");
+};
+
+const initSportsPicksDashboard = () => {
+  const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
+  if (page !== "user-hoy.html") return;
+  const picksHost = document.getElementById("sports-picks-list");
+  if (!picksHost) return;
+
+  const summaryHost = document.getElementById("sports-picks-summary");
+  const historyHost = document.getElementById("sports-picks-history");
+  const refreshBtn = document.getElementById("sports-refresh-picks");
+
+  const load = async () => {
+    if (summaryHost) {
+      summaryHost.innerHTML = `<div class="sports-summary-card"><strong>Cargando picks...</strong><p>Consultando backend.</p></div>`;
+    }
+    try {
+      const [todayRemote, historyRemote] = await Promise.all([
+        apiGet("/api/picks/today"),
+        apiGet("/api/picks/history?limit=8"),
+      ]);
+      const picks = Array.isArray(todayRemote?.picks) ? todayRemote.picks : [];
+      const history = Array.isArray(historyRemote?.picks) ? historyRemote.picks : [];
+      renderSportsPickCards(picksHost, picks);
+      renderSportsHistoryRows(historyHost, history);
+      if (summaryHost) {
+        const avgConfidence = picks.length
+          ? Math.round(picks.reduce((sum, item) => sum + Number(item.confidence || 0), 0) / picks.length)
+          : 0;
+        summaryHost.innerHTML = `
+          <div class="sports-summary-card">
+            <strong>${picks.length}</strong>
+            <span>Picks del día</span>
+          </div>
+          <div class="sports-summary-card">
+            <strong>${avgConfidence}%</strong>
+            <span>Confianza media</span>
+          </div>
+          <div class="sports-summary-card">
+            <strong>${history.length}</strong>
+            <span>Historial reciente</span>
+          </div>
+        `;
+      }
+    } catch (error) {
+      renderSportsPickCards(picksHost, []);
+      if (summaryHost) {
+        summaryHost.innerHTML = `<div class="sports-summary-card"><strong>Error</strong><span>No se pudo cargar el dashboard.</span></div>`;
+      }
+      if (historyHost) {
+        historyHost.innerHTML = `<div class="sports-table-empty">No se pudo cargar historial.</div>`;
+      }
+    }
+  };
+
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", load);
+  }
+  load();
+};
+
+const initSportsAnalysisPage = () => {
+  const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
+  if (page !== "user-rutinas.html") return;
+  const host = document.getElementById("sports-analysis-cards");
+  if (!host) return;
+
+  const render = async () => {
+    try {
+      const remote = await apiGet("/api/picks/today");
+      const picks = Array.isArray(remote?.picks) ? remote.picks : [];
+      if (!picks.length) {
+        host.innerHTML = `<article class="sports-empty-card"><strong>Sin analisis disponible</strong><p>Genera picks desde admin para poblar esta vista.</p></article>`;
+        return;
+      }
+      host.innerHTML = picks
+        .map(
+          (pick) => `
+            <article class="sports-analysis-card">
+              <div class="sports-analysis-top">
+                <span class="sports-league-pill">${escHtml(pick.league || pick.sport || "Evento")}</span>
+                <span class="sports-risk-pill ${getRiskClass(pick.riskLevel)}">${escHtml(pick.riskLevel || "MEDIO")}</span>
+              </div>
+              <h3>${escHtml(`${pick.homeTeam || "Local"} vs ${pick.awayTeam || "Visita"}`)}</h3>
+              <p class="sports-analysis-pick"><strong>Pick:</strong> ${escHtml(pick.pick || "-")}</p>
+              <p class="sports-analysis-pick"><strong>Market:</strong> ${escHtml(pick.market || "-")}</p>
+              <p class="sports-analysis-pick"><strong>Confianza:</strong> ${Number(pick.confidence || 0)}%</p>
+              <p class="sports-pick-analysis">${escHtml(pick.analysis || "")}</p>
+              <p class="sports-disclaimer">${escHtml(pick.disclaimer || "Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.")}</p>
+            </article>
+          `
+        )
+        .join("");
+    } catch {
+      host.innerHTML = `<article class="sports-empty-card"><strong>Error</strong><p>No se pudo cargar el análisis del día.</p></article>`;
+    }
+  };
+
+  render();
+};
+
+const initSportsHistoryPage = () => {
+  const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
+  if (page !== "user-progreso.html") return;
+  const tableHost = document.getElementById("sports-history-table");
+  const summaryHost = document.getElementById("sports-history-summary");
+  const notesHost = document.getElementById("sports-history-notes");
+  if (!tableHost || !summaryHost || !notesHost) return;
+
+  const render = async () => {
+    try {
+      const remote = await apiGet("/api/picks/history?limit=20");
+      const picks = Array.isArray(remote?.picks) ? remote.picks : [];
+      renderSportsHistoryRows(tableHost, picks);
+      const avgConfidence = picks.length
+        ? Math.round(picks.reduce((sum, item) => sum + Number(item.confidence || 0), 0) / picks.length)
+        : 0;
+      const lowRiskCount = picks.filter((item) => String(item.riskLevel || "").toUpperCase() === "BAJO").length;
+      summaryHost.innerHTML = `
+        <div class="sports-summary-card">
+          <strong>${picks.length}</strong>
+          <span>Picks registrados</span>
+        </div>
+        <div class="sports-summary-card">
+          <strong>${avgConfidence}%</strong>
+          <span>Confianza media</span>
+        </div>
+        <div class="sports-summary-card">
+          <strong>${lowRiskCount}</strong>
+          <span>Lecturas de riesgo bajo</span>
+        </div>
+      `;
+      notesHost.innerHTML = picks.length
+        ? picks.slice(0, 6).map((pick) => `
+            <article class="sports-analysis-card">
+              <div class="sports-analysis-top">
+                <span class="sports-market-pill">${escHtml(pick.market || "-")}</span>
+                <span>${new Date(pick.createdAt || Date.now()).toLocaleString("es-MX")}</span>
+              </div>
+              <h3>${escHtml(`${pick.homeTeam || "Local"} vs ${pick.awayTeam || "Visita"}`)}</h3>
+              <p class="sports-pick-selection">${escHtml(pick.pick || "")}</p>
+              <p class="sports-pick-analysis">${escHtml(pick.analysis || "")}</p>
+            </article>
+          `).join("")
+        : `<article class="sports-empty-card"><strong>Sin historial</strong><p>Aún no hay picks generados.</p></article>`;
+    } catch {
+      tableHost.innerHTML = `<div class="sports-table-empty">No se pudo cargar historial.</div>`;
+      summaryHost.innerHTML = `<div class="sports-summary-card"><strong>Error</strong><span>Sin datos</span></div>`;
+      notesHost.innerHTML = `<article class="sports-empty-card"><strong>Error</strong><p>No se pudo cargar contexto histórico.</p></article>`;
+    }
+  };
+
+  render();
+};
+
+const initSportsAdminPanel = () => {
+  const syncBtn = document.getElementById("sports-sync-btn");
+  const eventsHost = document.getElementById("sports-events-table");
+  const picksHost = document.getElementById("sports-admin-picks");
+  const logsHost = document.getElementById("sports-sync-status");
+  if (!syncBtn || !eventsHost || !picksHost || !logsHost) return;
+
+  let latestEvents = [];
+
+  const renderEvents = () => {
+    if (!latestEvents.length) {
+      eventsHost.innerHTML = `<div class="sports-table-empty">Sin eventos cargados.</div>`;
+      return;
+    }
+    eventsHost.innerHTML = latestEvents
+      .map(
+        (event) => `
+          <div class="sports-table-row sports-table-row-actions">
+            <span>${escHtml(event.league || event.sport || "-")}</span>
+            <span>${escHtml(`${event.homeTeam || "Local"} vs ${event.awayTeam || "Visita"}`)}</span>
+            <span>${new Date(event.eventDate || Date.now()).toLocaleString("es-MX")}</span>
+            <span>${escHtml(event.status || "scheduled")}</span>
+            <span>
+              <button class="ghost sports-generate-btn" type="button" data-event-id="${Number(event.id)}">Generar pick IA</button>
+            </span>
+          </div>
+        `
+      )
+      .join("");
+
+    eventsHost.querySelectorAll(".sports-generate-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const eventId = btn.getAttribute("data-event-id");
+        btn.disabled = true;
+        btn.textContent = "Generando...";
+        try {
+          const remote = await apiPost(`/api/picks/generate/${eventId}`, { force: false });
+          if (!remote?.ok) {
+            throw new Error(remote?.error || "pick_generation_failed");
+          }
+          await loadPicks();
+          await loadLogs();
+        } catch (error) {
+          showToast("No se pudo generar pick.", "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Generar pick IA";
+        }
+      });
+    });
+  };
+
+  const loadEvents = async () => {
+    const remote = await apiGet("/api/sports/events/today");
+    latestEvents = Array.isArray(remote?.events) ? remote.events : [];
+    renderEvents();
+  };
+
+  const loadPicks = async () => {
+    const remote = await apiGet("/api/picks/history?limit=12");
+    renderSportsPickCards(picksHost, Array.isArray(remote?.picks) ? remote.picks : []);
+  };
+
+  const loadLogs = async () => {
+    const remote = await apiGet("/api/sports/sync/logs?limit=6");
+    const logs = Array.isArray(remote?.logs) ? remote.logs : [];
+    logsHost.innerHTML = logs.length
+      ? logs
+          .map(
+            (log) => `
+              <div class="sports-log-item">
+                <strong>${escHtml(log.status || "ok")}</strong>
+                <span>${escHtml(log.sourceApi || "mock")} • ${escHtml(log.endpoint || "/today")}</span>
+                <p>${escHtml(log.message || "")}</p>
+              </div>
+            `
+          )
+          .join("")
+      : `<div class="sports-log-item"><strong>Sin sincronizaciones</strong><p>Usa el botón para traer eventos del día.</p></div>`;
+  };
+
+  syncBtn.addEventListener("click", async () => {
+    syncBtn.disabled = true;
+    syncBtn.textContent = "Sincronizando...";
+    try {
+      const remote = await apiPost("/api/sports/sync", {});
+      if (!remote?.ok) throw new Error(remote?.error || "sports_sync_failed");
+      await loadEvents();
+      await loadLogs();
+      showToast("Eventos sincronizados.", "success");
+    } catch (error) {
+      showToast("No se pudo sincronizar eventos.", "error");
+    } finally {
+      syncBtn.disabled = false;
+      syncBtn.textContent = "Sincronizar eventos deportivos";
+    }
+  });
+
+  loadEvents().catch(() => {
+    eventsHost.innerHTML = `<div class="sports-table-empty">No se pudo cargar eventos.</div>`;
+  });
+  loadPicks().catch(() => {
+    picksHost.innerHTML = `<div class="sports-table-empty">No se pudo cargar picks.</div>`;
+  });
+  loadLogs().catch(() => {
+    logsHost.innerHTML = `<div class="sports-log-item"><strong>Error</strong><p>No se pudo cargar la bitácora.</p></div>`;
+  });
 };
 
 function initPlanSelectionPage() {
@@ -4413,6 +4746,9 @@ initAdminTabNav();
 initGodStatusPulse();
 initAdminAutoRefresh();
 renderUserGreeting();
+initSportsPicksDashboard();
+initSportsAnalysisPage();
+initSportsHistoryPage();
 initHomeGodEntry();
 initPlanSelectionPage();
 applyPlanNavVisibility();
@@ -5373,7 +5709,7 @@ if (loginForm) {
       renderWeeklyAiAdjustment();
       applyPlanNavVisibility();
       renderUserNotifications();
-      navigateToApp(resolvedRole === "admin" ? "admin.html" : "app-inicio.html");
+      navigateToApp(resolvedRole === "admin" ? "admin.html" : "user-hoy.html");
     } catch (err) {
       console.warn("[login] error de red:", err?.message || err);
       if (loginFeedback) loginFeedback.textContent = "No se pudo conectar al servidor. Verifica tu conexión.";

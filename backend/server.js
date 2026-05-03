@@ -3,7 +3,8 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const crypto = require("node:crypto");
-const { generateAiPlan, buildFallbackPlan } = require("./ai");
+const { generateAiPlan, buildFallbackPlan, generateSportsPick } = require("./ai");
+const sportsApiService = require("./sportsApiService");
 const { sendWhatsAppText, getWhatsAppConfigStatus } = require("./whatsapp");
 const { startCoachOnboardingForUser, handleIncomingCoachMessage } = require("./coach-whatsapp");
 const {
@@ -39,6 +40,18 @@ const {
   deleteUser,
   recordAiUsage,
   listAiUsageLogs,
+  upsertSportsEvent,
+  getSportsEventById,
+  getSportsEventsByDate,
+  listRecentSportsEvents,
+  saveEventStats,
+  getLatestEventStats,
+  saveAiPick,
+  getLatestAiPickForEvent,
+  listPicksByDate,
+  listPickHistory,
+  logApiSync,
+  listApiSyncLogs,
 } = require("./db");
 
 const app = express();
@@ -306,6 +319,37 @@ const normalizeWhatsAppOnboardingResult = (error) => {
     skipped: true,
     reason: "whatsapp_unavailable",
   };
+};
+
+const SPORTS_PICK_DISCLAIMER = "Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.";
+const toDateKey = (value = new Date()) => new Date(value).toISOString().slice(0, 10);
+const isPickRecent = (pick, maxAgeHours = 8) => {
+  const createdAt = Date.parse(String(pick?.createdAt || ""));
+  if (!Number.isFinite(createdAt)) return false;
+  return Date.now() - createdAt <= maxAgeHours * 60 * 60 * 1000;
+};
+
+const syncSportsEvents = async () => {
+  const events = await sportsApiService.getTodayEvents();
+  const saved = [];
+  for (const event of Array.isArray(events) ? events : []) {
+    const row = await upsertSportsEvent(event);
+    saved.push(row);
+    if (event?.stats && typeof event.stats === "object") {
+      await saveEventStats({
+        eventId: row.id,
+        sourceApi: String(process.env.SPORTS_API_PROVIDER || "mock").trim().toLowerCase() || "mock",
+        statsJson: event.stats,
+      });
+    }
+  }
+  await logApiSync({
+    sourceApi: String(process.env.SPORTS_API_PROVIDER || "mock").trim().toLowerCase() || "mock",
+    endpoint: "/today",
+    status: "ok",
+    message: `Eventos sincronizados: ${saved.length}`,
+  });
+  return saved;
 };
 
 app.get("/health", (req, res) => {
@@ -953,6 +997,191 @@ app.get("/ranking/weekly", async (req, res) => {
     res.json({ ok: true, ranking });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || "ranking_failed") });
+  }
+});
+
+app.get("/api/sports/events/today", async (req, res) => {
+  try {
+    const dateKey = String(req.query.date || toDateKey()).trim();
+    let events = await getSportsEventsByDate(dateKey);
+    if (!events.length) {
+      events = await syncSportsEvents();
+      events = events.filter((event) => String(event?.eventDate || "").slice(0, 10) === dateKey);
+    }
+    const picks = await listPicksByDate(dateKey);
+    const picksByEvent = new Map(picks.map((pick) => [Number(pick.eventId), pick]));
+    res.json({
+      ok: true,
+      date: dateKey,
+      events: events.map((event) => ({
+        ...event,
+        latestPick: picksByEvent.get(Number(event.id)) || null,
+      })),
+    });
+  } catch (error) {
+    await logApiSync({
+      sourceApi: String(process.env.SPORTS_API_PROVIDER || "mock").trim().toLowerCase() || "mock",
+      endpoint: "/today",
+      status: "error",
+      message: String(error.message || "sports_today_failed"),
+    }).catch(() => {});
+    res.status(500).json({ ok: false, error: String(error.message || "sports_today_failed") });
+  }
+});
+
+app.post("/api/sports/sync", requireAdmin, async (req, res) => {
+  try {
+    const events = await syncSportsEvents();
+    res.json({
+      ok: true,
+      count: events.length,
+      events,
+      logs: await listApiSyncLogs(5),
+    });
+  } catch (error) {
+    await logApiSync({
+      sourceApi: String(process.env.SPORTS_API_PROVIDER || "mock").trim().toLowerCase() || "mock",
+      endpoint: "/today",
+      status: "error",
+      message: String(error.message || "sports_sync_failed"),
+    }).catch(() => {});
+    res.status(500).json({ ok: false, error: String(error.message || "sports_sync_failed") });
+  }
+});
+
+app.get("/api/sports/sync/logs", requireAdmin, async (req, res) => {
+  try {
+    const logs = await listApiSyncLogs(Number(req.query.limit || 10));
+    const events = await listRecentSportsEvents(20);
+    res.json({ ok: true, logs, events });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "sports_sync_logs_failed") });
+  }
+});
+
+app.post("/api/picks/generate/:eventId", requireAdmin, async (req, res) => {
+  try {
+    const eventId = Number(req.params.eventId || 0);
+    const force = Boolean(req.body?.force) || String(req.query.force || "").trim().toLowerCase() === "true";
+    const event = await getSportsEventById(eventId);
+    if (!event) {
+      return res.status(404).json({ ok: false, error: "event_not_found" });
+    }
+
+    const existingPick = await getLatestAiPickForEvent(eventId);
+    if (existingPick && !force && isPickRecent(existingPick, 12)) {
+      return res.json({
+        ok: true,
+        cached: true,
+        pick: {
+          ...existingPick,
+          disclaimer: SPORTS_PICK_DISCLAIMER,
+        },
+      });
+    }
+
+    let stats = await getLatestEventStats(eventId);
+    if (!stats) {
+      const pulledStats = await sportsApiService.getEventStats(event);
+      stats = await saveEventStats({
+        eventId,
+        sourceApi: pulledStats.sourceApi,
+        statsJson: pulledStats.statsJson,
+      });
+    }
+
+    const historicalContext = (await listPickHistory(12))
+      .filter((row) => Number(row.eventId) !== eventId)
+      .slice(0, 8)
+      .map((row) => ({
+        league: row.league,
+        market: row.market,
+        confidence: row.confidence,
+        riskLevel: row.riskLevel,
+        createdAt: row.createdAt,
+      }));
+
+    const aiPick = await generateSportsPick({
+      event: {
+        sport: event.sport,
+        league: event.league,
+        home_team: event.homeTeam,
+        away_team: event.awayTeam,
+        event_date: event.eventDate,
+        status: event.status,
+      },
+      stats: stats?.statsJson || {},
+      historicalContext,
+    });
+
+    const savedPick = await saveAiPick({
+      eventId,
+      pick: aiPick.pick,
+      market: aiPick.market,
+      confidence: aiPick.confidence,
+      analysis: aiPick.analysis,
+      riskLevel: aiPick.risk_level,
+      modelUsed: aiPick.model || aiPick.provider || "fallback",
+      status: "generated",
+      createdAt: new Date().toISOString(),
+    });
+
+    res.json({
+      ok: true,
+      cached: false,
+      pick: {
+        ...savedPick,
+        sport: event.sport,
+        league: event.league,
+        homeTeam: event.homeTeam,
+        awayTeam: event.awayTeam,
+        eventDate: event.eventDate,
+        disclaimer: SPORTS_PICK_DISCLAIMER,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "pick_generation_failed") });
+  }
+});
+
+app.get("/api/picks/today", async (req, res) => {
+  try {
+    const dateKey = String(req.query.date || toDateKey()).trim();
+    let picks = await listPicksByDate(dateKey);
+    if (!picks.length) {
+      let events = await getSportsEventsByDate(dateKey);
+      if (!events.length) {
+        events = await syncSportsEvents();
+      }
+      picks = await listPicksByDate(dateKey);
+      res.json({
+        ok: true,
+        date: dateKey,
+        picks: picks.map((pick) => ({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER })),
+        eventsAvailable: events.length,
+      });
+      return;
+    }
+    res.json({
+      ok: true,
+      date: dateKey,
+      picks: picks.map((pick) => ({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER })),
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "picks_today_failed") });
+  }
+});
+
+app.get("/api/picks/history", async (req, res) => {
+  try {
+    const limit = Number(req.query.limit || 100);
+    const picks = await listPickHistory(limit);
+    res.json({
+      ok: true,
+      picks: picks.map((pick) => ({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER })),
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "picks_history_failed") });
   }
 });
 
