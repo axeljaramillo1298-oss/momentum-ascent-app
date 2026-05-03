@@ -5,6 +5,223 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Picks de Hoy | Momentum Ascent</title>
     <link rel="stylesheet" href="styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+      .sports-dashboard-page .user-panel-top {
+        position: relative;
+        z-index: 200;
+        padding: 12px 16px;
+      }
+
+      .sports-dashboard-page .page-hero {
+        padding: 36px 52px 32px;
+        position: relative;
+      }
+
+      .sports-dashboard-page .page-hero::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 360px;
+        background:
+          radial-gradient(ellipse 60% 80% at 20% 20%, rgba(80, 20, 120, 0.18) 0%, transparent 70%),
+          radial-gradient(ellipse 40% 60% at 80% 40%, rgba(255, 69, 0, 0.05) 0%, transparent 70%);
+        pointer-events: none;
+      }
+
+      .sports-dashboard-page .hero-inner {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 40px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .sports-dashboard-page .hero-left {
+        flex: 1;
+        max-width: 420px;
+      }
+
+      .sports-dashboard-page .page-eyebrow {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: rgba(240, 237, 232, 0.4);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .sports-dashboard-page .page-eyebrow::before {
+        content: "";
+        width: 20px;
+        height: 1px;
+        background: rgba(240, 237, 232, 0.4);
+      }
+
+      .sports-dashboard-page .page-title {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 900;
+        font-style: italic;
+        font-size: clamp(56px, 8vw, 104px);
+        text-transform: uppercase;
+        letter-spacing: -0.02em;
+        line-height: 0.88;
+      }
+
+      .sports-dashboard-page .page-desc {
+        margin-top: 16px;
+        font-size: 14px;
+        color: rgba(240, 237, 232, 0.55);
+        max-width: 400px;
+        line-height: 1.65;
+        font-weight: 300;
+      }
+
+      .sports-dashboard-page .disc {
+        margin-top: 14px;
+        font-size: 10px;
+        color: #ff4500;
+        letter-spacing: 0.04em;
+      }
+
+      .sports-dashboard-page .hero-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 14px;
+        padding-top: 4px;
+      }
+
+      .sports-dashboard-page .hero-stats,
+      .sports-dashboard-page .hero-right .sports-summary-grid {
+        display: flex;
+        gap: 2px;
+        margin-top: 0;
+      }
+
+      .sports-dashboard-page .hero-right .sports-summary-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        padding: 16px 22px;
+        text-align: center;
+        min-width: 110px;
+        position: relative;
+        overflow: hidden;
+        transition: border-color 0.3s, background 0.3s;
+        cursor: default;
+        border-radius: 0;
+        display: block;
+      }
+
+      .sports-dashboard-page .hero-right .sports-summary-card::before {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 1.5px;
+        background: linear-gradient(90deg, transparent, #ff4500, transparent);
+        transform: scaleX(0);
+        transform-origin: center;
+        transition: transform 0.4s;
+      }
+
+      .sports-dashboard-page .hero-right .sports-summary-card:hover {
+        background: rgba(255, 69, 0, 0.04);
+        border-color: rgba(255, 69, 0, 0.2);
+      }
+
+      .sports-dashboard-page .hero-right .sports-summary-card:hover::before {
+        transform: scaleX(1);
+      }
+
+      .sports-dashboard-page .hero-right .sports-summary-card strong {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 900;
+        font-size: 40px;
+        line-height: 1;
+        letter-spacing: -0.02em;
+        display: block;
+        color: #f3efe7;
+      }
+
+      .sports-dashboard-page .hero-right .sports-summary-card:nth-child(1) strong,
+      .sports-dashboard-page .hero-right .sports-summary-card:nth-child(3) strong {
+        color: #4ade80;
+      }
+
+      .sports-dashboard-page .hero-right .sports-summary-card:nth-child(2) strong {
+        color: #ff4500;
+      }
+
+      .sports-dashboard-page .hero-right .sports-summary-card span {
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(240, 237, 232, 0.4);
+        margin-top: 5px;
+        display: block;
+      }
+
+      .sports-dashboard-page .hero-copy-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+      }
+
+      .sports-dashboard-page .user-greeting {
+        margin-top: 18px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(240, 237, 232, 0.6);
+      }
+
+      .sports-dashboard-page .sports-dashboard-section {
+        padding-top: 0;
+      }
+
+      @media (max-width: 920px) {
+        .sports-dashboard-page .page-hero {
+          padding: 24px 20px 20px;
+        }
+
+        .sports-dashboard-page .hero-inner {
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .sports-dashboard-page .hero-right {
+          align-items: flex-start;
+        }
+
+        .sports-dashboard-page .hero-right .sports-summary-card {
+          min-width: 90px;
+          padding: 12px 14px;
+        }
+
+        .sports-dashboard-page .hero-right .sports-summary-card strong {
+          font-size: 32px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .sports-dashboard-page .hero-right .sports-summary-grid {
+          width: 100%;
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+    </style>
   </head>
   <body class="user-panel-premium sports-dashboard-page">
     <main class="user-panel-shell sports-dashboard-shell">
@@ -32,17 +249,23 @@
             <a class="ghost up-nav-link" href="user-checkin.html">Cuenta</a>
           </div>
         </nav>
-        <div class="user-panel-hero sports-dashboard-hero">
-          <p class="eyebrow">AI PICKS DASHBOARD</p>
-          <h1>PICKS DEL DIA</h1>
-          <p class="subhead">Eventos del dia, recomendacion sugerida, nivel de confianza y analisis breve generado con IA.</p>
-          <p class="user-greeting" id="user-greeting"></p>
-          <div class="sports-summary-grid" id="sports-picks-summary"></div>
-          <div class="sports-hero-actions">
-            <button class="primary" type="button" id="sports-refresh-picks">Actualizar picks</button>
-            <a class="ghost" href="user-progreso.html">Ver historial</a>
+        <div class="page-hero">
+          <div class="hero-inner">
+            <div class="hero-left">
+              <div class="page-eyebrow">Stat + AI Layer</div>
+              <h1 class="page-title">Picks<br>del Dia</h1>
+              <p class="page-desc">Lectura rapida del tablero principal: picks activos, confianza estimada y analisis breve generado con IA.</p>
+              <p class="user-greeting" id="user-greeting"></p>
+              <div class="hero-copy-actions">
+                <button class="primary" type="button" id="sports-refresh-picks">Actualizar picks</button>
+                <a class="ghost" href="user-progreso.html">Ver historial</a>
+              </div>
+              <div class="disc">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</div>
+            </div>
+            <div class="hero-right">
+              <div class="sports-summary-grid" id="sports-picks-summary"></div>
+            </div>
           </div>
-          <p class="sports-disclaimer">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</p>
         </div>
       </header>
 
