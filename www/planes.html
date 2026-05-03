@@ -6,19 +6,87 @@
     <title>Membresia | Momentum Ascent</title>
     <link rel="stylesheet" href="styles.css" />
     <style>
-      /* 4-column comparison for planes page */
-      .comparison-row{grid-template-columns:1.5fr 0.75fr 0.85fr 0.85fr}
-      @media(max-width:640px){.comparison-row{grid-template-columns:1.1fr 0.55fr 0.65fr 0.65fr;font-size:12px;padding:10px 8px}}
-      @media(max-width:420px){.comparison-row{grid-template-columns:1fr 0.5fr 0.6fr 0.6fr;font-size:11px;padding:9px 6px}}
-      .apex-col{color:#f5c04a;font-weight:700}
-      .comparison-row.header .apex-col{background:rgba(245,192,74,.12);border-radius:6px;padding:2px 8px}
-      .apex-badge{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;background:linear-gradient(135deg,#f5c04a,#ff6b35);color:#0a0a0a;padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle}
-      .plans-grid-3{grid-template-columns:repeat(3,1fr)}
-      @media(max-width:900px){.plans-grid-3{grid-template-columns:1fr}}
-      .price-card.apex{border-color:rgba(245,192,74,.4);background:linear-gradient(135deg,rgba(245,192,74,.06),rgba(255,107,53,.04))}
-      .price-card.apex h3{color:#f5c04a}
-      .price-card.apex .price{background:linear-gradient(135deg,#f5c04a,#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-      .bankroll-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#f5c04a;background:rgba(245,192,74,.1);border:1px solid rgba(245,192,74,.25);border-radius:20px;padding:3px 10px;margin-top:2px}
+      /* ===== COMPARISON TABLE — 4 columns ===== */
+      .comparison-row{grid-template-columns:1.6fr 0.7fr 0.88fr 0.88fr}
+      .comparison-row span{display:flex;align-items:center}
+      .comparison-row span:not(:first-child){justify-content:center;text-align:center}
+      @media(max-width:720px){.comparison-row{grid-template-columns:1.2fr 0.55fr 0.72fr 0.72fr;font-size:12px;padding:10px 8px}}
+      @media(max-width:460px){.comparison-row{grid-template-columns:1fr 0.45fr 0.62fr 0.62fr;font-size:11px;padding:8px 5px}}
+
+      /* Header row */
+      .comparison-row.header{background:#0a0a0c;padding-top:18px;padding-bottom:18px}
+      .comparison-row.header .premium-col{
+        background:rgba(255,69,0,.11);border-radius:8px;padding:5px 14px;
+        color:#ff6b35;font-weight:700;font-size:13px;justify-content:center}
+      .comparison-row.header .apex-col{
+        background:linear-gradient(135deg,rgba(245,192,74,.15),rgba(255,107,53,.06));
+        border:1px solid rgba(245,192,74,.25);border-radius:8px;padding:5px 14px;
+        color:#f5c04a;font-weight:800;font-size:13px;justify-content:center}
+
+      /* Value symbols */
+      .ck{color:#4ade80;font-size:16px;font-weight:900;line-height:1}
+      .cx{color:rgba(240,237,232,.15);font-size:18px;font-weight:300}
+      .vl-o{font-size:12px;font-weight:700;color:#ff6b35}
+      .vl-g{font-size:12px;font-weight:700;color:#f5c04a}
+      .vl-m{font-size:11px;color:rgba(240,237,232,.3);font-style:italic}
+
+      /* Exclusive row — Control de bank */
+      .row-excl{background:linear-gradient(90deg,transparent,rgba(245,192,74,.05),transparent) !important;border-top:1px solid rgba(245,192,74,.14) !important}
+      .row-excl>span:first-child{color:#f5c04a;font-weight:600;gap:7px}
+      .row-excl>span:first-child::before{content:'★';font-size:10px;color:#f5c04a;flex-shrink:0}
+
+      /* ===== PRICING GRID ===== */
+      .plans-grid-3{grid-template-columns:repeat(3,1fr);align-items:stretch}
+      @media(max-width:960px){.plans-grid-3{grid-template-columns:1fr;max-width:420px;margin:0 auto}}
+
+      /* Badges — show above card */
+      .pricing-grid{overflow:visible !important}
+      .price-card{overflow:visible !important;position:relative}
+      .price-card .badge{
+        position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+        font-size:9px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;
+        padding:4px 16px;border-radius:20px;white-space:nowrap;z-index:5}
+      .price-card.highlight .badge{
+        background:linear-gradient(135deg,#c42820,#ff3b30,#ff6b35);color:#fff;
+        box-shadow:0 4px 18px rgba(255,59,48,.55)}
+
+      /* Apex card — dark gold premium */
+      .price-card.apex{
+        background:linear-gradient(160deg,#100d02,#0c0a00);
+        border:1.5px solid rgba(245,192,74,.34);
+        box-shadow:0 0 0 1px rgba(245,192,74,.06),0 24px 64px rgba(245,192,74,.09),inset 0 1px 0 rgba(245,192,74,.1);
+        overflow:visible !important;position:relative}
+      .price-card.apex::before{
+        content:'';position:absolute;top:-1px;left:12%;right:12%;height:2px;
+        background:linear-gradient(90deg,transparent,#f5c04a 35%,#ff8c42 65%,transparent);
+        border-radius:2px}
+      .price-card.apex .badge{
+        background:linear-gradient(135deg,#7a5200,#f5c04a,#ffd97a);color:#0a0700;
+        box-shadow:0 4px 18px rgba(245,192,74,.45);font-weight:900}
+      .price-card.apex h3{
+        background:linear-gradient(135deg,#f5c04a,#ffd97a);
+        -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+      .price-card.apex .price{
+        background:linear-gradient(135deg,#f5c04a 20%,#ff9842 100%);
+        -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+      /* Feature list items */
+      .price-card ul{list-style:none;padding:0;margin:0}
+      .price-card ul li{display:flex;align-items:flex-start;gap:9px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+      .price-card ul li:last-child{border-bottom:none}
+      .li-ic{flex-shrink:0;font-size:11px;margin-top:3px;font-weight:900}
+      .price-card:not(.highlight):not(.apex) .li-ic{color:rgba(240,237,232,.35)}
+      .price-card.highlight .li-ic{color:rgba(255,255,255,.85)}
+      .price-card.apex .li-ic{color:#f5c04a}
+
+      /* Bankroll exclusive highlight */
+      .bank-item{
+        margin-top:12px;padding:10px 14px;
+        background:rgba(245,192,74,.07);border:1px solid rgba(245,192,74,.24);border-radius:10px;
+        display:flex;align-items:center;gap:9px;
+        font-size:13px;font-weight:700;color:#f5c04a;letter-spacing:.03em;
+        box-shadow:0 0 20px rgba(245,192,74,.05)}
+      .bank-item::before{content:'◈';font-size:16px;color:#f5c04a;flex-shrink:0}
     </style>
   </head>
   <body>
@@ -61,13 +129,48 @@
       <section class="section comparison" id="comparacion" data-role-hide="admin">
         <div class="section-title"><h2>Comparativo por plan</h2><p>Escala de acceso: Free, AI Picks y Apex.</p></div>
         <div class="comparison-table premium-boost">
-          <div class="comparison-row header"><span>Feature</span><span>Free</span><span class="premium-col">AI Picks</span><span class="apex-col">Apex</span></div>
-          <div class="comparison-row"><span>Picks del dia</span><span>Si</span><span class="premium-col">Si</span><span class="apex-col">Si</span></div>
-          <div class="comparison-row"><span>Analisis IA</span><span>No</span><span class="premium-col">Extendido</span><span class="apex-col">Full IA</span></div>
-          <div class="comparison-row"><span>Historial</span><span>Limitado</span><span class="premium-col">Ampliado</span><span class="apex-col">Todo</span></div>
-          <div class="comparison-row"><span>Eventos cubiertos</span><span>Top del dia</span><span class="premium-col">Cobertura ampliada</span><span class="apex-col">Todos</span></div>
-          <div class="comparison-row"><span>Comunidad</span><span>No</span><span class="premium-col">Si</span><span class="apex-col">Si</span></div>
-          <div class="comparison-row"><span>Control de bank</span><span>No</span><span class="premium-col">No</span><span class="apex-col">Si</span></div>
+          <div class="comparison-row header">
+            <span>Feature</span>
+            <span>Free</span>
+            <span class="premium-col">AI Picks</span>
+            <span class="apex-col">Apex</span>
+          </div>
+          <div class="comparison-row">
+            <span>Picks del dia</span>
+            <span><span class="ck">✓</span></span>
+            <span class="premium-col"><span class="ck">✓</span></span>
+            <span class="apex-col"><span class="ck">✓</span></span>
+          </div>
+          <div class="comparison-row">
+            <span>Analisis IA</span>
+            <span><span class="cx">—</span></span>
+            <span class="premium-col"><span class="vl-o">Extendido</span></span>
+            <span class="apex-col"><span class="vl-g">Full IA</span></span>
+          </div>
+          <div class="comparison-row">
+            <span>Historial</span>
+            <span><span class="vl-m">Limitado</span></span>
+            <span class="premium-col"><span class="vl-o">Ampliado</span></span>
+            <span class="apex-col"><span class="vl-g">Todo</span></span>
+          </div>
+          <div class="comparison-row">
+            <span>Eventos cubiertos</span>
+            <span><span class="vl-m">Top del dia</span></span>
+            <span class="premium-col"><span class="vl-o">Ampliada</span></span>
+            <span class="apex-col"><span class="vl-g">Todos</span></span>
+          </div>
+          <div class="comparison-row">
+            <span>Comunidad</span>
+            <span><span class="cx">—</span></span>
+            <span class="premium-col"><span class="ck">✓</span></span>
+            <span class="apex-col"><span class="ck">✓</span></span>
+          </div>
+          <div class="comparison-row row-excl">
+            <span>Control de bank</span>
+            <span><span class="cx">—</span></span>
+            <span class="premium-col"><span class="cx">—</span></span>
+            <span class="apex-col"><span class="ck">✓</span></span>
+          </div>
         </div>
       </section>
 
@@ -78,9 +181,9 @@
             <h3>Free</h3>
             <p class="price">$0 / mes</p>
             <ul>
-              <li>Picks del dia</li>
-              <li>Historial basico</li>
-              <li>Vista general</li>
+              <li><span class="li-ic">✓</span>Picks del dia</li>
+              <li><span class="li-ic">✓</span>Historial basico</li>
+              <li><span class="li-ic">✓</span>Vista general</li>
             </ul>
             <button class="ghost full" type="button" data-plan-select="free">Elegir Free</button>
           </div>
@@ -89,25 +192,25 @@
             <h3>AI Picks</h3>
             <p class="price">$19 / mes</p>
             <ul>
-              <li>Analisis IA Extendido</li>
-              <li>Mas picks por jornada</li>
-              <li>Historial ampliado</li>
-              <li>Comunidad incluida</li>
+              <li><span class="li-ic">✓</span>Analisis IA Extendido</li>
+              <li><span class="li-ic">✓</span>Mas picks por jornada</li>
+              <li><span class="li-ic">✓</span>Historial ampliado</li>
+              <li><span class="li-ic">✓</span>Comunidad incluida</li>
             </ul>
             <button class="primary full" type="button" data-plan-select="ai_coach">Elegir AI Picks</button>
           </div>
           <div class="price-card apex" data-tilt>
-            <div class="badge">Top</div>
+            <div class="badge">Apex</div>
             <h3>Apex</h3>
             <p class="price">$49 / mes</p>
             <ul>
-              <li>Analisis IA Full</li>
-              <li>Historial completo</li>
-              <li>Todos los eventos</li>
-              <li>Comunidad incluida</li>
-              <li><span class="bankroll-badge">&#9654; Control de bank</span></li>
+              <li><span class="li-ic">✓</span>Analisis IA Full</li>
+              <li><span class="li-ic">✓</span>Historial completo</li>
+              <li><span class="li-ic">✓</span>Todos los eventos</li>
+              <li><span class="li-ic">✓</span>Comunidad incluida</li>
             </ul>
-            <button class="primary full" type="button" data-plan-select="apex">Elegir Apex</button>
+            <div class="bank-item">Control de bank</div>
+            <button class="primary full" type="button" data-plan-select="apex" style="margin-top:18px">Elegir Apex</button>
           </div>
         </div>
         <article class="card plan-extras-card">
