@@ -10325,7 +10325,7 @@ body.user-panel-premium:not(.theme-female) .user-panel-top {
 body.user-panel-premium:not(.theme-female) .user-panel-nav {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 18px;
   padding: 0 0 12px;
   border: 0;
@@ -10341,7 +10341,8 @@ body.user-panel-premium:not(.theme-female) .user-panel-nav .logo {
   display: inline-flex;
   align-items: center;
   min-height: 34px;
-  padding-left: 34px;
+  flex: 0 0 auto;
+  padding-left: 38px;
   color: rgba(232, 238, 248, 0.88);
   font-family: "Barlow Condensed", sans-serif;
   font-size: 15px;
@@ -10366,20 +10367,23 @@ body.user-panel-premium:not(.theme-female) .user-panel-nav .logo::before {
 body.user-panel-premium:not(.theme-female) .user-panel-nav .logo::after {
   content: "";
   position: absolute;
-  left: 2px;
-  top: 4px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ff6b35, #ff3b30);
-  box-shadow: 0 0 14px rgba(255, 91, 77, 0.42);
+  left: 7px;
+  top: 3px;
+  width: 13px;
+  height: 18px;
+  border-radius: 65% 65% 70% 70% / 80% 80% 45% 45%;
+  background: linear-gradient(180deg, #ffb164 0%, #ff6b35 48%, #ff3b30 100%);
+  transform: rotate(-18deg);
+  box-shadow: 0 0 16px rgba(255, 91, 77, 0.44);
 }
 
 body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-left: 0;
+  justify-content: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  margin-left: 8px;
 }
 
 body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions .ghost,
