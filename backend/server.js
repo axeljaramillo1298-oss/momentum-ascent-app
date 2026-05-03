@@ -350,14 +350,14 @@ const syncSportsEvents = async () => {
     status: "ok",
     message: `Eventos sincronizados: ${saved.length}`,
   });
+  return saved;
+};
 
 const requireLegacyModules = (req, res, next) => {
   if (ENABLE_LEGACY_MODULES) {
     return next();
   }
   return res.status(410).json({ ok: false, error: "legacy_disabled" });
-};
-  return saved;
 };
 
 app.get("/health", (req, res) => {
