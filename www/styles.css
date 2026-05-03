@@ -10327,8 +10327,8 @@ body.user-panel-premium:not(.theme-female) .user-panel-nav {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 10px 18px 10px 20px;
-  border-radius: 20px;
+  padding: 9px 18px 9px 20px;
+  border-radius: 18px;
   background: rgba(3, 5, 16, 0.78);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 32px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 59, 48, 0.05);
@@ -10340,21 +10340,16 @@ body.user-panel-premium:not(.theme-female) .user-panel-nav .logo {
   position: relative;
   display: inline-flex;
   align-items: center;
-  min-height: 34px;
+  min-height: 32px;
   flex: 0 0 auto;
-  padding-left: 38px;
-  color: transparent;
+  padding-left: 34px;
+  color: #f4efe6;
   font-family: "Barlow Condensed", sans-serif;
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 900;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  background: linear-gradient(100deg, #fff 15%, #f5c04a 42%, #ff3b30 56%, #fff 80%);
-  background-size: 220% 100%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: shimV11 6s linear infinite;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.04);
 }
 
 body.user-panel-premium:not(.theme-female) .user-panel-nav .logo::before {
@@ -10362,25 +10357,25 @@ body.user-panel-premium:not(.theme-female) .user-panel-nav .logo::before {
   position: absolute;
   left: 0;
   top: 50%;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   transform: translateY(-50%);
-  border: 1px solid rgba(255, 107, 53, 0.7);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+  border: 1px solid rgba(255, 98, 36, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02), 0 0 18px rgba(255, 90, 40, 0.12);
 }
 
 body.user-panel-premium:not(.theme-female) .user-panel-nav .logo::after {
   content: "";
   position: absolute;
   left: 7px;
-  top: 3px;
-  width: 13px;
-  height: 18px;
-  border-radius: 65% 65% 70% 70% / 80% 80% 45% 45%;
-  background: linear-gradient(180deg, #ffb164 0%, #ff6b35 48%, #ff3b30 100%);
+  top: 5px;
+  width: 10px;
+  height: 14px;
+  border-radius: 68% 68% 72% 72% / 82% 82% 44% 44%;
+  background: radial-gradient(circle at 46% 24%, #ffd18d 0%, #ffb154 30%, #ff6b35 58%, #ff3b30 100%);
   transform: rotate(-18deg);
-  box-shadow: 0 0 16px rgba(255, 91, 77, 0.44);
+  box-shadow: 0 0 14px rgba(255, 91, 77, 0.34);
 }
 
 body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions {
@@ -10436,7 +10431,7 @@ body.user-panel-premium:not(.theme-female) .user-panel-nav [data-action="theme"]
   body.user-panel-premium:not(.theme-female) .user-panel-nav .logo {
     font-size: 13px;
     padding-left: 30px;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.1em;
   }
 
   body.user-panel-premium:not(.theme-female) .user-panel-nav .logo::before {
@@ -10446,7 +10441,9 @@ body.user-panel-premium:not(.theme-female) .user-panel-nav [data-action="theme"]
 
   body.user-panel-premium:not(.theme-female) .user-panel-nav .logo::after {
     width: 8px;
-    height: 8px;
+    height: 11px;
+    left: 7px;
+    top: 6px;
   }
 
   body.user-panel-premium:not(.theme-female) .user-panel-nav .nav-actions {
