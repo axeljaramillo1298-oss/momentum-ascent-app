@@ -1,105 +1,26 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Demo | Disciplina</title>
+    <title>Demo | Momentum Ascent</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="noise"></div>
     <div class="stars"></div>
-    <header class="hero page-hero">
-      <nav class="nav">
-        <div class="logo">DISCIPLINA</div>
-        <div class="nav-actions">
-          <a class="ghost" href="index.html">Inicio</a>
-          <a class="ghost" href="registro.html">Registro/Login</a>
-          <a class="ghost" href="planes.html">Planes</a>
-          <a class="primary" href="#demo">Probar ahora</a>
+    <main class="login-shell">
+      <section class="login-card">
+        <div class="login-card-header">
+          <h1 class="login-title">Demo del MVP sports</h1>
+          <p class="login-sub">La experiencia principal ya vive dentro del dashboard de picks, análisis e historial.</p>
         </div>
-      </nav>
-      <div class="hero-grid">
-        <div class="hero-copy">
-          <p class="eyebrow">Experiencia en vivo</p>
-          <h1>Demo interactivo</h1>
-          <p class="subhead">Prueba mensajes, tono y flujo real de onboarding sin salir de esta pagina.</p>
-        </div>
-      </div>
-    </header>
-
-    <main>
-      <section class="section coach-tones" id="tonos">
-        <div class="section-title"><h2>Elige tono de presion</h2><p>Simula exactamente como te hablaria el coach.</p></div>
-        <div class="tone-selector">
-          <button class="tone-btn active" data-tone="estricto">Estricto</button>
-          <button class="tone-btn" data-tone="neutral">Neutral</button>
-          <button class="tone-btn" data-tone="rudo">Rudo</button>
-        </div>
-        <div class="tone-chat" id="tone-chat"></div>
-      </section>
-
-      <section class="section coach-upgrade" id="coach-upgrade">
-        <div class="section-title">
-          <h2>Coach mejorado</h2>
-          <p>Configura personalidad, nivel de presión y gatillos de seguimiento.</p>
-        </div>
-        <div class="coach-upgrade-grid">
-          <div class="card">
-            <h3>Modo de coaching</h3>
-            <div class="coach-preset-grid">
-              <button class="ghost coach-preset active" data-coach="frio" type="button">Frio tactico</button>
-              <button class="ghost coach-preset" data-coach="estratega" type="button">Estratega</button>
-              <button class="ghost coach-preset" data-coach="empuje" type="button">Empuje fuerte</button>
-            </div>
-            <p id="coach-preview" class="coach-preview">No te felicito. Solo reviso si cumpliste.</p>
-          </div>
-          <div class="card">
-            <h3>Parametros adaptativos</h3>
-            <ul class="feature-list">
-              <li>Deteccion de dias de mayor riesgo de fallo.</li>
-              <li>Mensaje segun historial (racha, demora, omisiones).</li>
-              <li>Escalado de castigo por reincidencia.</li>
-              <li>Bloques express para gente ocupada.</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <section class="section simulator" id="simulador">
-        <div class="section-title"><h2>Simulador de coach en vivo</h2><p>Responde y mira como cambia el seguimiento.</p></div>
-        <div class="simulator-grid">
-          <div class="simulator-chat" id="sim-chat"></div>
-          <div class="simulator-controls">
-            <div class="control"><label>Tu nombre</label><input id="sim-name" type="text" placeholder="Ej. Alex" /></div>
-            <div class="control"><label>Tono</label><div class="tone-selector"><button class="tone-btn active" data-sim-tone="estricto">Estricto</button><button class="tone-btn" data-sim-tone="neutral">Neutral</button><button class="tone-btn" data-sim-tone="rudo">Rudo</button></div></div>
-            <div class="control"><label>Respuesta</label><div class="sim-buttons"><button class="ghost" data-sim-answer="si">Si cumpli</button><button class="ghost" data-sim-answer="no">No cumpli</button><button class="ghost" data-sim-answer="ignore">Ignore</button></div></div>
-            <button class="primary" id="sim-reset">Reiniciar simulador</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="section onboarding-demo" id="demo">
-        <div class="section-title"><h2>Demo de registro por WhatsApp</h2><p>Flujo por pasos con tiempo limite de respuesta. "Modo especial" define como se te exige y "Plan inicial" define el nivel de acompanamiento.</p></div>
-        <div class="demo-grid">
-          <div class="demo-chat" id="demo-chat"></div>
-          <div class="demo-controls">
-            <div class="demo-timer"><span>Tiempo restante para responder</span><strong id="demo-countdown">10:00</strong></div>
-            <div class="demo-steps" id="demo-steps"></div>
-            <div class="demo-buttons" id="demo-buttons"></div>
-            <button class="ghost" id="demo-back">Anterior</button>
-            <button class="primary" id="demo-next">Siguiente</button>
-            <button class="ghost" id="demo-reset">Reiniciar demo</button>
-          </div>
+        <div class="sports-hero-actions">
+          <a class="primary" href="user-hoy.html">Ver picks de hoy</a>
+          <a class="ghost" href="admin.html">Abrir admin</a>
         </div>
       </section>
     </main>
-
-    <footer class="footer"><div>Momentum Ascent • Sistema de disciplina</div></footer>
-    <div class="scroll-progress" aria-hidden="true"></div>
     <script src="app.js"></script>
   </body>
 </html>
-
-
-

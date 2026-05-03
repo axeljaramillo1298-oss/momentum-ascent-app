@@ -3,98 +3,41 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Nutricion y Habitos | Disciplina</title>
+    <title>Mercados | Momentum Ascent</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="noise"></div>
     <div class="stars"></div>
-
     <header class="hero page-hero nutrition-hero">
       <nav class="nav">
-        <div class="logo">DISCIPLINA</div>
+        <div class="logo">MOMENTUM ASCENT</div>
         <div class="nav-actions">
           <a class="ghost" href="index.html">Inicio</a>
-          <a class="ghost" href="planes.html">Planes</a>
-          <a class="ghost" href="sistema.html">Sistema</a>
-          <a class="ghost" href="https://app.momentumascent.com/admin.html" data-role-only="admin">Admin</a>
-          <a class="primary" href="user-dieta.html">Mi dieta</a>
+          <a class="ghost" href="planes.html">Membresia</a>
+          <a class="ghost" href="sistema.html">Metodologia</a>
+          <a class="primary" href="user-dieta.html">Ver cobertura</a>
         </div>
       </nav>
       <div class="hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow">Nutricion y habitos</p>
-          <h1>Nutricion, calorias y agua</h1>
-          <p class="subhead">Modulo inicial con seguimiento diario por fecha: agua, calorias, dieta y score del coach.</p>
-          <p class="nutrition-date" id="nutrition-date"></p>
+          <p class="eyebrow">Mercados y criterios</p>
+          <h1>Como leemos los mercados</h1>
+          <p class="subhead">Moneyline, spreads, dobles oportunidades y totales se priorizan según el tipo de evento y la calidad del dato disponible.</p>
         </div>
       </div>
     </header>
-
     <main>
-      <section class="section" id="nutricion-idea" data-role-hide="admin">
-        <div class="section-title"><h2>Tracker rapido diario</h2><p>Prototipo simple para validar el flujo antes de convertirlo en un modulo completo.</p></div>
-        <div class="nutrition-grid">
-          <article class="card nutrition-card">
-            <h3>Agua de hoy</h3>
-            <p class="nutrition-value"><span id="water-value">0</span> / 8 vasos</p>
-            <div class="nutrition-actions">
-              <button class="primary" id="water-plus" type="button">+1 vaso</button>
-              <button class="ghost" id="water-reset" type="button">Reiniciar</button>
-            </div>
-          </article>
-          <article class="card nutrition-card">
-            <h3>Calorias de hoy</h3>
-            <p class="nutrition-value"><span id="calories-value">0</span> kcal</p>
-            <div class="nutrition-actions">
-              <button class="ghost" data-calories="200" type="button">+200</button>
-              <button class="ghost" data-calories="450" type="button">+450</button>
-              <button class="ghost" id="calories-reset" type="button">Reset</button>
-            </div>
-          </article>
-          <article class="card nutrition-card">
-            <h3>Dieta del dia</h3>
-            <p class="nutrition-value"><span id="diet-status">Pendiente</span></p>
-            <ul class="feature-list">
-              <li>Desayuno alto en proteina.</li>
-              <li>Comida con verduras + carbo controlado.</li>
-              <li>Cena ligera y temprano.</li>
-            </ul>
-            <button class="primary" id="diet-toggle" type="button">Marcar dieta cumplida</button>
-            <button class="ghost" id="training-toggle" type="button">Marcar entrenamiento cumplido</button>
-            <p class="nutrition-meta">Entrenamiento: <strong id="training-status">Pendiente</strong></p>
-          </article>
+      <section class="section">
+        <div class="sports-analysis-grid">
+          <article class="sports-analysis-card"><h3>Moneyline</h3><p class="sports-pick-analysis">Se usa cuando la lectura de fuerza relativa del evento es suficientemente clara.</p></article>
+          <article class="sports-analysis-card"><h3>Totales</h3><p class="sports-pick-analysis">Tiene sentido cuando el ritmo, la forma reciente o la producción ofensiva sostienen una hipótesis razonable.</p></article>
+          <article class="sports-analysis-card"><h3>Doble oportunidad</h3><p class="sports-pick-analysis">Útil para escenarios conservadores cuando hay señales mixtas o volatilidad en el resultado final.</p></article>
+          <article class="sports-analysis-card"><h3>Spreads</h3><p class="sports-pick-analysis">Aplican mejor cuando hay diferencia de nivel o contexto estadístico útil para proyectar margen.</p></article>
         </div>
-      </section>
-
-      <section class="section" data-role-hide="admin">
-        <div class="section-title"><h2>Ideas para siguiente version</h2><p>Solo concepto por ahora, listo para convertirse en modulo completo.</p></div>
-        <div class="roadmap-grid">
-          <article class="roadmap-card"><h3>Registro de alimentos</h3><ul><li>Buscador rapido de comidas.</li><li>Macros por porcion.</li><li>Favoritos frecuentes.</li></ul></article>
-          <article class="roadmap-card"><h3>Hidratacion inteligente</h3><ul><li>Objetivo dinamico por peso/actividad.</li><li>Recordatorios por horario.</li><li>Resumen semanal.</li></ul></article>
-          <article class="roadmap-card"><h3>Dieta con disciplina</h3><ul><li>Checklist diario de adherencia.</li><li>Alertas por desorden.</li><li>Feedback del coach.</li></ul></article>
-        </div>
-      </section>
-
-      <section class="section" data-role-hide="admin">
-        <div class="section-title"><h2>Coach Score diario</h2><p>Puntaje de disciplina combinado con entrenamiento, hidratacion y dieta.</p></div>
-        <div class="coach-score-card card">
-          <p class="nutrition-value"><span id="coach-score">0</span> / 100</p>
-          <p id="coach-score-summary" class="coach-preview">Hoy aun no tienes registros suficientes.</p>
-        </div>
-      </section>
-
-      <section class="section" data-role-only="admin">
-        <article class="card">
-          <h3>Operacion de coach centralizada</h3>
-          <p>La gestion operativa de usuarios, ajustes de dieta, seguimiento y timeline ya vive en el Panel Coach dedicado.</p>
-          <a class="primary" href="https://app.momentumascent.com/admin.html">Abrir Panel Coach</a>
-        </article>
       </section>
     </main>
-
-    <footer class="footer"><div>Momentum Ascent • Sistema de disciplina</div></footer>
-    <div class="scroll-progress" aria-hidden="true"></div>
+    <footer class="footer"><div>Momentum Ascent • Markets Layer</div></footer>
     <script src="app.js"></script>
   </body>
 </html>

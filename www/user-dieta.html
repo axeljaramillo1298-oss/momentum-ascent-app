@@ -3,109 +3,71 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Nutricion | Momentum Ascent</title>
+    <title>Cobertura | Momentum Ascent</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="user-panel-premium">
-    <main class="user-panel-shell">
-      <header class="user-panel-top">
+  <body class="user-panel-premium sports-dashboard-page">
+    <main class="user-panel-shell sports-dashboard-shell">
+      <header class="user-panel-top sports-dashboard-top">
         <nav class="user-panel-nav">
           <div class="logo">MOMENTUM ASCENT</div>
           <div class="nav-actions">
-            <a class="ghost up-nav-link" href="user-hoy.html" data-nav="hoy">Hoy</a>
-            <a class="ghost up-nav-link" href="user-rutinas.html" data-nav="rutinas">Rutinas</a>
-            <a class="ghost up-nav-link" href="user-progreso.html" data-nav="progreso">Progreso</a>
-            <a class="ghost up-nav-link up-nav-active" href="user-dieta.html" data-nav="nutricion">Nutricion</a>
-            <a class="ghost up-nav-link" href="user-checkin.html" data-nav="perfil">Perfil</a>
+            <a class="ghost up-nav-link" href="user-hoy.html">Picks</a>
+            <a class="ghost up-nav-link" href="user-rutinas.html">Analisis</a>
+            <a class="ghost up-nav-link" href="user-progreso.html">Historial</a>
+            <a class="ghost up-nav-link up-nav-active" href="user-dieta.html">Cobertura</a>
+            <a class="ghost up-nav-link" href="user-checkin.html">Cuenta</a>
             <button class="ghost" type="button" data-action="theme">Cambiar vista</button>
           </div>
         </nav>
-        <div class="user-panel-hero">
-          <p class="eyebrow">MOMENTUM INDEX</p>
-          <h1>NUTRICION ACTIVA</h1>
-          <p class="subhead">Tu mapa nutricional semanal, con foco diario en adherencia, energia y ejecucion real.</p>
+        <div class="user-panel-hero sports-dashboard-hero">
+          <p class="eyebrow">MARKETS + COVERAGE</p>
+          <h1>COBERTURA</h1>
+          <p class="subhead">Resumen del alcance actual del MVP: deportes, mercados, fuentes de datos y reglas operativas para generar picks.</p>
+          <p class="sports-disclaimer">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</p>
         </div>
       </header>
 
-      <section class="section routine-prime-section">
-        <div class="routine-prime-shell diet-prime-shell">
-          <div class="routine-prime-copy">
-            <span class="routine-prime-kicker">Nutricion en foco</span>
-            <h2>No abras la dieta para leer bonito. Abrela para comer con estructura.</h2>
-            <p>Tu bloque nutricional va primero, con una lectura más clara y orientada al día activo para que sepas exactamente qué toca hoy dentro de tu semana.</p>
-          </div>
-          <div class="routine-prime-rail">
-            <div class="routine-prime-stat">
-              <span>Orden</span>
-              <strong>Dieta primero</strong>
+      <section class="section sports-dashboard-section">
+        <div class="sports-analysis-grid">
+          <article class="sports-analysis-card">
+            <div class="sports-analysis-top">
+              <span class="sports-league-pill">DEPORTES</span>
             </div>
-            <div class="routine-prime-stat">
-              <span>Meta</span>
-              <strong>Cumplir la semana</strong>
+            <h3>Cobertura actual</h3>
+            <p class="sports-pick-analysis">El MVP ya contempla futbol y basquetbol con estructura lista para ampliar a más ligas o deportes mediante la capa `sportsApiService`.</p>
+          </article>
+          <article class="sports-analysis-card">
+            <div class="sports-analysis-top">
+              <span class="sports-league-pill">MERCADOS</span>
             </div>
-            <div class="routine-prime-stat">
-              <span>Salida</span>
-              <strong>Comer y registrar</strong>
+            <h3>Mercados sugeridos</h3>
+            <p class="sports-pick-analysis">Moneyline, doble oportunidad, totales, spreads y otros mercados compatibles con los datos disponibles para cada evento.</p>
+          </article>
+          <article class="sports-analysis-card">
+            <div class="sports-analysis-top">
+              <span class="sports-league-pill">FUENTES</span>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section admin-grid">
-        <article class="card">
-          <h3>Tu dieta semanal primero</h3>
-          <div id="user-diet-plan" class="admin-list"></div>
-        </article>
-        <article class="card" id="user-plan-diet-panel"></article>
-        <article class="card">
-          <h3>Estado de hoy</h3>
-          <ul class="stat-list">
-            <li><span>Agua</span><strong id="user-diet-water">-</strong></li>
-            <li><span>Calorias</span><strong id="user-diet-calories">-</strong></li>
-            <li><span>Dieta</span><strong id="user-diet-status">-</strong></li>
-            <li><span>Score</span><strong id="user-diet-score">-</strong></li>
-          </ul>
-        </article>
-        <article class="card">
-          <h3>Macros del dia</h3>
-          <div id="macro-bars-container"></div>
-        </article>
-        <article class="card">
-          <h3>Acciones rapidas</h3>
-          <div class="role-actions">
-            <button class="ghost" type="button" id="diet-quick-water">+1 vaso</button>
-            <button class="ghost" type="button" id="diet-quick-300">+300 kcal</button>
-            <button class="ghost" type="button" id="diet-quick-done">Marcar dieta</button>
-            <button class="ghost" type="button" id="diet-quick-training">Marcar entreno</button>
-          </div>
-          <p class="reg-hint" id="diet-action-feedback" aria-live="polite"></p>
-        </article>
-      </section>
-
-      <section class="section" style="padding-top:0;">
-        <div class="today-triple-wrap">
-          <div class="triple-checkin-title">Progreso de hoy</div>
-          <div class="triple-checkin-container"></div>
+            <h3>API o mock</h3>
+            <p class="sports-pick-analysis">Si no hay API key configurada, el sistema usa eventos mock realistas para no bloquear desarrollo local ni la demo del flujo completo.</p>
+          </article>
+          <article class="sports-analysis-card">
+            <div class="sports-analysis-top">
+              <span class="sports-league-pill">COSTO</span>
+            </div>
+            <h3>Control de llamadas</h3>
+            <p class="sports-pick-analysis">La IA no se ejecuta en cada carga del frontend. Primero se reutiliza el pick guardado y solo se genera uno nuevo cuando hace falta o cuando admin lo fuerza.</p>
+          </article>
         </div>
       </section>
     </main>
 
     <nav class="bottom-nav" aria-label="Navegacion principal">
-      <a class="bottom-nav-item" href="user-hoy.html">
-        <span class="bottom-nav-icon">HO</span><span>Hoy</span>
-      </a>
-      <a class="bottom-nav-item" href="user-rutinas.html">
-        <span class="bottom-nav-icon">RT</span><span>Rutinas</span>
-      </a>
-      <a class="bottom-nav-item" href="user-progreso.html">
-        <span class="bottom-nav-icon">PR</span><span>Progreso</span>
-      </a>
-      <a class="bottom-nav-item bottom-nav-active" href="user-dieta.html">
-        <span class="bottom-nav-icon">NU</span><span>Nutricion</span>
-      </a>
-      <a class="bottom-nav-item" href="user-checkin.html">
-        <span class="bottom-nav-icon">PF</span><span>Perfil</span>
-      </a>
+      <a class="bottom-nav-item" href="user-hoy.html"><span class="bottom-nav-icon">🎯</span><span>Picks</span></a>
+      <a class="bottom-nav-item" href="user-rutinas.html"><span class="bottom-nav-icon">🧠</span><span>Analisis</span></a>
+      <a class="bottom-nav-item" href="user-progreso.html"><span class="bottom-nav-icon">📚</span><span>Historial</span></a>
+      <a class="bottom-nav-item bottom-nav-active" href="user-dieta.html"><span class="bottom-nav-icon">🌐</span><span>Cobertura</span></a>
+      <a class="bottom-nav-item" href="user-checkin.html"><span class="bottom-nav-icon">👤</span><span>Cuenta</span></a>
     </nav>
 
     <script src="app.js"></script>

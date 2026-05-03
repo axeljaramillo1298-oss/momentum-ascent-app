@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS routines (
   title TEXT NOT NULL,
   target TEXT NOT NULL,
   duration TEXT NOT NULL,
+  week_key TEXT NOT NULL DEFAULT '',
   created_by TEXT DEFAULT 'admin',
   created_at TIMESTAMPTZ NOT NULL
 );
@@ -47,6 +48,8 @@ CREATE TABLE IF NOT EXISTS assignments (
   routine TEXT DEFAULT '',
   diet TEXT DEFAULT '',
   message TEXT DEFAULT '',
+  week_key TEXT NOT NULL DEFAULT '',
+  assigned_for_week TEXT NOT NULL DEFAULT '',
   created_by TEXT DEFAULT 'admin',
   updated_at TIMESTAMPTZ NOT NULL
 );
@@ -103,6 +106,18 @@ CREATE TABLE IF NOT EXISTS coach_whatsapp_flows (
   updated_at TIMESTAMPTZ NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS onboarding_profiles (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  answers_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT PRIMARY KEY,
+  value_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS ai_usage_logs (
   id BIGSERIAL PRIMARY KEY,
   actor_email TEXT NOT NULL,
@@ -116,3 +131,51 @@ CREATE TABLE IF NOT EXISTS ai_usage_logs (
   context_chars INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS sports_events (
+  id BIGSERIAL PRIMARY KEY,
+  external_id TEXT NOT NULL UNIQUE,
+  sport TEXT NOT NULL,
+  league TEXT NOT NULL,
+  home_team TEXT NOT NULL,
+  away_team TEXT NOT NULL,
+  event_date TIMESTAMPTZ NOT NULL,
+  status TEXT NOT NULL DEFAULT 'scheduled',
+  raw_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS event_stats (
+  id BIGSERIAL PRIMARY KEY,
+  event_id BIGINT NOT NULL REFERENCES sports_events(id) ON DELETE CASCADE,
+  source_api TEXT NOT NULL,
+  stats_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ai_picks (
+  id BIGSERIAL PRIMARY KEY,
+  event_id BIGINT NOT NULL REFERENCES sports_events(id) ON DELETE CASCADE,
+  pick TEXT NOT NULL,
+  market TEXT NOT NULL,
+  confidence INTEGER NOT NULL DEFAULT 0,
+  analysis TEXT NOT NULL DEFAULT '',
+  risk_level TEXT NOT NULL DEFAULT 'MEDIO',
+  model_used TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'generated',
+  created_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS api_sync_logs (
+  id BIGSERIAL PRIMARY KEY,
+  source_api TEXT NOT NULL,
+  endpoint TEXT NOT NULL,
+  status TEXT NOT NULL,
+  message TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL
+);
+
+ALTER TABLE routines ADD COLUMN IF NOT EXISTS week_key TEXT NOT NULL DEFAULT '';
+ALTER TABLE assignments ADD COLUMN IF NOT EXISTS week_key TEXT NOT NULL DEFAULT '';
+ALTER TABLE assignments ADD COLUMN IF NOT EXISTS assigned_for_week TEXT NOT NULL DEFAULT '';

@@ -1,9 +1,9 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Sistema | Disciplina</title>
+    <title>Metodologia | Momentum Ascent</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -11,75 +11,39 @@
     <div class="stars"></div>
     <header class="hero page-hero">
       <nav class="nav">
-        <div class="logo">DISCIPLINA</div>
+        <div class="logo">MOMENTUM ASCENT</div>
         <div class="nav-actions">
           <a class="ghost" href="index.html">Inicio</a>
           <a class="ghost" href="demo.html">Demo</a>
-          <a class="ghost" href="planes.html">Planes</a>
-          <a class="primary" href="https://app.momentumascent.com/registro.html#login">Entrar</a>
+          <a class="ghost" href="planes.html">Membresia</a>
+          <a class="primary" href="registro.html#login">Entrar</a>
         </div>
       </nav>
       <div class="hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow">Arquitectura del producto</p>
+          <p class="eyebrow">Metodologia del producto</p>
           <h1>Como funciona el sistema</h1>
-          <p class="subhead">Desde la psicologia del habito hasta la rutina diaria y las reglas que sostienen el cumplimiento.</p>
+          <p class="subhead">API deportiva, almacenamiento persistente, generación IA y consumo frontend en un flujo simple orientado a MVP.</p>
         </div>
       </div>
     </header>
-
     <main>
-      <section class="section problem" id="problema">
-        <div class="section-title"><h2>El problema no es informacion</h2><p>Es falta de constancia y seguimiento real.</p></div>
+      <section class="section">
         <div class="problem-grid">
-          <div class="card"><h3>Apps ignorables</h3><p>Notificaciones que se apagan rapido.</p></div>
-          <div class="card"><h3>Sin seguimiento</h3><p>Sin control externo el compromiso cae.</p></div>
-          <div class="card"><h3>Rutinas sin responsabilidad</h3><p>No hay consecuencia y se abandona.</p></div>
+          <div class="card"><h3>1. Eventos</h3><p>Se sincronizan desde API real o mock realista cuando no hay credenciales configuradas.</p></div>
+          <div class="card"><h3>2. Base de datos</h3><p>Los eventos, stats y picks quedan guardados para reutilización y contexto histórico.</p></div>
+          <div class="card"><h3>3. IA</h3><p>La IA genera un pick solo cuando hace falta y devuelve market, confianza, riesgo y análisis.</p></div>
         </div>
       </section>
-
-      <section class="section system" id="sistema">
-        <div class="section-title"><h2>Sistema de disciplina externa</h2><p>WhatsApp como canal central para seguimiento diario.</p></div>
-        <div class="system-grid">
-          <div class="panel"><h3>Check-in obligatorio</h3><p>Respuesta binaria: Si o No.</p></div>
-          <div class="panel"><h3>Tiempo limite</h3><p>10 minutos para responder.</p></div>
-          <div class="panel"><h3>Castigo simple</h3><p>Si fallas hoy, mañana hay bloque extra.</p></div>
-          <div class="panel"><h3>Coach silencioso</h3><p>Si cumples, silencio. Si fallas, aparece.</p></div>
-        </div>
-      </section>
-
-      <section class="section habit" id="psicologia">
-        <div class="section-title"><h2>Psicologia del habito</h2><p>Racha, identidad y presion social en favor de tu constancia.</p></div>
-        <div class="habit-grid">
-          <div class="card"><h3>Racha diaria</h3><p>Cumplir te refuerza como persona disciplinada.</p></div>
-          <div class="card"><h3>Ranking anonimo</h3><p>Comparacion semanal sin exponer identidad.</p></div>
-          <div class="card"><h3>Audios clave</h3><p>Mensajes cortos en momentos de quiebre.</p></div>
-        </div>
-      </section>
-
-      <section class="section training" id="entrenamiento">
-        <div class="section-title"><h2>Entrenamiento realista</h2><p>20-40 minutos, progresivo, sin friccion.</p></div>
-        <div class="training-grid">
-          <div class="workout"><h3>Base 20 min</h3><ul><li>Calentamiento 4 min</li><li>Fuerza 10 min</li><li>Cardio 6 min</li></ul></div>
-          <div class="workout"><h3>Castigo 6-8 min</h3><ul><li>3 rondas</li><li>Sin equipo</li><li>Activacion por fallo</li></ul></div>
-          <div class="workout"><h3>Version gym</h3><ul><li>Fuerza basica</li><li>Progresion semanal</li><li>Simple y clara</li></ul></div>
-        </div>
-      </section>
-
-      <section class="section final-cta">
-        <div class="cta-card">
-          <h2>Ya viste el sistema. Ahora activalo.</h2>
-          <a class="primary" href="https://app.momentumascent.com/registro.html#login">Entrar o registrarte</a>
+      <section class="section">
+        <div class="problem-grid">
+          <div class="card"><h3>4. Frontend</h3><p>El dashboard muestra picks del día, análisis e historial sin recalcular todo en cada carga.</p></div>
+          <div class="card"><h3>5. Control de costo</h3><p>Si ya existe pick reciente para el evento, se reutiliza en lugar de volver a llamar a la IA.</p></div>
+          <div class="card"><h3>6. Disclaimer</h3><p>Todo el producto se presenta como contenido informativo, no como promesa de ganancia.</p></div>
         </div>
       </section>
     </main>
-
-    <footer class="footer"><div>Momentum Ascent • Sistema de disciplina</div></footer>
-    <div class="scroll-progress" aria-hidden="true"></div>
+    <footer class="footer"><div>Momentum Ascent • Sports Picks Methodology</div></footer>
     <script src="app.js"></script>
   </body>
 </html>
-
-
-
-

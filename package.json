@@ -1,8 +1,8 @@
 {
-  "name": "fitnesapk",
+  "name": "momentum-ascent",
   "version": "1.0.0",
   "private": true,
-  "description": "APK wrapper for Fitnespag using Capacitor",
+  "description": "Momentum Ascent MVP de picks deportivos con IA",
   "scripts": {
     "start": "node backend/server.js",
     "backend": "node backend/server.js",

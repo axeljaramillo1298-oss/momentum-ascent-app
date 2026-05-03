@@ -3,79 +3,77 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Perfil | Momentum Ascent</title>
+    <title>Cuenta | Momentum Ascent</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="user-panel-premium">
-    <main class="user-panel-shell">
-      <header class="user-panel-top">
+  <body class="user-panel-premium sports-dashboard-page">
+    <main class="user-panel-shell sports-dashboard-shell">
+      <header class="user-panel-top sports-dashboard-top">
         <nav class="user-panel-nav">
           <div class="logo">MOMENTUM ASCENT</div>
           <div class="nav-actions">
-            <a class="ghost up-nav-link" href="user-hoy.html" data-nav="hoy">Hoy</a>
-            <a class="ghost up-nav-link" href="user-rutinas.html" data-nav="rutinas">Rutinas</a>
-            <a class="ghost up-nav-link" href="user-progreso.html" data-nav="progreso">Progreso</a>
-            <a class="ghost up-nav-link" href="user-dieta.html" data-nav="nutricion">Nutricion</a>
-            <a class="ghost up-nav-link up-nav-active" href="user-checkin.html" data-nav="perfil">Perfil</a>
+            <a class="ghost up-nav-link" href="user-hoy.html">Picks</a>
+            <a class="ghost up-nav-link" href="user-rutinas.html">Analisis</a>
+            <a class="ghost up-nav-link" href="user-progreso.html">Historial</a>
+            <a class="ghost up-nav-link" href="user-dieta.html">Cobertura</a>
+            <a class="ghost up-nav-link up-nav-active" href="user-checkin.html">Cuenta</a>
             <button class="ghost" type="button" data-action="theme">Cambiar vista</button>
           </div>
         </nav>
-        <div class="user-panel-hero">
-          <p class="eyebrow">MOMENTUM INDEX</p>
-          <h1>MI PERFIL</h1>
-          <p class="subhead">Tu progreso, nivel, apuesta activa y evidencia de entrenamiento.</p>
+        <div class="user-panel-hero sports-dashboard-hero">
+          <p class="eyebrow">ACCOUNT + ACCESS</p>
+          <h1>MI CUENTA</h1>
+          <p class="subhead">Acceso actual, plan visible, puntos operativos del producto y siguientes pasos dentro del MVP sports.</p>
         </div>
       </header>
 
-      <section class="section" style="padding-bottom:0;">
-        <div class="profile-header-card" id="profile-header-card">
-          <div class="profile-avatar">?</div>
-          <div class="profile-name">Cargando...</div>
+      <section class="section sports-dashboard-section">
+        <div class="sports-dashboard-grid">
+          <section class="sports-main-column">
+            <article class="sports-analysis-card">
+              <div class="sports-analysis-top">
+                <span class="sports-league-pill">ESTADO</span>
+              </div>
+              <h3>Cuenta conectada al dashboard</h3>
+              <p class="sports-pick-analysis">Tu sesión reutiliza la autenticación existente del proyecto. Si tienes permisos admin, también puedes operar sincronización y generación desde el panel de administración.</p>
+            </article>
+            <article class="sports-analysis-card">
+              <div class="sports-analysis-top">
+                <span class="sports-league-pill">MEMBRESIA</span>
+              </div>
+              <h3>Planes del MVP</h3>
+              <p class="sports-pick-analysis">Los planes actuales diferencian acceso básico, AI Picks, Premium y Comunidad. La interfaz ya fue reciclada para el nuevo contexto sports sin rehacer auth ni pagos.</p>
+            </article>
+          </section>
+
+          <aside class="sports-side-column">
+            <article class="card sports-side-card">
+              <h3>Siguientes pasos</h3>
+              <ul class="sports-side-list">
+                <li>Revisar picks del día en el dashboard principal.</li>
+                <li>Consultar análisis detallado por evento.</li>
+                <li>Usar historial para revisar consistencia operativa.</li>
+                <li>Escalar a plan premium si necesitas más cobertura.</li>
+              </ul>
+            </article>
+            <article class="card sports-side-card">
+              <h3>Acciones</h3>
+              <div class="sports-hero-actions">
+                <a class="primary" href="planes.html">Ver membresia</a>
+                <a class="ghost" href="user-hoy.html">Volver a picks</a>
+              </div>
+            </article>
+          </aside>
         </div>
-      </section>
-
-      <section class="section admin-grid">
-        <article class="card">
-          <div class="section-header-row">
-            <h3>Modo Apuesta</h3>
-          </div>
-          <div class="bet-status-card"></div>
-        </article>
-
-        <article class="card">
-          <h3>Nuevo check-in con foto</h3>
-          <form id="user-checkin-form" class="admin-form">
-            <label>Foto<input id="user-checkin-file" type="file" accept="image/*" capture="environment" required /></label>
-            <label>Nota<input id="user-checkin-note" type="text" placeholder="Ej. Full body 30 min" required /></label>
-            <img id="user-checkin-preview" class="photo-preview" alt="preview" />
-            <button class="primary" type="submit">Guardar check-in</button>
-            <p class="reg-feedback" id="user-checkin-feedback" aria-live="polite"></p>
-          </form>
-        </article>
-
-        <article class="card">
-          <h3>Historial reciente</h3>
-          <div id="user-checkin-list" class="admin-list"></div>
-        </article>
       </section>
     </main>
 
     <nav class="bottom-nav" aria-label="Navegacion principal">
-      <a class="bottom-nav-item" href="user-hoy.html">
-        <span class="bottom-nav-icon">HO</span><span>Hoy</span>
-      </a>
-      <a class="bottom-nav-item" href="user-rutinas.html">
-        <span class="bottom-nav-icon">RT</span><span>Rutinas</span>
-      </a>
-      <a class="bottom-nav-item" href="user-progreso.html">
-        <span class="bottom-nav-icon">PR</span><span>Progreso</span>
-      </a>
-      <a class="bottom-nav-item" href="user-dieta.html">
-        <span class="bottom-nav-icon">NU</span><span>Nutricion</span>
-      </a>
-      <a class="bottom-nav-item bottom-nav-active" href="user-checkin.html">
-        <span class="bottom-nav-icon">PF</span><span>Perfil</span>
-      </a>
+      <a class="bottom-nav-item" href="user-hoy.html"><span class="bottom-nav-icon">🎯</span><span>Picks</span></a>
+      <a class="bottom-nav-item" href="user-rutinas.html"><span class="bottom-nav-icon">🧠</span><span>Analisis</span></a>
+      <a class="bottom-nav-item" href="user-progreso.html"><span class="bottom-nav-icon">📚</span><span>Historial</span></a>
+      <a class="bottom-nav-item" href="user-dieta.html"><span class="bottom-nav-icon">🌐</span><span>Cobertura</span></a>
+      <a class="bottom-nav-item bottom-nav-active" href="user-checkin.html"><span class="bottom-nav-icon">👤</span><span>Cuenta</span></a>
     </nav>
 
     <script src="app.js"></script>

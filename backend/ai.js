@@ -24,14 +24,14 @@ const buildFallbackPlan = ({ users = [], prompt = "", context = "", mode = "admi
   const providerNote =
     mode === "ai_only"
       ? "Modo respaldo IA directo."
-      : "Modo respaldo coach + IA, listo para editar antes de asignar.";
+      : "Modo respaldo operador + IA, listo para editar antes de publicar.";
 
   return {
     provider: "fallback",
     sport: basePlan.sportLabel,
     routineText: [basePlan.routineText, `Destino: ${names}.`, providerNote].filter(Boolean).join("\n"),
     dietText: [basePlan.dietText, context ? `Contexto aplicado: ${safeStr(context).slice(0, 220)}.` : ""].filter(Boolean).join("\n"),
-    messageText: basePlan.messageText || `Momentum check: ${names}, ya tienes plan asignado. Ejecuta hoy y reporta check-in.`,
+    messageText: basePlan.messageText || `Momentum update: ${names}, ya tienes una sugerencia base lista para revisar.`,
   };
 };
 
@@ -132,26 +132,26 @@ async function generateAiPlan(payload = {}) {
 
   if (!apiKey) throw new Error("openai_key_missing");
 
-  const coachStyle = mode === "ai_only" ? "coach IA directo" : "coach IA con validacion de admin";
+  const coachStyle = mode === "ai_only" ? "asistente IA directo" : "asistente IA con validacion de admin";
   const userSummary = users
     .map((u, idx) => `${idx + 1}. ${safeStr(u.name) || "User"} | ${safeStr(u.email)} | plan:${safeStr(u.plan) || "n/a"}`)
     .join("\n");
 
   const systemPrompt = [
-    "Eres un coach fitness y nutricion para una app.",
+    "Eres un asistente interno para una plataforma digital.",
     "Debes responder SOLO JSON valido con esta estructura:",
     '{"routineText":"...","dietText":"...","messageText":"..."}',
-    "Texto en espanol, concreto, orientado a ejecucion diaria.",
+    "Texto en espanol, concreto y util para el operador.",
     "No uses markdown.",
   ].join(" ");
 
   const userPrompt = [
     `Modo: ${coachStyle}.`,
     `Usuarios:\n${userSummary || "Sin usuarios especificos"}`,
-    `Objetivo del admin: ${prompt || "Plan general de recomposicion corporal"}`,
+    `Objetivo del admin: ${prompt || "Generar una sugerencia estructurada"}`,
     `Contexto extra: ${context || "Sin contexto"}`,
-    "Genera rutina y dieta aplicables desde hoy.",
-    "messageText debe ser corto para WhatsApp y tono firme.",
+    "Genera contenido breve y estructurado usando el contexto disponible.",
+    "messageText debe ser corto y util como nota operativa.",
   ].join("\n\n");
 
   const modelsToTry = [model, ...fallbackModels.filter((m) => m !== model)];

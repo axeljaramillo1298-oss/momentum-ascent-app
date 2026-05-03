@@ -1,6 +1,57 @@
 ﻿const THEME_KEY = "discipline_theme";
 const BRAND_NAME = "Momentum Ascent";
 const ONBOARDING_DONE_STORAGE_KEY = "discipline_onboarding_done";
+const ENABLE_LEGACY_EXPERIENCE = false;
+
+const LEGACY_TEXT_REPLACEMENTS = [
+  [/Disciplina WhatsApp Coach/gi, BRAND_NAME],
+  [/\bRutinas?\b/gi, "Analisis"],
+  [/\bNutrici[oó]n\b/gi, "Cobertura"],
+  [/\bDieta\b/gi, "Cobertura"],
+  [/\bCheck-?in\b/gi, "Cuenta"],
+  [/\bEntrenamiento\b/gi, "Analisis"],
+  [/\bRacha\b/gi, "Historial"],
+  [/\bDisciplina\b/gi, "Momentum"],
+  [/\bCalor[ií]as\b/gi, "metricas"],
+  [/onboarding fitness/gi, "flujo anterior"],
+];
+
+const replaceLegacyCopy = (value) => {
+  let text = String(value || "");
+  for (const [pattern, replacement] of LEGACY_TEXT_REPLACEMENTS) {
+    text = text.replace(pattern, replacement);
+  }
+  return text;
+};
+
+const sanitizeLegacyVisibleCopy = () => {
+  if (!document.body) return;
+  if (document.title) {
+    document.title = replaceLegacyCopy(document.title).replace(/Disciplina[^|]*/i, BRAND_NAME);
+  }
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  let node = walker.nextNode();
+  while (node) {
+    const parentTag = String(node.parentNode?.nodeName || "").toUpperCase();
+    if (!["SCRIPT", "STYLE", "NOSCRIPT", "TEXTAREA"].includes(parentTag)) {
+      const nextValue = replaceLegacyCopy(node.nodeValue);
+      if (nextValue !== node.nodeValue) {
+        node.nodeValue = nextValue;
+      }
+    }
+    node = walker.nextNode();
+  }
+  document.querySelectorAll("[title],[aria-label],[placeholder],[alt]").forEach((el) => {
+    ["title", "aria-label", "placeholder", "alt"].forEach((attr) => {
+      const current = el.getAttribute(attr);
+      if (!current) return;
+      const nextValue = replaceLegacyCopy(current);
+      if (nextValue !== current) {
+        el.setAttribute(attr, nextValue);
+      }
+    });
+  });
+};
 
 const applyBranding = () => {
   document.querySelectorAll(".logo").forEach((el) => {
@@ -68,6 +119,17 @@ const showBrandSplash = () => {
 applyBranding();
 applyAppIcon();
 showBrandSplash();
+sanitizeLegacyVisibleCopy();
+if (typeof MutationObserver !== "undefined" && document.body) {
+  const legacyCopyObserver = new MutationObserver(() => sanitizeLegacyVisibleCopy());
+  legacyCopyObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ["title", "aria-label", "placeholder", "alt"],
+  });
+}
 
 const applyTheme = (theme) => {
   const normalized = theme === "female" ? "female" : "male";
@@ -311,25 +373,25 @@ const PLAN_CATALOG = {
     id: "free",
     label: "Free",
     price: "$0 / mes",
-    includes: ["Check-in diario", "Rutina base", "Tracking esencial"],
+    includes: ["Picks del dia", "Vista general", "Historial basico"],
   },
   ai_coach: {
     id: "ai_coach",
-    label: "Coach IA",
+    label: "AI Picks",
     price: "$19 / mes",
-    includes: ["Rutinas IA adaptativas", "Ajuste semanal", "Soporte inteligente"],
+    includes: ["Analisis IA ampliado", "Mas picks por jornada", "Historial extendido"],
   },
   coach_humano: {
     id: "coach_humano",
-    label: "Coach + Humano",
+    label: "Premium",
     price: "$59 / mes",
-    includes: ["IA + revision humana", "Asignaciones personalizadas", "Alerta directa al coach"],
+    includes: ["Cobertura ampliada", "Picks premium", "Prioridad operativa"],
   },
   retos: {
     id: "retos",
-    label: "Retos",
+    label: "Comunidad",
     price: "$29 / 30 dias",
-    includes: ["Ranking semanal", "Retos diarios", "Sistema de squad"],
+    includes: ["Ranking semanal", "Comunidad", "Picks compartidos"],
   },
 };
 
@@ -338,9 +400,10 @@ function mapLegacyPlanToId(value) {
     .trim()
     .toLowerCase();
   if (!raw) return "free";
-  if (raw.includes("coach + humano") || raw.includes("coach humano") || raw.includes("premium")) return "coach_humano";
-  if (raw.includes("coach ia") || raw.includes("ia coach") || raw.includes("solo ia")) return "ai_coach";
-  if (raw.includes("reto")) return "retos";
+  if (raw.includes("premium")) return "coach_humano";
+  if (raw.includes("coach + humano") || raw.includes("coach humano")) return "coach_humano";
+  if (raw.includes("coach ia") || raw.includes("ia coach") || raw.includes("solo ia") || raw.includes("ai picks")) return "ai_coach";
+  if (raw.includes("comunidad") || raw.includes("reto")) return "retos";
   if (raw.includes("basico") || raw.includes("basic") || raw.includes("free") || raw.includes("gratis")) return "free";
   return "free";
 }
@@ -549,15 +612,15 @@ function getSubscriptionPlanSelection(subscription = getCurrentSubscription()) {
 
 function formatPlanExtrasList(extras = {}) {
   const list = [];
-  if (extras.contract_enabled || extras.contract) list.push("Contrato");
+  if (extras.contract_enabled || extras.contract) list.push("Acceso operativo");
   if (extras.bet_mode || extras.bet) {
     const betAmount = Number(extras.bet_amount || 0);
-    list.push(betAmount > 0 ? `Apuesta $${betAmount.toLocaleString("es-MX")}` : "Apuesta");
+    list.push(betAmount > 0 ? `Cobertura $${betAmount.toLocaleString("es-MX")}` : "Cobertura especial");
   }
-  if (extras.diet_basic) list.push("Dieta Basica");
-  if (extras.diet_plus) list.push("Dieta Pro");
-  if (extras.challenge_type) list.push(`Tipo de reto: ${String(extras.challenge_type).trim()}`);
-  if (extras.nutrition_plan) list.push(`Nutricion ${String(extras.nutrition_plan).toUpperCase()}`);
+  if (extras.diet_basic) list.push("Cobertura extendida");
+  if (extras.diet_plus) list.push("Analisis pro");
+  if (extras.challenge_type) list.push(`Comunidad: ${String(extras.challenge_type).trim()}`);
+  if (extras.nutrition_plan) list.push(`Capa ${String(extras.nutrition_plan).toUpperCase()}`);
   return list.filter(Boolean);
 }
 
@@ -1107,65 +1170,15 @@ const syncGodLinkVisibility = () => {
 };
 
 const hasCompletedOnboarding = () => {
-  const done = String(localStorage.getItem(ONBOARDING_DONE_STORAGE_KEY) || "").toLowerCase();
-  if (done === "1" || done === "true") {
-    return true;
-  }
   const current = getCurrentUser();
-  if (!current || current.role === "admin") {
-    return false;
-  }
-  const hasStructuredUserData = Boolean(
-    String(current.objetivo || "").trim() ||
-    String(current.horario || "").trim() ||
-    String(current.goal || "").trim() ||
-    String(current.checkinSchedule || "").trim()
-  );
-  const rawDraft = localStorage.getItem(REG_DRAFT_KEY);
-  let hasDraft = false;
-  if (rawDraft) {
-    try {
-      const draft = JSON.parse(rawDraft);
-      hasDraft = Boolean(
-        draft &&
-        (
-          String(draft.objetivo || "").trim() ||
-          String(draft.horario || "").trim() ||
-          String(draft.deporte || "").trim()
-        )
-      );
-    } catch {
-      hasDraft = false;
-    }
-  }
-  const rawProfile = localStorage.getItem(REG_PROFILE_KEY);
-  let hasProfile = false;
-  if (rawProfile) {
-    try {
-      const profile = JSON.parse(rawProfile);
-      hasProfile = Boolean(
-        profile &&
-        (
-          String(profile.objetivo || "").trim() ||
-          String(profile.horario || "").trim() ||
-          String(profile.nombre || "").trim()
-        )
-      );
-    } catch {
-      hasProfile = false;
-    }
-  }
-  return hasStructuredUserData || hasDraft || hasProfile;
+  return Boolean(current && current.role !== "admin");
 };
 
 const getUserEntryTarget = () => {
   if (getRoleMode() === "admin") {
     return "admin.html";
   }
-  if (hasPendingPaidAccess()) {
-    return "onboarding-resumen.html";
-  }
-  return hasCompletedOnboarding() ? "user-hoy.html" : "onboarding-1.html";
+  return "user-hoy.html";
 };
 
 const initRoleMode = () => {
@@ -1184,30 +1197,7 @@ const initAppEntryScreen = () => {
     navigateToApp("registro.html#login", true);
     return;
   }
-  const target = getUserEntryTarget();
-  const copy = document.getElementById("app-entry-copy");
-  const countdownEl = document.getElementById("app-entry-countdown");
-  const link = document.getElementById("app-entry-link");
-  if (copy) {
-    copy.textContent = `${current.name || "Usuario"}, estamos preparando tu home.`;
-  }
-  if (link) {
-    link.href = target;
-  }
-  let remaining = 3;
-  if (countdownEl) {
-    countdownEl.textContent = String(remaining).padStart(2, "0");
-  }
-  const timer = setInterval(() => {
-    remaining -= 1;
-    if (countdownEl) {
-      countdownEl.textContent = String(Math.max(remaining, 0)).padStart(2, "0");
-    }
-    if (remaining <= 0) {
-      clearInterval(timer);
-      window.location.replace(target);
-    }
-  }, 1000);
+  navigateToApp(getUserEntryTarget(), true);
 };
 
 const readJsonArray = (key) => {
@@ -1360,15 +1350,38 @@ const enforceOnboardingBeforeHome = () => {
   if (!current || current.role === "admin") {
     return;
   }
-  const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
-  const appPages = new Set(["user-hoy.html", "user-rutinas.html", "user-progreso.html", "user-dieta.html", "user-checkin.html"]);
-  if (appPages.has(page) && hasPendingPaidAccess()) {
-    navigateToApp("onboarding-resumen.html", true);
+};
+
+const redirectLegacySportsPages = () => {
+  const page = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
+  const redirects = new Map([
+    ["app-inicio.html", "user-hoy.html"],
+    ["nutricion.html", "user-dieta.html"],
+    ["sistema.html", "user-rutinas.html"],
+    ["roadmap.html", "user-progreso.html"],
+    ["demo.html", "user-hoy.html"],
+    ["onboarding.html", "registro.html#login"],
+    ["onboarding-1.html", "registro.html#login"],
+    ["onboarding-2.html", "registro.html#login"],
+    ["onboarding-3.html", "registro.html#login"],
+    ["onboarding-4.html", "registro.html#login"],
+    ["onboarding-4-apuesta.html", "registro.html#login"],
+    ["onboarding-5.html", "registro.html#login"],
+    ["onboarding-6.html", "registro.html#login"],
+    ["onboarding-7.html", "registro.html#login"],
+    ["onboarding-8.html", "registro.html#login"],
+    ["onboarding-8-modos.html", "registro.html#login"],
+    ["onboarding-9.html", "registro.html#login"],
+    ["onboarding-resumen.html", "user-hoy.html"],
+  ]);
+  const target = redirects.get(page);
+  if (!target) return;
+  const current = getCurrentUser();
+  if (current && page.startsWith("onboarding")) {
+    navigateToApp("user-hoy.html", true);
     return;
   }
-  if (appPages.has(page) && !hasCompletedOnboarding()) {
-    navigateToApp("app-inicio.html", true);
-  }
+  navigateToApp(target, true);
 };
 
 const syncUserWithBackend = async (payload) => {
@@ -1491,7 +1504,7 @@ const renderUserRoutineFeed = async () => {
     container.innerHTML = `
       <article class="entry-card">
         <h3>Sin contenido del staff</h3>
-        <p>Cuando el admin publique rutinas o planes, apareceran aqui.</p>
+        <p>Cuando el admin publique analisis o cobertura, apareceran aqui.</p>
       </article>
     `;
     return;
@@ -3774,8 +3787,8 @@ function initPlanSelectionPage() {
     const extraLines = activeExtras.length
       ? activeExtras
       : [
-          ...(extras.diet_basic ? ["Dieta Basica (+$12/mes)"] : []),
-          ...(extras.diet_plus ? ["Dieta Pro (+$24/mes)"] : []),
+          ...(extras.diet_basic ? ["Cobertura extendida (+$12/mes)"] : []),
+          ...(extras.diet_plus ? ["Analisis pro (+$24/mes)"] : []),
         ];
     const billingRaw = localStorage.getItem(BILLING_TARGET_CACHE_KEY);
     let billing = defaultBillingTarget;
@@ -3801,7 +3814,7 @@ function initPlanSelectionPage() {
     }
     renderSummary();
     applyPlanNavVisibility();
-    setFeedback(`Plan ${selection.label} listo. Completa la transferencia demo para activar.`, "success");
+    setFeedback(`Plan ${selection.label} listo. Completa la transferencia para activar acceso premium.`, "success");
   };
 
   planButtons.forEach((btn) => {
@@ -3864,7 +3877,7 @@ function initPlanSelectionPage() {
           });
           await syncCurrentSubscriptionFromApi();
           if (paymentRemote?.payment?.existing) {
-            setFeedback("Ya tenias una solicitud pendiente para este plan. Reutilizamos esa misma solicitud.", "success");
+            setFeedback("Ya existia una solicitud pendiente para este plan. Reutilizamos esa misma solicitud.", "success");
           } else {
             setFeedback("Solicitud enviada. Queda pendiente hasta validacion de un admin.", "success");
           }
@@ -3874,7 +3887,7 @@ function initPlanSelectionPage() {
         }
       }
       setTimeout(() => {
-        navigateToApp(selection.id === "free" ? "user-hoy.html" : "onboarding-resumen.html");
+        navigateToApp("user-hoy.html");
       }, 800);
     });
   }
@@ -4487,7 +4500,7 @@ function applyPlanNavVisibility() {
     }
     link.style.opacity = "0.55";
     link.style.pointerEvents = "none";
-    link.title = "Activa extra de dieta en Planes para abrir este modulo";
+    link.title = "Activa cobertura premium en Membresia para abrir este modulo";
   });
 }
 
@@ -4736,6 +4749,7 @@ initAppEntryScreen();
 hideGuestOnlyLinksIfLogged();
 guardAuthScreensForLoggedUser();
 enforceOnboardingBeforeHome();
+redirectLegacySportsPages();
 initUserLogoutButton();
 initPublicNavSessionButton();
 initAdminPanel();
@@ -4752,13 +4766,7 @@ initSportsHistoryPage();
 initHomeGodEntry();
 initPlanSelectionPage();
 applyPlanNavVisibility();
-renderUserRoutineFeed();
-renderUserRoutinesPage();
-renderUserProgressPage();
-renderUserDietPage();
-renderUserPlanPanel();
 renderUserNotifications();
-initUserCheckinPage();
 
 const bootApiSession = async () => {
   try {
@@ -4772,11 +4780,6 @@ const bootApiSession = async () => {
   }
   try {
     await syncCurrentSubscriptionFromApi();
-    renderUserPlanPanel();
-    renderUserRoutinesPage();
-    renderUserDietPage();
-    renderUserProgressPage();
-    renderWeeklyAiAdjustment();
     applyPlanNavVisibility();
     renderUserNotifications();
   } catch (err) {
@@ -4794,7 +4797,7 @@ const onbSteps = Array.from(document.querySelectorAll(".onb-step"));
 const onbDots = document.getElementById("onb-dots");
 const onbBack = document.getElementById("onb-back");
 
-if (onbShell && onbSteps.length) {
+if (ENABLE_LEGACY_EXPERIENCE && onbShell && onbSteps.length) {
   const onbState = {
     step: 0,
     answers: {},
@@ -7027,8 +7030,8 @@ const renderDebugPanel = () => {
   panel.innerHTML = `
     <div class="admin-item"><strong>Usuario activo</strong><p>${current ? `${current.name} (${current.email})` : "Ninguno"}</p></div>
     <div class="admin-item"><strong>Users</strong><p>${users.length}</p></div>
-    <div class="admin-item"><strong>Rutinas</strong><p>${routines.length}</p></div>
-    <div class="admin-item"><strong>Planes</strong><p>${plans.length}</p></div>
+    <div class="admin-item"><strong>Analisis legacy</strong><p>${routines.length}</p></div>
+    <div class="admin-item"><strong>Cobertura legacy</strong><p>${plans.length}</p></div>
     <div class="admin-item"><strong>Asignaciones</strong><p>${Object.keys(assignments).length}</p></div>
   `;
 };
@@ -7196,10 +7199,10 @@ const renderBottomTabs = () => {
   tabs.className = "bottom-tabs";
   tabs.innerHTML = `
     <a href="user-hoy.html" class="${file === "user-hoy.html" ? "active" : ""}">Hoy</a>
-    <a href="user-rutinas.html" class="${file === "user-rutinas.html" ? "active" : ""}">Rutinas</a>
-    <a href="user-progreso.html" class="${file === "user-progreso.html" ? "active" : ""}">Progreso</a>
-    <a href="user-dieta.html" class="${file === "user-dieta.html" ? "active" : ""}">Dieta</a>
-    <a href="user-checkin.html" class="${file === "user-checkin.html" ? "active" : ""}">Check-in</a>
+    <a href="user-rutinas.html" class="${file === "user-rutinas.html" ? "active" : ""}">Analisis</a>
+    <a href="user-progreso.html" class="${file === "user-progreso.html" ? "active" : ""}">Historial</a>
+    <a href="user-dieta.html" class="${file === "user-dieta.html" ? "active" : ""}">Cobertura</a>
+    <a href="user-checkin.html" class="${file === "user-checkin.html" ? "active" : ""}">Cuenta</a>
   `;
   document.body.appendChild(tabs);
   document.body.classList.add("with-bottom-tabs");
@@ -8430,17 +8433,19 @@ const initGamingDashboard = () => {
   });
 })();
 
-initGamingDashboard();
-renderTripleCheckin();
-renderBetStatus();
-renderProgressLevelSteps();
-renderLevelBar("progress-level-bar");
-renderLevelBar("user-level-bar");
-renderLevelBar("onb1-level-bar");
-renderGamingRanking("progress-gaming-ranking");
-renderGamingRanking("hoy-gaming-ranking");
-renderMacroBars();
-renderProfileHeader();
+if (ENABLE_LEGACY_EXPERIENCE) {
+  initGamingDashboard();
+  renderTripleCheckin();
+  renderBetStatus();
+  renderProgressLevelSteps();
+  renderLevelBar("progress-level-bar");
+  renderLevelBar("user-level-bar");
+  renderLevelBar("onb1-level-bar");
+  renderGamingRanking("progress-gaming-ranking");
+  renderGamingRanking("hoy-gaming-ranking");
+  renderMacroBars();
+  renderProfileHeader();
+}
 
 // ── GSAP animations (lazy-loaded, page-aware) ─────────────────────
 (function () {

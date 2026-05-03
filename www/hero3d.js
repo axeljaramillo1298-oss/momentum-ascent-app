@@ -37,19 +37,19 @@
 
   /* ── PRODUCT PANELS ───────────────────────────────────────────── */
   var cards = [
-    { title:"CHECK-IN",  subtitle:"10 min activos",   kind:"progress",
+    { title:"PICKS",     subtitle:"senal del dia",    kind:"progress",
       pos:{x:248,y:112,z:120}, size:{w:172,h:116},
       rot:{x:0.24,y:-0.5,z:0.1},  accent:"#ff6b35", glow:"rgba(255,107,53,0.3)" },
-    { title:"RACHA",     subtitle:"14 dias",           kind:"streak",
+    { title:"EDGE",      subtitle:"+14% valor",        kind:"streak",
       pos:{x:-230,y:26,z:110},  size:{w:186,h:124},
       rot:{x:-0.14,y:0.46,z:-0.06}, accent:"#f5c04a", glow:"rgba(245,192,74,0.26)" },
-    { title:"COACH",     subtitle:"Presion real",      kind:"message",
+    { title:"IA",        subtitle:"analisis activo",   kind:"message",
       pos:{x:145,y:-162,z:40},  size:{w:160,h:96},
       rot:{x:0.12,y:-0.16,z:0.05}, accent:"#ff8f70", glow:"rgba(255,143,112,0.22)" },
-    { title:"DIETA",     subtitle:"Plan activo",       kind:"nutrition",
+    { title:"MERCADO",   subtitle:"linea activa",      kind:"nutrition",
       pos:{x:-62,y:-188,z:-10}, size:{w:150,h:88},
       rot:{x:0.18,y:0.08,z:-0.02}, accent:"#ffd36e", glow:"rgba(255,211,110,0.2)" },
-    { title:"XP",        subtitle:"+24% momentum",    kind:"bars",
+    { title:"CONF",      subtitle:"82 sobre 100",     kind:"bars",
       pos:{x:310,y:-28,z:-18},  size:{w:132,h:84},
       rot:{x:-0.12,y:-0.6,z:0.1},  accent:"#ff5a49", glow:"rgba(255,90,73,0.2)" }
   ];

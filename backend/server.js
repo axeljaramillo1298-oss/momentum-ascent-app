@@ -99,6 +99,7 @@ const AI_COOLDOWN_MS = Math.max(0, Number(process.env.OPENAI_COOLDOWN_MS || 45_0
 const AI_MAX_USERS_PER_CALL = Math.max(1, Number(process.env.OPENAI_MAX_USERS_PER_CALL || 3));
 const AI_MAX_PROMPT_CHARS = Math.max(300, Number(process.env.OPENAI_MAX_PROMPT_CHARS || 700));
 const AI_MAX_CONTEXT_CHARS = Math.max(800, Number(process.env.OPENAI_MAX_CONTEXT_CHARS || 3500));
+const ENABLE_LEGACY_MODULES = String(process.env.ENABLE_LEGACY_MODULES || "").trim().toLowerCase() === "true";
 const getClientIp = (req) =>
   String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "")
     .split(",")[0]
@@ -349,13 +350,20 @@ const syncSportsEvents = async () => {
     status: "ok",
     message: `Eventos sincronizados: ${saved.length}`,
   });
+
+const requireLegacyModules = (req, res, next) => {
+  if (ENABLE_LEGACY_MODULES) {
+    return next();
+  }
+  return res.status(410).json({ ok: false, error: "legacy_disabled" });
+};
   return saved;
 };
 
 app.get("/health", (req, res) => {
   res.json({
     ok: true,
-    service: "fitnes-backend",
+    service: "momentum-ascent-sports-backend",
     db: DB_META,
     now: new Date().toISOString(),
   });
@@ -393,20 +401,22 @@ app.post("/auth/login", async (req, res) => {
       role: resolvedRole,
     });
     let onboardingProfile = null;
-    try {
-      const candidates = email ? await searchUsers(email) : [];
-      onboardingProfile =
-        candidates.find((candidate) => String(candidate?.id || candidate?.email || "").trim().toLowerCase() === email) || null;
-    } catch (error) {
-      console.warn("[backend] auth/login profile lookup skipped:", String(error?.message || error));
+    if (ENABLE_LEGACY_MODULES) {
+      try {
+        const candidates = email ? await searchUsers(email) : [];
+        onboardingProfile =
+          candidates.find((candidate) => String(candidate?.id || candidate?.email || "").trim().toLowerCase() === email) || null;
+      } catch (error) {
+        console.warn("[backend] auth/login profile lookup skipped:", String(error?.message || error));
+      }
     }
     if (strictLogin) {
       resetRateLimit(ip);
     }
+    let onboarding = null;
     const isNew = !previous;
     const hasNewWhatsapp = !String(previous?.whatsapp || "").trim() && String(user?.whatsapp || "").trim();
-    let onboarding = null;
-    if ((isNew || hasNewWhatsapp) && user?.whatsapp) {
+    if (ENABLE_LEGACY_MODULES && (isNew || hasNewWhatsapp) && user?.whatsapp) {
       try {
         onboarding = await startCoachOnboardingForUser(user, {
           getCoachFlowByUser,
@@ -421,13 +431,21 @@ app.post("/auth/login", async (req, res) => {
         console.warn("[backend] whatsapp onboarding skipped:", String(err.message || err));
       }
     }
-    const metrics = await getMetrics(user.id);
+    const metrics = ENABLE_LEGACY_MODULES
+      ? await getMetrics(user.id)
+      : {
+          userId: user.id,
+          streak: 0,
+          bestStreak: 0,
+          totalDays: 0,
+          completedDays: 0,
+          failures: 0,
+          xp: 0,
+        };
     const onboardingAnswers = toPlainObject(onboardingProfile?.onboardingAnswers);
-    const onboardingComplete = Boolean(
-      String(user?.goal || "").trim() ||
-      String(user?.checkin_schedule || "").trim() ||
-      Object.keys(onboardingAnswers).length
-    );
+    const onboardingComplete = ENABLE_LEGACY_MODULES
+      ? Boolean(String(user?.goal || "").trim() || String(user?.checkin_schedule || "").trim() || Object.keys(onboardingAnswers).length)
+      : true;
     res.json({
       ok: true,
       isNew,
@@ -545,7 +563,7 @@ app.post("/god/users/delete", requireGod, async (req, res) => {
   }
 });
 
-app.post("/coach/onboarding/start", requireSelfOrAdminByAnyBodyField(["email", "userId"]), async (req, res) => {
+app.post("/coach/onboarding/start", requireLegacyModules, requireSelfOrAdminByAnyBodyField(["email", "userId"]), async (req, res) => {
   try {
     const email = String(req.body?.email || req.body?.userId || "").trim().toLowerCase();
     if (!email) throw new Error("email_required");
@@ -572,7 +590,7 @@ app.post("/coach/onboarding/start", requireSelfOrAdminByAnyBodyField(["email", "
   }
 });
 
-app.post("/onboarding/profile", requireSelfOrAdminByAnyBodyField(["email", "userId"]), async (req, res) => {
+app.post("/onboarding/profile", requireLegacyModules, requireSelfOrAdminByAnyBodyField(["email", "userId"]), async (req, res) => {
   try {
     const email = String(req.body?.email || req.body?.userId || "").trim().toLowerCase();
     if (!email) throw new Error("email_required");
@@ -584,7 +602,7 @@ app.post("/onboarding/profile", requireSelfOrAdminByAnyBodyField(["email", "user
   }
 });
 
-app.get("/whatsapp/webhook", (req, res) => {
+app.get("/whatsapp/webhook", requireLegacyModules, (req, res) => {
   const mode = String(req.query["hub.mode"] || "");
   const token = String(req.query["hub.verify_token"] || "");
   const challenge = String(req.query["hub.challenge"] || "");
@@ -594,7 +612,7 @@ app.get("/whatsapp/webhook", (req, res) => {
   return res.status(403).send("forbidden");
 });
 
-app.post("/whatsapp/webhook", async (req, res) => {
+app.post("/whatsapp/webhook", requireLegacyModules, async (req, res) => {
   try {
     const entries = Array.isArray(req.body?.entry) ? req.body.entry : [];
     for (const entry of entries) {
@@ -630,7 +648,7 @@ app.get("/users", requireAdmin, async (req, res) => {
   }
 });
 
-app.get("/feed/:userId", requireSelfOrAdminByParam("userId"), async (req, res) => {
+app.get("/feed/:userId", requireLegacyModules, requireSelfOrAdminByParam("userId"), async (req, res) => {
   try {
     const userId = String(req.params.userId || "").trim().toLowerCase();
     const payload = await getFeed(userId);
@@ -640,7 +658,7 @@ app.get("/feed/:userId", requireSelfOrAdminByParam("userId"), async (req, res) =
   }
 });
 
-app.get("/metrics/:userId", requireSelfOrAdminByParam("userId"), async (req, res) => {
+app.get("/metrics/:userId", requireLegacyModules, requireSelfOrAdminByParam("userId"), async (req, res) => {
   try {
     const userId = String(req.params.userId || "").trim().toLowerCase();
     const metrics = await getMetrics(userId);
@@ -661,7 +679,7 @@ app.get("/metrics/:userId", requireSelfOrAdminByParam("userId"), async (req, res
   }
 });
 
-app.post("/admin/routines", requireAdmin, async (req, res) => {
+app.post("/admin/routines", requireLegacyModules, requireAdmin, async (req, res) => {
   try {
     const routine = await saveRoutine(req.body || {});
     res.status(201).json({ ok: true, routine });
@@ -670,7 +688,7 @@ app.post("/admin/routines", requireAdmin, async (req, res) => {
   }
 });
 
-app.post("/admin/nutrition", requireAdmin, async (req, res) => {
+app.post("/admin/nutrition", requireLegacyModules, requireAdmin, async (req, res) => {
   try {
     const plan = await saveNutritionPlan(req.body || {});
     res.status(201).json({ ok: true, plan });
@@ -679,7 +697,7 @@ app.post("/admin/nutrition", requireAdmin, async (req, res) => {
   }
 });
 
-app.post("/admin/assignments", requireAdmin, async (req, res) => {
+app.post("/admin/assignments", requireLegacyModules, requireAdmin, async (req, res) => {
   try {
     const payload = req.body || {};
     const assignments = await saveAssignments(payload);
@@ -722,7 +740,7 @@ app.get("/admin/ai-usage", requireAdmin, async (req, res) => {
   }
 });
 
-app.post("/admin/ai-plan", requireAdmin, async (req, res) => {
+app.post("/admin/ai-plan", requireLegacyModules, requireAdmin, async (req, res) => {
   try {
     const payload = req.body || {};
     const actorEmail = normalizeEmail(getRequestEmail(req) || (isGodRequest(req) ? "god_mode" : ""));
@@ -861,7 +879,7 @@ app.post("/admin/ai-plan", requireAdmin, async (req, res) => {
   }
 });
 
-app.post("/admin/coach/nudge", requireAdmin, async (req, res) => {
+app.post("/admin/coach/nudge", requireLegacyModules, requireAdmin, async (req, res) => {
   try {
     const userId = String(req.body?.userId || "").trim().toLowerCase();
     const message = String(req.body?.message || "").trim();
@@ -880,7 +898,7 @@ app.post("/admin/coach/nudge", requireAdmin, async (req, res) => {
   }
 });
 
-app.get("/admin/whatsapp-status", requireAdmin, async (req, res) => {
+app.get("/admin/whatsapp-status", requireLegacyModules, requireAdmin, async (req, res) => {
   try {
     res.json({ ok: true, whatsapp: getWhatsAppConfigStatus() });
   } catch (error) {
@@ -888,7 +906,7 @@ app.get("/admin/whatsapp-status", requireAdmin, async (req, res) => {
   }
 });
 
-app.post("/admin/whatsapp/test", requireAdmin, async (req, res) => {
+app.post("/admin/whatsapp/test", requireLegacyModules, requireAdmin, async (req, res) => {
   try {
     const to = String(req.body?.to || "").trim();
     const body = String(req.body?.body || "Prueba tecnica desde Momentum Ascent.").trim();
@@ -900,7 +918,7 @@ app.post("/admin/whatsapp/test", requireAdmin, async (req, res) => {
   }
 });
 
-app.post("/checkins", requireSelfOrAdminByBody("userId"), async (req, res) => {
+app.post("/checkins", requireLegacyModules, requireSelfOrAdminByBody("userId"), async (req, res) => {
   try {
     const metrics = await saveCheckin(req.body || {});
     res.status(201).json({ ok: true, metrics });
@@ -909,7 +927,7 @@ app.post("/checkins", requireSelfOrAdminByBody("userId"), async (req, res) => {
   }
 });
 
-app.post("/support-alert", requireSelfOrAdminByBody("userId"), async (req, res) => {
+app.post("/support-alert", requireLegacyModules, requireSelfOrAdminByBody("userId"), async (req, res) => {
   try {
     const alert = await saveSupportAlert(req.body || {});
     res.status(201).json({ ok: true, alert });
@@ -980,18 +998,18 @@ app.get("/payments/:userId", requireSelfOrAdminByParam("userId"), async (req, re
   }
 });
 
-app.get("/mindset/daily", (req, res) => {
+app.get("/mindset/daily", requireLegacyModules, (req, res) => {
   const phrases = [
-    "La disciplina gana cuando la motivacion falla.",
-    "No negocies con la excusa de hoy.",
-    "La constancia de hoy paga la version de manana.",
-    "Tu identidad se construye en dias normales.",
+    "Lee la cuota con criterio, no con impulso.",
+    "Sin datos suficientes, la mejor jugada es bajar confianza.",
+    "La ventaja esta en el proceso, no en perseguir resultados.",
+    "Analiza el mercado antes de aceptar una narrativa facil.",
   ];
   const idx = new Date().getDate() % phrases.length;
   res.json({ ok: true, phrase: phrases[idx] });
 });
 
-app.get("/ranking/weekly", async (req, res) => {
+app.get("/ranking/weekly", requireLegacyModules, async (req, res) => {
   try {
     const ranking = await getWeeklyRanking();
     res.json({ ok: true, ranking });
