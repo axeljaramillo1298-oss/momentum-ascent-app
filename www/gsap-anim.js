@@ -18,6 +18,10 @@
     else document.addEventListener("DOMContentLoaded", fn);
   }
 
+  function hasTargets(selector) {
+    return Boolean(document.querySelector(selector));
+  }
+
   // ── page router ───────────────────────────────────────────────────
   function route(gsap, ScrollTrigger) {
     if (ScrollTrigger) gsap.registerPlugin(ScrollTrigger);
@@ -33,12 +37,12 @@
   // ── RUTINAS ───────────────────────────────────────────────────────
   function initRutinas(gsap, ScrollTrigger) {
     // Hero text
-    gsap.from(".user-panel-hero .eyebrow", { y: -20, opacity: 0, duration: 0.5, ease: "power2.out" });
-    gsap.from(".user-panel-hero h1",       { y: -16, opacity: 0, duration: 0.6, delay: 0.1, ease: "power2.out" });
-    gsap.from(".user-panel-hero .subhead", { y: -12, opacity: 0, duration: 0.5, delay: 0.2, ease: "power2.out" });
+    if (hasTargets(".user-panel-hero .eyebrow")) gsap.from(".user-panel-hero .eyebrow", { y: -20, opacity: 0, duration: 0.5, ease: "power2.out" });
+    if (hasTargets(".user-panel-hero h1")) gsap.from(".user-panel-hero h1", { y: -16, opacity: 0, duration: 0.6, delay: 0.1, ease: "power2.out" });
+    if (hasTargets(".user-panel-hero .subhead")) gsap.from(".user-panel-hero .subhead", { y: -12, opacity: 0, duration: 0.5, delay: 0.2, ease: "power2.out" });
 
     // Level bar card entrance
-    gsap.from("#user-level-bar", { y: 30, opacity: 0, duration: 0.5, delay: 0.3, ease: "back.out(1.7)" });
+    if (hasTargets("#user-level-bar")) gsap.from("#user-level-bar", { y: 30, opacity: 0, duration: 0.5, delay: 0.3, ease: "back.out(1.7)" });
 
     // Animate level bar fill — wait for app.js to set the width, then tween from 0
     var fillEl = document.querySelector(".level-progress-fill");
@@ -49,12 +53,12 @@
     }
 
     // Section titles
-    gsap.from(".section-title", {
+    if (hasTargets(".section-title")) gsap.from(".section-title", {
       y: 28, opacity: 0, duration: 0.5, stagger: 0.14, delay: 0.35, ease: "power2.out"
     });
 
     // Admin grid cards
-    gsap.from(".admin-grid .card", {
+    if (hasTargets(".admin-grid .card")) gsap.from(".admin-grid .card", {
       y: 40, opacity: 0, duration: 0.55, stagger: 0.1, delay: 0.4, ease: "back.out(1.4)"
     });
 
@@ -92,18 +96,18 @@
     }
 
     // Activity mode chips
-    gsap.from(".chip-grid .chip-btn", { scale: 0.8, opacity: 0, duration: 0.3, stagger: 0.05, delay: 0.55, ease: "back.out(2)" });
+    if (hasTargets(".chip-grid .chip-btn")) gsap.from(".chip-grid .chip-btn", { scale: 0.8, opacity: 0, duration: 0.3, stagger: 0.05, delay: 0.55, ease: "back.out(2)" });
 
     // Bottom nav
-    gsap.from(".bottom-nav-item", { y: 30, opacity: 0, duration: 0.45, stagger: 0.07, delay: 0.6, ease: "back.out(2)" });
+    if (hasTargets(".bottom-nav-item")) gsap.from(".bottom-nav-item", { y: 30, opacity: 0, duration: 0.45, stagger: 0.07, delay: 0.6, ease: "back.out(2)" });
   }
 
   // ── HOY ───────────────────────────────────────────────────────────
   function initHoy(gsap) {
-    gsap.from(".user-panel-hero .eyebrow, .user-panel-hero h1, .user-panel-hero .subhead", {
+    if (hasTargets(".user-panel-hero .eyebrow, .user-panel-hero h1, .user-panel-hero .subhead")) gsap.from(".user-panel-hero .eyebrow, .user-panel-hero h1, .user-panel-hero .subhead", {
       y: -14, opacity: 0, duration: 0.5, stagger: 0.1, ease: "power2.out"
     });
-    gsap.from("#user-level-bar", { y: 28, opacity: 0, duration: 0.5, delay: 0.25, ease: "back.out(1.7)" });
+    if (hasTargets("#user-level-bar")) gsap.from("#user-level-bar", { y: 28, opacity: 0, duration: 0.5, delay: 0.25, ease: "back.out(1.7)" });
 
     var fillEl = document.querySelector(".level-progress-fill");
     if (fillEl) {
@@ -112,7 +116,7 @@
       gsap.to(fillEl, { width: tw, duration: 1, delay: 0.5, ease: "power3.out" });
     }
 
-    gsap.from(".section .card, .section .entry-card", {
+    if (hasTargets(".section .card, .section .entry-card")) gsap.from(".section .card, .section .entry-card", {
       y: 36, opacity: 0, duration: 0.5, stagger: 0.1, delay: 0.3, ease: "back.out(1.4)"
     });
 
@@ -138,12 +142,12 @@
       });
     }
 
-    gsap.from(".bottom-nav-item", { y: 30, opacity: 0, duration: 0.45, stagger: 0.07, delay: 0.6, ease: "back.out(2)" });
+    if (hasTargets(".bottom-nav-item")) gsap.from(".bottom-nav-item", { y: 30, opacity: 0, duration: 0.45, stagger: 0.07, delay: 0.6, ease: "back.out(2)" });
   }
 
   // ── PROGRESO ──────────────────────────────────────────────────────
   function initProgreso(gsap, ScrollTrigger) {
-    gsap.from(".user-panel-hero h1, .user-panel-hero .eyebrow, .user-panel-hero .subhead", {
+    if (hasTargets(".user-panel-hero h1, .user-panel-hero .eyebrow, .user-panel-hero .subhead")) gsap.from(".user-panel-hero h1, .user-panel-hero .eyebrow, .user-panel-hero .subhead", {
       y: -14, opacity: 0, duration: 0.5, stagger: 0.1, ease: "power2.out"
     });
 
@@ -159,15 +163,21 @@
       gsap.from(cards, { y: 36, opacity: 0, duration: 0.5, stagger: 0.1, delay: 0.2, ease: "back.out(1.4)" });
     }
 
-    gsap.from(".bottom-nav-item", { y: 30, opacity: 0, duration: 0.45, stagger: 0.07, delay: 0.5, ease: "back.out(2)" });
+    if (hasTargets(".bottom-nav-item")) gsap.from(".bottom-nav-item", { y: 30, opacity: 0, duration: 0.45, stagger: 0.07, delay: 0.5, ease: "back.out(2)" });
   }
 
   // ── HOME / LANDING ────────────────────────────────────────────────
   function initHome(gsap, ScrollTrigger) {
     // Hero headline
-    gsap.from(".hero-title, .hero-sub, .hero-cta", {
-      y: 30, opacity: 0, duration: 0.6, stagger: 0.15, delay: 0.2, ease: "power3.out"
-    });
+    if (hasTargets(".home-v2-copy h1, .home-v2-copy > p, .home-v2-cta-row")) {
+      gsap.from(".home-v2-copy h1, .home-v2-copy > p, .home-v2-cta-row", {
+        y: 30, opacity: 0, duration: 0.6, stagger: 0.15, delay: 0.2, ease: "power3.out"
+      });
+    } else if (hasTargets(".hero-title, .hero-sub, .hero-cta")) {
+      gsap.from(".hero-title, .hero-sub, .hero-cta", {
+        y: 30, opacity: 0, duration: 0.6, stagger: 0.15, delay: 0.2, ease: "power3.out"
+      });
+    }
 
     if (!ScrollTrigger) return;
 

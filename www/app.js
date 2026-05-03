@@ -1112,20 +1112,43 @@ const lockAdminIfNeeded = () => {
   const path = window.location.pathname;
   const isAdminPage = path.endsWith("/admin.html") || path.endsWith("admin.html");
   const isGodPage = path.endsWith("/god-panel.html") || path.endsWith("god-panel.html");
+  const current = getCurrentUser();
   if (isGodPage) {
-    // god-panel.html permite acceso con sesion God aun sin currentUser admin en localStorage
     if (getRoleMode() !== "admin" && !hasActiveGodSession()) {
-      navigateToApp("user-hoy.html", true);
+      navigateToApp("registro.html#login", true);
     }
     return;
   }
   if (isAdminPage && hasActiveGodSession()) {
     return;
   }
-  if (!isAdminPage || getRoleMode() === "admin") {
+  if (!isAdminPage) {
+    return;
+  }
+  if (!current) {
+    navigateToApp("registro.html#login", true);
+    return;
+  }
+  if (getRoleMode() === "admin") {
     return;
   }
   navigateToApp("user-hoy.html", true);
+};
+
+const lockUserPagesIfNeeded = () => {
+  const page = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
+  const userPages = new Set(["user-hoy.html", "user-rutinas.html", "user-progreso.html", "user-dieta.html", "user-checkin.html"]);
+  if (!userPages.has(page)) {
+    return;
+  }
+  const current = getCurrentUser();
+  if (!current) {
+    navigateToApp("registro.html#login", true);
+    return;
+  }
+  if (String(current.role || "").toLowerCase() === "admin") {
+    navigateToApp("admin.html", true);
+  }
 };
 
 // Muestra el link de Modo Dios a todos los admins; el panel interno se bloquea sin sesión activa
@@ -1151,6 +1174,7 @@ const getUserEntryTarget = () => {
 const initRoleMode = () => {
   applyRoleMode(getRoleMode());
   lockAdminIfNeeded();
+  lockUserPagesIfNeeded();
   syncGodLinkVisibility();
 };
 
@@ -5609,6 +5633,11 @@ if (regForm) {
 // Show password field when email matches a known admin domain pattern
 const loginPasswordField = document.getElementById("login-password-field");
 const loginPassword = document.getElementById("login-password");
+const registerForm = document.getElementById("register-form");
+const registerName = document.getElementById("register-name");
+const registerEmail = document.getElementById("register-email");
+const registerWhatsapp = document.getElementById("register-whatsapp");
+const registerFeedback = document.getElementById("register-feedback");
 const ADMIN_HINT_DOMAINS = ["ascent.com", "momentumascent.com"];
 if (loginEmail && loginPasswordField) {
   loginEmail.addEventListener("blur", () => {
@@ -5683,6 +5712,64 @@ if (loginForm) {
     } catch (err) {
       console.warn("[login] error de red:", err?.message || err);
       if (loginFeedback) loginFeedback.textContent = "No se pudo conectar al servidor. Verifica tu conexión.";
+    }
+  });
+}
+
+if (registerForm) {
+  registerForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const name = String(registerName?.value || "").trim();
+    const email = String(registerEmail?.value || "").trim().toLowerCase();
+    const whatsapp = normalizeWhatsapp(registerWhatsapp?.value || "");
+    if (!name) {
+      if (registerFeedback) registerFeedback.textContent = "Ingresa tu nombre para crear la cuenta.";
+      return;
+    }
+    if (!email) {
+      if (registerFeedback) registerFeedback.textContent = "Ingresa tu correo para crear la cuenta.";
+      return;
+    }
+    if (!whatsapp) {
+      if (registerFeedback) registerFeedback.textContent = "Ingresa tu WhatsApp para crear la cuenta.";
+      return;
+    }
+    if (registerFeedback) registerFeedback.textContent = "Creando cuenta...";
+    try {
+      const remote = await apiPost("/auth/login", {
+        name,
+        email,
+        whatsapp,
+        plan: getPlanSelection().label,
+        intent: "register",
+      });
+      if (!remote?.ok) {
+        if (registerFeedback) {
+          registerFeedback.textContent =
+            remote?.error === "rate_limited"
+              ? "Servidor ocupado. Intenta otra vez en un momento."
+              : "No fue posible crear la cuenta. Verifica tus datos.";
+        }
+        return;
+      }
+      hydrateUserCacheFromApi(remote?.user);
+      clearGodSession();
+      applyRoleMode("user");
+      await syncCurrentSubscriptionFromApi();
+      applyPlanNavVisibility();
+      renderUserNotifications();
+      if (registerFeedback) {
+        registerFeedback.className = "reg-feedback login-feedback success";
+        registerFeedback.textContent = remote?.isNew
+          ? "Cuenta creada. Entrando al dashboard..."
+          : "Cuenta existente detectada. Entrando al dashboard...";
+      }
+      setTimeout(() => {
+        navigateToApp("user-hoy.html");
+      }, 300);
+    } catch (err) {
+      console.warn("[register] error de red:", err?.message || err);
+      if (registerFeedback) registerFeedback.textContent = "No se pudo conectar al servidor. Verifica tu conexión.";
     }
   });
 }

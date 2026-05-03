@@ -15,8 +15,8 @@
       </a>
       <section class="login-card" id="login">
         <div class="login-card-header">
-          <h1 class="login-title">Accede a tus picks</h1>
-          <p class="login-sub">Ingresa para volver al dashboard de picks deportivos con IA.</p>
+          <h1 class="login-title">Accede o crea tu cuenta</h1>
+          <p class="login-sub">Entra al dashboard o activa una nueva cuenta para ver picks deportivos con IA.</p>
         </div>
         <form class="login-form" id="login-form" novalidate>
           <div class="login-field">
@@ -35,7 +35,22 @@
           <p class="reg-feedback login-feedback" id="login-feedback" aria-live="polite"></p>
         </form>
         <div class="login-divider"><span>Nueva cuenta</span></div>
-        <a class="login-register-btn" href="user-hoy.html">Explorar interfaz de picks</a>
+        <form class="login-form" id="register-form" novalidate>
+          <div class="login-field">
+            <label class="login-label" for="register-name">Nombre</label>
+            <input class="login-input" id="register-name" type="text" placeholder="Tu nombre" autocomplete="name" />
+          </div>
+          <div class="login-field">
+            <label class="login-label" for="register-email">Email</label>
+            <input class="login-input" id="register-email" type="email" placeholder="tu@email.com" autocomplete="email" />
+          </div>
+          <div class="login-field">
+            <label class="login-label" for="register-whatsapp">WhatsApp</label>
+            <input class="login-input" id="register-whatsapp" type="tel" maxlength="16" placeholder="+52 10 digitos" autocomplete="tel" />
+          </div>
+          <button class="login-register-btn" type="submit">Crear cuenta y entrar</button>
+          <p class="reg-feedback login-feedback" id="register-feedback" aria-live="polite"></p>
+        </form>
         <a class="login-back" href="index.html">Volver al inicio</a>
       </section>
     </main>
