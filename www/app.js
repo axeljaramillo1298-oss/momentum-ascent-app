@@ -188,13 +188,10 @@ const openThemeSelector = () => {
 };
 
 const ensureThemePicker = () => {
-  const savedTheme = localStorage.getItem(THEME_KEY);
-  if (savedTheme === "male" || savedTheme === "female") {
-    applyTheme(savedTheme);
-  } else {
-    applyTheme("male");
-    openThemeSelector();
-  }
+  localStorage.setItem(THEME_KEY, "male");
+  document.body.classList.remove("theme-gated");
+  removeThemeGate();
+  applyTheme("male");
 };
 
 ensureThemePicker();
@@ -208,24 +205,10 @@ const renderHomeV2ThemeContent = () => {
   if (!title) {
     return;
   }
-  const female = document.body.classList.contains("theme-female");
   const setText = (id, value) => {
     const node = document.getElementById(id);
     if (node) node.textContent = value;
   };
-  if (female) {
-    title.innerHTML = "PICKS CON IA.<br />SEÑAL CON<br />CONTEXTO.";
-    setText("home-v2-sub", "Analisis deportivo, eventos del dia y picks informativos impulsados por IA.");
-    setText("home-v2-cta-main", "Ver picks de hoy");
-    setText("home-v2-cta-alt", "Ver historial");
-    setText("home-v2-dash-title", "Momentum Ascent Picks");
-    setText("home-v2-item-1", "⚽ La Liga en vivo");
-    setText("home-v2-item-2", "📊 Confianza 74%");
-    setText("home-v2-item-3", "🧠 Analisis IA listo");
-    setText("home-v2-item-4", "🛡 Riesgo medio");
-    setText("home-v2-device-btn", "Abrir picks");
-    return;
-  }
   title.innerHTML = "PICKS DEPORTIVOS<br />CON IA Y<br />ANALISIS REAL.";
   setText("home-v2-sub", "Eventos del dia, datos estadisticos y picks informativos generados por IA.");
   setText("home-v2-cta-main", "Ver picks de hoy");
@@ -275,15 +258,6 @@ const initMobileMenu = () => {
       nav.appendChild(toggle);
     }
 
-    if (!actions.querySelector("[data-action='theme'], #nav-theme-btn, .nav-theme-toggle")) {
-      const themeButton = document.createElement("button");
-      themeButton.type = "button";
-      themeButton.className = "ghost menu-theme-btn";
-      themeButton.dataset.action = "theme";
-      themeButton.textContent = "Cambiar vista";
-      actions.appendChild(themeButton);
-    }
-
     toggle.addEventListener("click", (event) => {
       event.stopPropagation();
       const wasOpen = nav.classList.contains("mobile-open");
@@ -298,13 +272,6 @@ const initMobileMenu = () => {
     actions.addEventListener("click", (event) => {
       const target = event.target.closest("a, button");
       if (!target) {
-        return;
-      }
-
-      if (target.dataset.action === "theme") {
-        event.preventDefault();
-        closeAllMobileMenus();
-        openThemeSelector();
         return;
       }
 
@@ -8415,22 +8382,10 @@ const initGamingDashboard = () => {
 // ── BOOT ALL NEW FEATURES ─────────────────────────────────────────
 // ── NAV THEME TOGGLE BUTTON ───────────────────────────────────────
 (() => {
-  const btn   = document.getElementById("nav-theme-btn");
-  const icon  = document.getElementById("nav-theme-icon");
-  const label = document.getElementById("nav-theme-label");
-  if (!btn) return;
-  const syncBtn = () => {
-    const isFemale = document.body.classList.contains("theme-female");
-    if (icon)  icon.textContent  = isFemale ? "♀" : "♂";
-    if (label) label.textContent = isFemale ? "Mujer" : "Hombre";
-  };
-  syncBtn();
-  btn.addEventListener("click", () => {
-    const next = document.body.classList.contains("theme-female") ? "male" : "female";
-    applyTheme(next);
-    localStorage.setItem(THEME_KEY, next);
-    syncBtn();
-  });
+  localStorage.setItem(THEME_KEY, "male");
+  if (document.body.classList.contains("theme-female")) {
+    applyTheme("male");
+  }
 })();
 
 if (ENABLE_LEGACY_EXPERIENCE) {
