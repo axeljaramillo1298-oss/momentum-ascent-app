@@ -8582,6 +8582,54 @@ if (ENABLE_LEGACY_EXPERIENCE) {
   renderProfileHeader();
 }
 
+// ── CUSTOM CURSOR ─────────────────────────────────────────────────
+(function initCustomCursor() {
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+  const dot = document.createElement('div');
+  dot.className = 'cursor-dot';
+  const ring = document.createElement('div');
+  ring.className = 'cursor-ring';
+  document.body.appendChild(dot);
+  document.body.appendChild(ring);
+
+  let mx = window.innerWidth / 2, my = window.innerHeight / 2;
+  let rx = mx, ry = my;
+  let hidden = false;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    dot.style.left = mx + 'px';
+    dot.style.top = my + 'px';
+    if (hidden) { dot.style.opacity = '1'; ring.style.opacity = '1'; hidden = false; }
+  });
+
+  document.addEventListener('mouseleave', () => {
+    dot.style.opacity = '0'; ring.style.opacity = '0'; hidden = true;
+  });
+  document.addEventListener('mouseenter', () => {
+    dot.style.opacity = '1'; ring.style.opacity = '1'; hidden = false;
+  });
+
+  const INTERACTIVE = 'a,button,[role="button"],label,input,select,textarea,summary,[data-action],[data-filter],[data-pg],.pick-card,.stat-card,.filter-btn,.t-row,.bottom-nav-item,.hs-box,.page-btn';
+  document.addEventListener('mouseover', e => {
+    if (e.target.closest(INTERACTIVE)) document.body.classList.add('cur-hover');
+  });
+  document.addEventListener('mouseout', e => {
+    if (e.target.closest(INTERACTIVE)) document.body.classList.remove('cur-hover');
+  });
+  document.addEventListener('mousedown', () => document.body.classList.add('cur-click'));
+  document.addEventListener('mouseup', () => document.body.classList.remove('cur-click'));
+
+  (function animRing() {
+    rx += (mx - rx) * 0.11;
+    ry += (my - ry) * 0.11;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    requestAnimationFrame(animRing);
+  })();
+})();
+
 // ── GSAP animations (lazy-loaded, page-aware) ─────────────────────
 (function () {
   var base = "";

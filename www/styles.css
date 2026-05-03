@@ -14151,3 +14151,42 @@ body.user-panel-premium #today-yes:hover {
   }
 }
 
+
+/* ── CUSTOM CURSOR ─────────────────────────────────────────────────── */
+@media (hover: hover) and (pointer: fine) {
+  body { cursor: none !important; }
+  a, button, [role="button"], label, input, select, textarea, summary,
+  [data-action], [data-filter], [data-pg], .pick-card, .stat-card,
+  .filter-btn, .t-row, .bottom-nav-item { cursor: none !important; }
+}
+.cursor-dot {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  background: #FF4500;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 999999;
+  left: 0; top: 0;
+  transform: translate(-50%, -50%);
+  transition: opacity .25s, width .2s, height .2s, background .2s;
+  will-change: transform;
+  mix-blend-mode: screen;
+}
+.cursor-ring {
+  position: fixed;
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid rgba(255, 69, 0, 0.65);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 999998;
+  left: 0; top: 0;
+  transform: translate(-50%, -50%);
+  transition: width .25s ease, height .25s ease, border-color .25s, opacity .25s;
+  will-change: transform;
+}
+body.cur-hover .cursor-dot { width: 12px; height: 12px; background: #FF6B2B; }
+body.cur-hover .cursor-ring { width: 48px; height: 48px; border-color: rgba(255,69,0,.35); }
+body.cur-click .cursor-dot { width: 6px; height: 6px; }
+body.cur-click .cursor-ring { width: 20px; height: 20px; border-color: rgba(255,69,0,.9); }
