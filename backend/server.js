@@ -153,10 +153,49 @@ const defaultBillingTarget = {
   whatsapp: "+52 000 000 0000",
   note: "Referencia: tu correo de registro",
 };
+const defaultBankControl = {
+  totalBank: 10000,
+  unitPercent: 2,
+  stopLossPercent: 6,
+  maxExposurePercent: 10,
+  targetPercent: 8,
+  personalRule: "",
+  tracking: {},
+  updatedAt: "",
+};
 
 const getBillingTarget = async () => {
   const fromDb = await getAppSetting("billing_target", defaultBillingTarget);
   return { ...defaultBillingTarget, ...(fromDb && typeof fromDb === "object" ? fromDb : {}) };
+};
+const bankControlKeyForUser = (userIdRaw) => `bank_control:${String(userIdRaw || "").trim().toLowerCase()}`;
+const getBankControlForUser = async (userIdRaw) => {
+  const userId = String(userIdRaw || "").trim().toLowerCase();
+  if (!userId) throw new Error("user_id_required");
+  const stored = await getAppSetting(bankControlKeyForUser(userId), defaultBankControl);
+  return {
+    ...defaultBankControl,
+    ...(stored && typeof stored === "object" ? stored : {}),
+    tracking: stored?.tracking && typeof stored.tracking === "object" ? stored.tracking : {},
+  };
+};
+const setBankControlForUser = async (userIdRaw, payload) => {
+  const userId = String(userIdRaw || "").trim().toLowerCase();
+  if (!userId) throw new Error("user_id_required");
+  const current = await getBankControlForUser(userId);
+  const next = {
+    ...current,
+    ...(payload && typeof payload === "object" ? payload : {}),
+    totalBank: Math.max(0, Number(payload?.totalBank ?? current.totalBank ?? defaultBankControl.totalBank)),
+    unitPercent: Math.max(0.25, Number(payload?.unitPercent ?? current.unitPercent ?? defaultBankControl.unitPercent)),
+    stopLossPercent: Math.max(1, Number(payload?.stopLossPercent ?? current.stopLossPercent ?? defaultBankControl.stopLossPercent)),
+    maxExposurePercent: Math.max(1, Number(payload?.maxExposurePercent ?? current.maxExposurePercent ?? defaultBankControl.maxExposurePercent)),
+    targetPercent: Math.max(1, Number(payload?.targetPercent ?? current.targetPercent ?? defaultBankControl.targetPercent)),
+    personalRule: String(payload?.personalRule ?? current.personalRule ?? "").trim(),
+    tracking: payload?.tracking && typeof payload.tracking === "object" ? payload.tracking : current.tracking || {},
+    updatedAt: new Date().toISOString(),
+  };
+  return setAppSetting(bankControlKeyForUser(userId), next);
 };
 
 const isAdminEmail = async (emailRaw) => {
@@ -1140,6 +1179,26 @@ app.get("/subscriptions/:userId", requireSelfOrAdminByParam("userId"), async (re
     res.json({ ok: true, subscription });
   } catch (error) {
     res.status(400).json({ ok: false, error: String(error.message || "subscription_failed") });
+  }
+});
+
+app.get("/bank-control/:userId", requireSelfOrAdminByParam("userId"), async (req, res) => {
+  try {
+    const userId = String(req.params.userId || "").trim().toLowerCase();
+    const bankControl = await getBankControlForUser(userId);
+    res.json({ ok: true, bankControl });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: String(error.message || "bank_control_failed") });
+  }
+});
+
+app.post("/bank-control/:userId", requireSelfOrAdminByParam("userId"), async (req, res) => {
+  try {
+    const userId = String(req.params.userId || "").trim().toLowerCase();
+    const bankControl = await setBankControlForUser(userId, req.body || {});
+    res.json({ ok: true, bankControl });
+  } catch (error) {
+    res.status(400).json({ ok: false, error: String(error.message || "bank_control_save_failed") });
   }
 });
 

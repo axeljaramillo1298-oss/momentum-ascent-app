@@ -193,7 +193,6 @@
       const planStatus = String(sub?.status || 'inactive').toLowerCase();
       const isApex = planId === 'coach_humano';
       const userKey = String(user?.id || user?.email || 'guest').toLowerCase();
-
       const loadScoped = (key, fallback) => {
         try {
           const raw = localStorage.getItem(key);
@@ -211,8 +210,7 @@
       };
       const formatMoney = (value) => new Intl.NumberFormat('es-MX', { style:'currency', currency:'MXN', maximumFractionDigits:2 }).format(Number(value || 0));
       const toPct = (value) => `${Number(value || 0).toFixed(2).replace(/\.00$/, '')}%`;
-
-      const bankState = {
+      const localFallbackState = {
         totalBank: 10000,
         unitPercent: 2,
         stopLossPercent: 6,
@@ -221,7 +219,56 @@
         personalRule: '',
         ...loadScoped(BANK_STATE_KEY, {}),
       };
-      const tracking = loadScoped(BANK_TRACK_KEY, {});
+      let bankState = { ...localFallbackState };
+      let tracking = loadScoped(BANK_TRACK_KEY, {});
+      const persistLocalFallback = () => {
+        saveScoped(BANK_STATE_KEY, {
+          totalBank: bankState.totalBank,
+          unitPercent: bankState.unitPercent,
+          stopLossPercent: bankState.stopLossPercent,
+          maxExposurePercent: bankState.maxExposurePercent,
+          targetPercent: bankState.targetPercent,
+          personalRule: bankState.personalRule,
+        });
+        saveScoped(BANK_TRACK_KEY, tracking);
+      };
+      const loadBankControlRemote = async () => {
+        if (!user?.id || typeof apiGet !== 'function') return;
+        try {
+          const remote = await apiGet(`/bank-control/${encodeURIComponent(user.id)}`);
+          const payload = remote?.bankControl || null;
+          if (payload && typeof payload === 'object') {
+            bankState = {
+              totalBank: Number(payload.totalBank || localFallbackState.totalBank),
+              unitPercent: Number(payload.unitPercent || localFallbackState.unitPercent),
+              stopLossPercent: Number(payload.stopLossPercent || localFallbackState.stopLossPercent),
+              maxExposurePercent: Number(payload.maxExposurePercent || localFallbackState.maxExposurePercent),
+              targetPercent: Number(payload.targetPercent || localFallbackState.targetPercent),
+              personalRule: String(payload.personalRule || ''),
+            };
+            tracking = payload.tracking && typeof payload.tracking === 'object' ? payload.tracking : {};
+            persistLocalFallback();
+          }
+        } catch {}
+      };
+      const saveBankControlRemote = async () => {
+        persistLocalFallback();
+        if (!user?.id || typeof apiRequest !== 'function') return;
+        try {
+          await apiRequest(`/bank-control/${encodeURIComponent(user.id)}`, {
+            method: 'POST',
+            body: {
+              totalBank: bankState.totalBank,
+              unitPercent: bankState.unitPercent,
+              stopLossPercent: bankState.stopLossPercent,
+              maxExposurePercent: bankState.maxExposurePercent,
+              targetPercent: bankState.targetPercent,
+              personalRule: bankState.personalRule,
+              tracking,
+            },
+          });
+        } catch {}
+      };
 
       const riskClass = (risk) => {
         const raw = String(risk || '').toUpperCase();
@@ -281,19 +328,20 @@
           ? `Regla activa: ${bankState.personalRule}`
           : 'El sistema calculará stake sugerido por pick con base en tu unidad y el riesgo de cada selección.';
       };
-      const saveConfig = () => {
+      const saveConfig = async () => {
         bankState.totalBank = Number(document.getElementById('bank-total-input').value || bankState.totalBank || 0);
         bankState.unitPercent = Number(document.getElementById('bank-unit-input').value || bankState.unitPercent || 2);
         bankState.stopLossPercent = Number(document.getElementById('bank-stop-input').value || bankState.stopLossPercent || 6);
         bankState.maxExposurePercent = Number(document.getElementById('bank-exposure-input').value || bankState.maxExposurePercent || 10);
         bankState.targetPercent = Number(document.getElementById('bank-target-input').value || bankState.targetPercent || 8);
         bankState.personalRule = String(document.getElementById('bank-notes-input').value || '').trim();
-        saveScoped(BANK_STATE_KEY, bankState);
+        await saveBankControlRemote();
         bindConfig();
         if (typeof showToast === 'function') showToast('Control de bank actualizado.', 'success');
       };
-      const resetSession = () => {
-        saveScoped(BANK_TRACK_KEY, {});
+      const resetSession = async () => {
+        tracking = {};
+        await saveBankControlRemote();
         if (typeof showToast === 'function') showToast('Sesión de bank reiniciada.', 'info');
       };
       const renderPicksBank = async () => {
@@ -367,7 +415,7 @@
                 net: Number(listEl.querySelector(`[data-bank-net="${id}"]`)?.value || 0),
                 status: String(listEl.querySelector(`[data-bank-status="${id}"]`)?.value || 'open').trim().toLowerCase() || 'open',
               };
-              saveScoped(BANK_TRACK_KEY, tracking);
+              saveBankControlRemote();
               paintMetrics(picks);
               const statusEl = document.getElementById(`bank-track-status-${id}`);
               if (statusEl) statusEl.textContent = `Stake registrado: ${formatMoney(tracking[id].stake)} · neto: ${formatMoney(tracking[id].net)} · estado: ${tracking[id].status}.`;
@@ -406,14 +454,15 @@
         document.getElementById('bank-note').textContent = 'No se pudo cargar la cuenta bancaria en este momento.';
       }
 
+      await loadBankControlRemote();
       bindConfig();
       await renderPicksBank();
       document.getElementById('bank-save-btn').addEventListener('click', async () => {
-        saveConfig();
+        await saveConfig();
         await renderPicksBank();
       });
       document.getElementById('bank-reset-btn').addEventListener('click', async () => {
-        resetSession();
+        await resetSession();
         await renderPicksBank();
       });
       document.getElementById('bank-logout').addEventListener('click', () => {
