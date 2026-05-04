@@ -1,93 +1,350 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Cuenta | Momentum Ascent</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body class="user-panel-premium sports-dashboard-page">
-    <main class="user-panel-shell sports-dashboard-shell">
-      <header class="user-panel-top sports-dashboard-top">
-        <nav class="user-panel-nav">
-          <a class="nav-logo-link" href="user-hoy.html" aria-label="Momentum Ascent">
-            <svg class="logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <defs>
-                <linearGradient id="userNavLg5" x1="0" y1="36" x2="36" y2="0" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stop-color="#ff3b30"/>
-                  <stop offset="100%" stop-color="#f5c04a"/>
-                </linearGradient>
-              </defs>
-              <circle cx="18" cy="18" r="17" stroke="url(#userNavLg5)" stroke-width="2" fill="none" opacity="0.35"/>
-              <path d="M18.2 6.2C20.4 9.1 24.8 12 24.8 17.1C24.8 23 21.2 28.4 18 29.6C14.6 28.5 11.2 23.3 11.2 17.4C11.2 13.1 13.8 9.7 16.3 7.8C16.8 10 17.5 11.7 19.2 13.4C18.9 11.3 18.7 8.8 18.2 6.2Z" fill="url(#userNavLg5)" opacity="0.96"/>
-              <path d="M18.1 13.2C19.4 15 21.4 16.7 21.4 19.6C21.4 22.8 19.5 25.4 18 26C16.2 25.4 14.5 22.5 14.5 19.5C14.5 17.2 15.8 15.4 17.2 14.2C17.4 15.3 17.8 16.2 18.9 17.1C18.7 15.9 18.4 14.6 18.1 13.2Z" fill="rgba(255,248,235,0.72)"/>
-            </svg>
-            <span class="logo-wordmark">MOMENTUM ASCENT</span>
-          </a>
-          <div class="nav-actions">
-            <a class="ghost up-nav-link" href="user-hoy.html">Picks</a>
-            <a class="ghost up-nav-link" href="user-hoy.html">Analisis</a>
-            <a class="ghost up-nav-link" href="user-progreso.html">Historial</a>
-            <a class="ghost up-nav-link" href="user-dieta.html">Cobertura</a>
-            <a class="ghost up-nav-link up-nav-active" href="user-checkin.html">Cuenta</a>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Mi Cuenta | Momentum Ascent</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#FF4500;
+  --dark:#060608;
+  --border:rgba(255,255,255,0.07);
+  --text:#f0ede8;
+  --muted:rgba(240,237,232,0.4);
+  --green:#4ADE80;
+  --red:#F87171;
+  --yellow:#F59E0B;
+  --purple:#A78BFA;
+}
+html{scroll-behavior:smooth}
+body{background:var(--dark)!important;color:var(--text);font-family:'Barlow',sans-serif;overflow-x:hidden;min-height:100vh}
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+main{position:relative;z-index:2}
+.user-panel-top{position:relative;z-index:200;padding:12px 16px}
+
+/* NAV */
+.user-panel-nav{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.nav-logo-link{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{width:32px;height:32px;flex-shrink:0}
+.logo-wordmark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--text)}
+.nav-actions{display:flex;align-items:center;gap:4px}
+.up-nav-link{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;border-radius:3px;text-decoration:none;color:var(--muted);transition:color .2s,background .2s;white-space:nowrap}
+.up-nav-link:hover{color:var(--text)}
+.up-nav-active{color:var(--text);background:rgba(255,255,255,.06)}
+.nav-logout{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;border-radius:3px;background:transparent;border:none;color:var(--muted);cursor:pointer;transition:color .2s}
+.nav-logout:hover{color:var(--red)}
+
+/* HERO */
+.page-hero{padding:52px 52px 40px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:400px;background:radial-gradient(ellipse 60% 80% at 20% 20%,rgba(80,20,120,.18) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 80% 40%,rgba(255,69,0,.05) 0%,transparent 70%);pointer-events:none}
+.hero-inner{display:flex;justify-content:space-between;align-items:flex-start;gap:40px;position:relative;z-index:1}
+.hero-left{flex:1}
+.page-eyebrow{font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;opacity:0;animation:fadeUp .5s .1s forwards}
+.page-eyebrow::before{content:'';width:20px;height:1px;background:var(--muted)}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(56px,7vw,96px);text-transform:uppercase;letter-spacing:-.02em;line-height:.9;opacity:0;animation:fadeUp .6s .2s forwards}
+.page-desc{margin-top:16px;font-size:14px;color:var(--muted);max-width:380px;line-height:1.65;font-weight:300;opacity:0;animation:fadeUp .5s .35s forwards}
+
+/* AVATAR BLOCK */
+.hero-right{display:flex;flex-direction:column;align-items:flex-end;gap:14px;padding-top:4px;opacity:0;animation:fadeUp .6s .3s forwards;flex-shrink:0}
+.avatar-box{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,rgba(255,69,0,.3),rgba(167,139,250,.2));border:2px solid rgba(255,69,0,.3);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--orange)}
+.user-email-chip{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--muted);background:rgba(255,255,255,.04);border:1px solid var(--border);padding:6px 14px;border-radius:3px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plan-chip{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,69,0,.35);background:rgba(255,69,0,.08);color:var(--orange)}
+
+/* CONTENT */
+.page-content{padding:0 52px 140px;position:relative;z-index:2;opacity:0;animation:fadeUp .5s .5s forwards}
+.cuenta-grid{display:grid;grid-template-columns:1fr 300px;gap:24px}
+
+/* INFO CARDS */
+.info-card{background:rgba(255,255,255,.022);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px;transition:border-color .25s}
+.info-card:hover{border-color:rgba(255,69,0,.18)}
+.info-card-hdr{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.info-card-tag{font-size:8.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid rgba(255,255,255,.12);color:var(--muted)}
+.info-card-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:17px;text-transform:uppercase;letter-spacing:.04em}
+.info-card-body{padding:16px 20px;font-size:13px;color:rgba(240,237,232,.6);line-height:1.7;font-weight:300}
+.info-card-body strong{color:var(--text);font-weight:600}
+
+/* DATA ROWS */
+.data-row{display:flex;align-items:center;justify-content:space-between;padding:11px 20px;border-bottom:1px solid rgba(255,255,255,.04)}
+.data-row:last-child{border-bottom:none}
+.data-lbl{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.data-val{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:17px}
+.data-val.green{color:var(--green)}
+.data-val.orange{color:var(--orange)}
+.data-val.muted{font-family:'Barlow',sans-serif;font-size:13px;font-weight:500;color:rgba(240,237,232,.5)}
+
+/* SIDEBAR */
+.sidebar-col{display:flex;flex-direction:column;gap:14px}
+.side-card{background:rgba(255,255,255,.022);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .25s}
+.side-card:hover{border-color:rgba(255,69,0,.18)}
+.side-card-hdr{padding:14px 18px 10px;border-bottom:1px solid var(--border)}
+.side-card-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;text-transform:uppercase;letter-spacing:.05em}
+.side-card-body{padding:14px 18px}
+.side-list{display:flex;flex-direction:column;gap:9px;list-style:none}
+.side-list li{font-size:12px;color:rgba(240,237,232,.6);line-height:1.55;display:flex;align-items:flex-start;gap:7px}
+.side-list li::before{content:'·';color:var(--orange);font-size:14px;flex-shrink:0;line-height:1.3}
+.side-list strong{color:var(--text);font-weight:600}
+
+/* ACTIONS */
+.action-grid{display:flex;flex-direction:column;gap:8px}
+.btn-action{display:block;width:100%;font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:12px 18px;border-radius:4px;text-decoration:none;text-align:center;cursor:pointer;transition:all .2s}
+.btn-action.primary{background:var(--orange);color:#fff;border:none}
+.btn-action.primary:hover{background:#e03d00}
+.btn-action.ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-action.ghost:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+.btn-action.danger{background:rgba(248,113,113,.08);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+.btn-action.danger:hover{background:rgba(248,113,113,.14)}
+.btn-action.admin{background:linear-gradient(135deg,rgba(167,139,250,.12),rgba(255,69,0,.08));color:var(--purple);border:1px solid rgba(167,139,250,.25)}
+.btn-action.admin:hover{border-color:rgba(167,139,250,.4)}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:300;display:flex;border-top:1px solid var(--border);background:rgba(6,6,8,.92);backdrop-filter:blur(16px)}
+.bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;text-decoration:none;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:color .2s}
+.bottom-nav-item:hover,.bottom-nav-active{color:var(--orange)}
+.bottom-nav-icon{font-size:18px;display:block}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:860px){
+  .page-hero{padding:28px 20px 24px}
+  .page-content{padding:0 20px 140px}
+  .cuenta-grid{grid-template-columns:1fr}
+  .hero-inner{flex-direction:column;gap:16px}
+  .hero-right{align-items:flex-start}
+  .nav-actions{display:none}
+}
+  </style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<header class="user-panel-top">
+  <nav class="user-panel-nav">
+    <a class="nav-logo-link" href="user-hoy.html" aria-label="Momentum Ascent">
+      <svg class="logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="lgNav" x1="0" y1="36" x2="36" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#ff3b30"/>
+            <stop offset="100%" stop-color="#f5c04a"/>
+          </linearGradient>
+        </defs>
+        <circle cx="18" cy="18" r="17" stroke="url(#lgNav)" stroke-width="2" fill="none" opacity="0.35"/>
+        <path d="M18.2 6.2C20.4 9.1 24.8 12 24.8 17.1C24.8 23 21.2 28.4 18 29.6C14.6 28.5 11.2 23.3 11.2 17.4C11.2 13.1 13.8 9.7 16.3 7.8C16.8 10 17.5 11.7 19.2 13.4C18.9 11.3 18.7 8.8 18.2 6.2Z" fill="url(#lgNav)" opacity="0.96"/>
+        <path d="M18.1 13.2C19.4 15 21.4 16.7 21.4 19.6C21.4 22.8 19.5 25.4 18 26C16.2 25.4 14.5 22.5 14.5 19.5C14.5 17.2 15.8 15.4 17.2 14.2C17.4 15.3 17.8 16.2 18.9 17.1C18.7 15.9 18.4 14.6 18.1 13.2Z" fill="rgba(255,248,235,0.72)"/>
+      </svg>
+      <span class="logo-wordmark">MOMENTUM ASCENT</span>
+    </a>
+    <div class="nav-actions">
+      <a class="up-nav-link" href="user-hoy.html">Picks · Análisis</a>
+      <a class="up-nav-link" href="user-progreso.html">Historial</a>
+      <a class="up-nav-link" href="planes.html">Planes</a>
+      <a class="up-nav-link up-nav-active" href="user-checkin.html">Cuenta</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <div class="page-hero">
+    <div class="hero-inner">
+      <div class="hero-left">
+        <div class="page-eyebrow">Account + Access</div>
+        <h1 class="page-title">Mi<br>Cuenta</h1>
+        <p class="page-desc">Información de tu sesión, plan activo y acceso rápido a todas las secciones.</p>
+      </div>
+      <div class="hero-right">
+        <div class="avatar-box" id="avatar-initials">?</div>
+        <div class="user-email-chip" id="user-email-display">Cargando…</div>
+        <div class="plan-chip" id="user-plan-chip">Plan Free</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <div class="cuenta-grid">
+
+      <div class="main-col">
+        <!-- SESIÓN -->
+        <div class="info-card">
+          <div class="info-card-hdr">
+            <span class="info-card-tag">Sesión</span>
+            <span class="info-card-title">Estado de cuenta</span>
           </div>
-        </nav>
-        <div class="user-panel-hero sports-dashboard-hero">
-          <p class="eyebrow">ACCOUNT + ACCESS</p>
-          <h1>MI CUENTA</h1>
-          <p class="subhead">Acceso actual, plan visible, puntos operativos del producto y siguientes pasos dentro del MVP sports.</p>
+          <div class="data-row">
+            <span class="data-lbl">Email</span>
+            <span class="data-val muted" id="dr-email">—</span>
+          </div>
+          <div class="data-row">
+            <span class="data-lbl">Estado</span>
+            <span class="data-val green" id="dr-estado">Activo</span>
+          </div>
+          <div class="data-row">
+            <span class="data-lbl">Acceso admin</span>
+            <span class="data-val" id="dr-admin" style="color:var(--muted);font-family:'Barlow',sans-serif;font-size:13px">—</span>
+          </div>
         </div>
-      </header>
 
-      <section class="section sports-dashboard-section">
-        <div class="sports-dashboard-grid">
-          <section class="sports-main-column">
-            <article class="sports-analysis-card">
-              <div class="sports-analysis-top">
-                <span class="sports-league-pill">ESTADO</span>
-              </div>
-              <h3>Cuenta conectada al dashboard</h3>
-              <p class="sports-pick-analysis">Tu sesión reutiliza la autenticación existente del proyecto. Si tienes permisos admin, también puedes operar sincronización y generación desde el panel de administración.</p>
-            </article>
-            <article class="sports-analysis-card">
-              <div class="sports-analysis-top">
-                <span class="sports-league-pill">MEMBRESIA</span>
-              </div>
-              <h3>Planes del MVP</h3>
-              <p class="sports-pick-analysis">Los planes actuales diferencian acceso Free, AI Picks y Apex. La interfaz ya quedo alineada al nuevo contexto sports sin rehacer auth ni pagos.</p>
-            </article>
-          </section>
-
-          <aside class="sports-side-column">
-            <article class="card sports-side-card">
-              <h3>Siguientes pasos</h3>
-              <ul class="sports-side-list">
-                <li>Revisar picks del día en el dashboard principal.</li>
-                <li>Consultar análisis detallado por evento.</li>
-                <li>Usar historial para revisar consistencia operativa.</li>
-                <li>Escalar a plan premium si necesitas más cobertura.</li>
-              </ul>
-            </article>
-            <article class="card sports-side-card">
-              <h3>Acciones</h3>
-              <div class="sports-hero-actions">
-                <a class="primary" href="planes.html">Ver membresia</a>
-                <a class="ghost" href="user-hoy.html">Volver a picks</a>
-              </div>
-            </article>
-          </aside>
+        <!-- MEMBRESÍA -->
+        <div class="info-card">
+          <div class="info-card-hdr">
+            <span class="info-card-tag">Membresía</span>
+            <span class="info-card-title">Tu plan actual</span>
+          </div>
+          <div class="info-card-body">
+            Los planes diferencian acceso <strong>Free</strong>, <strong>AI Picks</strong> y <strong>Apex Full IA</strong>.
+            Escala cuando necesites picks con análisis dual GPT + Claude y control de bankroll avanzado.
+          </div>
+          <div class="data-row">
+            <span class="data-lbl">Plan activo</span>
+            <span class="data-val orange" id="dr-plan">Free</span>
+          </div>
         </div>
-      </section>
-    </main>
 
-    <nav class="bottom-nav" aria-label="Navegacion principal">
-      <a class="bottom-nav-item" href="user-hoy.html"><span class="bottom-nav-icon">🎯</span><span>Picks</span></a>
-      <a class="bottom-nav-item" href="user-hoy.html"><span class="bottom-nav-icon">🧠</span><span>Picks</span></a>
-      <a class="bottom-nav-item" href="user-progreso.html"><span class="bottom-nav-icon">📚</span><span>Historial</span></a>
-      <a class="bottom-nav-item" href="user-dieta.html"><span class="bottom-nav-icon">🌐</span><span>Cobertura</span></a>
-      <a class="bottom-nav-item bottom-nav-active" href="user-checkin.html"><span class="bottom-nav-icon">👤</span><span>Cuenta</span></a>
-    </nav>
+        <!-- ACCESO RÁPIDO -->
+        <div class="info-card">
+          <div class="info-card-hdr">
+            <span class="info-card-tag">Navegación</span>
+            <span class="info-card-title">Acceso rápido</span>
+          </div>
+          <div style="padding:14px 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <a class="btn-action primary" href="user-hoy.html">Ver picks del día</a>
+            <a class="btn-action ghost" href="user-progreso.html">Ver historial</a>
+            <a class="btn-action ghost" href="planes.html">Ver planes</a>
+            <a class="btn-action admin" href="admin.html" id="link-admin" style="display:none">Panel admin</a>
+          </div>
+        </div>
+      </div>
 
-    <script src="app.js"></script>
-  </body>
+      <!-- SIDEBAR -->
+      <aside class="sidebar-col">
+        <div class="side-card">
+          <div class="side-card-hdr"><span class="side-card-title">Siguientes pasos</span></div>
+          <div class="side-card-body">
+            <ul class="side-list">
+              <li>Revisar picks del día y su análisis completo.</li>
+              <li>Consultar el historial para medir consistencia.</li>
+              <li>Escalar a plan <strong>AI Picks</strong> para picks generados con IA dual.</li>
+              <li>Acceder al plan <strong>Apex</strong> para control de bankroll.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="side-card">
+          <div class="side-card-hdr"><span class="side-card-title">Sesión</span></div>
+          <div class="side-card-body">
+            <div class="action-grid">
+              <button class="btn-action danger" id="btn-logout">Cerrar sesión</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<nav class="bottom-nav" aria-label="Navegacion principal">
+  <a class="bottom-nav-item" href="user-hoy.html">
+    <span class="bottom-nav-icon">🎯</span><span>Picks</span>
+  </a>
+  <a class="bottom-nav-item" href="user-progreso.html">
+    <span class="bottom-nav-icon">📚</span><span>Historial</span>
+  </a>
+  <a class="bottom-nav-item" href="planes.html">
+    <span class="bottom-nav-icon">💳</span><span>Planes</span>
+  </a>
+  <a class="bottom-nav-item bottom-nav-active" href="user-checkin.html">
+    <span class="bottom-nav-icon">👤</span><span>Cuenta</span>
+  </a>
+</nav>
+
+<script src="app.js"></script>
+<script>
+(function(){
+  // ── USER DATA ──────────────────────────────────────────
+  const ADMIN_EMAILS = ['admin@momentumascent.com','fermarquez@ascent.com'];
+  let userEmail = '';
+  let planLabel = 'Free';
+
+  try {
+    const raw = localStorage.getItem('discipline_current_user_v1');
+    if(raw){
+      const u = JSON.parse(raw);
+      userEmail = u.email || u.username || '';
+      planLabel = u.plan || u.membership || 'Free';
+    }
+  } catch(_){}
+
+  const godToken = localStorage.getItem('discipline_god_token_v1');
+  const isAdmin = godToken || ADMIN_EMAILS.includes(userEmail);
+
+  // Avatar initials
+  const initials = userEmail ? userEmail.slice(0,2).toUpperCase() : '?';
+  document.getElementById('avatar-initials').textContent = initials;
+  document.getElementById('user-email-display').textContent = userEmail || 'Sin sesión';
+  document.getElementById('user-plan-chip').textContent = 'Plan ' + planLabel;
+  document.getElementById('dr-email').textContent = userEmail || '—';
+  document.getElementById('dr-plan').textContent = planLabel;
+
+  // Admin flag
+  const adminEl = document.getElementById('dr-admin');
+  const adminLink = document.getElementById('link-admin');
+  if(isAdmin){
+    adminEl.textContent = 'Sí';
+    adminEl.style.color = 'var(--green)';
+    adminEl.style.fontFamily = "'Barlow Condensed', sans-serif";
+    adminEl.style.fontWeight = '800';
+    if(adminLink) adminLink.style.display = 'block';
+  } else {
+    adminEl.textContent = 'No';
+  }
+
+  // Logout
+  document.getElementById('btn-logout').addEventListener('click', ()=>{
+    if(!confirm('¿Cerrar sesión?')) return;
+    localStorage.removeItem('discipline_current_user_v1');
+    localStorage.removeItem('discipline_god_token_v1');
+    localStorage.removeItem('discipline_session_v1');
+    window.location.href = 'index.html';
+  });
+
+  // ── THREE.JS BG ────────────────────────────────────────
+  (function initBg(){
+    const bgCanvas = document.getElementById('bg-canvas');
+    if(!bgCanvas || !window.THREE) return;
+    const renderer = new THREE.WebGLRenderer({canvas:bgCanvas,alpha:true,antialias:false});
+    renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,100);
+    camera.position.z = 5;
+    function resize(){ renderer.setSize(innerWidth,innerHeight); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); }
+    resize(); window.addEventListener('resize',resize);
+    const N=200, geo=new THREE.BufferGeometry(), pos=new Float32Array(N*3), vel=[];
+    for(let i=0;i<N;i++){
+      pos[i*3]=(Math.random()-.5)*20;pos[i*3+1]=(Math.random()-.5)*14;pos[i*3+2]=(Math.random()-.5)*6;
+      vel.push({vx:(Math.random()-.5)*.0025,vy:Math.random()*.003+.001});
+    }
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    scene.add(new THREE.Points(geo,new THREE.PointsMaterial({color:0xFF4500,size:.04,sizeAttenuation:true,transparent:true,opacity:.35,blending:THREE.AdditiveBlending,depthWrite:false})));
+    const geo2=new THREE.BufferGeometry(),pos2=new Float32Array(N*3);
+    for(let i=0;i<N;i++){pos2[i*3]=(Math.random()-.5)*20;pos2[i*3+1]=(Math.random()-.5)*14;pos2[i*3+2]=(Math.random()-.5)*6}
+    geo2.setAttribute('position',new THREE.BufferAttribute(pos2,3));
+    scene.add(new THREE.Points(geo2,new THREE.PointsMaterial({color:0xffffff,size:.022,sizeAttenuation:true,transparent:true,opacity:.1,blending:THREE.AdditiveBlending,depthWrite:false})));
+    let tMX=0,tMY=0,cMX=0,cMY=0;
+    document.addEventListener('mousemove',e=>{tMX=(e.clientX/innerWidth-.5)*2;tMY=(e.clientY/innerHeight-.5)*2});
+    (function loop(){
+      requestAnimationFrame(loop);
+      cMX+=(tMX-cMX)*.03; cMY+=(tMY-cMY)*.03;
+      camera.position.x=cMX*.8; camera.position.y=-cMY*.5;
+      const p=geo.attributes.position.array;
+      for(let i=0;i<N;i++){p[i*3]+=vel[i].vx;p[i*3+1]+=vel[i].vy;if(p[i*3+1]>7)p[i*3+1]=-7}
+      geo.attributes.position.needsUpdate=true;
+      renderer.render(scene,camera);
+    })();
+  })();
+})();
+</script>
+</body>
 </html>
