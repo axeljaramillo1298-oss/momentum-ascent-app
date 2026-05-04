@@ -107,6 +107,8 @@ main{position:relative;z-index:2}
 .btn-plan.ghost:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
 .btn-plan.gold-btn{background:linear-gradient(135deg,#7a5200,#f5c04a);color:#0a0700}
 .btn-plan.gold-btn:hover{opacity:.9}
+.plan-card.plan-selected{border-color:rgba(255,69,0,.6)!important;background:rgba(255,69,0,.08)!important;box-shadow:0 0 0 1px rgba(255,69,0,.3),0 8px 32px rgba(255,69,0,.12)}
+.plan-card.apex.plan-selected{border-color:rgba(245,192,74,.7)!important;box-shadow:0 0 0 1px rgba(245,192,74,.35),0 8px 32px rgba(245,192,74,.15)}
 
 /* PAYMENT SECTION */
 .payment-card{background:rgba(255,255,255,.022);border:1px solid var(--border);border-radius:8px;padding:28px;margin-bottom:64px;opacity:0;animation:fadeUp .5s .75s forwards}
@@ -126,6 +128,9 @@ main{position:relative;z-index:2}
 .note-card{background:rgba(255,255,255,.022);border:1px solid var(--border);padding:24px 20px}
 .note-card blockquote{font-size:13px;color:rgba(240,237,232,.6);line-height:1.7;font-style:italic;font-weight:300;margin-bottom:10px}
 .note-card cite{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.note-card-highlight{background:rgba(255,69,0,.05);border-color:rgba(255,69,0,.18)}
+.note-icon{font-size:28px;margin-bottom:12px;display:block}
+.disc-note{margin-top:20px;font-size:10px;color:var(--muted);line-height:1.6;font-style:italic}
 
 /* BOTTOM NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:300;display:flex;border-top:1px solid var(--border);background:rgba(6,6,8,.92);backdrop-filter:blur(16px)}
@@ -342,26 +347,30 @@ main{position:relative;z-index:2}
       <div class="pay-feedback" id="plan-payment-feedback"></div>
     </div>
 
-    <!-- NOTAS -->
+    <!-- MOTIVACIONAL -->
     <div class="notes-section">
       <div class="sec-hdr">
-        <div class="sec-title">Notas importantes</div>
-        <div class="sec-sub">La plataforma no promete ganancias ni resultados garantizados.</div>
+        <div class="sec-title">Por qué escalar tu plan</div>
+        <div class="sec-sub">No se trata de suerte. Se trata de información mejor procesada que la del resto.</div>
       </div>
       <div class="notes-grid">
-        <div class="note-card">
-          <blockquote>"Úsalo como contenido informativo y criterio adicional, no como garantía."</blockquote>
-          <cite>— Nota operativa</cite>
+        <div class="note-card note-card-highlight">
+          <div class="note-icon">🧠</div>
+          <blockquote>"El análisis dual GPT-4o + Claude Sonnet te da en segundos lo que un analista profesional tarda horas en construir."</blockquote>
+          <cite>— IA Dual · Plan AI Picks & Apex</cite>
         </div>
-        <div class="note-card">
-          <blockquote>"La confianza es una estimación estadística, no una certeza de resultado."</blockquote>
-          <cite>— Riesgo y gestión</cite>
+        <div class="note-card note-card-highlight">
+          <div class="note-icon">📈</div>
+          <blockquote>"El 90% de las personas que pierden en apuestas no tienen criterio estructurado. Con Apex tienes datos, contexto y control de bank."</blockquote>
+          <cite>— Control operativo · Plan Apex</cite>
         </div>
-        <div class="note-card">
-          <blockquote>"Apuesta con responsabilidad y evita sobreexposición en un solo evento."</blockquote>
-          <cite>— Momentum Ascent</cite>
+        <div class="note-card note-card-highlight">
+          <div class="note-icon">⚡</div>
+          <blockquote>"Cada pick viene con mercado, confianza, riesgo y razonamiento completo. Deja de apostar con intuición, apuesta con sistema."</blockquote>
+          <cite>— Metodología MVP · Todos los planes</cite>
         </div>
       </div>
+      <div class="disc-note">* Contenido informativo. La confianza es una estimación estadística, no garantía de resultado. Apuesta con responsabilidad.</div>
     </div>
 
   </div>
@@ -383,6 +392,36 @@ main{position:relative;z-index:2}
 </nav>
 
 <script src="app.js"></script>
+<script>
+(function(){
+  // Plan selection
+  const PLAN_LABELS = { free:'Free ($0/mes)', ai_coach:'AI Picks ($19/mes)', coach_humano:'Apex ($49/mes)' };
+  let selectedPlan = null;
+  document.querySelectorAll('[data-plan-select]').forEach(btn => {
+    btn.addEventListener('click', function(){
+      selectedPlan = this.dataset.planSelect;
+      document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('plan-selected'));
+      this.closest('.plan-card').classList.add('plan-selected');
+      const confirmBtn = document.getElementById('plan-confirm-button');
+      confirmBtn.textContent = 'Confirmar ' + (PLAN_LABELS[selectedPlan] || selectedPlan);
+      document.getElementById('plan-payment-feedback').textContent = '';
+      const payCard = document.querySelector('.payment-card');
+      if(payCard) payCard.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  });
+  const confirmBtn = document.getElementById('plan-confirm-button');
+  if(confirmBtn) confirmBtn.addEventListener('click', function(){
+    const fb = document.getElementById('plan-payment-feedback');
+    if(!selectedPlan || selectedPlan === 'free'){
+      fb.style.color = 'var(--muted)';
+      fb.textContent = selectedPlan === 'free' ? 'Plan Free activo — sin costo.' : 'Selecciona un plan primero.';
+      return;
+    }
+    fb.style.color = 'var(--green)';
+    fb.textContent = 'Realiza la transferencia y envía el comprobante por WhatsApp para activar ' + (PLAN_LABELS[selectedPlan] || selectedPlan) + '.';
+  });
+})();
+</script>
 <script>
 (function(){
   // Three.js bg
