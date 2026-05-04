@@ -306,28 +306,31 @@ main{position:relative;z-index:2}
       <div class="plan-card highlight">
         <div class="plan-badge pop">Popular</div>
         <div class="plan-name">AI Picks</div>
-        <div class="plan-price">$19<span> / mes</span></div>
-        <div class="plan-desc">Análisis IA extendido y más picks por jornada.</div>
+        <div class="plan-price">$129<span> MXN / mes</span></div>
+        <div class="plan-desc">Menos que dos cervezas al mes. Picks con análisis IA todos los días.</div>
         <ul class="plan-features">
           <li>Análisis IA extendido</li>
           <li>Más picks por jornada</li>
           <li>Historial ampliado</li>
           <li>Comunidad incluida</li>
         </ul>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:14px">O $1,290 MXN/año — ahorra 2 meses</div>
         <button class="btn-plan primary" data-plan-select="ai_coach">Elegir AI Picks</button>
       </div>
 
       <div class="plan-card apex">
         <div class="plan-badge gold">Apex</div>
         <div class="plan-name" style="color:var(--gold)">Apex</div>
-        <div class="plan-price" style="color:var(--gold)">$49<span> / mes</span></div>
-        <div class="plan-desc">Acceso completo con control de bankroll integrado.</div>
+        <div class="plan-price" style="color:var(--gold)">$399<span> MXN / mes</span></div>
+        <div class="plan-desc">Para el que apuesta en serio. Análisis full, pick seguro y control de bank integrado.</div>
         <ul class="plan-features">
           <li class="gold-feat">Análisis IA full (GPT + Claude)</li>
+          <li class="gold-feat">Pick normal + pick seguro por evento</li>
           <li class="gold-feat">Historial completo</li>
           <li class="gold-feat">Todos los eventos</li>
           <li class="gold-feat">Comunidad incluida</li>
         </ul>
+        <div style="font-size:11px;color:rgba(245,192,74,.6);margin-bottom:10px">O $3,490 MXN/año — ahorra 2 meses</div>
         <div class="plan-bank">Control de bank</div>
         <button class="btn-plan gold-btn" data-plan-select="coach_humano">Elegir Apex</button>
       </div>
@@ -407,7 +410,7 @@ main{position:relative;z-index:2}
 <script>
 (function(){
   // Plan selection
-  const PLAN_LABELS = { free:'Free ($0/mes)', ai_coach:'AI Picks ($19/mes)', coach_humano:'Apex ($49/mes)' };
+  const PLAN_LABELS = { free:'Free ($0/mes)', ai_coach:'AI Picks ($129 MXN/mes)', coach_humano:'Apex ($399 MXN/mes)' };
   let selectedPlan = null;
   document.querySelectorAll('[data-plan-select]').forEach(btn => {
     btn.addEventListener('click', function(){
