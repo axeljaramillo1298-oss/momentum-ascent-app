@@ -28,6 +28,11 @@ Claves principales:
 - `ENABLE_LEGACY_MODULES=false`
 
 Si no configuras API deportiva, el backend usa datos mock realistas para desarrollo local.
+Si configuras `SPORTS_API_PROVIDER` y `SPORTS_API_KEY`, el backend puede usar URL por defecto sin necesidad de definir `SPORTS_API_BASE_URL`:
+
+- `api-football` -> `https://v3.football.api-sports.io`
+- `the-odds-api` -> `https://api.the-odds-api.com/v4`
+
 Los modulos legacy quedan desactivados por defecto.
 
 ## Correr local

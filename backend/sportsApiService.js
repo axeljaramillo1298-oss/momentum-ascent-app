@@ -1,8 +1,27 @@
 const safeStr = (value) => String(value || "").trim();
 
-const provider = safeStr(process.env.SPORTS_API_PROVIDER || "mock").toLowerCase();
+const providerRaw = safeStr(process.env.SPORTS_API_PROVIDER || "mock").toLowerCase();
 const apiKey = safeStr(process.env.SPORTS_API_KEY);
-const baseUrl = safeStr(process.env.SPORTS_API_BASE_URL);
+
+const normalizeProvider = (value) => {
+  const current = safeStr(value).toLowerCase();
+  if (["api-football", "api_football", "apifootball", "api sports", "apisports"].includes(current)) {
+    return "api-football";
+  }
+  if (["the-odds-api", "theoddsapi", "odds-api", "the_odds_api"].includes(current)) {
+    return "the-odds-api";
+  }
+  return current || "mock";
+};
+
+const provider = normalizeProvider(providerRaw);
+
+const defaultBaseUrlByProvider = {
+  "api-football": "https://v3.football.api-sports.io",
+  "the-odds-api": "https://api.the-odds-api.com/v4",
+};
+
+const baseUrl = safeStr(process.env.SPORTS_API_BASE_URL) || defaultBaseUrlByProvider[provider] || "";
 
 const todayKey = () => new Date().toISOString().slice(0, 10);
 
