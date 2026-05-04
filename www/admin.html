@@ -1,157 +1,641 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Admin Sports | Momentum Ascent</title>
-    <meta name="description" content="Panel admin para sincronizar eventos y generar picks deportivos con IA." />
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body class="sports-admin-page">
-    <div class="noise"></div>
-    <div class="stars"></div>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Admin Panel | Momentum Ascent</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#FF4500;
+  --orange2:#FF6B2B;
+  --dark:#060608;
+  --dark2:#0a0a0d;
+  --dark3:#0e0e12;
+  --surface:rgba(255,255,255,0.03);
+  --border:rgba(255,255,255,0.07);
+  --text:#f0ede8;
+  --muted:rgba(240,237,232,0.4);
+  --green:#4ADE80;
+  --red:#F87171;
+  --yellow:#F59E0B;
+  --purple:#A78BFA;
+}
+html{scroll-behavior:smooth}
+body{background:var(--dark)!important;color:var(--text);font-family:'Barlow',sans-serif;overflow-x:hidden;min-height:100vh}
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+main{position:relative;z-index:2}
 
-    <header class="hero page-hero admin-hero">
-      <nav class="nav">
-        <div class="logo">MOMENTUM ASCENT</div>
-        <div class="nav-actions">
-          <a class="ghost" href="index.html">Inicio</a>
-          <a class="ghost" href="user-hoy.html">Picks</a>
-          <a class="ghost" href="planes.html">Membresia</a>
-          <a class="primary" href="#sports-admin-panel">Admin Sports</a>
+/* NAV */
+.admin-nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:14px 52px;background:rgba(6,6,8,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px;letter-spacing:.12em;text-transform:uppercase;color:var(--orange)}
+.nav-badge{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;background:rgba(255,69,0,.12);border:1px solid rgba(255,69,0,.25);color:var(--orange);padding:3px 10px;border-radius:2px;margin-left:12px}
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-user{font-size:11px;color:var(--muted);font-weight:500}
+.nav-link{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s}
+.nav-link:hover{color:var(--text)}
+
+/* HERO */
+.page-hero{padding:52px 52px 40px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:400px;background:radial-gradient(ellipse 60% 80% at 20% 20%,rgba(80,20,120,.2) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 80% 40%,rgba(255,69,0,.07) 0%,transparent 70%);pointer-events:none}
+.hero-inner{position:relative;z-index:1}
+.page-eyebrow{font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;opacity:0;animation:fadeUp .5s .1s forwards}
+.page-eyebrow::before{content:'';width:20px;height:1px;background:var(--muted)}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(56px,7vw,96px);text-transform:uppercase;letter-spacing:-.02em;line-height:.9;opacity:0;animation:fadeUp .6s .2s forwards}
+.page-title span{color:var(--orange)}
+.page-desc{margin-top:16px;font-size:14px;color:var(--muted);max-width:440px;line-height:1.65;font-weight:300;opacity:0;animation:fadeUp .5s .35s forwards}
+
+/* STAT CARDS ROW */
+.stats-row{display:flex;gap:2px;margin-top:36px;opacity:0;animation:fadeUp .6s .45s forwards;flex-wrap:wrap}
+.stat-card{background:rgba(255,255,255,.035);border:1px solid var(--border);padding:20px 28px;min-width:140px;position:relative;overflow:hidden;transition:border-color .3s,background .3s;cursor:default}
+.stat-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent,var(--orange),transparent);transform:scaleX(0);transform-origin:center;transition:transform .4s}
+.stat-card:hover{background:rgba(255,69,0,.04);border-color:rgba(255,69,0,.2)}
+.stat-card:hover::before{transform:scaleX(1)}
+.sc-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:44px;line-height:1;letter-spacing:-.02em}
+.sc-val.orange{color:var(--orange)}
+.sc-val.green{color:var(--green)}
+.sc-val.yellow{color:var(--yellow)}
+.sc-val.purple{color:var(--purple)}
+.sc-lbl{font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.sc-sub{font-size:11px;color:rgba(240,237,232,.22);margin-top:2px}
+
+/* CONTENT */
+.page-content{padding:0 52px 100px;position:relative;z-index:2}
+
+/* OPS BAR */
+.ops-bar{display:flex;align-items:center;gap:12px;margin-bottom:40px;flex-wrap:wrap;padding:16px 20px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;opacity:0;animation:fadeUp .5s .55s forwards}
+.ops-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin-right:8px}
+.ops-sep{width:1px;height:22px;background:var(--border)}
+.btn-primary{font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:9px 20px;background:var(--orange);color:#fff;border:none;border-radius:3px;cursor:pointer;transition:background .2s,transform .1s}
+.btn-primary:hover{background:var(--orange2)}
+.btn-primary:active{transform:scale(.97)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-ghost{font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:9px 18px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:3px;cursor:pointer;transition:all .2s}
+.btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+.chip{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:4px 10px;border-radius:20px;border:1px solid}
+.chip.green{color:var(--green);border-color:rgba(74,222,128,.25);background:rgba(74,222,128,.06)}
+.chip.orange{color:var(--orange);border-color:rgba(255,69,0,.25);background:rgba(255,69,0,.06)}
+.chip.yellow{color:var(--yellow);border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.06)}
+.chip.muted{color:var(--muted);border-color:var(--border);background:rgba(255,255,255,.02)}
+.ops-status{font-size:11px;color:var(--muted);margin-left:auto}
+
+/* SECTION HEADER */
+.section-hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px}
+.section-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:22px;text-transform:uppercase;letter-spacing:.03em}
+.section-sub{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+/* EVENTS GRID */
+.events-section{margin-bottom:48px;opacity:0;animation:fadeUp .5s .65s forwards}
+.event-card{background:rgba(255,255,255,.022);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden;transition:border-color .25s}
+.event-card:hover{border-color:rgba(255,69,0,.2)}
+.event-card-head{display:flex;align-items:center;gap:16px;padding:16px 20px;cursor:default}
+.event-sport-icon{width:36px;height:36px;border-radius:50%;background:rgba(255,69,0,.1);border:1px solid rgba(255,69,0,.2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.event-info{flex:1;min-width:0}
+.event-match{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:18px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.event-meta{display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap}
+.event-league{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.event-time{font-size:11px;color:rgba(240,237,232,.3)}
+.event-pick-status{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.event-pick-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.btn-dual{font-family:'Barlow',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:8px 16px;background:linear-gradient(135deg,rgba(255,69,0,.15),rgba(167,139,250,.1));color:var(--orange);border:1px solid rgba(255,69,0,.3);border-radius:3px;cursor:pointer;transition:all .25s;white-space:nowrap;flex-shrink:0}
+.btn-dual:hover{background:linear-gradient(135deg,rgba(255,69,0,.25),rgba(167,139,250,.18));border-color:rgba(255,69,0,.5)}
+.btn-dual:disabled{opacity:.4;cursor:not-allowed}
+
+/* DUAL PANEL */
+.dual-panel{display:none;border-top:1px solid var(--border);padding:20px;background:rgba(0,0,0,.2)}
+.dual-panel.open{display:block}
+.dual-loading{display:flex;align-items:center;gap:12px;padding:24px 0;color:var(--muted);font-size:13px}
+.dual-spinner{width:20px;height:20px;border:2px solid rgba(255,69,0,.2);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.dual-step{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--orange);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.dual-step::before{content:'';width:16px;height:1px;background:var(--orange)}
+
+/* GPT CANDIDATES */
+.candidates-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:860px){.candidates-grid{grid-template-columns:1fr}}
+.candidate-card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:6px;padding:16px;position:relative;transition:border-color .25s}
+.candidate-card.is-selected{border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.05)}
+.cand-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cand-n{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.cand-conf{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--orange)}
+.cand-pick{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:16px;letter-spacing:.02em;text-transform:uppercase;margin-bottom:4px;color:var(--text)}
+.cand-market{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.cand-analysis{font-size:11.5px;color:rgba(240,237,232,.55);line-height:1.6;margin-bottom:14px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.cand-risk{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid;margin-bottom:12px}
+.cand-risk.low{color:var(--green);border-color:rgba(74,222,128,.25)}
+.cand-risk.med{color:var(--yellow);border-color:rgba(245,158,11,.25)}
+.cand-risk.high{color:var(--red);border-color:rgba(248,113,113,.25)}
+.btn-publish{width:100%;font-family:'Barlow',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:9px;background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--border);border-radius:3px;cursor:pointer;transition:all .2s}
+.btn-publish:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2)}
+.btn-publish.published{background:rgba(74,222,128,.1);color:var(--green);border-color:rgba(74,222,128,.3);cursor:default}
+
+/* CLAUDE SELECTION */
+.claude-box{background:linear-gradient(135deg,rgba(167,139,250,.08),rgba(255,69,0,.06));border:1px solid rgba(167,139,250,.3);border-radius:8px;padding:20px;margin-bottom:16px}
+.claude-label{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--purple);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.claude-label::before{content:'';width:14px;height:1px;background:var(--purple)}
+.claude-pick{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:4px}
+.claude-market{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.claude-reasoning-label{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.claude-reasoning{font-size:12px;color:rgba(240,237,232,.6);line-height:1.65;margin-bottom:16px}
+.btn-publish-claude{font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:11px 24px;background:linear-gradient(135deg,var(--purple),rgba(255,69,0,.7));color:#fff;border:none;border-radius:3px;cursor:pointer;transition:opacity .2s}
+.btn-publish-claude:hover{opacity:.88}
+.btn-publish-claude.published{background:rgba(74,222,128,.15);color:var(--green);border:1px solid rgba(74,222,128,.3);cursor:default}
+
+/* PUBLISHED BADGE */
+.pub-badge{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--green);border:1px solid rgba(74,222,128,.25);background:rgba(74,222,128,.06);padding:4px 10px;border-radius:20px;margin-left:8px}
+
+/* PIPELINE */
+.pipeline-section{margin-bottom:48px;opacity:0;animation:fadeUp .5s .75s forwards}
+.pipeline-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px}
+@media(max-width:700px){.pipeline-grid{grid-template-columns:1fr 1fr}}
+.pipeline-step{background:rgba(255,255,255,.02);border:1px solid var(--border);padding:20px;position:relative;overflow:hidden;transition:border-color .3s}
+.pipeline-step:hover{border-color:rgba(255,69,0,.2)}
+.pipeline-step::after{content:'';position:absolute;top:0;left:0;bottom:0;width:2px;background:var(--orange);opacity:.3}
+.step-n{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:42px;color:rgba(255,69,0,.12);line-height:1;margin-bottom:8px}
+.step-name{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.step-desc{font-size:11px;color:var(--muted);line-height:1.6}
+
+/* LOG SECTION */
+.log-section{margin-bottom:48px;opacity:0;animation:fadeUp .5s .8s forwards}
+.log-list{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;padding:4px 0;max-height:200px;overflow-y:auto;font-family:'Barlow',monospace;font-size:11px}
+.log-item{padding:6px 16px;border-bottom:1px solid rgba(255,255,255,.03);display:flex;gap:12px;align-items:flex-start}
+.log-item:last-child{border-bottom:none}
+.log-ts{color:rgba(240,237,232,.2);white-space:nowrap;flex-shrink:0}
+.log-msg{color:var(--muted);line-height:1.5}
+.log-msg.ok{color:var(--green)}
+.log-msg.err{color:var(--red)}
+.log-msg.warn{color:var(--yellow)}
+.log-empty{padding:20px;text-align:center;color:rgba(240,237,232,.2);font-size:11px}
+
+/* ERROR BOX */
+.dual-error{background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.2);border-radius:6px;padding:14px 18px;color:var(--red);font-size:12px;line-height:1.6;margin-top:8px}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,69,0,.3);border-radius:2px}
+  </style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<!-- NAV -->
+<nav class="admin-nav">
+  <div style="display:flex;align-items:center">
+    <span class="nav-logo">Momentum Ascent</span>
+    <span class="nav-badge">Admin Panel</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-user" id="nav-user-email">—</span>
+    <a class="nav-link" href="user-hoy.html">Dashboard</a>
+    <a class="nav-link" href="index.html">Inicio</a>
+  </div>
+</nav>
+
+<main>
+  <!-- HERO -->
+  <section class="page-hero">
+    <div class="hero-inner">
+      <p class="page-eyebrow">Operación MVP</p>
+      <h1 class="page-title">PANEL DE<br><span>CONTROL IA</span></h1>
+      <p class="page-desc">Sincroniza eventos deportivos, lanza el análisis dual GPT + Claude y publica picks directamente desde aquí.</p>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="sc-val orange" id="stat-eventos">0</div>
+          <div class="sc-lbl">Eventos hoy</div>
+          <div class="sc-sub">cargados</div>
         </div>
-      </nav>
-      <div class="hero-grid">
-        <div class="hero-copy">
-          <p class="eyebrow">OPERACION MVP</p>
-          <h1>PANEL DE PICKS</h1>
-          <p class="subhead">Sincroniza eventos deportivos, consulta el estado de la fuente y genera picks con IA solo cuando sea necesario.</p>
-          <p class="sports-disclaimer">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</p>
-          <div class="sports-hero-actions">
-            <a class="primary" href="#sports-admin-panel">Abrir operacion</a>
-            <a class="ghost" href="user-hoy.html">Ver dashboard usuario</a>
-          </div>
+        <div class="stat-card">
+          <div class="sc-val green" id="stat-picks">0</div>
+          <div class="sc-lbl">Picks generados</div>
+          <div class="sc-sub">publicados</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-val yellow" id="stat-sin-pick">0</div>
+          <div class="sc-lbl">Sin pick</div>
+          <div class="sc-sub">pendientes</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-val purple" id="stat-sesiones">0</div>
+          <div class="sc-lbl">Sesiones IA</div>
+          <div class="sc-sub">hoy</div>
         </div>
       </div>
-    </header>
+    </div>
+  </section>
 
-    <main id="sports-admin-panel" class="section sports-admin-shell">
-      <section class="sports-summary-grid" id="sports-admin-summary">
-        <article class="sports-summary-card">
-          <strong>0</strong>
-          <span>Eventos activos</span>
-        </article>
-        <article class="sports-summary-card">
-          <strong>0</strong>
-          <span>Picks de hoy</span>
-        </article>
-        <article class="sports-summary-card">
-          <strong>0%</strong>
-          <span>Confianza media</span>
-        </article>
-      </section>
+  <div class="page-content">
 
-      <section class="sports-admin-grid">
-        <article class="card sports-admin-card sports-admin-ops-card">
-          <div class="sports-section-head">
-            <h2>Operacion</h2>
-            <span>Sincroniza la fuente y dispara IA solo en eventos necesarios</span>
-          </div>
-          <div class="sports-admin-actions">
-            <button class="primary" type="button" id="sports-sync-btn">Sincronizar eventos deportivos</button>
-            <button class="ghost" type="button" id="sports-refresh-admin-btn">Actualizar panel</button>
-            <button class="ghost" type="button" id="sports-generate-missing-btn">Generar picks faltantes</button>
-          </div>
-          <div class="sports-admin-mini-grid" id="sports-admin-ops-grid">
-            <article class="sports-mini-card">
-              <span>Proveedor</span>
-              <strong id="sports-admin-provider">mock</strong>
-              <p>Origen activo para eventos y stats</p>
-            </article>
-            <article class="sports-mini-card">
-              <span>Ultimo estado</span>
-              <strong id="sports-admin-last-sync">Sin sync</strong>
-              <p>Bitacora de sincronizacion reciente</p>
-            </article>
-            <article class="sports-mini-card">
-              <span>Motor IA</span>
-              <strong id="sports-admin-ai-state">Listo</strong>
-              <p>Cachea picks recientes para evitar costo extra</p>
-            </article>
-          </div>
-          <div id="sports-admin-action-feedback" class="sports-admin-feedback">
-            <strong>Estado operativo</strong>
-            <p>Panel listo para sincronizar y generar picks.</p>
-          </div>
-        </article>
+    <!-- OPS BAR -->
+    <div class="ops-bar">
+      <span class="ops-title">Operaciones</span>
+      <div class="ops-sep"></div>
+      <button class="btn-primary" id="btn-sync">Sincronizar eventos</button>
+      <button class="btn-ghost" id="btn-refresh">Actualizar panel</button>
+      <div class="ops-sep"></div>
+      <span class="chip muted" id="chip-provider">Proveedor: mock</span>
+      <span class="chip green" id="chip-ai">IA lista</span>
+      <span class="ops-status" id="ops-status-txt">—</span>
+    </div>
 
-        <article class="card sports-admin-card">
-          <div class="sports-section-head">
-            <h2>Picks recientes</h2>
-            <span>Salida del motor IA con contexto y riesgo</span>
-          </div>
-          <div id="sports-admin-picks" class="sports-picks-list compact"></div>
-        </article>
-      </section>
+    <!-- EVENTS SECTION -->
+    <section class="events-section">
+      <div class="section-hdr">
+        <h2 class="section-title">Eventos del día</h2>
+        <span class="section-sub" id="events-count-label">cargando…</span>
+      </div>
+      <div id="events-list">
+        <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Cargando eventos…</div>
+      </div>
+    </section>
 
-      <section class="sports-admin-grid sports-admin-grid-secondary">
-        <article class="card sports-admin-card">
-          <div class="sports-section-head">
-            <h2>Bitacora de sync</h2>
-            <span>Ultimos eventos de sincronizacion y mensajes del sistema</span>
-          </div>
-          <div id="sports-sync-status" class="sports-log-list"></div>
-        </article>
-
-        <article class="card sports-admin-card">
-          <div class="sports-section-head">
-            <h2>Pipeline IA</h2>
-            <span>Como fluye la operacion desde la fuente hasta el pick</span>
-          </div>
-          <div class="sports-admin-pipeline">
-            <article class="sports-pipeline-step">
-              <span>1</span>
-              <strong>Sync de eventos</strong>
-              <p>API real o mock llena la base del dia.</p>
-            </article>
-            <article class="sports-pipeline-step">
-              <span>2</span>
-              <strong>Stats y contexto</strong>
-              <p>Se recuperan stats guardadas o se refrescan bajo demanda.</p>
-            </article>
-            <article class="sports-pipeline-step">
-              <span>3</span>
-              <strong>Claude / IA</strong>
-              <p>Genera pick, mercado, confianza y riesgo en JSON estricto.</p>
-            </article>
-            <article class="sports-pipeline-step">
-              <span>4</span>
-              <strong>Persistencia</strong>
-              <p>El pick queda en historial y alimenta el dashboard del usuario.</p>
-            </article>
-          </div>
-        </article>
-      </section>
-
-      <section class="sports-admin-events">
-        <div class="sports-section-head">
-          <h2>Eventos disponibles</h2>
-          <span>Estado del partido, pick actual y acciones manuales por evento</span>
+    <!-- PIPELINE -->
+    <section class="pipeline-section">
+      <div class="section-hdr">
+        <h2 class="section-title">Pipeline IA Dual</h2>
+        <span class="section-sub">GPT genera · Claude elige</span>
+      </div>
+      <div class="pipeline-grid">
+        <div class="pipeline-step">
+          <div class="step-n">01</div>
+          <div class="step-name">Sync de eventos</div>
+          <div class="step-desc">La API real o mock llena la base de datos del día con partidos y metadata.</div>
         </div>
-        <div class="sports-table-card">
-          <div class="sports-table-head sports-table-head-admin">
-            <span>Liga</span>
-            <span>Partido</span>
-            <span>Fecha</span>
-            <span>Pick</span>
-            <span>Accion</span>
-          </div>
-          <div id="sports-events-table"></div>
+        <div class="pipeline-step">
+          <div class="step-n">02</div>
+          <div class="step-name">GPT-4o genera</div>
+          <div class="step-desc">OpenAI analiza el evento y produce 3 picks en mercados distintos con análisis detallado.</div>
         </div>
-      </section>
-    </main>
+        <div class="pipeline-step">
+          <div class="step-n">03</div>
+          <div class="step-name">Claude evalúa</div>
+          <div class="step-desc">Claude Sonnet actúa como juez: revisa los 3 candidatos y selecciona el más sólido.</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-n">04</div>
+          <div class="step-name">Publicar</div>
+          <div class="step-desc">Tú decides qué pick se publica. Queda guardado en historial y visible para usuarios.</div>
+        </div>
+      </div>
+    </section>
 
-    <footer class="footer"><div>Momentum Ascent • Admin Sports</div></footer>
-    <script src="app.js"></script>
-  </body>
+    <!-- LOG SECTION -->
+    <section class="log-section">
+      <div class="section-hdr">
+        <h2 class="section-title">Bitácora del sistema</h2>
+        <span class="section-sub">logs recientes</span>
+      </div>
+      <div class="log-list" id="log-list">
+        <div class="log-empty">Sin actividad registrada aún.</div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer style="position:relative;z-index:2;padding:24px 52px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+  <span style="font-size:11px;color:var(--muted)">Momentum Ascent · Admin Panel</span>
+  <span style="font-size:10px;color:rgba(240,237,232,.18)">Contenido informativo. No garantiza ganancias.</span>
+</footer>
+
+<script src="app.js"></script>
+<script>
+(function(){
+  // ── AUTH ──────────────────────────────────────────────────
+  const userRaw = localStorage.getItem('discipline_current_user_v1');
+  const godToken = localStorage.getItem('discipline_god_token_v1');
+  let userEmail = '';
+  try { userEmail = JSON.parse(userRaw)?.email || ''; } catch(_){}
+  document.getElementById('nav-user-email').textContent = userEmail || 'no autenticado';
+
+  function apiHeaders(){
+    const h = { 'Content-Type':'application/json' };
+    if(userEmail) h['x-user-email'] = userEmail;
+    if(godToken)  h['x-god-token']  = godToken;
+    return h;
+  }
+
+  // ── LOG ───────────────────────────────────────────────────
+  const logEl = document.getElementById('log-list');
+  function addLog(msg, type=''){
+    if(logEl.querySelector('.log-empty')) logEl.innerHTML = '';
+    const ts = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const item = document.createElement('div');
+    item.className = 'log-item';
+    item.innerHTML = `<span class="log-ts">${ts}</span><span class="log-msg ${type}">${msg}</span>`;
+    logEl.prepend(item);
+    if(logEl.children.length > 60) logEl.lastElementChild.remove();
+  }
+
+  // ── STATE ─────────────────────────────────────────────────
+  let events = [];
+  let aiSessions = 0;
+  const publishedSet = new Set();
+
+  // ── STATS ─────────────────────────────────────────────────
+  function updateStats(){
+    document.getElementById('stat-eventos').textContent = events.length;
+    const withPick = events.filter(e => e.hasPick).length;
+    document.getElementById('stat-picks').textContent = withPick;
+    document.getElementById('stat-sin-pick').textContent = events.length - withPick;
+    document.getElementById('stat-sesiones').textContent = aiSessions;
+  }
+
+  // ── STATUS TEXT ───────────────────────────────────────────
+  function setStatus(txt){ document.getElementById('ops-status-txt').textContent = txt; }
+
+  // ── SPORT ICON MAP ────────────────────────────────────────
+  const SPORT_ICONS = { futbol:'⚽', basketball:'🏀', tenis:'🎾', beisbol:'⚾', nfl:'🏈', default:'🏆' };
+  function sportIcon(sport){ return SPORT_ICONS[(sport||'').toLowerCase()] || SPORT_ICONS.default; }
+
+  // ── RISK COLOR ────────────────────────────────────────────
+  function riskClass(r){ const v=(r||'').toUpperCase(); return v==='BAJO'?'low':v==='ALTO'?'high':'med'; }
+  function confColor(v){ return v>=75?'green':v>=55?'yellow':'orange'; }
+
+  // ── RENDER EVENTS ─────────────────────────────────────────
+  function renderEvents(list){
+    const container = document.getElementById('events-list');
+    if(!list || !list.length){
+      container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No hay eventos para hoy. Sincroniza primero.</div>';
+      document.getElementById('events-count-label').textContent = '0 eventos';
+      return;
+    }
+    document.getElementById('events-count-label').textContent = `${list.length} evento${list.length!==1?'s':''}`;
+    container.innerHTML = '';
+    list.forEach(ev => {
+      const card = document.createElement('div');
+      card.className = 'event-card';
+      card.dataset.eventId = ev.id;
+
+      const home = ev.home_team || ev.homeTeam || '?';
+      const away = ev.away_team || ev.awayTeam || '?';
+      const league = ev.league || ev.competition || '—';
+      const sport = ev.sport || 'default';
+      const timeStr = ev.start_time ? new Date(ev.start_time).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : '—';
+      const hasPick = !!ev.hasPick;
+
+      card.innerHTML = `
+        <div class="event-card-head">
+          <div class="event-sport-icon">${sportIcon(sport)}</div>
+          <div class="event-info">
+            <div class="event-match">${home} vs ${away}</div>
+            <div class="event-meta">
+              <span class="event-league">${league}</span>
+              <span class="event-time">${timeStr}</span>
+            </div>
+          </div>
+          <div class="event-pick-status">
+            ${hasPick ? '<span class="chip green">✓ Pick</span>' : '<span class="chip yellow">Sin pick</span>'}
+            <button class="btn-dual" data-eid="${ev.id}">
+              Análisis Dual IA
+            </button>
+          </div>
+        </div>
+        <div class="dual-panel" id="dual-${ev.id}"></div>
+      `;
+      container.appendChild(card);
+    });
+
+    container.addEventListener('click', e => {
+      const btn = e.target.closest('.btn-dual');
+      if(btn) launchDual(parseInt(btn.dataset.eid), btn);
+      const pub = e.target.closest('.btn-publish, .btn-publish-claude');
+      if(pub && !pub.classList.contains('published')) publishCandidate(pub);
+    });
+  }
+
+  // ── LAUNCH DUAL ANALYSIS ──────────────────────────────────
+  async function launchDual(eventId, btn){
+    const panel = document.getElementById(`dual-${eventId}`);
+    if(panel.classList.contains('open') && panel.dataset.loaded){
+      panel.classList.toggle('open');
+      return;
+    }
+    panel.classList.add('open');
+    panel.dataset.loaded = '1';
+    btn.disabled = true;
+    aiSessions++;
+    updateStats();
+
+    panel.innerHTML = `
+      <div class="dual-loading">
+        <div class="dual-spinner"></div>
+        <span id="dual-step-txt-${eventId}">GPT-4o analizando el evento…</span>
+      </div>`;
+    addLog(`Iniciando análisis dual para evento #${eventId}`, 'ok');
+    setStatus(`Analizando evento #${eventId}…`);
+
+    try {
+      const stepTxt = document.getElementById(`dual-step-txt-${eventId}`);
+      if(stepTxt) stepTxt.textContent = 'GPT-4o generando 3 picks…';
+
+      const res = await fetch(`/api/picks/generate-dual/${eventId}`, {
+        method:'POST', headers: apiHeaders()
+      });
+      const data = await res.json();
+
+      if(!res.ok || !data.ok){
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+
+      if(stepTxt) stepTxt.textContent = 'Claude evaluando candidatos…';
+      // brief delay for UX (Claude already ran on backend)
+      await new Promise(r => setTimeout(r,400));
+
+      renderDualResult(panel, data, eventId);
+      addLog(`Dual completo: evento #${eventId} — Claude eligió candidato ${(data.claudeSelection?.selectedIndex ?? 0)+1}`, 'ok');
+      setStatus(`Análisis completado — evento #${eventId}`);
+    } catch(err){
+      panel.innerHTML = `<div class="dual-error">Error: ${err.message}</div>`;
+      addLog(`Error en dual #${eventId}: ${err.message}`, 'err');
+      setStatus('Error en análisis.');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── RENDER DUAL RESULT ────────────────────────────────────
+  function renderDualResult(panel, data, eventId){
+    const { candidates, claudeSelection, event: ev } = data;
+    const selectedIdx = claudeSelection?.selectedIndex ?? 0;
+
+    let candidatesHtml = '';
+    (candidates || []).forEach((c, i) => {
+      const isSelected = i === selectedIdx;
+      const rc = riskClass(c.risk_level || c.riskLevel);
+      const cc = confColor(parseInt(c.confidence)||60);
+      candidatesHtml += `
+        <div class="candidate-card ${isSelected?'is-selected':''}">
+          <div class="cand-header">
+            <span class="cand-n">Candidato ${i+1}${isSelected?' · ★ Elegido por Claude':''}</span>
+            <span class="cand-conf" style="color:var(--${cc})">${c.confidence}%</span>
+          </div>
+          <div class="cand-pick">${c.pick||'—'}</div>
+          <div class="cand-market">${c.market||'—'}</div>
+          <span class="cand-risk ${rc}">${c.risk_level||c.riskLevel||'MEDIO'}</span>
+          <div class="cand-analysis">${c.analysis||'—'}</div>
+          <button class="btn-publish" data-cid="${c.dbId||''}" data-eid="${eventId}">
+            Publicar este pick
+          </button>
+        </div>`;
+    });
+
+    const cs = claudeSelection || {};
+    const fp = cs.finalPick || {};
+    const rc2 = riskClass(fp.risk_level || fp.riskLevel || 'MEDIO');
+    const cc2 = confColor(parseInt(fp.confidence)||60);
+
+    panel.innerHTML = `
+      <div style="padding:8px 0 16px">
+        <div class="dual-step">Paso 2 · Generado por GPT-4o</div>
+        <div class="candidates-grid">${candidatesHtml}</div>
+
+        <div class="dual-step">Paso 3 · Selección de Claude Sonnet</div>
+        <div class="claude-box">
+          <div class="claude-label">Claude eligió este pick</div>
+          <div class="claude-pick">${fp.pick||cs.refinedPick||'—'} <span style="font-size:14px;color:var(--${cc2})">${fp.confidence||cs.confidenceAdjustment||'—'}%</span></div>
+          <div class="claude-market">${fp.market||'—'} · <span class="cand-risk ${rc2}" style="display:inline;padding:2px 8px">${fp.risk_level||fp.riskLevel||'MEDIO'}</span></div>
+          <div class="claude-reasoning-label" style="margin-top:14px">Razonamiento de Claude</div>
+          <div class="claude-reasoning">${cs.reasoning||'—'}</div>
+          <button class="btn-publish-claude" data-cid="${cs.claudePickId||''}" data-eid="${eventId}">
+            Publicar selección de Claude
+          </button>
+        </div>
+      </div>`;
+  }
+
+  // ── PUBLISH CANDIDATE ─────────────────────────────────────
+  async function publishCandidate(btn){
+    const cid = btn.dataset.cid;
+    const eid = btn.dataset.eid;
+    if(!cid){ addLog('Sin ID de candidato para publicar.','warn'); return; }
+
+    btn.textContent = 'Publicando…';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(`/api/picks/publish-candidate/${cid}`, {
+        method:'POST', headers: apiHeaders()
+      });
+      const data = await res.json();
+      if(!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+      btn.textContent = '✓ Publicado';
+      btn.classList.add('published');
+      publishedSet.add(cid);
+
+      // mark event as having pick
+      const evCard = document.querySelector(`.event-card[data-event-id="${eid}"]`);
+      if(evCard){
+        const chip = evCard.querySelector('.chip.yellow');
+        if(chip){ chip.className='chip green'; chip.textContent='✓ Pick'; }
+        const ev = events.find(e=>String(e.id)===String(eid));
+        if(ev) ev.hasPick = true;
+        updateStats();
+      }
+      addLog(`Pick publicado: evento #${eid} — candidato #${cid}`, 'ok');
+      setStatus('Pick publicado correctamente.');
+    } catch(err){
+      btn.textContent = 'Error — reintentar';
+      btn.disabled = false;
+      addLog(`Error al publicar: ${err.message}`, 'err');
+    }
+  }
+
+  // ── LOAD EVENTS ───────────────────────────────────────────
+  async function loadEvents(){
+    try {
+      setStatus('Cargando eventos…');
+      const res = await fetch('/api/sports/events/today', { headers: apiHeaders() });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      events = Array.isArray(data) ? data : (data.events || []);
+      updateStats();
+      renderEvents(events);
+      addLog(`${events.length} evento(s) cargado(s)`, 'ok');
+      setStatus(`${events.length} eventos cargados — ${new Date().toLocaleTimeString('es-MX')}`);
+    } catch(err){
+      document.getElementById('events-list').innerHTML = `<div class="dual-error">No se pudieron cargar eventos: ${err.message}</div>`;
+      addLog(`Error cargando eventos: ${err.message}`, 'err');
+      setStatus('Error al cargar eventos.');
+    }
+  }
+
+  // ── SYNC ──────────────────────────────────────────────────
+  document.getElementById('btn-sync').addEventListener('click', async function(){
+    this.disabled = true;
+    this.textContent = 'Sincronizando…';
+    addLog('Iniciando sincronización de eventos…');
+    setStatus('Sincronizando…');
+    try {
+      const res = await fetch('/api/sports/sync', { method:'POST', headers: apiHeaders() });
+      const data = await res.json();
+      addLog(`Sync completado: ${data.synced||0} evento(s) importado(s)`, 'ok');
+      await loadEvents();
+    } catch(err){
+      addLog(`Error en sync: ${err.message}`, 'err');
+      setStatus('Error en sync.');
+    } finally {
+      this.disabled = false;
+      this.textContent = 'Sincronizar eventos';
+    }
+  });
+
+  // ── REFRESH ───────────────────────────────────────────────
+  document.getElementById('btn-refresh').addEventListener('click', () => loadEvents());
+
+  // ── THREE.JS BG ───────────────────────────────────────────
+  (function initBg(){
+    if(typeof THREE === 'undefined') return;
+    const canvas = document.getElementById('bg-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias:false, alpha:true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
+    camera.position.z = 60;
+
+    const geo = new THREE.BufferGeometry();
+    const N = 600;
+    const pos = new Float32Array(N*3);
+    const col = new Float32Array(N*3);
+    for(let i=0;i<N;i++){
+      pos[i*3]=(Math.random()-.5)*160;
+      pos[i*3+1]=(Math.random()-.5)*120;
+      pos[i*3+2]=(Math.random()-.5)*80;
+      const isOrange=Math.random()>.6;
+      col[i*3]=isOrange?1:.9; col[i*3+1]=isOrange?.27:.88; col[i*3+2]=isOrange?0:.86;
+    }
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+    const mat = new THREE.PointsMaterial({ size:.55, vertexColors:true, transparent:true, opacity:.5 });
+    scene.add(new THREE.Points(geo,mat));
+
+    let mx=0,my=0;
+    window.addEventListener('mousemove',e=>{mx=(e.clientX/innerWidth-.5)*2;my=(e.clientY/innerHeight-.5)*2});
+
+    function resize(){ renderer.setSize(innerWidth,innerHeight); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); }
+    resize(); window.addEventListener('resize',resize);
+
+    let t=0;
+    (function loop(){
+      requestAnimationFrame(loop);
+      t+=.002;
+      scene.rotation.y = mx*.04 + Math.sin(t)*.04;
+      scene.rotation.x = -my*.03 + Math.cos(t*.7)*.02;
+      renderer.render(scene,camera);
+    })();
+  })();
+
+  // ── INIT ──────────────────────────────────────────────────
+  loadEvents();
+})();
+</script>
+</body>
 </html>

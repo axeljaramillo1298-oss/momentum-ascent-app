@@ -1,349 +1,660 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Picks de Hoy | Momentum Ascent</title>
-    <link rel="stylesheet" href="styles.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style>
-      .sports-dashboard-page .user-panel-top {
-        position: relative;
-        z-index: 200;
-        padding: 12px 16px;
-      }
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Picks del Día | Momentum Ascent</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#FF4500;
+  --dark:#060608;
+  --border:rgba(255,255,255,0.07);
+  --text:#f0ede8;
+  --muted:rgba(240,237,232,0.4);
+  --green:#4ADE80;
+  --red:#F87171;
+  --yellow:#F59E0B;
+}
+html{scroll-behavior:smooth}
+body{background:var(--dark)!important;color:var(--text);font-family:'Barlow',sans-serif;overflow-x:hidden;min-height:100vh}
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+main{position:relative;z-index:2}
+.user-panel-top{position:relative;z-index:200;padding:12px 16px}
 
-      .sports-dashboard-page .page-hero {
-        padding: 36px 52px 32px;
-        position: relative;
-      }
+/* NAV */
+.user-panel-nav{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.nav-logo-link{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{width:32px;height:32px;flex-shrink:0}
+.logo-wordmark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--text)}
+.nav-actions{display:flex;align-items:center;gap:4px}
+.up-nav-link{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;border-radius:3px;text-decoration:none;color:var(--muted);transition:color .2s,background .2s;white-space:nowrap}
+.up-nav-link:hover{color:var(--text)}
+.up-nav-active{color:var(--text);background:rgba(255,255,255,.06)}
 
-      .sports-dashboard-page .page-hero::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 360px;
-        background:
-          radial-gradient(ellipse 60% 80% at 20% 20%, rgba(80, 20, 120, 0.18) 0%, transparent 70%),
-          radial-gradient(ellipse 40% 60% at 80% 40%, rgba(255, 69, 0, 0.05) 0%, transparent 70%);
-        pointer-events: none;
-      }
+/* HERO */
+.page-hero{padding:36px 52px 32px;position:relative}
+.page-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:360px;background:radial-gradient(ellipse 60% 80% at 20% 20%,rgba(80,20,120,.18) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 80% 40%,rgba(255,69,0,.05) 0%,transparent 70%);pointer-events:none}
+.hero-inner{display:flex;justify-content:space-between;align-items:flex-start;gap:40px;position:relative;z-index:1}
+.hero-left{flex:1}
+.page-eyebrow{font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;opacity:0;animation:fadeUp .5s .1s forwards}
+.page-eyebrow::before{content:'';width:20px;height:1px;background:var(--muted)}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(56px,8vw,104px);text-transform:uppercase;letter-spacing:-.02em;line-height:.88;opacity:0;animation:fadeUp .6s .2s forwards}
+.page-desc{margin-top:16px;font-size:14px;color:var(--muted);max-width:380px;line-height:1.65;font-weight:300;opacity:0;animation:fadeUp .5s .35s forwards}
+.disc{margin-top:14px;font-size:10px;color:var(--orange);letter-spacing:.04em;opacity:0;animation:fadeUp .4s .5s forwards}
+.hero-actions{display:flex;gap:10px;margin-top:18px;opacity:0;animation:fadeUp .4s .55s forwards;flex-wrap:wrap}
+.btn-refresh{font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:9px 20px;background:var(--orange);color:#fff;border:none;border-radius:3px;cursor:pointer;transition:background .2s}
+.btn-refresh:hover{background:#e03d00}
+.btn-refresh:disabled{opacity:.5;cursor:not-allowed}
+.btn-hist{font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:9px 18px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:3px;cursor:pointer;text-decoration:none;transition:all .2s;display:inline-flex;align-items:center}
+.btn-hist:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+.hero-right{display:flex;flex-direction:column;align-items:flex-end;gap:14px;padding-top:4px;opacity:0;animation:fadeUp .6s .3s forwards;flex-shrink:0}
+.hero-date{border:1px solid var(--orange);color:var(--orange);font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;padding:7px 18px;border-radius:3px}
+.hero-stats{display:flex;gap:2px}
+.hs-box{background:rgba(255,255,255,.03);border:1px solid var(--border);padding:16px 22px;text-align:center;min-width:110px;position:relative;overflow:hidden;transition:border-color .3s,background .3s;cursor:default}
+.hs-box::before{content:'';position:absolute;bottom:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent,var(--orange),transparent);transform:scaleX(0);transform-origin:center;transition:transform .4s}
+.hs-box:hover{background:rgba(255,69,0,.04);border-color:rgba(255,69,0,.2)}
+.hs-box:hover::before{transform:scaleX(1)}
+.hs-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:40px;line-height:1;letter-spacing:-.02em}
+.hs-val.green{color:var(--green)}
+.hs-val.orange{color:var(--orange)}
+.hs-val.yellow{color:var(--yellow)}
+.hs-lbl{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:5px}
 
-      .sports-dashboard-page .hero-inner {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 40px;
-        position: relative;
-        z-index: 1;
-      }
+/* CONTENT */
+.page-content{padding:0 52px 140px;position:relative;z-index:2}
 
-      .sports-dashboard-page .hero-left {
-        flex: 1;
-        max-width: 420px;
-      }
+/* FILTER BAR */
+.filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:28px;flex-wrap:wrap;opacity:0;animation:fadeUp .5s .6s forwards}
+.filter-btn{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:7px 16px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap}
+.filter-btn:hover{color:var(--text);border-color:rgba(255,255,255,.18)}
+.filter-btn.on{background:var(--orange);color:#fff;border-color:var(--orange)}
 
-      .sports-dashboard-page .page-eyebrow {
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.22em;
-        text-transform: uppercase;
-        color: rgba(240, 237, 232, 0.4);
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
+/* LAYOUT */
+.page-cols{display:grid;grid-template-columns:1fr 300px;gap:24px}
+.section-hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px;opacity:0;animation:fadeUp .5s .65s forwards}
+.section-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:22px;text-transform:uppercase;letter-spacing:.03em}
+.section-sub{font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 
-      .sports-dashboard-page .page-eyebrow::before {
-        content: "";
-        width: 20px;
-        height: 1px;
-        background: rgba(240, 237, 232, 0.4);
-      }
+/* PICK CARD */
+.pick-card{background:rgba(255,255,255,.022);border:1px solid var(--border);border-left:3px solid;border-radius:0 8px 8px 0;margin-bottom:12px;opacity:0;transform:translateY(16px);transition:opacity .55s ease,transform .55s ease,background .2s,border-color .25s}
+.pick-card.vis{opacity:1;transform:none}
+.pick-card:hover{background:rgba(255,255,255,.034)}
+.pick-card.risk-low{border-left-color:var(--green)}
+.pick-card.risk-med{border-left-color:var(--yellow)}
+.pick-card.risk-high{border-left-color:var(--red)}
 
-      .sports-dashboard-page .page-title {
-        font-family: "Barlow Condensed", sans-serif;
-        font-weight: 900;
-        font-style: italic;
-        font-size: clamp(56px, 8vw, 104px);
-        text-transform: uppercase;
-        letter-spacing: -0.02em;
-        line-height: 0.88;
-      }
+/* CARD HEAD */
+.pick-card-head{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 18px 0;gap:12px}
+.pick-info{flex:1;min-width:0}
+.pick-match{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:20px;letter-spacing:.01em;text-transform:uppercase;margin-bottom:8px;line-height:1.1}
+.pick-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pick-league{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid rgba(255,255,255,.14);color:var(--muted)}
+.pick-dot{color:rgba(240,237,232,.2);font-size:10px}
+.pick-time{font-size:11px;color:var(--muted)}
+.pick-ring-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0}
+.pick-risk-badge{font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid}
+.risk-low{color:var(--green);border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.08)}
+.risk-med{color:var(--yellow);border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.08)}
+.risk-high{color:var(--red);border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.08)}
 
-      .sports-dashboard-page .page-desc {
-        margin-top: 16px;
-        font-size: 14px;
-        color: rgba(240, 237, 232, 0.55);
-        max-width: 400px;
-        line-height: 1.65;
-        font-weight: 300;
-      }
+/* CARD DETAILS ROW */
+.pick-details{display:flex;padding:14px 18px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-top:14px}
+.pick-detail-col{flex:1;padding:0 16px;border-right:1px solid rgba(255,255,255,.05)}
+.pick-detail-col:first-child{padding-left:0}
+.pick-detail-col:last-child{border-right:none}
+.pd-label{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.pd-val{font-size:14px;font-weight:600}
+.pd-val.orange{color:var(--orange)}
+.conf-bar-wrap{height:2.5px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:8px;overflow:hidden}
+.conf-bar-fill{height:100%;border-radius:2px;transition:width 1.2s cubic-bezier(.22,1,.36,1)}
 
-      .sports-dashboard-page .disc {
-        margin-top: 14px;
-        font-size: 10px;
-        color: #ff4500;
-        letter-spacing: 0.04em;
-      }
+/* ANALYSIS */
+.pick-analysis{font-size:13px;color:rgba(240,237,232,.62);line-height:1.7;padding:14px 18px;font-weight:300}
 
-      .sports-dashboard-page .hero-right {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 14px;
-        padding-top: 4px;
-      }
+/* EXPAND TOGGLE */
+.pick-expand{width:100%;padding:10px;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);background:transparent;border:none;border-top:1px solid rgba(255,255,255,.05);cursor:pointer;transition:color .2s,background .2s;text-align:center;display:block}
+.pick-expand:hover{color:var(--text);background:rgba(255,255,255,.02)}
+.pick-extra{padding:0 18px;max-height:0;overflow:hidden;transition:max-height .35s ease,padding .25s ease}
+.pick-extra.open{max-height:200px;padding:12px 18px 16px}
+.extra-label{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.extra-text{font-size:12px;color:rgba(240,237,232,.5);line-height:1.65}
 
-      .sports-dashboard-page .hero-stats,
-      .sports-dashboard-page .hero-right .sports-summary-grid {
-        display: flex;
-        gap: 2px;
-        margin-top: 0;
-      }
+/* CARD FOOTER */
+.pick-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid rgba(255,255,255,.05);gap:12px}
+.pick-teams{display:flex;align-items:center;gap:10px}
+.pick-team{display:flex;flex-direction:column;gap:2px}
+.pick-team-name{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+.pick-team-liga{font-size:9.5px;color:var(--muted)}
+.pick-vs{font-size:9px;font-weight:700;color:rgba(240,237,232,.2);letter-spacing:.1em;text-transform:uppercase;padding:0 2px}
+.pick-actions{display:flex;gap:8px;flex-shrink:0}
+.btn-share{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:7px 14px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:3px;cursor:pointer;transition:all .2s}
+.btn-share:hover{color:var(--text);border-color:rgba(255,255,255,.25)}
+.btn-save{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:7px 16px;background:var(--orange);color:#fff;border:none;border-radius:3px;cursor:pointer;transition:background .2s}
+.btn-save:hover{background:#e03d00}
 
-      .sports-dashboard-page .hero-right .sports-summary-card {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.07);
-        padding: 16px 22px;
-        text-align: center;
-        min-width: 110px;
-        position: relative;
-        overflow: hidden;
-        transition: border-color 0.3s, background 0.3s;
-        cursor: default;
-        border-radius: 0;
-        display: block;
-      }
+/* EMPTY + LOADING */
+.picks-empty{padding:60px 20px;text-align:center;color:var(--muted);background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px}
+.picks-empty-icon{font-size:36px;margin-bottom:16px;opacity:.3}
+.picks-empty-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;color:rgba(240,237,232,.3)}
+.picks-empty-s{font-size:13px;line-height:1.6}
+.loading-state{display:flex;align-items:center;gap:12px;padding:40px 20px;color:var(--muted);font-size:13px}
+.loading-spinner{width:18px;height:18px;border:2px solid rgba(255,69,0,.2);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
 
-      .sports-dashboard-page .hero-right .sports-summary-card::before {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 1.5px;
-        background: linear-gradient(90deg, transparent, #ff4500, transparent);
-        transform: scaleX(0);
-        transform-origin: center;
-        transition: transform 0.4s;
-      }
+/* SIDEBAR */
+.sidebar-col{display:flex;flex-direction:column;gap:16px}
+.side-card{background:rgba(255,255,255,.022);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:background .25s,border-color .25s}
+.side-card-hdr{padding:16px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.side-card-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:16px;text-transform:uppercase;letter-spacing:.05em}
+.side-date-chip{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border:1px solid rgba(255,69,0,.4);color:var(--orange);border-radius:20px}
+.side-card-body{padding:16px 18px}
+.res-stat{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.res-stat:last-of-type{border-bottom:none}
+.res-stat-lbl{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.res-stat-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;line-height:1}
+.res-stat-val.green{color:var(--green)}
+.res-stat-val.yellow{color:var(--yellow)}
+.res-stat-val.red{color:var(--red)}
+.dist-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.dist-label{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.dist-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.dist-row-lbl{font-size:9.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;width:90px;flex-shrink:0}
+.dist-bar-wrap{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.dist-bar-fill{height:100%;border-radius:2px;width:0;transition:width 1.2s cubic-bezier(.22,1,.36,1)}
+.dist-row-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:14px;width:16px;text-align:right;flex-shrink:0}
+.side-list{display:flex;flex-direction:column;gap:10px;list-style:none}
+.side-list li{font-size:12px;color:rgba(240,237,232,.62);line-height:1.55;display:flex;align-items:flex-start;gap:7px}
+.side-list li::before{content:'·';color:var(--orange);font-size:14px;flex-shrink:0;line-height:1.3}
+.side-list strong{color:var(--text);font-weight:600}
 
-      .sports-dashboard-page .hero-right .sports-summary-card:hover {
-        background: rgba(255, 69, 0, 0.04);
-        border-color: rgba(255, 69, 0, 0.2);
-      }
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:300;display:flex;border-top:1px solid var(--border);background:rgba(6,6,8,.92);backdrop-filter:blur(16px)}
+.bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;text-decoration:none;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:color .2s}
+.bottom-nav-item:hover,.bottom-nav-active{color:var(--orange)}
+.bottom-nav-icon{font-size:18px;display:block}
 
-      .sports-dashboard-page .hero-right .sports-summary-card:hover::before {
-        transform: scaleX(1);
-      }
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-      .sports-dashboard-page .hero-right .sports-summary-card strong {
-        font-family: "Barlow Condensed", sans-serif;
-        font-weight: 900;
-        font-size: 40px;
-        line-height: 1;
-        letter-spacing: -0.02em;
-        display: block;
-        color: #f3efe7;
-      }
+@media(max-width:920px){
+  .page-hero{padding:24px 20px 20px}
+  .page-content{padding:0 20px 140px}
+  .page-cols{grid-template-columns:1fr}
+  .sidebar-col{order:-1}
+  .hero-stats .hs-box{min-width:90px;padding:12px 14px}
+  .hs-val{font-size:32px}
+}
+@media(max-width:560px){
+  .hero-inner{flex-direction:column;gap:20px}
+  .hero-right{align-items:flex-start}
+  .pick-details{flex-direction:column;gap:10px}
+  .pick-detail-col{border-right:none;border-bottom:1px solid rgba(255,255,255,.04);padding:0 0 10px}
+  .pick-detail-col:last-child{border-bottom:none}
+  .pick-footer{flex-direction:column;align-items:flex-start}
+  .pick-actions{width:100%;justify-content:flex-end}
+  .filter-bar{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+  .filter-bar::-webkit-scrollbar{display:none}
+  .nav-actions{display:none}
+}
+  </style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
 
-      .sports-dashboard-page .hero-right .sports-summary-card:nth-child(1) strong,
-      .sports-dashboard-page .hero-right .sports-summary-card:nth-child(3) strong {
-        color: #4ade80;
-      }
+<header class="user-panel-top">
+  <nav class="user-panel-nav">
+    <a class="nav-logo-link" href="user-hoy.html" aria-label="Momentum Ascent">
+      <svg class="logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="lgNav" x1="0" y1="36" x2="36" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#ff3b30"/>
+            <stop offset="100%" stop-color="#f5c04a"/>
+          </linearGradient>
+        </defs>
+        <circle cx="18" cy="18" r="17" stroke="url(#lgNav)" stroke-width="2" fill="none" opacity="0.35"/>
+        <path d="M18.2 6.2C20.4 9.1 24.8 12 24.8 17.1C24.8 23 21.2 28.4 18 29.6C14.6 28.5 11.2 23.3 11.2 17.4C11.2 13.1 13.8 9.7 16.3 7.8C16.8 10 17.5 11.7 19.2 13.4C18.9 11.3 18.7 8.8 18.2 6.2Z" fill="url(#lgNav)" opacity="0.96"/>
+        <path d="M18.1 13.2C19.4 15 21.4 16.7 21.4 19.6C21.4 22.8 19.5 25.4 18 26C16.2 25.4 14.5 22.5 14.5 19.5C14.5 17.2 15.8 15.4 17.2 14.2C17.4 15.3 17.8 16.2 18.9 17.1C18.7 15.9 18.4 14.6 18.1 13.2Z" fill="rgba(255,248,235,0.72)"/>
+      </svg>
+      <span class="logo-wordmark">MOMENTUM ASCENT</span>
+    </a>
+    <div class="nav-actions">
+      <a class="up-nav-link up-nav-active" href="user-hoy.html">Picks · Análisis</a>
+      <a class="up-nav-link" href="user-progreso.html">Historial</a>
+      <a class="up-nav-link" href="user-dieta.html">Cobertura</a>
+      <a class="up-nav-link" href="user-checkin.html">Cuenta</a>
+    </div>
+  </nav>
+</header>
 
-      .sports-dashboard-page .hero-right .sports-summary-card:nth-child(2) strong {
-        color: #ff4500;
-      }
-
-      .sports-dashboard-page .hero-right .sports-summary-card span {
-        font-size: 9.5px;
-        font-weight: 700;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: rgba(240, 237, 232, 0.4);
-        margin-top: 5px;
-        display: block;
-      }
-
-      .sports-dashboard-page .hero-copy-actions {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-top: 18px;
-      }
-
-      .sports-dashboard-page .user-greeting {
-        margin-top: 18px;
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: rgba(240, 237, 232, 0.6);
-      }
-
-      .sports-dashboard-page .sports-dashboard-section {
-        padding-top: 0;
-      }
-
-      @media (max-width: 920px) {
-        .sports-dashboard-page .page-hero {
-          padding: 24px 20px 20px;
-        }
-
-        .sports-dashboard-page .hero-inner {
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .sports-dashboard-page .hero-right {
-          align-items: flex-start;
-        }
-
-        .sports-dashboard-page .hero-right .sports-summary-card {
-          min-width: 90px;
-          padding: 12px 14px;
-        }
-
-        .sports-dashboard-page .hero-right .sports-summary-card strong {
-          font-size: 32px;
-        }
-      }
-
-      @media (max-width: 640px) {
-        .sports-dashboard-page .hero-right .sports-summary-grid {
-          width: 100%;
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-      }
-    </style>
-  </head>
-  <body class="user-panel-premium sports-dashboard-page">
-    <main class="user-panel-shell sports-dashboard-shell">
-      <header class="user-panel-top sports-dashboard-top">
-        <nav class="user-panel-nav">
-          <a class="nav-logo-link" href="user-hoy.html" aria-label="Momentum Ascent">
-            <svg class="logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <defs>
-                <linearGradient id="userNavLg1" x1="0" y1="36" x2="36" y2="0" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stop-color="#ff3b30"/>
-                  <stop offset="100%" stop-color="#f5c04a"/>
-                </linearGradient>
-              </defs>
-              <circle cx="18" cy="18" r="17" stroke="url(#userNavLg1)" stroke-width="2" fill="none" opacity="0.35"/>
-              <path d="M18.2 6.2C20.4 9.1 24.8 12 24.8 17.1C24.8 23 21.2 28.4 18 29.6C14.6 28.5 11.2 23.3 11.2 17.4C11.2 13.1 13.8 9.7 16.3 7.8C16.8 10 17.5 11.7 19.2 13.4C18.9 11.3 18.7 8.8 18.2 6.2Z" fill="url(#userNavLg1)" opacity="0.96"/>
-              <path d="M18.1 13.2C19.4 15 21.4 16.7 21.4 19.6C21.4 22.8 19.5 25.4 18 26C16.2 25.4 14.5 22.5 14.5 19.5C14.5 17.2 15.8 15.4 17.2 14.2C17.4 15.3 17.8 16.2 18.9 17.1C18.7 15.9 18.4 14.6 18.1 13.2Z" fill="rgba(255,248,235,0.72)"/>
-            </svg>
-            <span class="logo-wordmark">MOMENTUM ASCENT</span>
-          </a>
-          <div class="nav-actions">
-            <a class="ghost up-nav-link up-nav-active" href="user-hoy.html">Picks</a>
-            <a class="ghost up-nav-link" href="user-rutinas.html">Analisis</a>
-            <a class="ghost up-nav-link" href="user-progreso.html">Historial</a>
-            <a class="ghost up-nav-link" href="user-dieta.html">Cobertura</a>
-            <a class="ghost up-nav-link" href="user-checkin.html">Cuenta</a>
+<main>
+  <div class="page-hero">
+    <div class="hero-inner">
+      <div class="hero-left">
+        <div class="page-eyebrow">Stat + AI Layer</div>
+        <h1 class="page-title">Picks<br>del Día</h1>
+        <p class="page-desc">Picks activos del día con mercado, confianza estimada y análisis completo generado por IA dual.</p>
+        <div class="disc">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</div>
+        <div class="hero-actions">
+          <button class="btn-refresh" id="btn-refresh">Actualizar picks</button>
+          <a class="btn-hist" href="user-progreso.html">Ver historial</a>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="hero-date" id="hero-date">—</div>
+        <div class="hero-stats">
+          <div class="hs-box">
+            <div class="hs-val green" id="stat-total">—</div>
+            <div class="hs-lbl">Picks hoy</div>
           </div>
-        </nav>
-        <div class="page-hero">
-          <div class="hero-inner">
-            <div class="hero-left">
-              <div class="page-eyebrow">Stat + AI Layer</div>
-              <h1 class="page-title">Picks<br>del Dia</h1>
-              <p class="page-desc">Lectura rapida del tablero principal: picks activos, confianza estimada y analisis breve generado con IA.</p>
-              <p class="user-greeting" id="user-greeting"></p>
-              <div class="hero-copy-actions">
-                <button class="primary" type="button" id="sports-refresh-picks">Actualizar picks</button>
-                <a class="ghost" href="user-progreso.html">Ver historial</a>
+          <div class="hs-box">
+            <div class="hs-val orange" id="stat-conf">—</div>
+            <div class="hs-lbl">Conf. media</div>
+          </div>
+          <div class="hs-box">
+            <div class="hs-val yellow" id="stat-bajo">—</div>
+            <div class="hs-lbl">Bajo riesgo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <div class="filter-bar" id="filter-bar">
+      <button class="filter-btn on" data-filter="all">Todos</button>
+    </div>
+
+    <div class="page-cols">
+      <div class="picks-col">
+        <div class="section-hdr">
+          <span class="section-title">Desglose por pick</span>
+          <span class="section-sub" id="picks-count-label">cargando…</span>
+        </div>
+        <div id="picks-container">
+          <div class="loading-state">
+            <div class="loading-spinner"></div>
+            Cargando picks del día…
+          </div>
+        </div>
+      </div>
+
+      <aside class="sidebar-col">
+        <div class="side-card">
+          <div class="side-card-hdr">
+            <span class="side-card-title">Resumen del Día</span>
+            <span class="side-date-chip" id="side-date-chip">—</span>
+          </div>
+          <div class="side-card-body">
+            <div class="res-stat"><span class="res-stat-lbl">Total picks</span><span class="res-stat-val" id="rs-total" style="color:var(--text)">—</span></div>
+            <div class="res-stat"><span class="res-stat-lbl">Riesgo bajo</span><span class="res-stat-val green" id="rs-bajo">—</span></div>
+            <div class="res-stat"><span class="res-stat-lbl">Riesgo medio</span><span class="res-stat-val yellow" id="rs-medio">—</span></div>
+            <div class="res-stat"><span class="res-stat-lbl">Riesgo alto</span><span class="res-stat-val red" id="rs-alto">—</span></div>
+            <div class="dist-section">
+              <div class="dist-label">Distribución de confianza</div>
+              <div class="dist-row">
+                <span class="dist-row-lbl" style="color:var(--green)">Alta ≥75</span>
+                <div class="dist-bar-wrap"><div class="dist-bar-fill" style="background:var(--green)" id="bar-alta"></div></div>
+                <span class="dist-row-num" style="color:var(--green)" id="num-alta">0</span>
               </div>
-              <div class="disc">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</div>
-            </div>
-            <div class="hero-right">
-              <div class="sports-summary-grid" id="sports-picks-summary"></div>
+              <div class="dist-row">
+                <span class="dist-row-lbl" style="color:var(--yellow)">Media 60-74</span>
+                <div class="dist-bar-wrap"><div class="dist-bar-fill" style="background:var(--yellow)" id="bar-media"></div></div>
+                <span class="dist-row-num" style="color:var(--yellow)" id="num-media">0</span>
+              </div>
+              <div class="dist-row">
+                <span class="dist-row-lbl" style="color:var(--red)">Baja &lt;60</span>
+                <div class="dist-bar-wrap"><div class="dist-bar-fill" style="background:var(--red)" id="bar-baja"></div></div>
+                <span class="dist-row-num" style="color:var(--red)" id="num-baja">0</span>
+              </div>
             </div>
           </div>
         </div>
-      </header>
 
-      <section class="section sports-dashboard-section">
-        <div class="sports-dashboard-grid">
-          <section class="sports-main-column">
-            <div class="sports-section-head">
-              <h2>Recomendaciones activas</h2>
-              <span>Basadas en datos guardados, estadisticas y analisis IA</span>
-            </div>
-            <div class="sports-picks-list" id="sports-picks-list"></div>
-          </section>
-
-          <aside class="sports-side-column">
-            <article class="card sports-side-card">
-              <h3>Metodologia MVP</h3>
-              <ul class="sports-side-list">
-                <li>API deportiva o datos mock realistas.</li>
-                <li>Eventos persistidos en base de datos.</li>
-                <li>Generacion IA bajo demanda para evitar costo innecesario.</li>
-                <li>Historial acumulado para seguir nutriendo contexto.</li>
-              </ul>
-            </article>
-
-            <article class="card sports-side-card">
-              <h3>Lectura rapida</h3>
-              <ul class="sports-side-list">
-                <li><strong>Pick:</strong> mercado sugerido por la IA.</li>
-                <li><strong>Confianza:</strong> porcentaje estimado, no certeza.</li>
-                <li><strong>Riesgo:</strong> BAJO, MEDIO o ALTO.</li>
-                <li><strong>Analisis:</strong> explicacion breve y entendible.</li>
-              </ul>
-            </article>
-          </aside>
+        <div class="side-card">
+          <div class="side-card-hdr"><span class="side-card-title">Marco de Lectura</span></div>
+          <div class="side-card-body">
+            <ul class="side-list">
+              <li><strong>Confianza alta:</strong> más soporte estadístico, no certeza.</li>
+              <li><strong>Riesgo alto:</strong> mayor volatilidad o menos datos disponibles.</li>
+              <li><strong>Mercado:</strong> la forma concreta de la recomendación.</li>
+              <li><strong>Análisis:</strong> explica por qué la IA sugiere ese ángulo.</li>
+              <li><strong>Contexto:</strong> factores externos como lesiones o motivación.</li>
+            </ul>
+          </div>
         </div>
 
-        <section class="sports-history-section">
-          <div class="sports-section-head">
-            <h2>Historial reciente</h2>
-            <span>Ultimos picks generados para referencia</span>
+        <div class="side-card">
+          <div class="side-card-hdr"><span class="side-card-title">Objetivo de Esta Vista</span></div>
+          <div class="side-card-body">
+            <ul class="side-list">
+              <li>Entender cada pick antes de usarlo.</li>
+              <li>Separar el análisis del historial acumulado.</li>
+              <li>Construir criterio propio con base estadística.</li>
+              <li>Identificar patrones de riesgo por deporte y mercado.</li>
+            </ul>
           </div>
-          <div class="sports-table-card">
-            <div class="sports-table-head">
-              <span>Partido</span>
-              <span>Market</span>
-              <span>Pick</span>
-              <span>Conf.</span>
-              <span>Riesgo</span>
-            </div>
-            <div id="sports-picks-history"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<nav class="bottom-nav" aria-label="Navegacion principal">
+  <a class="bottom-nav-item bottom-nav-active" href="user-hoy.html">
+    <span class="bottom-nav-icon">🎯</span><span>Picks</span>
+  </a>
+  <a class="bottom-nav-item" href="user-progreso.html">
+    <span class="bottom-nav-icon">📚</span><span>Historial</span>
+  </a>
+  <a class="bottom-nav-item" href="user-dieta.html">
+    <span class="bottom-nav-icon">🌐</span><span>Cobertura</span>
+  </a>
+  <a class="bottom-nav-item" href="user-checkin.html">
+    <span class="bottom-nav-icon">👤</span><span>Cuenta</span>
+  </a>
+</nav>
+
+<script src="app.js"></script>
+<script>
+(function(){
+'use strict';
+
+// ── HELPERS ───────────────────────────────────────────────
+function riskClass(r){const v=(r||'').toUpperCase();return v==='BAJO'?'low':v==='ALTO'?'high':'med'}
+function confColor(v){return v>=75?'var(--green)':v>=60?'var(--yellow)':'var(--orange)'}
+function confBarColor(v){return v>=75?'var(--green)':v>=60?'var(--yellow)':'var(--orange)'}
+function pad2(n){return String(n).padStart(2,'0')}
+
+function sportLabel(s){
+  const map={futbol:'⚽ Fútbol',football:'⚽ Fútbol',soccer:'⚽ Fútbol',basketball:'🏀 Basketball',nba:'🏀 NBA',tenis:'🎾 Tenis',tennis:'🎾 Tenis',beisbol:'⚾ Béisbol',baseball:'⚾ Béisbol',nfl:'🏈 NFL',ufc:'🥊 UFC',mma:'🥊 MMA'};
+  return map[(s||'').toLowerCase()] || ('🏆 '+(s||'Sport'));
+}
+function sportKey(s){return (s||'').toLowerCase().replace(/\s+/g,'_')}
+
+function svgRing(conf){
+  const c=parseInt(conf)||50;
+  const col=confColor(c);
+  const r=28,circ=2*Math.PI*r,dash=(c/100)*circ;
+  return `<svg width="70" height="70" viewBox="0 0 70 70" style="display:block">
+    <circle cx="35" cy="35" r="${r}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="3.5"/>
+    <circle cx="35" cy="35" r="${r}" fill="none" stroke="${col}" stroke-width="3.5"
+      stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}"
+      stroke-linecap="round" transform="rotate(-90 35 35)"/>
+    <text x="35" y="40" text-anchor="middle" fill="${col}" font-family="Barlow Condensed,sans-serif" font-weight="900" font-size="14">${c}%</text>
+  </svg>`;
+}
+
+// ── DATE ──────────────────────────────────────────────────
+const now = new Date();
+const MONTHS = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+const dateStr = `${now.getDate()} DE ${MONTHS[now.getMonth()]} · ${now.getFullYear()}`;
+const chipStr = `${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+document.getElementById('hero-date').textContent = dateStr;
+document.getElementById('side-date-chip').textContent = chipStr;
+
+// ── STATE ─────────────────────────────────────────────────
+let allPicks = [];
+let activeFilter = 'all';
+
+// ── STATS ─────────────────────────────────────────────────
+function updateStats(picks){
+  const n = picks.length;
+  const bajo = picks.filter(p=>(p.riskLevel||p.risk_level||'').toUpperCase()==='BAJO').length;
+  const medio = picks.filter(p=>(p.riskLevel||p.risk_level||'').toUpperCase()==='MEDIO').length;
+  const alto = picks.filter(p=>(p.riskLevel||p.risk_level||'').toUpperCase()==='ALTO').length;
+  const avg = n ? Math.round(picks.reduce((s,p)=>s+(parseInt(p.confidence)||0),0)/n) : 0;
+
+  document.getElementById('stat-total').textContent = n;
+  document.getElementById('stat-conf').textContent = n ? avg+'%' : '—';
+  document.getElementById('stat-bajo').textContent = bajo;
+  document.getElementById('rs-total').textContent = n;
+  document.getElementById('rs-bajo').textContent = bajo;
+  document.getElementById('rs-medio').textContent = medio;
+  document.getElementById('rs-alto').textContent = alto;
+
+  const alta = picks.filter(p=>parseInt(p.confidence)>=75).length;
+  const media = picks.filter(p=>parseInt(p.confidence)>=60&&parseInt(p.confidence)<75).length;
+  const baja = picks.filter(p=>parseInt(p.confidence)<60).length;
+  const max = Math.max(alta,media,baja,1);
+
+  document.getElementById('num-alta').textContent = alta;
+  document.getElementById('num-media').textContent = media;
+  document.getElementById('num-baja').textContent = baja;
+
+  setTimeout(()=>{
+    document.getElementById('bar-alta').style.width = (alta/max*100)+'%';
+    document.getElementById('bar-media').style.width = (media/max*100)+'%';
+    document.getElementById('bar-baja').style.width = (baja/max*100)+'%';
+  }, 400);
+}
+
+// ── FILTER BAR ────────────────────────────────────────────
+function buildFilterBar(picks){
+  const sports = [...new Set(picks.map(p=>p.sport||'').filter(Boolean))];
+  const bar = document.getElementById('filter-bar');
+  bar.innerHTML = '<button class="filter-btn on" data-filter="all">Todos</button>';
+  sports.forEach(s=>{
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn';
+    btn.dataset.filter = sportKey(s);
+    btn.textContent = sportLabel(s);
+    bar.appendChild(btn);
+  });
+  bar.addEventListener('click', e=>{
+    const btn = e.target.closest('.filter-btn');
+    if(!btn) return;
+    bar.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    activeFilter = btn.dataset.filter;
+    renderCards(allPicks);
+  });
+}
+
+// ── RENDER CARDS ──────────────────────────────────────────
+function renderCards(picks){
+  const filtered = activeFilter==='all' ? picks : picks.filter(p=>sportKey(p.sport||'')=== activeFilter);
+  const container = document.getElementById('picks-container');
+  const label = document.getElementById('picks-count-label');
+
+  label.textContent = `${filtered.length} pick${filtered.length!==1?'s':''}`;
+
+  if(!filtered.length){
+    container.innerHTML = `
+      <div class="picks-empty">
+        <div class="picks-empty-icon">🎯</div>
+        <div class="picks-empty-t">Sin picks disponibles</div>
+        <div class="picks-empty-s">No hay picks para el filtro seleccionado o el día de hoy.<br>Genera picks desde el admin panel.</div>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  filtered.forEach((p, i)=>{
+    const conf = parseInt(p.confidence)||50;
+    const rc = riskClass(p.riskLevel || p.risk_level);
+    const home = p.homeTeam || p.home_team || '—';
+    const away = p.awayTeam || p.away_team || '—';
+    const league = p.league || '—';
+    const sport = p.sport || '';
+    const timeStr = p.eventDate ? new Date(p.eventDate).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : '—';
+    const analysis = p.analysis || '';
+    const shortAnalysis = analysis.length > 220 ? analysis.slice(0,220)+'…' : analysis;
+    const hasMore = analysis.length > 220;
+
+    const card = document.createElement('div');
+    card.className = `pick-card risk-${rc}`;
+    card.style.transitionDelay = `${i*60}ms`;
+    card.innerHTML = `
+      <div class="pick-card-head">
+        <div class="pick-info">
+          <div class="pick-match">${home} vs ${away}</div>
+          <div class="pick-meta">
+            <span class="pick-league">${league}</span>
+            ${sport ? `<span class="pick-dot">·</span><span class="pick-time">${sportLabel(sport).replace(/^[^\s]+ /,'')}</span>` : ''}
+            <span class="pick-dot">·</span>
+            <span class="pick-time">${timeStr}</span>
           </div>
-        </section>
-      </section>
-    </main>
+        </div>
+        <div class="pick-ring-wrap">
+          ${svgRing(conf)}
+          <span class="pick-risk-badge risk-${rc}">${(p.riskLevel||p.risk_level||'MEDIO').toUpperCase()}</span>
+        </div>
+      </div>
 
-    <nav class="bottom-nav" aria-label="Navegacion principal">
-      <a class="bottom-nav-item bottom-nav-active" href="user-hoy.html">
-        <span class="bottom-nav-icon">🎯</span>
-        <span>Picks</span>
-      </a>
-      <a class="bottom-nav-item" href="user-rutinas.html">
-        <span class="bottom-nav-icon">🧠</span>
-        <span>Analisis</span>
-      </a>
-      <a class="bottom-nav-item" href="user-progreso.html">
-        <span class="bottom-nav-icon">📚</span>
-        <span>Historial</span>
-      </a>
-      <a class="bottom-nav-item" href="user-dieta.html">
-        <span class="bottom-nav-icon">🌐</span>
-        <span>Cobertura</span>
-      </a>
-      <a class="bottom-nav-item" href="user-checkin.html">
-        <span class="bottom-nav-icon">👤</span>
-        <span>Cuenta</span>
-      </a>
-    </nav>
+      <div class="pick-details">
+        <div class="pick-detail-col">
+          <div class="pd-label">Mercado</div>
+          <div class="pd-val">${p.market||'—'}</div>
+        </div>
+        <div class="pick-detail-col">
+          <div class="pd-label">Pick IA</div>
+          <div class="pd-val orange">${p.pick||'—'}</div>
+        </div>
+        <div class="pick-detail-col">
+          <div class="pd-label">Confianza</div>
+          <div class="pd-val" style="color:${confColor(conf)}">${conf}%</div>
+          <div class="conf-bar-wrap"><div class="conf-bar-fill" style="width:${conf}%;background:${confBarColor(conf)}"></div></div>
+        </div>
+      </div>
 
-    <script src="app.js"></script>
-  </body>
+      <div class="pick-analysis">${shortAnalysis}</div>
+
+      ${hasMore ? `
+        <button class="pick-expand" data-open="0">Ver análisis completo ↓</button>
+        <div class="pick-extra">
+          <div class="extra-label">Análisis completo</div>
+          <div class="extra-text">${analysis}</div>
+        </div>
+      ` : ''}
+
+      <div class="pick-footer">
+        <div class="pick-teams">
+          <div class="pick-team">
+            <span class="pick-team-name">${home}</span>
+            <span class="pick-team-liga">${league}</span>
+          </div>
+          <span class="pick-vs">vs</span>
+          <div class="pick-team">
+            <span class="pick-team-name">${away}</span>
+          </div>
+        </div>
+        <div class="pick-actions">
+          <button class="btn-share" onclick="navigator.share ? navigator.share({title:'Pick: ${home} vs ${away}',text:'${p.pick||''} — ${conf}% confianza'}) : alert('Pick copiado!')">Compartir</button>
+          <button class="btn-save">Guardar Pick</button>
+        </div>
+      </div>
+    `;
+
+    // expand toggle
+    const expBtn = card.querySelector('.pick-expand');
+    if(expBtn){
+      expBtn.addEventListener('click', ()=>{
+        const extra = card.querySelector('.pick-extra');
+        const open = expBtn.dataset.open === '1';
+        expBtn.dataset.open = open ? '0' : '1';
+        expBtn.textContent = open ? 'Ver análisis completo ↓' : 'Cerrar ↑';
+        extra.classList.toggle('open', !open);
+      });
+    }
+
+    container.appendChild(card);
+  });
+
+  // IntersectionObserver reveal
+  const obs = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('vis'); obs.unobserve(e.target); }});
+  },{threshold:0.08});
+  container.querySelectorAll('.pick-card').forEach(c=>obs.observe(c));
+}
+
+// ── LOAD PICKS ────────────────────────────────────────────
+async function loadPicks(){
+  const container = document.getElementById('picks-container');
+  container.innerHTML = '<div class="loading-state"><div class="loading-spinner"></div>Cargando picks del día…</div>';
+  document.getElementById('btn-refresh').disabled = true;
+
+  try {
+    // Use apiGet from app.js if available, else raw fetch
+    let picks = [];
+    if(typeof apiGet === 'function'){
+      const res = await apiGet('/api/picks/today');
+      picks = Array.isArray(res?.picks) ? res.picks : [];
+    } else {
+      const res = await fetch('/api/picks/today');
+      const data = await res.json();
+      picks = Array.isArray(data?.picks) ? data.picks : [];
+    }
+
+    allPicks = picks;
+    updateStats(picks);
+    buildFilterBar(picks);
+    renderCards(picks);
+  } catch(err){
+    container.innerHTML = `
+      <div class="picks-empty">
+        <div class="picks-empty-icon">⚠️</div>
+        <div class="picks-empty-t">Error al cargar</div>
+        <div class="picks-empty-s">${err.message}</div>
+      </div>`;
+  } finally {
+    document.getElementById('btn-refresh').disabled = false;
+  }
+}
+
+document.getElementById('btn-refresh').addEventListener('click', loadPicks);
+
+// ── THREE.JS BG ───────────────────────────────────────────
+(function initBg(){
+  const bgCanvas = document.getElementById('bg-canvas');
+  if(!bgCanvas || !window.THREE) return;
+  const renderer = new THREE.WebGLRenderer({canvas:bgCanvas,alpha:true,antialias:false});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,100);
+  camera.position.z = 5;
+
+  function resize(){ renderer.setSize(innerWidth,innerHeight); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); }
+  resize(); window.addEventListener('resize',resize);
+
+  const N=240, geo=new THREE.BufferGeometry(), pos=new Float32Array(N*3), vel=[];
+  for(let i=0;i<N;i++){
+    pos[i*3]=(Math.random()-.5)*20;pos[i*3+1]=(Math.random()-.5)*14;pos[i*3+2]=(Math.random()-.5)*6;
+    vel.push({vx:(Math.random()-.5)*.0025,vy:Math.random()*.003+.0008});
+  }
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  scene.add(new THREE.Points(geo,new THREE.PointsMaterial({color:0xFF4500,size:.045,sizeAttenuation:true,transparent:true,opacity:.38,blending:THREE.AdditiveBlending,depthWrite:false})));
+
+  const geo2=new THREE.BufferGeometry(),pos2=new Float32Array(N*3);
+  for(let i=0;i<N;i++){pos2[i*3]=(Math.random()-.5)*20;pos2[i*3+1]=(Math.random()-.5)*14;pos2[i*3+2]=(Math.random()-.5)*6}
+  geo2.setAttribute('position',new THREE.BufferAttribute(pos2,3));
+  scene.add(new THREE.Points(geo2,new THREE.PointsMaterial({color:0xffffff,size:.025,sizeAttenuation:true,transparent:true,opacity:.10,blending:THREE.AdditiveBlending,depthWrite:false})));
+
+  let tMX=0,tMY=0,cMX=0,cMY=0;
+  document.addEventListener('mousemove',e=>{tMX=(e.clientX/innerWidth-.5)*2;tMY=(e.clientY/innerHeight-.5)*2});
+
+  (function loop(){
+    requestAnimationFrame(loop);
+    cMX+=(tMX-cMX)*.03; cMY+=(tMY-cMY)*.03;
+    camera.position.x=cMX*.8; camera.position.y=-cMY*.5;
+    const p=geo.attributes.position.array;
+    for(let i=0;i<N;i++){p[i*3]+=vel[i].vx;p[i*3+1]+=vel[i].vy;if(p[i*3+1]>7)p[i*3+1]=-7}
+    geo.attributes.position.needsUpdate=true;
+    renderer.render(scene,camera);
+  })();
+})();
+
+// ── INIT ──────────────────────────────────────────────────
+// Wait for app.js apiGet to be ready
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', loadPicks);
+} else {
+  setTimeout(loadPicks, 50);
+}
+
+})();
+</script>
+</body>
 </html>

@@ -3,7 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const crypto = require("node:crypto");
-const { generateAiPlan, buildFallbackPlan, generateSportsPick } = require("./ai");
+const { generateAiPlan, buildFallbackPlan, generateSportsPick, runDualAnalysis } = require("./ai");
 const sportsApiService = require("./sportsApiService");
 const { sendWhatsAppText, getWhatsAppConfigStatus } = require("./whatsapp");
 const { startCoachOnboardingForUser, handleIncomingCoachMessage } = require("./coach-whatsapp");
@@ -52,6 +52,9 @@ const {
   listPickHistory,
   logApiSync,
   listApiSyncLogs,
+  savePickCandidates,
+  getPickCandidateById,
+  markCandidatePublished,
 } = require("./db");
 
 const app = express();
@@ -1170,6 +1173,94 @@ app.post("/api/picks/generate/:eventId", requireAdmin, async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || "pick_generation_failed") });
+  }
+});
+
+// Dual analysis: GPT-4o generates 3 candidates → Claude judges and picks the best
+app.post("/api/picks/generate-dual/:eventId", requireAdmin, async (req, res) => {
+  try {
+    const eventId = Number(req.params.eventId || 0);
+    const event = await getSportsEventById(eventId);
+    if (!event) return res.status(404).json({ ok: false, error: "event_not_found" });
+
+    let stats = await getLatestEventStats(eventId);
+    if (!stats) {
+      const pulledStats = await sportsApiService.getEventStats(event);
+      stats = await saveEventStats({ eventId, sourceApi: pulledStats.sourceApi, statsJson: pulledStats.statsJson });
+    }
+
+    const historicalContext = (await listPickHistory(12))
+      .filter((row) => Number(row.eventId) !== eventId)
+      .slice(0, 8)
+      .map((row) => ({ league: row.league, market: row.market, confidence: row.confidence, riskLevel: row.riskLevel, createdAt: row.createdAt }));
+
+    const { candidates, claudeResult } = await runDualAnalysis({
+      event: { sport: event.sport, league: event.league, home_team: event.homeTeam, away_team: event.awayTeam, event_date: event.eventDate, status: event.status },
+      stats: stats?.statsJson || {},
+      historicalContext,
+    });
+
+    const sessionId = `dual-${eventId}-${Date.now()}`;
+    const savedCandidates = await savePickCandidates({
+      eventId,
+      sessionId,
+      candidates,
+      claudeSelectedIndex: claudeResult.selectedIndex,
+      claudeReasoning: claudeResult.reasoning,
+      claudeModel: claudeResult.model,
+      claudeFinalPick: claudeResult.finalPick,
+    });
+
+    const gptCandidates = savedCandidates.filter((c) => c.candidateIndex >= 0);
+    const claudePick = savedCandidates.find((c) => c.candidateIndex === -1) || null;
+
+    res.json({
+      ok: true,
+      sessionId,
+      event: { id: event.id, sport: event.sport, league: event.league, homeTeam: event.homeTeam, awayTeam: event.awayTeam, eventDate: event.eventDate },
+      candidates: gptCandidates,
+      claudeSelection: {
+        selectedIndex: claudeResult.selectedIndex,
+        reasoning: claudeResult.reasoning,
+        confidenceAdjustment: claudeResult.confidenceAdjustment,
+        claudePickId: claudePick?.id || null,
+        finalPick: { ...(claudePick || claudeResult.finalPick), disclaimer: SPORTS_PICK_DISCLAIMER },
+        model: claudeResult.model,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "dual_analysis_failed") });
+  }
+});
+
+// Publish a candidate (GPT or Claude) to the official ai_picks table
+app.post("/api/picks/publish-candidate/:candidateId", requireAdmin, async (req, res) => {
+  try {
+    const candidateId = Number(req.params.candidateId || 0);
+    const candidate = await getPickCandidateById(candidateId);
+    if (!candidate) return res.status(404).json({ ok: false, error: "candidate_not_found" });
+
+    const savedPick = await saveAiPick({
+      eventId: candidate.eventId,
+      pick: candidate.pick,
+      market: candidate.market,
+      confidence: candidate.confidence,
+      analysis: candidate.analysis,
+      riskLevel: candidate.riskLevel,
+      modelUsed: candidate.modelUsed || candidate.provider,
+      status: "generated",
+      createdAt: new Date().toISOString(),
+    });
+
+    await markCandidatePublished(candidateId, savedPick.id);
+
+    const event = await getSportsEventById(candidate.eventId);
+    res.json({
+      ok: true,
+      pick: { ...savedPick, sport: event?.sport, league: event?.league, homeTeam: event?.homeTeam, awayTeam: event?.awayTeam, eventDate: event?.eventDate, disclaimer: SPORTS_PICK_DISCLAIMER },
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "publish_failed") });
   }
 });
 

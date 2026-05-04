@@ -236,6 +236,24 @@ CREATE TABLE IF NOT EXISTS api_sync_logs (
   message TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS ai_pick_candidates (
+  id BIGSERIAL PRIMARY KEY,
+  event_id BIGINT NOT NULL REFERENCES sports_events(id) ON DELETE CASCADE,
+  session_id TEXT NOT NULL DEFAULT '',
+  candidate_index INTEGER NOT NULL DEFAULT 0,
+  pick TEXT NOT NULL DEFAULT '',
+  market TEXT NOT NULL DEFAULT '',
+  confidence INTEGER NOT NULL DEFAULT 0,
+  analysis TEXT NOT NULL DEFAULT '',
+  risk_level TEXT NOT NULL DEFAULT 'MEDIO',
+  provider TEXT NOT NULL DEFAULT 'openai',
+  model_used TEXT NOT NULL DEFAULT '',
+  is_claude_selected BOOLEAN NOT NULL DEFAULT false,
+  claude_reasoning TEXT NOT NULL DEFAULT '',
+  published_pick_id BIGINT REFERENCES ai_picks(id),
+  created_at TIMESTAMPTZ NOT NULL
+);
 `;
 
 async function initDb() {
@@ -1741,6 +1759,51 @@ async function listPickHistory(limit = 100) {
   return result.rows.map((row) => ({ ...row, id: Number(row.id), eventId: Number(row.eventId), confidence: Number(row.confidence || 0) }));
 }
 
+async function savePickCandidates({ eventId, sessionId, candidates, claudeSelectedIndex, claudeReasoning, claudeModel, claudeFinalPick }) {
+  const now = nowIso();
+  const saved = [];
+
+  for (let i = 0; i < candidates.length; i++) {
+    const c = candidates[i];
+    const isSelected = i === claudeSelectedIndex;
+    const result = await pool.query(
+      `INSERT INTO ai_pick_candidates (event_id, session_id, candidate_index, pick, market, confidence, analysis, risk_level, provider, model_used, is_claude_selected, claude_reasoning, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
+      [Number(eventId), safeStr(sessionId), i, safeStr(c.pick), safeStr(c.market), Math.max(0, Math.min(100, Number(c.confidence || 0))), safeStr(c.analysis), safeStr(c.risk_level || "MEDIO"), safeStr(c.provider || "openai"), safeStr(c.model_used || "gpt-4o"), isSelected, isSelected ? safeStr(claudeReasoning) : "", now]
+    );
+    saved.push({ id: Number(result.rows[0]?.id || 0), eventId: Number(eventId), sessionId: safeStr(sessionId), candidateIndex: i, pick: safeStr(c.pick), market: safeStr(c.market), confidence: Math.max(0, Math.min(100, Number(c.confidence || 0))), analysis: safeStr(c.analysis), riskLevel: safeStr(c.risk_level || "MEDIO"), provider: safeStr(c.provider || "openai"), modelUsed: safeStr(c.model_used || "gpt-4o"), isClaudeSelected: isSelected, claudeReasoning: isSelected ? safeStr(claudeReasoning) : "", publishedPickId: null, createdAt: now });
+  }
+
+  // Save Claude's refined final pick as a separate candidate (candidateIndex = -1)
+  if (claudeFinalPick && claudeFinalPick.pick) {
+    const cr = await pool.query(
+      `INSERT INTO ai_pick_candidates (event_id, session_id, candidate_index, pick, market, confidence, analysis, risk_level, provider, model_used, is_claude_selected, claude_reasoning, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
+      [Number(eventId), safeStr(sessionId), -1, safeStr(claudeFinalPick.pick), safeStr(claudeFinalPick.market), Math.max(0, Math.min(100, Number(claudeFinalPick.confidence || 0))), safeStr(claudeFinalPick.analysis), safeStr(claudeFinalPick.risk_level || "MEDIO"), "claude-judge", safeStr(claudeModel || "claude-sonnet-4-6"), true, safeStr(claudeReasoning), now]
+    );
+    saved.push({ id: Number(cr.rows[0]?.id || 0), eventId: Number(eventId), sessionId: safeStr(sessionId), candidateIndex: -1, pick: safeStr(claudeFinalPick.pick), market: safeStr(claudeFinalPick.market), confidence: Math.max(0, Math.min(100, Number(claudeFinalPick.confidence || 0))), analysis: safeStr(claudeFinalPick.analysis), riskLevel: safeStr(claudeFinalPick.risk_level || "MEDIO"), provider: "claude-judge", modelUsed: safeStr(claudeModel || "claude-sonnet-4-6"), isClaudeSelected: true, claudeReasoning: safeStr(claudeReasoning), publishedPickId: null, createdAt: now });
+  }
+
+  return saved;
+}
+
+async function getPickCandidateById(id) {
+  const result = await pool.query(
+    `SELECT id, event_id AS "eventId", session_id AS "sessionId", candidate_index AS "candidateIndex",
+     pick, market, confidence, analysis, risk_level AS "riskLevel", provider, model_used AS "modelUsed",
+     is_claude_selected AS "isClaudeSelected", claude_reasoning AS "claudeReasoning",
+     published_pick_id AS "publishedPickId", created_at AS "createdAt"
+     FROM ai_pick_candidates WHERE id = $1`,
+    [Number(id || 0)]
+  );
+  const row = result.rows[0];
+  return row ? { ...row, id: Number(row.id), eventId: Number(row.eventId), confidence: Number(row.confidence || 0) } : null;
+}
+
+async function markCandidatePublished(candidateId, publishedPickId) {
+  await pool.query(`UPDATE ai_pick_candidates SET published_pick_id = $1 WHERE id = $2`, [Number(publishedPickId || 0), Number(candidateId || 0)]);
+}
+
 async function logApiSync(payload) {
   const now = nowIso();
   const result = await pool.query(
@@ -1797,6 +1860,9 @@ module.exports = {
   reviewPaymentRequest,
   setUserRole,
   grantSubscription,
+  savePickCandidates,
+  getPickCandidateById,
+  markCandidatePublished,
   getAppSetting,
   setAppSetting,
   recordAiUsage,
