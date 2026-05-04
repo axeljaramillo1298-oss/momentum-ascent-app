@@ -201,6 +201,48 @@
           font-size: 12px;
         }
       }
+
+      @media (max-width: 560px) {
+        .comparison-table-clean {
+          background: transparent;
+          border: 0;
+          gap: 12px;
+        }
+
+        .comparison-row-clean.header {
+          display: none;
+        }
+
+        .comparison-row-clean {
+          min-width: 0;
+          grid-template-columns: 1fr;
+          gap: 8px;
+          padding: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 16px;
+          background: rgba(8, 10, 18, 0.96);
+        }
+
+        .comparison-row-clean span {
+          justify-content: flex-start !important;
+          text-align: left !important;
+        }
+
+        .comparison-row-clean span:nth-child(2)::before,
+        .comparison-row-clean span:nth-child(3)::before,
+        .comparison-row-clean span:nth-child(4)::before {
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: rgba(240, 237, 232, 0.46);
+          margin-right: 8px;
+        }
+
+        .comparison-row-clean span:nth-child(2)::before { content: "Free"; }
+        .comparison-row-clean span:nth-child(3)::before { content: "AI Picks"; }
+        .comparison-row-clean span:nth-child(4)::before { content: "Apex"; }
+      }
     </style>
   </head>
   <body>

@@ -112,8 +112,11 @@ const showBrandSplash = () => {
   `;
   document.body.appendChild(splash);
   requestAnimationFrame(() => splash.classList.add("show"));
-  setTimeout(() => splash.classList.add("hide"), 4200);
-  setTimeout(() => splash.remove(), 5200);
+  const isTouchScreen = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+  const holdMs = isTouchScreen ? (isLoginPage ? 500 : 900) : 4200;
+  const removeMs = holdMs + (isTouchScreen ? 420 : 1000);
+  setTimeout(() => splash.classList.add("hide"), holdMs);
+  setTimeout(() => splash.remove(), removeMs);
 };
 
 applyBranding();
@@ -1114,9 +1117,6 @@ const lockUserPagesIfNeeded = () => {
   if (!current) {
     navigateToApp("registro.html#login", true);
     return;
-  }
-  if (String(current.role || "").toLowerCase() === "admin") {
-    navigateToApp("admin.html", true);
   }
 };
 
@@ -3434,8 +3434,52 @@ const renderSportsPickCards = (host, picks = []) => {
 
 const renderSportsHistoryRows = (host, picks = []) => {
   if (!host) return;
+  const useLegacyHistoryTable = host.id === "table-body";
   if (!Array.isArray(picks) || !picks.length) {
-    host.innerHTML = `<div class="sports-table-empty">Sin historial todavía.</div>`;
+    host.innerHTML = useLegacyHistoryTable
+      ? `<div class="empty"><div class="empty-icon">📭</div><div class="empty-t">Sin historial</div><div class="empty-p">Todavia no hay picks generados.</div></div>`
+      : `<div class="sports-table-empty">Sin historial todavía.</div>`;
+    return;
+  }
+  if (useLegacyHistoryTable) {
+    host.innerHTML = picks
+      .map((pick) => {
+        const confidence = Number(pick.confidence || 0);
+        const riskLabel = String(pick.riskLevel || "MEDIO").toUpperCase();
+        const riskClass = getRiskClass(riskLabel);
+        const status = String(pick.status || "GENERADO").toUpperCase();
+        const statusClass =
+          status === "WIN" ? "res-win" :
+          status === "LOSS" ? "res-loss" :
+          status === "PUSH" ? "res-push" :
+          "res-pend";
+        const statusLabel =
+          status === "WIN" ? "✓ Ganado" :
+          status === "LOSS" ? "✕ Perdido" :
+          status === "PUSH" ? "= Push" :
+          status;
+        const eventDate = pick.eventDate || pick.createdAt || Date.now();
+        return `
+          <div class="t-row">
+            <div class="t-match">
+              <div class="t-match-name">${escHtml(`${pick.homeTeam || "Local"} vs ${pick.awayTeam || "Visita"}`)}</div>
+              <div class="t-match-meta">
+                <span class="t-sport-tag">${escHtml(pick.league || pick.sport || "Evento")}</span>
+                <span class="t-date">${escHtml(new Date(eventDate).toLocaleDateString("es-MX"))}</span>
+              </div>
+            </div>
+            <div class="t-market">${escHtml(pick.market || "-")}</div>
+            <div class="t-pick">${escHtml(pick.pick || "-")}</div>
+            <div class="t-conf">
+              <span class="conf-num">${confidence}%</span>
+              <div class="conf-mini-bar"><div class="conf-mini-fill" style="width:${Math.max(0, Math.min(100, confidence))}%;background:${confidence >= 75 ? "var(--green)" : confidence >= 60 ? "var(--yellow)" : "var(--red)"}"></div></div>
+            </div>
+            <div><span class="risk-badge ${riskClass}">${escHtml(riskLabel)}</span></div>
+            <div><span class="result-badge ${statusClass}">${escHtml(statusLabel)}</span></div>
+          </div>
+        `;
+      })
+      .join("");
     return;
   }
   host.innerHTML = picks
@@ -3515,7 +3559,7 @@ const initSportsPicksDashboard = () => {
 const initSportsAnalysisPage = () => {
   const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
   if (page !== "user-rutinas.html") return;
-  const host = document.getElementById("sports-analysis-cards");
+  const host = document.getElementById("sports-analysis-cards") || document.getElementById("picks-list");
   if (!host) return;
 
   const render = async () => {
@@ -3555,9 +3599,9 @@ const initSportsAnalysisPage = () => {
 const initSportsHistoryPage = () => {
   const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
   if (page !== "user-progreso.html") return;
-  const tableHost = document.getElementById("sports-history-table");
-  const summaryHost = document.getElementById("sports-history-summary");
-  const notesHost = document.getElementById("sports-history-notes");
+  const tableHost = document.getElementById("sports-history-table") || document.getElementById("table-body");
+  const summaryHost = document.getElementById("sports-history-summary") || document.querySelector(".stats-row");
+  const notesHost = document.getElementById("sports-history-notes") || document.getElementById("notes-body");
   if (!tableHost || !summaryHost || !notesHost) return;
 
   const render = async () => {
@@ -3569,33 +3613,62 @@ const initSportsHistoryPage = () => {
         ? Math.round(picks.reduce((sum, item) => sum + Number(item.confidence || 0), 0) / picks.length)
         : 0;
       const lowRiskCount = picks.filter((item) => String(item.riskLevel || "").toUpperCase() === "BAJO").length;
-      summaryHost.innerHTML = `
-        <div class="sports-summary-card">
-          <strong>${picks.length}</strong>
-          <span>Picks registrados</span>
-        </div>
-        <div class="sports-summary-card">
-          <strong>${avgConfidence}%</strong>
-          <span>Confianza media</span>
-        </div>
-        <div class="sports-summary-card">
-          <strong>${lowRiskCount}</strong>
-          <span>Lecturas de riesgo bajo</span>
-        </div>
-      `;
+      if (summaryHost.classList.contains("stats-row")) {
+        summaryHost.innerHTML = `
+          <div class="stat-card">
+            <div class="sc-val green">${picks.length}</div>
+            <div class="sc-lbl">Picks registrados</div>
+            <div class="sc-sub">Historial real</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-val orange">${avgConfidence}%</div>
+            <div class="sc-lbl">Confianza media</div>
+            <div class="sc-sub">Promedio actual</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-val yellow">${lowRiskCount}</div>
+            <div class="sc-lbl">Riesgo bajo</div>
+            <div class="sc-sub">Clasificacion IA</div>
+          </div>
+        `;
+      } else {
+        summaryHost.innerHTML = `
+          <div class="sports-summary-card">
+            <strong>${picks.length}</strong>
+            <span>Picks registrados</span>
+          </div>
+          <div class="sports-summary-card">
+            <strong>${avgConfidence}%</strong>
+            <span>Confianza media</span>
+          </div>
+          <div class="sports-summary-card">
+            <strong>${lowRiskCount}</strong>
+            <span>Lecturas de riesgo bajo</span>
+          </div>
+        `;
+      }
       notesHost.innerHTML = picks.length
-        ? picks.slice(0, 6).map((pick) => `
-            <article class="sports-analysis-card">
-              <div class="sports-analysis-top">
-                <span class="sports-market-pill">${escHtml(pick.market || "-")}</span>
-                <span>${new Date(pick.createdAt || Date.now()).toLocaleString("es-MX")}</span>
+        ? picks.slice(0, 6).map((pick) => notesHost.id === "notes-body"
+            ? `
+              <div class="note-item">
+                <div class="note-date">${escHtml(new Date(pick.createdAt || Date.now()).toLocaleDateString("es-MX"))}</div>
+                <div class="note-text"><strong>${escHtml(`${pick.homeTeam || "Local"} vs ${pick.awayTeam || "Visita"}`)}</strong> · ${escHtml(pick.pick || "")}. ${escHtml(pick.analysis || "")}</div>
               </div>
-              <h3>${escHtml(`${pick.homeTeam || "Local"} vs ${pick.awayTeam || "Visita"}`)}</h3>
-              <p class="sports-pick-selection">${escHtml(pick.pick || "")}</p>
-              <p class="sports-pick-analysis">${escHtml(pick.analysis || "")}</p>
-            </article>
-          `).join("")
-        : `<article class="sports-empty-card"><strong>Sin historial</strong><p>Aún no hay picks generados.</p></article>`;
+            `
+            : `
+              <article class="sports-analysis-card">
+                <div class="sports-analysis-top">
+                  <span class="sports-market-pill">${escHtml(pick.market || "-")}</span>
+                  <span>${new Date(pick.createdAt || Date.now()).toLocaleString("es-MX")}</span>
+                </div>
+                <h3>${escHtml(`${pick.homeTeam || "Local"} vs ${pick.awayTeam || "Visita"}`)}</h3>
+                <p class="sports-pick-selection">${escHtml(pick.pick || "")}</p>
+                <p class="sports-pick-analysis">${escHtml(pick.analysis || "")}</p>
+              </article>
+            `).join("")
+        : notesHost.id === "notes-body"
+          ? `<div class="note-item"><div class="note-date">Sin datos</div><div class="note-text">Aun no hay picks generados.</div></div>`
+          : `<article class="sports-empty-card"><strong>Sin historial</strong><p>Aún no hay picks generados.</p></article>`;
     } catch {
       tableHost.innerHTML = `<div class="sports-table-empty">No se pudo cargar historial.</div>`;
       summaryHost.innerHTML = `<div class="sports-summary-card"><strong>Error</strong><span>Sin datos</span></div>`;
@@ -5759,12 +5832,19 @@ if (loginForm) {
       if (loginPassword) loginPassword.required = isAdminHint;
     }
     const password = loginPassword?.value?.trim() || "";
+    const whatsapp = normalizeWhatsapp(loginWhatsapp?.value || "");
+    const domain = email.split("@")[1] || "";
+    const isAdminHint = ADMIN_HINT_DOMAINS.some((d) => domain === d);
+    if (!isAdminHint && !whatsapp) {
+      if (loginFeedback) loginFeedback.textContent = "Ingresa el WhatsApp con el que registraste tu cuenta.";
+      return;
+    }
     if (loginFeedback) loginFeedback.textContent = "Verificando...";
     try {
       const remote = await apiPost("/auth/login", {
         name: email.split("@")[0] || "User",
         email,
-        whatsapp: normalizeWhatsapp(loginWhatsapp?.value || ""),
+        whatsapp,
         plan: getPlanSelection().label,
         intent: "login",
         password,
@@ -5777,6 +5857,10 @@ if (loginForm) {
         if (loginFeedback) {
           loginFeedback.textContent = remote?.error === "invalid_password"
             ? "Contraseña incorrecta."
+            : remote?.error === "invalid_whatsapp"
+            ? "El WhatsApp no coincide con tu cuenta."
+            : remote?.error === "whatsapp_not_configured"
+            ? "Tu cuenta no tiene WhatsApp configurado. Regístrate de nuevo o pide soporte."
             : remote?.error === "admin_password_not_configured"
             ? "Este admin no tiene credenciales configuradas en el servidor."
             : remote?.error === "user_not_found"

@@ -132,7 +132,7 @@ main{position:relative;z-index:2}
 
 /* SIDEBAR */
 .sidebar-col{display:flex;flex-direction:column;gap:16px}
-.side-card{background:rgba(255,255,255,.022);border:1px solid var(--border);border-radius:8px;overflow:hidden;opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease}
+.side-card{background:rgba(255,255,255,.022);border:1px solid var(--border);border-radius:8px;overflow:hidden;opacity:1;transform:none;transition:background .25s ease,border-color .25s ease}
 .side-card.vis{opacity:1;transform:none}
 .side-card-hdr{padding:16px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .side-card-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:16px;text-transform:uppercase;letter-spacing:.05em}
@@ -181,6 +181,12 @@ main{position:relative;z-index:2}
   .pick-detail-col:last-child{border-bottom:none}
   .pick-footer{flex-direction:column;align-items:flex-start}
   .pick-actions{width:100%;justify-content:flex-end}
+  .filter-bar{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+  .filter-bar::-webkit-scrollbar{display:none}
+}
+@media(max-width:420px){
+  .page-title{font-size:clamp(44px,17vw,58px)}
+  .hero-date{width:100%;text-align:center}
 }
   </style>
 </head>
@@ -208,7 +214,7 @@ main{position:relative;z-index:2}
         <a class="ghost up-nav-link" href="user-hoy.html">Picks</a>
         <a class="ghost up-nav-link up-nav-active" href="user-rutinas.html">Analisis</a>
         <a class="ghost up-nav-link" href="user-progreso.html">Historial</a>
-        <a class="ghost up-nav-link" href="planes.html">Premium</a>
+        <a class="ghost up-nav-link" href="user-dieta.html">Cobertura</a>
         <a class="ghost up-nav-link" href="user-checkin.html">Cuenta</a>
       </div>
     </nav>
@@ -260,7 +266,7 @@ main{position:relative;z-index:2}
             <span class="section-title">Desglose por pick</span>
             <span class="section-sub">Explicaciones pensadas para consumo rápido</span>
           </div>
-          <div id="picks-list"></div>
+          <div id="sports-analysis-cards"></div>
         </div>
 
         <aside class="sidebar-col">
@@ -329,14 +335,16 @@ main{position:relative;z-index:2}
     <a class="bottom-nav-item" href="user-hoy.html"><span class="bottom-nav-icon">🎯</span><span>Picks</span></a>
     <a class="bottom-nav-item bottom-nav-active" href="user-rutinas.html"><span class="bottom-nav-icon">🧠</span><span>Analisis</span></a>
     <a class="bottom-nav-item" href="user-progreso.html"><span class="bottom-nav-icon">📚</span><span>Historial</span></a>
-    <a class="bottom-nav-item" href="planes.html"><span class="bottom-nav-icon">💎</span><span>Premium</span></a>
+    <a class="bottom-nav-item" href="user-dieta.html"><span class="bottom-nav-icon">🌐</span><span>Cobertura</span></a>
     <a class="bottom-nav-item" href="user-checkin.html"><span class="bottom-nav-icon">👤</span><span>Cuenta</span></a>
   </nav>
 
+  <script>window.__sportsLiveData = true;</script>
   <script src="app.js"></script>
   <script>
 (function(){
 'use strict';
+if (window.__sportsLiveData) return;
 
 // THREE.JS BG
 const bgCanvas = document.getElementById('bg-canvas');

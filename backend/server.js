@@ -360,6 +360,8 @@ const requireLegacyModules = (req, res, next) => {
   return res.status(410).json({ ok: false, error: "legacy_disabled" });
 };
 
+const normalizeAuthPhone = (value) => String(value || "").replace(/\D+/g, "");
+
 app.get("/health", (req, res) => {
   res.json({
     ok: true,
@@ -394,6 +396,15 @@ app.post("/auth/login", async (req, res) => {
       const provided = String(payload.password || "").trim();
       if (!provided || provided !== configuredPassword) {
         return res.status(401).json({ ok: false, error: "invalid_password" });
+      }
+    } else if (strictLogin) {
+      const expectedWhatsapp = normalizeAuthPhone(previous?.whatsapp || "");
+      const providedWhatsapp = normalizeAuthPhone(payload.whatsapp || "");
+      if (!expectedWhatsapp) {
+        return res.status(409).json({ ok: false, error: "whatsapp_not_configured" });
+      }
+      if (!providedWhatsapp || providedWhatsapp !== expectedWhatsapp) {
+        return res.status(401).json({ ok: false, error: "invalid_whatsapp" });
       }
     }
     const user = await ensureUser({
