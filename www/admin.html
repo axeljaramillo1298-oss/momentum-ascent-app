@@ -319,8 +319,14 @@ main{position:relative;z-index:2}
   document.getElementById('nav-user-email').textContent = userEmail || 'no autenticado';
 
   const API_BASE = (() => {
+    const forced = (localStorage.getItem('discipline_api_base_v1') || '').trim();
+    if (forced) return forced.replace(/\/+$/, '');
     const { protocol, hostname, port, origin } = window.location;
-    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+    const host = String(hostname || '').trim().toLowerCase();
+    if (host === 'app.momentumascent.com' || host === 'momentumascent.com' || host === 'www.momentumascent.com') {
+      return 'https://api.momentumascent.com';
+    }
+    const isLocal = host === 'localhost' || host === '127.0.0.1';
     if (isLocal && port && port !== '8787') return `${protocol}//${hostname}:8787`;
     return origin;
   })();
@@ -628,7 +634,7 @@ main{position:relative;z-index:2}
       setStatus(`${events.length} eventos cargados — ${new Date().toLocaleTimeString('es-MX')}`);
     } catch(err){
       const hint = err.status === 404
-        ? `No se encontraron rutas API en ${API_BASE}. Abre esta pantalla desde http://localhost:8787/admin.html`
+        ? `No se encontraron rutas API en ${API_BASE}.`
         : err.status === 403
         ? 'Tu sesion no tiene permisos admin. Inicia sesion como admin o usa un x-god-token valido.'
         : err.message;
