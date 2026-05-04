@@ -1505,8 +1505,18 @@ app.post("/api/picks/claude-decide", requireAdmin, async (req, res) => {
     const event = await getSportsEventById(Number(eventId));
     if (!event) return res.status(404).json({ ok: false, error: "event_not_found" });
 
+    let stats = await getLatestEventStats(Number(eventId));
+    if (!stats) {
+      const pulledStats = await sportsApiService.getEventStats(event);
+      stats = await saveEventStats({
+        eventId: Number(eventId),
+        sourceApi: pulledStats.sourceApi,
+        statsJson: pulledStats.statsJson,
+      });
+    }
+
     const publishedToday = (await listPickHistory(20))
-      .filter((p) => p.createdAt && p.createdAt.slice(0, 10) === toDateKey())
+      .filter((p) => p.createdAt && toDateKey(p.createdAt) === toDateKey())
       .slice(0, 8)
       .map((p) => ({ market: p.market, pick: p.pick, riskLevel: p.riskLevel }));
 

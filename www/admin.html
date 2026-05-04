@@ -430,7 +430,9 @@ main{position:relative;z-index:2}
         <thead><tr><th>Mercado</th><th>Recomendación GPT-4o</th><th>Confianza</th></tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table>
-      ${markets.resumen ? `<div style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:16px">📊 ${markets.resumen}</div>` : ''}`;
+      ${markets.resumen ? `<div style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px">📊 ${markets.resumen}</div>` : ''}
+      ${markets.research_summary ? `<div style="font-size:11px;color:rgba(240,237,232,.45);line-height:1.6;margin-bottom:10px">🌐 ${markets.research_summary}</div>` : ''}
+      <div style="font-size:10px;color:rgba(240,237,232,.3);letter-spacing:.08em;text-transform:uppercase">Proveedor IA: ${markets.provider || 'desconocido'}</div>`;
   }
 
   // ── GPT STEP ──────────────────────────────────────────────
@@ -451,8 +453,8 @@ main{position:relative;z-index:2}
       pendingGptMarkets = data.markets;
       gptArea.innerHTML = renderMarketsTable(data.markets);
       panel.querySelector('#claude-btn').disabled = false;
-      addLog(`GPT completó análisis de 5 mercados — evento #${eventId}`, 'ok');
-      setStatus('GPT listo. Pasa a Claude cuando quieras.');
+      addLog(`GPT completó análisis de 5 mercados — evento #${eventId} — proveedor ${data.markets?.provider || 'desconocido'}`, 'ok');
+      setStatus(`GPT listo (${data.markets?.provider || 'sin proveedor visible'}). Pasa a Claude cuando quieras.`);
     } catch(err){
       gptArea.innerHTML = `<div class="dual-error">Error GPT: ${err.message}</div>`;
       panel.querySelector('#gpt-btn').disabled = false;
