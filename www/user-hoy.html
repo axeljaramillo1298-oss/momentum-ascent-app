@@ -173,6 +173,15 @@ main{position:relative;z-index:2}
 /* PREMIUM TIER BADGE */
 .tier-badge{display:inline-flex;align-items:center;gap:4px;font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:2px 8px;background:linear-gradient(135deg,rgba(255,69,0,.18),rgba(255,107,43,.08));border:1px solid rgba(255,69,0,.4);color:var(--orange);border-radius:20px;margin-left:6px}
 
+/* LOCKED PICK CARD */
+.pick-locked-body{padding:24px 18px;display:flex;align-items:center;gap:20px}
+.pick-lock-icon{font-size:32px;flex-shrink:0;opacity:.5}
+.pick-lock-text{flex:1}
+.pick-lock-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;color:rgba(240,237,232,.5)}
+.pick-lock-desc{font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:12px}
+.btn-unlock{display:inline-flex;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:8px 18px;background:linear-gradient(135deg,var(--orange),#e03d00);color:#fff;border:none;border-radius:3px;cursor:pointer;text-decoration:none;transition:opacity .2s}
+.btn-unlock:hover{opacity:.88}
+
 /* APEX ANALYSIS SECTION */
 .apex-section{border-top:1px solid rgba(167,139,250,.18);margin-top:0;padding:14px 18px}
 .apex-tabs{display:flex;gap:4px;margin-bottom:14px}
@@ -594,6 +603,34 @@ function renderCards(picks){
     const card = document.createElement('div');
     card.className = `pick-card risk-${rc}`;
     card.style.transitionDelay = `${i*60}ms`;
+
+    // locked premium pick: show match but hide pick/analysis
+    if(p.pickLocked){
+      card.innerHTML = `
+        <div class="pick-card-head">
+          <div class="pick-info">
+            <div class="pick-match">${home} vs ${away}
+              <span class="tier-badge">⭐ PREMIUM</span>
+            </div>
+            <div class="pick-meta">
+              <span class="pick-league">${league}</span>
+              ${sport ? `<span class="pick-dot">·</span><span class="pick-time">${sportLabel(sport).replace(/^[^\s]+ /,'')}</span>` : ''}
+              <span class="pick-dot">·</span><span class="pick-time">${timeStr}</span>
+            </div>
+          </div>
+        </div>
+        <div class="pick-locked-body">
+          <div class="pick-lock-icon">🔒</div>
+          <div class="pick-lock-text">
+            <div class="pick-lock-title">Pick exclusivo Premium</div>
+            <div class="pick-lock-desc">Este pick está disponible solo para usuarios con plan All Picks o Apex.<br>Activa tu plan para ver el pick completo y el análisis de IA.</div>
+            <a class="btn-unlock" href="planes.html">Ver planes →</a>
+          </div>
+        </div>`;
+      container.appendChild(card);
+      return;
+    }
+
     card.innerHTML = `
       <div class="pick-card-head">
         <div class="pick-info">

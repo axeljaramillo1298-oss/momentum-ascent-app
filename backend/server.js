@@ -248,7 +248,20 @@ const summarizeAnalysis = (text = "", maxLen = 220) => {
   if (firstSentence?.[1]) return firstSentence[1].trim();
   return `${clean.slice(0, maxLen).trim()}...`;
 };
+const PICK_LOCKED_LABEL = "Solo Plan Premium. Activa All Picks o Apex para ver este pick.";
 const redactPickForViewer = (pick, planId = "free") => {
+  // Premium pick shown to free user: show match, hide pick + analysis
+  if (pick?.pickLocked) {
+    return {
+      ...pick,
+      pick: null,
+      market: null,
+      analysis: PICK_LOCKED_LABEL,
+      analysisLocked: true,
+      pickLocked: true,
+      fullData: "",
+    };
+  }
   const normalizedPlan = normalizeViewerPlanId(planId);
   const fullAnalysis = String(pick?.analysis || "").trim();
   if (normalizedPlan === "coach_humano") {
@@ -1738,8 +1751,12 @@ app.get("/api/picks/today", async (req, res) => {
   try {
     const viewerPlanId = await getViewerPlanId(req);
     const isPremiumViewer = viewerPlanId !== "free";
+    // Free users see premium picks locked (match visible, pick/analysis hidden)
     const filterByTier = (arr) =>
-      filterPublishedPicks(arr).filter((p) => (p?.planTier || "free") === "free" || isPremiumViewer);
+      filterPublishedPicks(arr).map((p) => {
+        if ((p?.planTier || "free") === "premium" && !isPremiumViewer) return { ...p, pickLocked: true };
+        return p;
+      });
     const explicitDate = typeof req.query.date === "string" && req.query.date.trim();
     let dateKey = String(req.query.date || toDateKey()).trim();
     let picks = filterByTier((await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, dateKey)));
@@ -1785,7 +1802,10 @@ app.get("/api/picks/history", async (req, res) => {
     const viewerPlanId = await getViewerPlanId(req);
     const isPremiumViewer = viewerPlanId !== "free";
     const limit = Number(req.query.limit || 100);
-    const picks = filterPublishedPicks(await listPickHistory(limit)).filter((p) => (p?.planTier || "free") === "free" || isPremiumViewer);
+    const picks = filterPublishedPicks(await listPickHistory(limit)).map((p) => {
+      if ((p?.planTier || "free") === "premium" && !isPremiumViewer) return { ...p, pickLocked: true };
+      return p;
+    });
     res.json({
       ok: true,
       picks: picks.map((pick) => redactPickForViewer({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER }, viewerPlanId)),

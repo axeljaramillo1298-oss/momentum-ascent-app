@@ -605,6 +605,65 @@ async function runDualAnalysis({ event = {}, stats = {}, historicalContext = [] 
 }
 
 // ── GPT: analyze 5 key betting markets — short and direct ──────────────
+// ── Sport-specific market config ──────────────────────────
+const getSportMarketConfig = (sport, home, away) => {
+  const s = (sport || "").toLowerCase();
+  const RULES = [
+    "No prometas ganancias ni uses palabras como seguro o garantizado.",
+    "La confianza es entero 0-100; reducela si faltan datos.",
+    "Cada nota es max 1 oracion corta y basada en datos.",
+    "No inventes lesiones, odds, bajas ni resultados.",
+    "Usa los Stats como fuente primaria.",
+    "Si odds y estadistica se contradicen, refleja eso con menor confianza.",
+    "El resumen menciona los factores que mas pesaron.",
+  ];
+
+  if (s.includes("basket") || s.includes("nba")) {
+    return {
+      label: "basquetbol/NBA",
+      markets: "ml (ganador ML), total puntos (Over/Under), spread (handicap puntos), primera mitad (ganador), cuartos (total cuartos/ritmo)",
+      jsonSchema: '{"ml":{"pick":"Local|Visitante","conf":65,"nota":""},"goles":{"pick":"Over 221.5|Under 221.5 pts","conf":60,"nota":""},"btts":{"pick":"Local 1ra mitad|Visitante 1ra mitad","conf":55,"nota":""},"handicap":{"pick":"Local -5.5|Visitante +5.5","line":"-5.5","conf":58,"nota":""},"corners":{"pick":"Over 48.5|Under 48.5 pts 1er cuarto","conf":52,"nota":""},"resumen":"1 oracion"}',
+      criteria: ["Forma ultimos 5 partidos y racha de victorias.", "Promedio de puntos anotados y recibidos por equipo.", "Rendimiento de anotacion en casa vs visita.", "Jugadores clave: lesiones o descanso de titulares.", "Ritmo de juego (pace) si hay datos.", "H2H si disponible."],
+      fallback: { ml: { pick: "Local", conf: 55, nota: "Ventaja de cancha local." }, goles: { pick: "Over 221.5 pts", conf: 52, nota: "Promedio de puntos del torneo." }, btts: { pick: "Local 1ra mitad", conf: 50, nota: "Local suele controlar el inicio." }, handicap: { pick: "Local -5.5", line: "-5.5", conf: 48, nota: "Leve favorito local." }, corners: { pick: "Over 48.5 pts 1er cuarto", conf: 45, nota: "Ritmo alto esperado." }, resumen: `${home} vs ${away} — basquetbol, datos limitados.` },
+    };
+  }
+  if (s.includes("beisbol") || s.includes("baseball") || s.includes("mlb")) {
+    return {
+      label: "béisbol/MLB",
+      markets: "ml (ganador), total carreras (Over/Under), btts (1ra entrada anota o no), run line (-1.5/+1.5), ponches del pitcher abridor",
+      jsonSchema: '{"ml":{"pick":"Local|Visitante","conf":65,"nota":""},"goles":{"pick":"Over 8.5|Under 8.5 carreras","conf":60,"nota":""},"btts":{"pick":"Si anota 1ra entrada|No anota 1ra entrada","conf":55,"nota":""},"handicap":{"pick":"Local -1.5|Visitante +1.5","line":"-1.5","conf":58,"nota":""},"corners":{"pick":"Pitcher Over 5.5|Pitcher Under 5.5 Ks","conf":52,"nota":""},"resumen":"1 oracion"}',
+      criteria: ["Pitcher abridor: ERA, WHIP, ponches en ultimas 3 aperturas.", "Lineup ofensivo: promedio al bate y OBP vs tipo de pitcher.", "Bullpen: efectividad si el partido se extiende.", "Rendimiento en casa vs visita de cada equipo.", "H2H reciente si disponible.", "Clima o condiciones si hay datos."],
+      fallback: { ml: { pick: "Local", conf: 55, nota: "Pitcher y ventaja de campo local." }, goles: { pick: "Over 8.5 carreras", conf: 52, nota: "Promedio de carreras del torneo." }, btts: { pick: "No anota 1ra entrada", conf: 50, nota: "Abridores suelen dominar el inicio." }, handicap: { pick: "Local -1.5", line: "-1.5", conf: 48, nota: "Local favorito por run line." }, corners: { pick: "Pitcher Over 5.5 Ks", conf: 45, nota: "Buen abridor esperado." }, resumen: `${home} vs ${away} — béisbol, datos limitados.` },
+    };
+  }
+  if (s.includes("tenis") || s.includes("tennis")) {
+    return {
+      label: "tenis",
+      markets: "ml (ganador partido), juegos totales (Over/Under), ganador del 1er set, handicap de juegos, break de servicio en 1er set",
+      jsonSchema: '{"ml":{"pick":"Jugador A|Jugador B","conf":65,"nota":""},"goles":{"pick":"Over 22.5|Under 22.5 juegos","conf":60,"nota":""},"btts":{"pick":"Jugador A 1er set|Jugador B 1er set","conf":55,"nota":""},"handicap":{"pick":"Jugador A -3.5|Jugador B +3.5 juegos","line":"-3.5","conf":58,"nota":""},"corners":{"pick":"Si hay break 1er set|No hay break 1er set","conf":52,"nota":""},"resumen":"1 oracion"}',
+      criteria: ["Ranking ATP/WTA y forma reciente ultimos 5 partidos.", "Rendimiento en la superficie del torneo.", "H2H si disponible.", "Condicion fisica o lesiones reportadas.", "Stats de servicio y retorno si disponibles.", "Etapa del torneo y nivel de motivacion."],
+      fallback: { ml: { pick: home, conf: 55, nota: "Mejor ranking y forma reciente." }, goles: { pick: "Over 22.5 juegos", conf: 52, nota: "Promedio de juegos en torneo." }, btts: { pick: `${home} 1er set`, conf: 50, nota: "Ventaja de ranking en inicio." }, handicap: { pick: `${home} -3.5`, line: "-3.5", conf: 48, nota: "Diferencia de nivel esperada." }, corners: { pick: "Si hay break 1er set", conf: 45, nota: "Ambos servidores variables." }, resumen: `${home} vs ${away} — tenis, datos limitados.` },
+    };
+  }
+  if (s.includes("nfl") || (s.includes("americano") && !s.includes("soccer"))) {
+    return {
+      label: "fútbol americano/NFL",
+      markets: "ml (ganador partido), total puntos (Over/Under), spread (handicap puntos), primera mitad, total touchdowns",
+      jsonSchema: '{"ml":{"pick":"Local|Visitante","conf":65,"nota":""},"goles":{"pick":"Over 48.5|Under 48.5 pts","conf":60,"nota":""},"btts":{"pick":"Local 1ra mitad|Visitante 1ra mitad","conf":55,"nota":""},"handicap":{"pick":"Local -6.5|Visitante +6.5","line":"-6.5","conf":58,"nota":""},"corners":{"pick":"Over 3.5|Under 3.5 touchdowns","conf":52,"nota":""},"resumen":"1 oracion"}',
+      criteria: ["QB performance: QBR, TDs, INTs ultimos 3 juegos.", "Linea ofensiva y defensiva.", "Running game y eficiencia ofensiva.", "Lesiones de jugadores clave.", "H2H si disponible.", "Temperatura/viento si hay datos."],
+      fallback: { ml: { pick: "Local", conf: 55, nota: "Ventaja de campo local." }, goles: { pick: "Over 48.5 pts", conf: 52, nota: "Ritmo de anotacion esperado." }, btts: { pick: "Local 1ra mitad", conf: 50, nota: "Local domina inicio." }, handicap: { pick: "Local -6.5", line: "-6.5", conf: 48, nota: "Local favorito por spread." }, corners: { pick: "Over 3.5 TDs", conf: 45, nota: "Partido con ritmo ofensivo." }, resumen: `${home} vs ${away} — NFL, datos limitados.` },
+    };
+  }
+  // Default: soccer/futbol
+  return {
+    label: "fútbol",
+    markets: "1X2 ML (Local/Empate/Visitante), Goles Over/Under, BTTS (ambos anotan), Hándicap Asiático, Corners Over/Under",
+    jsonSchema: '{"ml":{"pick":"Local|Empate|Visitante","conf":65,"nota":""},"goles":{"pick":"Over 2.5|Under 2.5","conf":60,"nota":""},"btts":{"pick":"Si|No","conf":55,"nota":""},"handicap":{"pick":"descripcion exacta del handicap","line":"0.5|1|etc","conf":58,"nota":""},"corners":{"pick":"Over 9.5|Under 9.5","conf":52,"nota":""},"resumen":"1 oracion de contexto"}',
+    criteria: ["Forma ultimos 5 partidos de cada equipo.", "Lesiones o bajas relevantes confirmadas.", "Rendimiento local/visita de la temporada.", "Historial H2H reciente.", "Odds disponibles y movimientos de linea.", "Produccion ofensiva/defensiva y tendencia de totales y corners."],
+    fallback: { ml: { pick: home, conf: 55, nota: "Favorito local por localia." }, goles: { pick: "Over 2.5", conf: 52, nota: "Promedio de goles del torneo." }, btts: { pick: "Si", conf: 50, nota: "Ambos equipos tienen capacidad ofensiva." }, handicap: { pick: `${home} -0.5`, line: "-0.5", conf: 48, nota: "Leve ventaja local." }, corners: { pick: "Over 9.5", conf: 45, nota: "Ritmo de juego abierto esperado." }, resumen: `${home} vs ${away} — fútbol, datos limitados.` },
+  };
+};
+
 async function analyzeMarketsGPT({ event = {}, stats = {} } = {}) {
   const apiKey = safeStr(process.env.OPENAI_API_KEY);
   const model = safeStr(process.env.OPENAI_MODEL) || "gpt-4o";
@@ -613,84 +672,54 @@ async function analyzeMarketsGPT({ event = {}, stats = {} } = {}) {
   const league = safeStr(event.league || "Liga");
   const sport = safeStr(event.sport || "futbol");
   const date = safeStr(event.event_date || event.eventDate || "");
+  const sportCfg = getSportMarketConfig(sport, home, away);
 
-  const mkFallback = () => ({
-    ml: { pick: home, conf: 55, nota: "Favorito local por localia." },
-    goles: { pick: "Over 2.5", conf: 52, nota: "Promedio de goles del torneo." },
-    btts: { pick: "Si", conf: 50, nota: "Ambos equipos tienen capacidad ofensiva." },
-    handicap: { pick: `${home} -0.5`, line: "-0.5", conf: 48, nota: "Leve ventaja local." },
-    corners: { pick: "Over 9.5", conf: 45, nota: "Ritmo de juego abierto esperado." },
-    resumen: `${home} vs ${away} — analisis con datos limitados.`,
-    provider: "fallback",
-  });
-
+  const mkFallback = () => ({ ...sportCfg.fallback, provider: "fallback" });
   if (!apiKey) return mkFallback();
 
   const systemPrompt = [
-    "Eres un analista deportivo senior enfocado en picks informativos para una plataforma premium de apuestas deportivas con IA.",
-    "Para el evento dado, analiza EXACTAMENTE 5 mercados clave de forma corta, directa y basada en datos.",
-    "Responde SOLO JSON valido con esta estructura exacta:",
-    '{"ml":{"pick":"Local|Empate|Visitante","conf":65,"nota":"max 1 oracion"},"goles":{"pick":"Over 2.5|Under 2.5","conf":60,"nota":"max 1 oracion"},"btts":{"pick":"Si|No","conf":55,"nota":"max 1 oracion"},"handicap":{"pick":"descripcion del handicap","line":"0.5|1|etc","conf":58,"nota":"max 1 oracion"},"corners":{"pick":"Over 9.5|Under 9.5","conf":52,"nota":"max 1 oracion"},"resumen":"1 oracion de contexto del partido"}',
+    `Eres un analista deportivo senior especializado en ${sportCfg.label} para una plataforma premium de apuestas deportivas.`,
+    `Para el evento dado, analiza EXACTAMENTE estos 5 mercados de ${sportCfg.label}: ${sportCfg.markets}.`,
+    "Responde SOLO JSON valido con esta estructura exacta (sin texto adicional):",
+    sportCfg.jsonSchema,
     "Reglas obligatorias:",
-    "1. No prometas ganancias.",
-    "2. No uses palabras como seguro, garantizado, apuesta segura o free money.",
-    "3. La confianza debe ser un entero de 0 a 100.",
-    "4. Cada nota debe ser corta, directa y basada en datos.",
-    "5. Si faltan datos relevantes, reduce la confianza y dilo de forma breve.",
-    "6. No inventes lesiones, odds, bajas ni resultados.",
-    "7. Usa primero los datos entregados en Stats.",
-    "8. Si hay datos de lesiones, bajas, forma reciente, head-to-head, rendimiento local/visita u odds, debes considerarlos obligatoriamente.",
-    "9. Evalua patrones en los ultimos 5 partidos de cada equipo si esa informacion esta disponible.",
-    "10. Si odds y estadistica se contradicen, reflejalo con menor confianza.",
-    "11. Da prioridad a coherencia estadistica sobre narrativas.",
-    "12. El resumen final debe mencionar de forma compacta que factores pesaron mas.",
-    "Criterios de analisis por orden:",
-    "1. Forma ultimos 5 partidos.",
-    "2. Lesiones o bajas relevantes.",
-    "3. Rendimiento local/visita.",
-    "4. Historial H2H si existe.",
-    "5. Odds disponibles y movimientos si existen.",
-    "6. Produccion ofensiva/defensiva o tendencia de totales/corners si existe.",
+    "1. No prometas ganancias ni uses palabras como seguro, garantizado o free money.",
+    "2. La confianza es un entero 0-100; reducela si faltan datos.",
+    "3. Cada nota es max 1 oracion corta y directa basada en datos.",
+    "4. No inventes lesiones, odds, bajas ni resultados.",
+    "5. Usa primero los Stats proporcionados.",
+    "6. Si hay forma reciente, lesiones, H2H, rendimiento local/visita u odds, consideralos obligatoriamente.",
+    "7. Si odds y estadistica se contradicen, refleja eso con menor confianza.",
+    "8. El resumen menciona que factores pesaron mas.",
+    `Criterios prioritarios para ${sportCfg.label}:`,
+    ...sportCfg.criteria,
   ].join(" ");
 
   const userPrompt = [
     `Evento: ${league} | ${home} vs ${away}`,
-    `Deporte: ${sport}`,
+    `Deporte: ${sportCfg.label}`,
     `Fecha: ${date}`,
     stats && Object.keys(stats).length ? `Stats: ${JSON.stringify(stats).slice(0, 3200)}` : "Stats: limitados",
-    "Instruccion:",
-    "Analiza los 5 mercados usando SOLO la informacion disponible.",
-    "Si hay forma reciente, lesiones, bajas, odds snapshot, rendimiento local/visita o H2H, incorporalos explicitamente en la logica de cada mercado.",
-    "Si no hay datos suficientes para algun mercado, baja confianza.",
+    `Analiza los 5 mercados de ${sportCfg.label} usando SOLO la informacion disponible.`,
+    "Si no hay datos suficientes para un mercado, baja confianza y explica brevemente.",
   ].join("\n");
 
   try {
     if (OPENAI_WEB_SEARCH_ENABLED) {
       const instructions = [
         systemPrompt,
-        "Debes consultar la web antes de responder para buscar informacion reciente y relevante del partido.",
-        "Busca, si estan disponibles, lesiones, bajas, forma de los ultimos 5 partidos, rendimiento local/visita, head-to-head reciente, odds o lineas de mercado.",
+        `Debes consultar la web para buscar informacion reciente del partido de ${sportCfg.label}.`,
+        "Busca lesiones, bajas, forma reciente, rendimiento local/visita, H2H y odds o lineas de mercado.",
         "Si la web no confirma un dato, no lo inventes.",
         "Usa la busqueda web para complementar Stats, no para contradecirlos sin explicarlo.",
       ].join(" ");
-      const webInput = [
-        userPrompt,
-        "",
-        "Consulta online informacion reciente y util del evento para completar el analisis.",
-      ].join("\n");
+      const webInput = [`${userPrompt}`, "", "Consulta online informacion reciente y util del evento."].join("\n");
       try {
-        const { content, model: webModel } = await callOpenAiWebSearchOnce({
-          apiKey,
-          model: OPENAI_WEB_SEARCH_MODEL,
-          instructions,
-          input: webInput,
-        });
+        const { content, model: webModel } = await callOpenAiWebSearchOnce({ apiKey, model: OPENAI_WEB_SEARCH_MODEL, instructions, input: webInput });
         const parsed = extractJsonObject(content);
-        if (parsed) {
-          return { ...parsed, provider: `openai-web-${webModel}` };
-        }
+        if (parsed) return { ...parsed, provider: `openai-web-${webModel}` };
       } catch {
-        // Fallback silently to standard non-web analysis below.
+        // fallback to standard below
       }
     }
 
