@@ -518,10 +518,6 @@ function renderCards(picks){
     return;
   }
 
-  // detect apex user
-  const isApex = (typeof getCurrentSubscription === 'function' && getCurrentSubscription()?.id === 'coach_humano') ||
-                 (typeof getSubscriptionPlanSelection === 'function' && getSubscriptionPlanSelection()?.id === 'coach_humano');
-
   container.innerHTML = '';
   filtered.forEach((p, i)=>{
     const conf = parseInt(p.confidence)||50;
@@ -539,7 +535,7 @@ function renderCards(picks){
 
     // parse fullData for apex
     let fd = null;
-    if(isApex && p.fullData){
+    if(p.fullData){
       try { fd = JSON.parse(p.fullData); } catch{}
     }
     const gpt = fd?.gptMarkets || null;
@@ -553,7 +549,7 @@ function renderCards(picks){
       {name:'Corners', d: gpt.corners},
     ] : [];
 
-    const apexSection = (isApex && fd) ? `
+    const apexSection = fd ? `
       <div class="apex-section">
         <div class="apex-tabs">
           <button class="apex-tab on" data-tab="gpt" data-uid="${uid}">Análisis GPT-4o</button>

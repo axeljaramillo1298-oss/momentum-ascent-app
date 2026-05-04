@@ -1109,7 +1109,7 @@ const lockAdminIfNeeded = () => {
 
 const lockUserPagesIfNeeded = () => {
   const page = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
-  const userPages = new Set(["user-hoy.html", "user-rutinas.html", "user-progreso.html", "user-dieta.html", "user-checkin.html"]);
+  const userPages = new Set(["user-hoy.html", "user-rutinas.html", "user-progreso.html", "user-dieta.html", "user-checkin.html", "user-bank.html"]);
   if (!userPages.has(page)) {
     return;
   }
@@ -4703,7 +4703,7 @@ const logoutCurrentUser = async () => {
 };
 
 const initUserLogoutButton = () => {
-  const userPages = new Set(["user-hoy.html", "user-rutinas.html", "user-progreso.html", "user-dieta.html", "user-checkin.html"]);
+  const userPages = new Set(["user-hoy.html", "user-rutinas.html", "user-progreso.html", "user-dieta.html", "user-checkin.html", "user-bank.html"]);
   const page = (window.location.pathname.split("/").pop() || "").toLowerCase();
   if (!userPages.has(page)) return;
   const navActions = document.querySelector(".user-panel-nav .nav-actions");
@@ -4737,6 +4737,7 @@ const initPublicNavSessionButton = () => {
     "user-progreso.html",
     "user-dieta.html",
     "user-checkin.html",
+    "user-bank.html",
     "onboarding.html",
     "onboarding-1.html",
     "onboarding-2.html",
@@ -7178,7 +7179,7 @@ if (trainingToggle) {
 }
 
 const QA_DEBUG_KEY = "discipline_debug_mode_v1";
-const APP_FILES = new Set(["user-hoy.html", "user-rutinas.html", "user-progreso.html", "user-dieta.html", "user-checkin.html"]);
+const APP_FILES = new Set(["user-hoy.html", "user-rutinas.html", "user-progreso.html", "user-dieta.html", "user-checkin.html", "user-bank.html"]);
 const getPageFile = () => (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
 const isAppPage = () => APP_FILES.has(getPageFile());
 

@@ -332,6 +332,16 @@ main{position:relative;z-index:2}
       </div>
     </section>
 
+    <section class="events-section">
+      <div class="section-hdr">
+        <h2 class="section-title">Picks publicados</h2>
+        <span class="section-sub" id="published-count-label">0 publicados</span>
+      </div>
+      <div id="published-list">
+        <div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Todavía no hay picks publicados para esta fecha.</div>
+      </div>
+    </section>
+
     <!-- PIPELINE -->
     <section class="pipeline-section">
       <div class="section-hdr">
@@ -442,9 +452,8 @@ main{position:relative;z-index:2}
   let events = [];
   let aiSessions = 0;
   let activeEventId = null;
-  let pendingGptMarkets = null;
-  let pendingDecision = null;  // stores claude decision for fullData
   let pendingPub = null;       // pending publish payload for modal
+  const analysisStateByEvent = new Map();
   const dateInput = document.getElementById('events-date');
 
   function fmtDateLocal(d){
@@ -499,6 +508,13 @@ main{position:relative;z-index:2}
       map.get(key).push(item);
     });
     return map;
+  }
+  function getEventState(eventId){
+    return analysisStateByEvent.get(Number(eventId)) || { gptMarkets:null, decision:null };
+  }
+  function setEventState(eventId, next){
+    const current = getEventState(eventId);
+    analysisStateByEvent.set(Number(eventId), { ...current, ...next });
   }
   function createEventCard(ev){
     const card = document.createElement('div');
@@ -584,8 +600,7 @@ main{position:relative;z-index:2}
 
   // ── GPT STEP ──────────────────────────────────────────────
   async function runGptAnalysis(eventId, panel){
-    pendingGptMarkets = null;
-    pendingDecision = null;
+    setEventState(eventId, { gptMarkets:null, decision:null });
     panel.querySelector('#gpt-btn').disabled = true;
     const gptArea = panel.querySelector('#gpt-area');
     gptArea.innerHTML = `<div class="work-loading"><div class="work-spinner"></div><span>GPT-4o analizando 5 mercados en tiempo real…</span></div>`;
@@ -598,7 +613,7 @@ main{position:relative;z-index:2}
       const data = await fetchJson(`/api/picks/gpt-markets/${eventId}`, { method:'POST', headers: apiHeaders() });
       if(!data?.ok) throw new Error(data?.error || 'gpt_markets_failed');
 
-      pendingGptMarkets = data.markets;
+      setEventState(eventId, { gptMarkets:data.markets, decision:null });
       gptArea.innerHTML = renderMarketsTable(data.markets);
       panel.querySelector('#claude-btn').disabled = false;
       addLog(`GPT completó análisis de 5 mercados — evento #${eventId} — proveedor ${data.markets?.provider || 'desconocido'}`, 'ok');
@@ -613,7 +628,8 @@ main{position:relative;z-index:2}
 
   // ── CLAUDE STEP ───────────────────────────────────────────
   async function runClaudeDecide(eventId, panel){
-    if(!pendingGptMarkets){ addLog('Ejecuta GPT primero.','warn'); return; }
+    const eventState = getEventState(eventId);
+    if(!eventState.gptMarkets){ addLog('Ejecuta GPT primero.','warn'); return; }
     panel.querySelector('#claude-btn').disabled = true;
     const claudeArea = panel.querySelector('#claude-area');
     claudeArea.innerHTML = `<div class="work-loading"><div class="work-spinner"></div><span>Claude revisando mercados y balanceando portafolio…</span></div>`;
@@ -623,7 +639,7 @@ main{position:relative;z-index:2}
     try {
       const data = await fetchJson('/api/picks/claude-decide', {
         method:'POST', headers: apiHeaders(),
-        body: JSON.stringify({ eventId, gptMarkets: pendingGptMarkets })
+        body: JSON.stringify({ eventId, gptMarkets: eventState.gptMarkets })
       });
       if(!data?.ok) throw new Error(data?.error || 'claude_decide_failed');
 
@@ -677,8 +693,8 @@ main{position:relative;z-index:2}
         </div>` : '';
 
       // store decision for fullData
-      pendingDecision = {
-        gptMarkets: pendingGptMarkets,
+      const decisionPayload = {
+        gptMarkets: eventState.gptMarkets,
         claudeNormal: {
           pick: d.pick || '',
           mercado: d.mercado || '',
@@ -695,6 +711,7 @@ main{position:relative;z-index:2}
           razonamiento: d.safe_razonamiento || '',
         } : null,
       };
+      setEventState(eventId, { decision: decisionPayload });
 
       claudeArea.innerHTML = `<div class="claude-dual">${normalCard}${safeCard}</div>`;
 
@@ -737,7 +754,8 @@ main{position:relative;z-index:2}
     btn.textContent = 'Publicando…';
     btn.disabled = true;
     const eid = btn.dataset.eid;
-    const fullData = pendingDecision ? JSON.stringify(pendingDecision) : '';
+    const eventState = getEventState(eid);
+    const fullData = eventState.decision ? JSON.stringify(eventState.decision) : '';
 
     try {
       const data = await fetchJson('/api/picks/publish-direct', {
@@ -761,27 +779,15 @@ main{position:relative;z-index:2}
       btn.textContent = `✓ Publicado (${tierLabel})`;
       btn.classList.add('published');
 
-      // show result buttons below
-      if(pickId){
-        const resultRow = document.createElement('div');
-        resultRow.className = 'result-row';
-        resultRow.innerHTML = `
-          <span class="result-lbl">Resultado:</span>
-          <button class="btn-result won" onclick="markResult(${pickId}, 'won', this)">✓ Ganó</button>
-          <button class="btn-result lost" onclick="markResult(${pickId}, 'lost', this)">✗ Perdió</button>
-          <button class="btn-result void" onclick="markResult(${pickId}, 'void', this)">— Void</button>`;
-        btn.parentNode.appendChild(resultRow);
-      }
-
       const ev = events.find(e=>String(e.id)===String(eid));
       if(ev){
         ev.hasPick = true;
         ev.latestPick = data?.pick || { pick: btn.dataset.pick, market: btn.dataset.market, status: 'published' };
       }
       activeEventId = null;
-      pendingGptMarkets = null;
-      pendingDecision = null;
+      analysisStateByEvent.delete(Number(eid));
       renderEvents(events);
+      renderPublishedPicks(events);
       updateStats();
       addLog(`Pick publicado [${tierLabel}]: ${btn.dataset.pick} (${btn.dataset.market}) — evento #${eid}`, 'ok');
       setStatus('Pick publicado.');
@@ -808,6 +814,50 @@ main{position:relative;z-index:2}
     }
   }
 
+  function renderPublishedPicks(list){
+    const container = document.getElementById('published-list');
+    const label = document.getElementById('published-count-label');
+    const published = (list || []).filter(ev => ev?.latestPick && String(ev.latestPick.status || '').toLowerCase() === 'published');
+    label.textContent = `${published.length} publicado${published.length!==1?'s':''}`;
+    if(!published.length){
+      container.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Todavía no hay picks publicados para esta fecha.</div>`;
+      return;
+    }
+    container.innerHTML = '';
+    published
+      .sort((a,b) => new Date(a.eventDate || a.event_date || a.date || 0) - new Date(b.eventDate || b.event_date || b.date || 0))
+      .forEach(ev => {
+        const pick = ev.latestPick || {};
+        const item = document.createElement('div');
+        item.className = 'event-card';
+        item.innerHTML = `
+          <div class="event-card-head">
+            <div class="event-sport-icon">${sportIcon(ev.sport || 'default')}</div>
+            <div class="event-info">
+              <div class="event-match">${ev.home_team || ev.homeTeam || '?'} vs ${ev.away_team || ev.awayTeam || '?'}</div>
+              <div class="event-meta">
+                <span class="event-league">${ev.league || ev.competition || '—'}</span>
+                <span class="event-time">${pick.market || '—'}</span>
+                <span class="event-time">${pick.pick || '—'}</span>
+              </div>
+            </div>
+            <div class="event-pick-status">
+              <span class="chip green">Publicado</span>
+              <span class="chip ${String(pick.planTier || 'free') === 'premium' ? 'orange' : 'muted'}">${String(pick.planTier || 'free') === 'premium' ? 'Premium' : 'Free'}</span>
+            </div>
+          </div>
+          <div class="work-panel open" style="display:block">
+            <div class="result-row">
+              <span class="result-lbl">Resultado:</span>
+              <button class="btn-result won ${pick.result === 'won' ? 'active' : ''}" onclick="markResult(${Number(pick.id || 0)}, 'won', this)">✓ Ganó</button>
+              <button class="btn-result lost ${pick.result === 'lost' ? 'active' : ''}" onclick="markResult(${Number(pick.id || 0)}, 'lost', this)">✕ Perdió</button>
+              <button class="btn-result void ${pick.result === 'void' ? 'active' : ''}" onclick="markResult(${Number(pick.id || 0)}, 'void', this)">— Void</button>
+            </div>
+          </div>`;
+        container.appendChild(item);
+      });
+  }
+
   window.openPubModal = openPubModal;
   window.closePubModal = closePubModal;
   window.confirmPublish = confirmPublish;
@@ -816,6 +866,7 @@ main{position:relative;z-index:2}
   // ── RENDER EVENTS ─────────────────────────────────────────
   function renderEvents(list){
     const container = document.getElementById('events-list');
+    renderPublishedPicks(list);
     const pendingList = (list || []).filter(ev => !(ev?.hasPick || ev?.latestPick));
     const publishedCount = (list || []).length - pendingList.length;
     if(!pendingList.length){
@@ -864,11 +915,9 @@ main{position:relative;z-index:2}
 
     if(activeEventId === eid){
       activeEventId = null;
-      pendingGptMarkets = null;
       return;
     }
     activeEventId = eid;
-    pendingGptMarkets = null;
     card.classList.add('selected');
     const panel = card.querySelector('.work-panel');
     panel.classList.add('open');

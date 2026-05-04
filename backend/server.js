@@ -199,6 +199,8 @@ const normalizeViewerPlanId = (value = "") => {
   if (raw.includes("reto") || raw.includes("comunidad")) return "retos";
   return "free";
 };
+const isPublishedPick = (pick) => String(pick?.status || "").trim().toLowerCase() === "published";
+const filterPublishedPicks = (rows) => safeArray(rows).filter(isPublishedPick);
 const summarizeAnalysis = (text = "", maxLen = 220) => {
   const clean = String(text || "").replace(/\s+/g, " ").trim();
   if (!clean) return "";
@@ -1179,7 +1181,7 @@ app.get("/api/sports/events/today", async (req, res) => {
       events = await syncSportsEvents();
       events = events.filter((event) => matchesDateKey(event?.eventDate, dateKey));
     }
-    const picks = (await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, dateKey));
+    const picks = filterPublishedPicks(await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, dateKey));
     const picksByEvent = new Map(picks.map((pick) => [Number(pick.eventId), pick]));
     res.json({
       ok: true,
@@ -1575,7 +1577,7 @@ app.post("/api/picks/claude-decide", requireAdmin, async (req, res) => {
       });
     }
 
-    const publishedToday = (await listPickHistory(20))
+    const publishedToday = filterPublishedPicks(await listPickHistory(20))
       .filter((p) => p.createdAt && toDateKey(p.createdAt) === toDateKey())
       .slice(0, 8)
       .map((p) => ({ market: p.market, pick: p.pick, riskLevel: p.riskLevel }));
@@ -1599,6 +1601,8 @@ app.post("/api/picks/publish-candidate/:candidateId", requireAdmin, async (req, 
     const candidateId = Number(req.params.candidateId || 0);
     const candidate = await getPickCandidateById(candidateId);
     if (!candidate) return res.status(404).json({ ok: false, error: "candidate_not_found" });
+    const planTier = String(req.body?.planTier || "free");
+    const fullData = String(req.body?.fullData || "");
 
     const savedPick = await saveAiPick({
       eventId: candidate.eventId,
@@ -1609,6 +1613,8 @@ app.post("/api/picks/publish-candidate/:candidateId", requireAdmin, async (req, 
       riskLevel: candidate.riskLevel,
       modelUsed: candidate.modelUsed || candidate.provider,
       status: "published",
+      planTier,
+      fullData,
       createdAt: new Date().toISOString(),
     });
 
@@ -1673,7 +1679,8 @@ app.get("/api/picks/today", async (req, res) => {
   try {
     const viewerPlanId = await getViewerPlanId(req);
     const isPremiumViewer = viewerPlanId !== "free";
-    const filterByTier = (arr) => arr.filter((p) => (p?.planTier || "free") === "free" || isPremiumViewer);
+    const filterByTier = (arr) =>
+      filterPublishedPicks(arr).filter((p) => (p?.planTier || "free") === "free" || isPremiumViewer);
     const explicitDate = typeof req.query.date === "string" && req.query.date.trim();
     let dateKey = String(req.query.date || toDateKey()).trim();
     let picks = filterByTier((await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, dateKey)));
@@ -1719,7 +1726,7 @@ app.get("/api/picks/history", async (req, res) => {
     const viewerPlanId = await getViewerPlanId(req);
     const isPremiumViewer = viewerPlanId !== "free";
     const limit = Number(req.query.limit || 100);
-    const picks = (await listPickHistory(limit)).filter((p) => (p?.planTier || "free") === "free" || isPremiumViewer);
+    const picks = filterPublishedPicks(await listPickHistory(limit)).filter((p) => (p?.planTier || "free") === "free" || isPremiumViewer);
     res.json({
       ok: true,
       picks: picks.map((pick) => redactPickForViewer({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER }, viewerPlanId)),

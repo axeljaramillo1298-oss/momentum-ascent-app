@@ -101,7 +101,9 @@
   <script>
     (async function(){
       const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
-      const sub = typeof getCurrentSubscription === 'function' ? getCurrentSubscription() : null;
+      const sub = typeof syncCurrentSubscriptionFromApi === 'function'
+        ? (await syncCurrentSubscriptionFromApi()) || (typeof getCurrentSubscription === 'function' ? getCurrentSubscription() : null)
+        : (typeof getCurrentSubscription === 'function' ? getCurrentSubscription() : null);
       const selected = typeof getSubscriptionPlanSelection === 'function'
         ? (getSubscriptionPlanSelection(sub) || getEffectivePlanSelection?.())
         : null;
@@ -124,12 +126,15 @@
         const billing = typeof getBillingTarget === 'function'
           ? await getBillingTarget()
           : { bankName:'—', accountHolder:'—', clabe:'—', accountNumber:'—', whatsapp:'—', note:'' };
+        const masked = 'Disponible solo para Apex';
         document.getElementById('bank-name').textContent = billing.bankName || '—';
-        document.getElementById('bank-holder').textContent = billing.accountHolder || '—';
-        document.getElementById('bank-clabe').textContent = billing.clabe || '—';
-        document.getElementById('bank-account').textContent = billing.accountNumber || '—';
-        document.getElementById('bank-whatsapp').textContent = billing.whatsapp || '—';
-        document.getElementById('bank-note').textContent = billing.note || 'Si ya hiciste la transferencia, envía el comprobante al WhatsApp configurado para validar tu acceso.';
+        document.getElementById('bank-holder').textContent = isApex ? (billing.accountHolder || '—') : masked;
+        document.getElementById('bank-clabe').textContent = isApex ? (billing.clabe || '—') : masked;
+        document.getElementById('bank-account').textContent = isApex ? (billing.accountNumber || '—') : masked;
+        document.getElementById('bank-whatsapp').textContent = isApex ? (billing.whatsapp || '—') : masked;
+        document.getElementById('bank-note').textContent = isApex
+          ? (billing.note || 'Si ya hiciste la transferencia, envía el comprobante al WhatsApp configurado para validar tu acceso.')
+          : 'Activa Apex para ver la cuenta operativa completa, el canal de confirmación y la nota interna del bank.';
       } catch {
         document.getElementById('bank-note').textContent = 'No se pudo cargar la cuenta bancaria en este momento.';
       }
