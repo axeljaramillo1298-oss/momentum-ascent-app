@@ -328,7 +328,14 @@ const normalizeWhatsAppOnboardingResult = (error) => {
 };
 
 const SPORTS_PICK_DISCLAIMER = "Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.";
-const toDateKey = (value = new Date()) => new Date(value).toISOString().slice(0, 10);
+const SPORTS_TIMEZONE = String(process.env.SPORTS_TIMEZONE || "America/Mexico_City").trim() || "America/Mexico_City";
+const dateKeyFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: SPORTS_TIMEZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+const toDateKey = (value = new Date()) => dateKeyFormatter.format(new Date(value));
 const isPickRecent = (pick, maxAgeHours = 8) => {
   const createdAt = Date.parse(String(pick?.createdAt || ""));
   if (!Number.isFinite(createdAt)) return false;
@@ -367,6 +374,12 @@ const normalizeLeagueLabel = (value) =>
     .trim();
 const toObject = (value) => (value && typeof value === "object" && !Array.isArray(value) ? { ...value } : {});
 const mergeObjects = (...values) => Object.assign({}, ...values.map((item) => toObject(item)));
+const matchesDateKey = (value, dateKey) => {
+  if (!value || !dateKey) return false;
+  const timestamp = Date.parse(String(value));
+  if (!Number.isFinite(timestamp)) return false;
+  return toDateKey(timestamp) === String(dateKey).trim();
+};
 
 const getTrackedLeagues = async () => {
   const stored = await getAppSetting("sports_tracked_leagues", DEFAULT_TRACKED_LEAGUES);
@@ -1101,12 +1114,12 @@ app.get("/ranking/weekly", requireLegacyModules, async (req, res) => {
 app.get("/api/sports/events/today", async (req, res) => {
   try {
     const dateKey = String(req.query.date || toDateKey()).trim();
-    let events = await getSportsEventsByDate(dateKey);
+    let events = (await listRecentSportsEvents(400)).filter((event) => matchesDateKey(event?.eventDate, dateKey));
     if (!events.length) {
       events = await syncSportsEvents();
-      events = events.filter((event) => String(event?.eventDate || "").slice(0, 10) === dateKey);
+      events = events.filter((event) => matchesDateKey(event?.eventDate, dateKey));
     }
-    const picks = await listPicksByDate(dateKey);
+    const picks = (await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, dateKey));
     const picksByEvent = new Map(picks.map((pick) => [Number(pick.eventId), pick]));
     res.json({
       ok: true,
@@ -1573,13 +1586,14 @@ app.post("/api/picks/publish-direct", requireAdmin, async (req, res) => {
 app.get("/api/picks/today", async (req, res) => {
   try {
     const dateKey = String(req.query.date || toDateKey()).trim();
-    let picks = await listPicksByDate(dateKey);
+    let picks = (await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, dateKey));
     if (!picks.length) {
-      let events = await getSportsEventsByDate(dateKey);
+      let events = (await listRecentSportsEvents(400)).filter((event) => matchesDateKey(event?.eventDate, dateKey));
       if (!events.length) {
         events = await syncSportsEvents();
+        events = events.filter((event) => matchesDateKey(event?.eventDate, dateKey));
       }
-      picks = await listPicksByDate(dateKey);
+      picks = (await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, dateKey));
       res.json({
         ok: true,
         date: dateKey,
