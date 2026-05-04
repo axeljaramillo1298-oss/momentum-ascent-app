@@ -1596,8 +1596,21 @@ app.post("/api/picks/publish-direct", requireAdmin, async (req, res) => {
 
 app.get("/api/picks/today", async (req, res) => {
   try {
-    const dateKey = String(req.query.date || toDateKey()).trim();
+    const explicitDate = typeof req.query.date === "string" && req.query.date.trim();
+    let dateKey = String(req.query.date || toDateKey()).trim();
     let picks = (await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, dateKey));
+    if (!explicitDate) {
+      const tomorrowDate = new Date();
+      tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+      const tomorrowKey = toDateKey(tomorrowDate);
+      const tomorrowPicks = (await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, tomorrowKey));
+      const todayHasOnlyMock = picks.length > 0 && picks.every((pick) => String(pick?.externalId || "").startsWith("mock-"));
+      const tomorrowHasCurated = tomorrowPicks.some((pick) => !String(pick?.externalId || "").startsWith("mock-"));
+      if ((!picks.length || todayHasOnlyMock) && tomorrowHasCurated) {
+        dateKey = tomorrowKey;
+        picks = tomorrowPicks;
+      }
+    }
     if (!picks.length) {
       let events = (await listRecentSportsEvents(400)).filter((event) => matchesDateKey(event?.eventDate, dateKey));
       if (!events.length) {
