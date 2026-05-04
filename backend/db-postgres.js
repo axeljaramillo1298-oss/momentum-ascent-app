@@ -225,6 +225,9 @@ CREATE TABLE IF NOT EXISTS ai_picks (
   risk_level TEXT NOT NULL DEFAULT 'MEDIO',
   model_used TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'generated',
+  plan_tier TEXT NOT NULL DEFAULT 'free',
+  full_data TEXT NOT NULL DEFAULT '',
+  result TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL
 );
 
@@ -261,6 +264,9 @@ async function initDb() {
   await pool.query("ALTER TABLE routines ADD COLUMN IF NOT EXISTS week_key TEXT NOT NULL DEFAULT ''");
   await pool.query("ALTER TABLE assignments ADD COLUMN IF NOT EXISTS week_key TEXT NOT NULL DEFAULT ''");
   await pool.query("ALTER TABLE assignments ADD COLUMN IF NOT EXISTS assigned_for_week TEXT NOT NULL DEFAULT ''");
+  await pool.query("ALTER TABLE ai_picks ADD COLUMN IF NOT EXISTS plan_tier TEXT NOT NULL DEFAULT 'free'");
+  await pool.query("ALTER TABLE ai_picks ADD COLUMN IF NOT EXISTS full_data TEXT NOT NULL DEFAULT ''");
+  await pool.query("ALTER TABLE ai_picks ADD COLUMN IF NOT EXISTS result TEXT NOT NULL DEFAULT ''");
   return DB_META;
 }
 
@@ -1675,8 +1681,8 @@ async function saveAiPick(payload) {
   const now = safeStr(payload.createdAt) || nowIso();
   const result = await pool.query(
     `
-    INSERT INTO ai_picks (event_id, pick, market, confidence, analysis, risk_level, model_used, status, created_at)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+    INSERT INTO ai_picks (event_id, pick, market, confidence, analysis, risk_level, model_used, status, plan_tier, full_data, result, created_at)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
     RETURNING id
     `,
     [
@@ -1688,6 +1694,9 @@ async function saveAiPick(payload) {
       safeStr(payload.riskLevel) || "MEDIO",
       safeStr(payload.modelUsed),
       safeStr(payload.status) || "generated",
+      safeStr(payload.planTier) || "free",
+      safeStr(payload.fullData) || "",
+      safeStr(payload.result) || "",
       now,
     ]
   );
@@ -1701,6 +1710,9 @@ async function saveAiPick(payload) {
     riskLevel: safeStr(payload.riskLevel) || "MEDIO",
     modelUsed: safeStr(payload.modelUsed),
     status: safeStr(payload.status) || "generated",
+    planTier: safeStr(payload.planTier) || "free",
+    fullData: safeStr(payload.fullData) || "",
+    result: safeStr(payload.result) || "",
     createdAt: now,
   };
 }
@@ -1711,7 +1723,8 @@ async function getLatestAiPickForEvent(eventId) {
     SELECT p.id, p.event_id AS "eventId", e.external_id AS "externalId", e.sport, e.league,
            e.home_team AS "homeTeam", e.away_team AS "awayTeam", e.event_date AS "eventDate",
            e.status AS "eventStatus", p.pick, p.market, p.confidence, p.analysis,
-           p.risk_level AS "riskLevel", p.model_used AS "modelUsed", p.status, p.created_at AS "createdAt"
+           p.risk_level AS "riskLevel", p.model_used AS "modelUsed", p.status,
+           p.plan_tier AS "planTier", p.full_data AS "fullData", p.result, p.created_at AS "createdAt"
     FROM ai_picks p
     INNER JOIN sports_events e ON e.id = p.event_id
     WHERE p.event_id = $1
@@ -1731,7 +1744,8 @@ async function listPicksByDate(dateKey) {
     SELECT p.id, p.event_id AS "eventId", e.external_id AS "externalId", e.sport, e.league,
            e.home_team AS "homeTeam", e.away_team AS "awayTeam", e.event_date AS "eventDate",
            e.status AS "eventStatus", p.pick, p.market, p.confidence, p.analysis,
-           p.risk_level AS "riskLevel", p.model_used AS "modelUsed", p.status, p.created_at AS "createdAt"
+           p.risk_level AS "riskLevel", p.model_used AS "modelUsed", p.status,
+           p.plan_tier AS "planTier", p.full_data AS "fullData", p.result, p.created_at AS "createdAt"
     FROM ai_picks p
     INNER JOIN sports_events e ON e.id = p.event_id
     WHERE TO_CHAR(e.event_date AT TIME ZONE 'UTC', 'YYYY-MM-DD') = $1
@@ -1748,7 +1762,8 @@ async function listPickHistory(limit = 100) {
     SELECT p.id, p.event_id AS "eventId", e.external_id AS "externalId", e.sport, e.league,
            e.home_team AS "homeTeam", e.away_team AS "awayTeam", e.event_date AS "eventDate",
            e.status AS "eventStatus", p.pick, p.market, p.confidence, p.analysis,
-           p.risk_level AS "riskLevel", p.model_used AS "modelUsed", p.status, p.created_at AS "createdAt"
+           p.risk_level AS "riskLevel", p.model_used AS "modelUsed", p.status,
+           p.plan_tier AS "planTier", p.full_data AS "fullData", p.result, p.created_at AS "createdAt"
     FROM ai_picks p
     INNER JOIN sports_events e ON e.id = p.event_id
     ORDER BY p.created_at DESC
@@ -1757,6 +1772,14 @@ async function listPickHistory(limit = 100) {
     [Math.max(1, Math.min(500, Number(limit || 100)))]
   );
   return result.rows.map((row) => ({ ...row, id: Number(row.id), eventId: Number(row.eventId), confidence: Number(row.confidence || 0) }));
+}
+
+async function updatePickResult({ id, result }) {
+  const allowed = ["won", "lost", "void", ""];
+  const normalized = safeStr(result).toLowerCase();
+  if (!allowed.includes(normalized)) throw new Error("invalid_result");
+  await pool.query(`UPDATE ai_picks SET result = $1 WHERE id = $2`, [normalized, Number(id || 0)]);
+  return { id: Number(id || 0), result: normalized };
 }
 
 async function savePickCandidates({ eventId, sessionId, candidates, claudeSelectedIndex, claudeReasoning, claudeModel, claudeFinalPick }) {
@@ -1887,6 +1910,7 @@ module.exports = {
   getLatestAiPickForEvent,
   listPicksByDate,
   listPickHistory,
+  updatePickResult,
   logApiSync,
   listApiSyncLogs,
   getAdminDashboard,

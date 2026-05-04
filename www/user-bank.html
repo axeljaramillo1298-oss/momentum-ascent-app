@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Bank | Momentum Ascent</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body{background:#060608;color:#f0ede8;font-family:'Barlow',sans-serif}
+    .bank-wrap{max-width:1200px;margin:0 auto;padding:18px 18px 140px}
+    .bank-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
+    .bank-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
+    .bank-nav a,.bank-nav button{font:700 11px 'Barlow',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(240,237,232,.6);text-decoration:none;background:transparent;border:1px solid rgba(255,255,255,.08);padding:10px 14px;border-radius:999px;cursor:pointer}
+    .bank-hero{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;align-items:start;margin-bottom:18px}
+    .bank-card{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:18px}
+    .bank-kicker{font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(240,237,232,.42);margin-bottom:12px}
+    .bank-title{font-family:'Barlow Condensed',sans-serif;font-style:italic;font-weight:900;font-size:clamp(44px,7vw,78px);line-height:.9;text-transform:uppercase}
+    .bank-title span{color:#ff5c1a}
+    .bank-copy{margin-top:14px;max-width:520px;color:rgba(240,237,232,.62);line-height:1.7}
+    .bank-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,92,26,.3);background:rgba(255,92,26,.08);color:#ff8e61;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+    .bank-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .bank-row{padding:14px;border-radius:14px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06)}
+    .bank-row span{display:block;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(240,237,232,.38);margin-bottom:7px}
+    .bank-row strong{display:block;font-size:18px;line-height:1.35;word-break:break-word}
+    .bank-note{margin-top:14px;padding:14px;border-radius:14px;background:linear-gradient(135deg,rgba(167,139,250,.08),rgba(255,92,26,.06));border:1px solid rgba(167,139,250,.18);color:rgba(240,237,232,.7);line-height:1.7}
+    .bank-side-list{display:grid;gap:10px}
+    .bank-side-item{padding:14px;border-radius:14px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06)}
+    .bank-side-item strong{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+    .bank-side-item p{color:rgba(240,237,232,.62);line-height:1.65;font-size:13px}
+    .bank-side-item .cta{display:inline-flex;margin-top:10px;padding:10px 14px;border-radius:999px;background:#ff5c1a;color:#fff;text-decoration:none;font:700 11px 'Barlow',sans-serif;letter-spacing:.08em;text-transform:uppercase}
+    .bank-status{font-size:13px;color:rgba(240,237,232,.6)}
+    .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:300;display:flex;border-top:1px solid rgba(255,255,255,.08);background:rgba(6,6,8,.92);backdrop-filter:blur(16px)}
+    .bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;text-decoration:none;color:rgba(240,237,232,.45);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+    .bottom-nav-active,.bottom-nav-item:hover{color:#ff5c1a}
+    .bottom-nav-icon{font-size:18px}
+    @media(max-width:860px){.bank-hero{grid-template-columns:1fr}.bank-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="bank-wrap">
+    <div class="bank-nav">
+      <div class="bank-logo">Momentum Ascent</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a href="user-hoy.html">Picks</a>
+        <a href="planes.html">Planes</a>
+        <button type="button" id="bank-logout">Salir</button>
+      </div>
+    </div>
+
+    <section class="bank-hero">
+      <article class="bank-card">
+        <div class="bank-kicker">Bank + Apex Layer</div>
+        <div class="bank-title">Control de <span>Bank</span></div>
+        <p class="bank-copy">
+          Referencia operativa para pagos, validación de acceso y control premium. Los usuarios Apex ven aquí
+          la cuenta vigente, el canal de confirmación y el contexto de su plan.
+        </p>
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <span class="bank-chip" id="bank-plan-chip">Plan Free</span>
+          <span class="bank-status" id="bank-plan-status">Cargando estado…</span>
+        </div>
+      </article>
+
+      <aside class="bank-side-list">
+        <div class="bank-side-item">
+          <strong>Qué hacer</strong>
+          <p>Transfiere a la cuenta indicada y envía comprobante al WhatsApp configurado. El acceso premium o Apex se valida desde admin.</p>
+        </div>
+        <div class="bank-side-item">
+          <strong>Acceso premium</strong>
+          <p id="bank-upsell-copy">Apex desbloquea análisis completo, lectura dual GPT + Claude y capa premium de operación.</p>
+          <a class="cta" href="planes.html">Ver planes</a>
+        </div>
+      </aside>
+    </section>
+
+    <section class="bank-card">
+      <div class="bank-kicker">Datos bancarios</div>
+      <div class="bank-grid">
+        <div class="bank-row"><span>Banco</span><strong id="bank-name">—</strong></div>
+        <div class="bank-row"><span>Titular</span><strong id="bank-holder">—</strong></div>
+        <div class="bank-row"><span>CLABE</span><strong id="bank-clabe">—</strong></div>
+        <div class="bank-row"><span>Número de cuenta</span><strong id="bank-account">—</strong></div>
+        <div class="bank-row"><span>WhatsApp confirmación</span><strong id="bank-whatsapp">—</strong></div>
+        <div class="bank-row"><span>Usuario</span><strong id="bank-user-email">—</strong></div>
+      </div>
+      <div class="bank-note" id="bank-note">Cargando instrucciones…</div>
+    </section>
+  </div>
+
+  <nav class="bottom-nav">
+    <a class="bottom-nav-item" href="user-hoy.html"><span class="bottom-nav-icon">🎯</span><span>Picks</span></a>
+    <a class="bottom-nav-item" href="user-progreso.html"><span class="bottom-nav-icon">📚</span><span>Historial</span></a>
+    <a class="bottom-nav-item bottom-nav-active" href="user-bank.html"><span class="bottom-nav-icon">💰</span><span>Bank</span></a>
+    <a class="bottom-nav-item" href="planes.html"><span class="bottom-nav-icon">💳</span><span>Planes</span></a>
+    <a class="bottom-nav-item" href="user-checkin.html"><span class="bottom-nav-icon">👤</span><span>Cuenta</span></a>
+  </nav>
+
+  <script src="app.js"></script>
+  <script>
+    (async function(){
+      const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+      const sub = typeof getCurrentSubscription === 'function' ? getCurrentSubscription() : null;
+      const selected = typeof getSubscriptionPlanSelection === 'function'
+        ? (getSubscriptionPlanSelection(sub) || getEffectivePlanSelection?.())
+        : null;
+      const planId = String(selected?.id || user?.planId || 'free').toLowerCase();
+      const planLabel = selected?.label || sub?.planLabel || user?.plan || 'Free';
+      const planStatus = String(sub?.status || 'inactive').toLowerCase();
+      const isApex = planId === 'coach_humano';
+
+      document.getElementById('bank-plan-chip').textContent = planLabel;
+      document.getElementById('bank-plan-status').textContent =
+        planStatus === 'active' ? 'Acceso activo' :
+        planStatus === 'pending' ? 'Pago pendiente de validación' :
+        'Sin acceso premium activo';
+      document.getElementById('bank-user-email').textContent = user?.email || '—';
+      document.getElementById('bank-upsell-copy').textContent = isApex
+        ? 'Tu cuenta Apex ya puede consumir la cuenta operativa completa, seguimiento premium y lectura extendida.'
+        : 'Apex desbloquea análisis completo, lectura dual GPT + Claude y capa premium de operación.';
+
+      try {
+        const billing = typeof getBillingTarget === 'function'
+          ? await getBillingTarget()
+          : { bankName:'—', accountHolder:'—', clabe:'—', accountNumber:'—', whatsapp:'—', note:'' };
+        document.getElementById('bank-name').textContent = billing.bankName || '—';
+        document.getElementById('bank-holder').textContent = billing.accountHolder || '—';
+        document.getElementById('bank-clabe').textContent = billing.clabe || '—';
+        document.getElementById('bank-account').textContent = billing.accountNumber || '—';
+        document.getElementById('bank-whatsapp').textContent = billing.whatsapp || '—';
+        document.getElementById('bank-note').textContent = billing.note || 'Si ya hiciste la transferencia, envía el comprobante al WhatsApp configurado para validar tu acceso.';
+      } catch {
+        document.getElementById('bank-note').textContent = 'No se pudo cargar la cuenta bancaria en este momento.';
+      }
+
+      document.getElementById('bank-logout').addEventListener('click', () => {
+        if (typeof logoutCurrentUser === 'function') {
+          logoutCurrentUser();
+        } else {
+          location.href = 'registro.html#login';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

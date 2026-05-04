@@ -204,6 +204,16 @@ if (!assignmentColumns.includes("week_key")) {
 if (!assignmentColumns.includes("assigned_for_week")) {
   db.exec("ALTER TABLE assignments ADD COLUMN assigned_for_week TEXT NOT NULL DEFAULT ''");
 }
+const aiPicksColumns = db.prepare("PRAGMA table_info(ai_picks)").all().map((row) => String(row.name || "").toLowerCase());
+if (!aiPicksColumns.includes("plan_tier")) {
+  db.exec("ALTER TABLE ai_picks ADD COLUMN plan_tier TEXT NOT NULL DEFAULT 'free'");
+}
+if (!aiPicksColumns.includes("full_data")) {
+  db.exec("ALTER TABLE ai_picks ADD COLUMN full_data TEXT NOT NULL DEFAULT ''");
+}
+if (!aiPicksColumns.includes("result")) {
+  db.exec("ALTER TABLE ai_picks ADD COLUMN result TEXT NOT NULL DEFAULT ''");
+}
 
 const nowIso = () => new Date().toISOString();
 const safeStr = (value) => String(value || "").trim();
@@ -836,9 +846,9 @@ LIMIT 1
 
 const insertAiPickStmt = db.prepare(`
 INSERT INTO ai_picks (
-  event_id, pick, market, confidence, analysis, risk_level, model_used, status, created_at
+  event_id, pick, market, confidence, analysis, risk_level, model_used, status, plan_tier, full_data, result, created_at
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 const getLatestAiPickForEventStmt = db.prepare(`
@@ -858,6 +868,9 @@ SELECT
   p.risk_level AS riskLevel,
   p.model_used AS modelUsed,
   p.status,
+  p.plan_tier AS planTier,
+  p.full_data AS fullData,
+  p.result,
   p.created_at AS createdAt
 FROM ai_picks p
 INNER JOIN sports_events e ON e.id = p.event_id
@@ -884,6 +897,9 @@ SELECT
   p.risk_level AS riskLevel,
   p.model_used AS modelUsed,
   p.status,
+  p.plan_tier AS planTier,
+  p.full_data AS fullData,
+  p.result,
   p.created_at AS createdAt
 FROM ai_picks p
 INNER JOIN sports_events e ON e.id = p.event_id
@@ -909,6 +925,9 @@ SELECT
   p.risk_level AS riskLevel,
   p.model_used AS modelUsed,
   p.status,
+  p.plan_tier AS planTier,
+  p.full_data AS fullData,
+  p.result,
   p.created_at AS createdAt
 FROM ai_picks p
 INNER JOIN sports_events e ON e.id = p.event_id
@@ -1689,6 +1708,9 @@ function parseAiPick(row) {
     riskLevel: row.riskLevel || "MEDIO",
     modelUsed: row.modelUsed || "",
     status: row.status || "generated",
+    planTier: row.planTier || "free",
+    fullData: row.fullData || "",
+    result: row.result || "",
     createdAt: row.createdAt,
   };
 }
@@ -1756,7 +1778,7 @@ function saveAiPick(payload) {
   const eventId = Number(payload.eventId || 0);
   if (!eventId) throw new Error("event_id_required");
   const now = safeStr(payload.createdAt) || nowIso();
-  const result = insertAiPickStmt.run(
+  const insertResult = insertAiPickStmt.run(
     eventId,
     safeStr(payload.pick),
     safeStr(payload.market),
@@ -1765,10 +1787,13 @@ function saveAiPick(payload) {
     safeStr(payload.riskLevel) || "MEDIO",
     safeStr(payload.modelUsed),
     safeStr(payload.status) || "generated",
+    safeStr(payload.planTier) || "free",
+    safeStr(payload.fullData) || "",
+    safeStr(payload.result) || "",
     now
   );
   return {
-    id: Number(result.lastInsertRowid),
+    id: Number(insertResult.lastInsertRowid),
     eventId,
     pick: safeStr(payload.pick),
     market: safeStr(payload.market),
@@ -1777,8 +1802,20 @@ function saveAiPick(payload) {
     riskLevel: safeStr(payload.riskLevel) || "MEDIO",
     modelUsed: safeStr(payload.modelUsed),
     status: safeStr(payload.status) || "generated",
+    planTier: safeStr(payload.planTier) || "free",
+    fullData: safeStr(payload.fullData) || "",
+    result: safeStr(payload.result) || "",
     createdAt: now,
   };
+}
+
+const updatePickResultStmt = db.prepare(`UPDATE ai_picks SET result = ? WHERE id = ?`);
+function updatePickResult({ id, result }) {
+  const allowed = ["won", "lost", "void", ""];
+  const normalized = safeStr(result).toLowerCase();
+  if (!allowed.includes(normalized)) throw new Error("invalid_result");
+  updatePickResultStmt.run(normalized, Number(id));
+  return { id: Number(id), result: normalized };
 }
 
 function getLatestAiPickForEvent(eventId) {
@@ -1878,6 +1915,7 @@ module.exports = {
   getLatestAiPickForEvent: async (eventId) => getLatestAiPickForEvent(eventId),
   listPicksByDate: async (dateKey) => listPicksByDate(dateKey),
   listPickHistory: async (limit) => listPickHistory(limit),
+  updatePickResult: async (payload) => updatePickResult(payload),
   logApiSync: async (payload) => logApiSync(payload),
   listApiSyncLogs: async (limit) => listApiSyncLogs(limit),
 };

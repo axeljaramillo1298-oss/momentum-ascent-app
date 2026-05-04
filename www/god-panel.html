@@ -4,7 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Modo Dios | Momentum Ascent</title>
-    <meta name="description" content="Panel de superadmin para pagos, permisos, membresias y configuracion global." />
+    <meta
+      name="description"
+      content="Panel de superadmin para pagos, permisos, membresias, usuarios y configuracion global."
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -23,19 +26,239 @@
         <div class="hero-copy">
           <p class="eyebrow">Superadmin</p>
           <h1>Modo Dios - Control total</h1>
-          <p class="subhead">Pagos, permisos, roles, membresias y configuracion sensible del producto sports.</p>
+          <p class="subhead">
+            Pagos, permisos, roles, membresias, cuenta bancaria y gestion completa de usuarios
+            registrados.
+          </p>
         </div>
       </div>
     </header>
+
     <main id="god-main">
       <section class="section">
-        <article class="card">
-          <h3>Panel sensible</h3>
-          <p>Este panel mantiene la gestion de acceso, pagos y configuracion global. Todo ajuste debe entenderse en contexto de la plataforma de picks deportivos con IA.</p>
-          <p class="sports-disclaimer">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</p>
-        </article>
+        <div class="god-shell">
+          <article class="card god-card">
+            <div class="god-head">
+              <div>
+                <h3>Operaciones sensibles</h3>
+                <p class="admin-section-desc">
+                  Acceso a configuracion global, cuenta bancaria de cobro, roles de usuario y
+                  membresias activas del producto.
+                </p>
+              </div>
+              <span id="god-status-pill" class="admin-chip pending god-status-badge">Bloqueado</span>
+            </div>
+            <p class="sports-disclaimer">
+              Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.
+            </p>
+          </article>
+
+          <div class="god-kpis">
+            <article class="god-kpi">
+              <span>Usuarios registrados</span>
+              <strong id="god-users-count">0</strong>
+            </article>
+            <article class="god-kpi">
+              <span>Admins</span>
+              <strong id="god-users-admin">0</strong>
+            </article>
+            <article class="god-kpi">
+              <span>Usuarios con plan</span>
+              <strong id="god-users-paid">0</strong>
+            </article>
+            <article class="god-kpi">
+              <span>Pagos pendientes</span>
+              <strong id="god-users-pending">-</strong>
+            </article>
+          </div>
+
+          <div class="god-layout">
+            <article class="god-card god-auth-card">
+              <div class="god-card-header">
+                <span class="god-card-icon">🔐</span>
+                <h4>Acceso Modo Dios</h4>
+              </div>
+              <div class="admin-form">
+                <label>
+                  Usuario Dios
+                  <input id="god-user" type="text" autocomplete="username" placeholder="Raz13l" />
+                </label>
+                <label>
+                  Password Dios
+                  <input
+                    id="god-pass"
+                    type="password"
+                    autocomplete="current-password"
+                    placeholder="Password"
+                  />
+                </label>
+                <div class="admin-tools-row">
+                  <button id="god-login-btn" class="primary" type="button">Entrar</button>
+                  <button id="god-logout-btn" class="ghost" type="button">Cerrar sesion</button>
+                </div>
+                <p id="god-auth-feedback" class="reg-feedback" aria-live="polite"></p>
+              </div>
+            </article>
+
+            <article class="god-card">
+              <div class="god-card-header">
+                <span class="god-card-icon">🏦</span>
+                <h4>Cuenta bancaria / cobro</h4>
+              </div>
+              <div class="admin-form">
+                <label>
+                  Banco
+                  <input id="god-bank-name" type="text" placeholder="BBVA / Santander / Banorte" />
+                </label>
+                <label>
+                  Titular
+                  <input id="god-bank-holder" type="text" placeholder="Nombre del titular" />
+                </label>
+                <label>
+                  CLABE
+                  <input id="god-bank-clabe" type="text" placeholder="18 digitos" />
+                </label>
+                <label>
+                  Numero de cuenta
+                  <input id="god-bank-account" type="text" placeholder="Numero de cuenta" />
+                </label>
+                <label>
+                  WhatsApp de pago
+                  <input id="god-bank-whatsapp" type="text" placeholder="+52..." />
+                </label>
+                <label>
+                  Nota de cobro
+                  <textarea
+                    id="god-bank-note"
+                    placeholder="Instrucciones de pago, confirmacion, referencia, horario, etc."
+                  ></textarea>
+                </label>
+                <div class="admin-tools-row">
+                  <button id="god-save-billing-btn" class="primary" type="button">
+                    Guardar cuenta
+                  </button>
+                </div>
+                <p id="god-billing-feedback" class="reg-feedback" aria-live="polite"></p>
+              </div>
+            </article>
+
+            <article class="god-card">
+              <div class="god-card-header">
+                <span class="god-card-icon">🧭</span>
+                <h4>Acciones sobre usuario</h4>
+              </div>
+              <div class="admin-form">
+                <label>
+                  Email objetivo
+                  <input
+                    id="god-target-user"
+                    type="email"
+                    autocomplete="off"
+                    placeholder="usuario@correo.com"
+                  />
+                </label>
+                <label>
+                  Rol
+                  <select id="god-target-role">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </label>
+                <div class="admin-tools-row">
+                  <button id="god-set-role-btn" class="ghost" type="button">Actualizar rol</button>
+                  <button id="god-delete-user-btn" class="ghost" type="button">
+                    Eliminar usuario
+                  </button>
+                </div>
+                <p id="god-user-feedback" class="reg-feedback" aria-live="polite"></p>
+              </div>
+            </article>
+          </div>
+
+          <div class="god-layout">
+            <article class="god-card">
+              <div class="god-card-header">
+                <span class="god-card-icon">👑</span>
+                <h4>Otorgar membresia / Apex</h4>
+              </div>
+              <div class="admin-form">
+                <label>
+                  Plan
+                  <select id="god-plan-id">
+                    <option value="free">Free</option>
+                    <option value="ai_coach">AI Picks</option>
+                    <option value="coach_humano">Apex</option>
+                    <option value="retos">Retos</option>
+                  </select>
+                </label>
+                <label>
+                  Label del plan
+                  <input id="god-plan-label" type="text" value="Free" />
+                </label>
+                <label>
+                  Dias de duracion
+                  <input id="god-plan-days" type="number" min="1" step="1" value="30" />
+                </label>
+                <label>
+                  Tipo de reto
+                  <input id="god-challenge-type" type="text" placeholder="30 dias / disciplina / etc." />
+                </label>
+                <label>
+                  Monto bet / premium
+                  <input id="god-bet-amount" type="number" min="0" step="1" value="0" />
+                </label>
+                <label>
+                  Contrato habilitado
+                  <input id="god-contract-enabled" type="checkbox" />
+                </label>
+                <label>
+                  Bet mode habilitado
+                  <input id="god-bet-enabled" type="checkbox" />
+                </label>
+                <label>
+                  Extra Diet Basic
+                  <input id="god-extra-diet-basic" type="checkbox" />
+                </label>
+                <label>
+                  Extra Diet Plus
+                  <input id="god-extra-diet-plus" type="checkbox" />
+                </label>
+                <div class="admin-tools-row">
+                  <button id="god-grant-plan-btn" class="primary" type="button">
+                    Otorgar plan
+                  </button>
+                </div>
+              </div>
+            </article>
+
+            <article class="god-users-box" style="grid-column: span 2;">
+              <div class="god-users-head">
+                <div>
+                  <h4>Usuarios registrados</h4>
+                  <p class="admin-section-desc">
+                    Busca, carga un usuario al formulario, cambia rol, otorga Apex o elimina la
+                    cuenta.
+                  </p>
+                </div>
+                <div class="admin-tools-row">
+                  <input
+                    id="god-users-search"
+                    type="search"
+                    placeholder="Buscar por email o nombre"
+                    style="min-width: 240px;"
+                  />
+                  <button id="god-users-refresh" class="ghost" type="button">Actualizar</button>
+                </div>
+              </div>
+              <div id="god-users-list" class="god-users-list">
+                <div class="admin-item"><p>Cargando usuarios...</p></div>
+              </div>
+            </article>
+          </div>
+        </div>
       </section>
     </main>
+
     <footer class="footer"><div>Momentum Ascent • Modo Dios</div></footer>
     <script src="app.js"></script>
   </body>

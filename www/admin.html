@@ -169,6 +169,29 @@ main{position:relative;z-index:2}
 .pub-badge{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--green);border:1px solid rgba(74,222,128,.25);background:rgba(74,222,128,.06);padding:4px 10px;border-radius:20px;margin-left:8px}
 .event-card.selected{border-color:rgba(255,69,0,.45);background:rgba(255,69,0,.03)}
 
+/* RESULT BUTTONS */
+.result-row{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+.result-lbl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.btn-result{font-size:10px;font-weight:700;letter-spacing:.06em;padding:5px 12px;border-radius:3px;border:1px solid;cursor:pointer;background:transparent;transition:all .2s}
+.btn-result.won{color:var(--green);border-color:rgba(74,222,128,.35)}.btn-result.won:hover,.btn-result.won.active{background:rgba(74,222,128,.15);border-color:var(--green)}
+.btn-result.lost{color:var(--red);border-color:rgba(248,113,113,.35)}.btn-result.lost:hover,.btn-result.lost.active{background:rgba(248,113,113,.15);border-color:var(--red)}
+.btn-result.void{color:var(--muted);border-color:var(--border)}.btn-result.void:hover,.btn-result.void.active{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.2)}
+
+/* PUBLISH MODAL */
+.pub-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px}
+.pub-modal-box{background:#0e0e12;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:32px;max-width:440px;width:100%;box-shadow:0 32px 80px rgba(0,0,0,.6)}
+.pub-modal-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:22px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}
+.pub-modal-desc{font-size:12px;color:var(--muted);margin-bottom:24px;line-height:1.6}
+.pub-modal-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.pub-tier-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px 12px;border-radius:8px;border:1px solid;cursor:pointer;background:transparent;transition:all .2s;font-family:'Barlow',sans-serif;text-align:center}
+.pub-tier-btn.free-btn{border-color:rgba(255,255,255,.15);color:var(--text)}.pub-tier-btn.free-btn:hover{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.3)}
+.pub-tier-btn.premium-btn{border-color:rgba(255,69,0,.35);color:var(--orange)}.pub-tier-btn.premium-btn:hover{background:rgba(255,69,0,.06);border-color:var(--orange)}
+.pub-tier-icon{font-size:28px}
+.pub-tier-btn strong{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.pub-tier-btn span:last-child{font-size:10px;color:var(--muted)}
+.pub-modal-cancel{width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:10px;border-radius:3px;cursor:pointer;transition:all .2s}
+.pub-modal-cancel:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+
 /* PIPELINE */
 .pipeline-section{margin-bottom:48px;opacity:0;animation:fadeUp .5s .75s forwards}
 .pipeline-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px}
@@ -420,6 +443,8 @@ main{position:relative;z-index:2}
   let aiSessions = 0;
   let activeEventId = null;
   let pendingGptMarkets = null;
+  let pendingDecision = null;  // stores claude decision for fullData
+  let pendingPub = null;       // pending publish payload for modal
   const dateInput = document.getElementById('events-date');
 
   function fmtDateLocal(d){
@@ -560,6 +585,7 @@ main{position:relative;z-index:2}
   // ── GPT STEP ──────────────────────────────────────────────
   async function runGptAnalysis(eventId, panel){
     pendingGptMarkets = null;
+    pendingDecision = null;
     panel.querySelector('#gpt-btn').disabled = true;
     const gptArea = panel.querySelector('#gpt-area');
     gptArea.innerHTML = `<div class="work-loading"><div class="work-spinner"></div><span>GPT-4o analizando 5 mercados en tiempo real…</span></div>`;
@@ -650,14 +676,34 @@ main{position:relative;z-index:2}
           </button>
         </div>` : '';
 
+      // store decision for fullData
+      pendingDecision = {
+        gptMarkets: pendingGptMarkets,
+        claudeNormal: {
+          pick: d.pick || '',
+          mercado: d.mercado || '',
+          confianza: d.confianza || 60,
+          riesgo: d.riesgo || 'MEDIO',
+          tipo: d.tipo || 'moderada',
+          razonamiento: d.razonamiento || '',
+        },
+        claudeSafe: d.safe_pick ? {
+          pick: d.safe_pick || '',
+          mercado: d.safe_mercado || d.mercado || '',
+          confianza: d.safe_confianza || 75,
+          riesgo: d.safe_riesgo || 'BAJO',
+          razonamiento: d.safe_razonamiento || '',
+        } : null,
+      };
+
       claudeArea.innerHTML = `<div class="claude-dual">${normalCard}${safeCard}</div>`;
 
       panel.querySelector('#pub-btn-'+eventId).addEventListener('click', function(){
-        if(!this.classList.contains('published')) publishDirect(this);
+        if(!this.classList.contains('published')) openPubModal(this);
       });
       if(hasSafe){
         panel.querySelector('#pub-safe-btn-'+eventId).addEventListener('click', function(){
-          if(!this.classList.contains('published')) publishDirect(this);
+          if(!this.classList.contains('published')) openPubModal(this);
         });
       }
       addLog(`Claude recomendó: ${d.pick} en ${d.mercado} (${d.tipo})`, 'ok');
@@ -670,11 +716,28 @@ main{position:relative;z-index:2}
     }
   }
 
+  // ── PUBLISH MODAL ──────────────────────────────────────────
+  function openPubModal(btn){
+    pendingPub = { btn };
+    document.getElementById('pub-modal').style.display = 'flex';
+  }
+  function closePubModal(){
+    document.getElementById('pub-modal').style.display = 'none';
+    pendingPub = null;
+  }
+  async function confirmPublish(planTier){
+    if(!pendingPub) return;
+    const current = pendingPub;
+    closePubModal();
+    await publishDirect(current.btn, planTier);
+  }
+
   // ── PUBLISH DIRECT ────────────────────────────────────────
-  async function publishDirect(btn){
+  async function publishDirect(btn, planTier = 'free'){
     btn.textContent = 'Publicando…';
     btn.disabled = true;
     const eid = btn.dataset.eid;
+    const fullData = pendingDecision ? JSON.stringify(pendingDecision) : '';
 
     try {
       const data = await fetchJson('/api/picks/publish-direct', {
@@ -687,36 +750,68 @@ main{position:relative;z-index:2}
           analysis: btn.dataset.reasoning,
           riskLevel: btn.dataset.risk,
           modelUsed: btn.dataset.model,
+          planTier,
+          fullData,
         })
       });
       if(!data?.ok) throw new Error(data?.error || 'publish_direct_failed');
 
-      btn.textContent = '✓ Publicado';
+      const pickId = data?.pick?.id;
+      const tierLabel = planTier === 'premium' ? '⭐ Premium' : '🌍 Free';
+      btn.textContent = `✓ Publicado (${tierLabel})`;
       btn.classList.add('published');
+
+      // show result buttons below
+      if(pickId){
+        const resultRow = document.createElement('div');
+        resultRow.className = 'result-row';
+        resultRow.innerHTML = `
+          <span class="result-lbl">Resultado:</span>
+          <button class="btn-result won" onclick="markResult(${pickId}, 'won', this)">✓ Ganó</button>
+          <button class="btn-result lost" onclick="markResult(${pickId}, 'lost', this)">✗ Perdió</button>
+          <button class="btn-result void" onclick="markResult(${pickId}, 'void', this)">— Void</button>`;
+        btn.parentNode.appendChild(resultRow);
+      }
+
       const ev = events.find(e=>String(e.id)===String(eid));
       if(ev){
         ev.hasPick = true;
-        ev.latestPick = data?.pick || {
-          pick: btn.dataset.pick,
-          market: btn.dataset.market,
-          confidence: Number(btn.dataset.conf || 60),
-          riskLevel: btn.dataset.risk || 'MEDIO',
-          analysis: btn.dataset.reasoning || '',
-          status: 'published',
-        };
+        ev.latestPick = data?.pick || { pick: btn.dataset.pick, market: btn.dataset.market, status: 'published' };
       }
       activeEventId = null;
       pendingGptMarkets = null;
+      pendingDecision = null;
       renderEvents(events);
       updateStats();
-      addLog(`Pick publicado: ${btn.dataset.pick} (${btn.dataset.market}) - evento #${eid}`, 'ok');
-      setStatus('Pick publicado y retirado de la cola operativa.');
+      addLog(`Pick publicado [${tierLabel}]: ${btn.dataset.pick} (${btn.dataset.market}) — evento #${eid}`, 'ok');
+      setStatus('Pick publicado.');
     } catch(err){
       btn.textContent = 'Error — reintentar';
       btn.disabled = false;
       addLog(`Error al publicar: ${err.message}`, 'err');
     }
   }
+
+  // ── MARK RESULT ───────────────────────────────────────────
+  async function markResult(pickId, result, btn){
+    const row = btn.parentNode;
+    row.querySelectorAll('.btn-result').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    try {
+      await fetchJson(`/api/picks/${pickId}/result`, {
+        method:'PUT', headers: apiHeaders(),
+        body: JSON.stringify({ result })
+      });
+      addLog(`Resultado marcado: ${result} (pick #${pickId})`, 'ok');
+    } catch(err){
+      addLog(`Error marcando resultado: ${err.message}`, 'err');
+    }
+  }
+
+  window.openPubModal = openPubModal;
+  window.closePubModal = closePubModal;
+  window.confirmPublish = confirmPublish;
+  window.markResult = markResult;
 
   // ── RENDER EVENTS ─────────────────────────────────────────
   function renderEvents(list){
@@ -881,5 +976,26 @@ main{position:relative;z-index:2}
   loadEvents();
 })();
 </script>
+
+<!-- PUBLISH TIER MODAL -->
+<div id="pub-modal" class="pub-modal-overlay" style="display:none" onclick="if(event.target===this)closePubModal()">
+  <div class="pub-modal-box">
+    <div class="pub-modal-title">¿A quién publicas?</div>
+    <p class="pub-modal-desc">Elige la visibilidad del pick. Los picks Free también son visibles para usuarios Premium.</p>
+    <div class="pub-modal-options">
+      <button class="pub-tier-btn free-btn" onclick="confirmPublish('free')">
+        <span class="pub-tier-icon">🌍</span>
+        <strong>Free</strong>
+        <span>Todos los usuarios</span>
+      </button>
+      <button class="pub-tier-btn premium-btn" onclick="confirmPublish('premium')">
+        <span class="pub-tier-icon">⭐</span>
+        <strong>Premium</strong>
+        <span>All Picks + Apex</span>
+      </button>
+    </div>
+    <button class="pub-modal-cancel" onclick="closePubModal()">Cancelar</button>
+  </div>
+</div>
 </body>
 </html>

@@ -170,6 +170,32 @@ main{position:relative;z-index:2}
 .side-list li::before{content:'·';color:var(--orange);font-size:14px;flex-shrink:0;line-height:1.3}
 .side-list strong{color:var(--text);font-weight:600}
 
+/* PREMIUM TIER BADGE */
+.tier-badge{display:inline-flex;align-items:center;gap:4px;font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:2px 8px;background:linear-gradient(135deg,rgba(255,69,0,.18),rgba(255,107,43,.08));border:1px solid rgba(255,69,0,.4);color:var(--orange);border-radius:20px;margin-left:6px}
+
+/* APEX ANALYSIS SECTION */
+.apex-section{border-top:1px solid rgba(167,139,250,.18);margin-top:0;padding:14px 18px}
+.apex-tabs{display:flex;gap:4px;margin-bottom:14px}
+.apex-tab{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s}
+.apex-tab.on{background:rgba(167,139,250,.14);border-color:rgba(167,139,250,.4);color:#c4b5fd}
+.apex-gpt-table{width:100%;border-collapse:collapse;font-size:11px}
+.apex-gpt-table th{font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:5px 8px;text-align:left;border-bottom:1px solid var(--border)}
+.apex-gpt-table td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:top}
+.apex-gpt-table tr:last-child td{border-bottom:none}
+.apex-mkt-name{font-weight:700;color:var(--text)}
+.apex-mkt-pick{color:var(--orange);font-weight:700}
+.apex-mkt-conf{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:900}
+.apex-safe-card{background:linear-gradient(135deg,rgba(74,222,128,.07),rgba(74,222,128,.03));border:1px solid rgba(74,222,128,.3);border-radius:8px;padding:16px}
+.apex-safe-label{font-size:8px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--green);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.apex-safe-pick{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;text-transform:uppercase;color:var(--green);margin-bottom:4px}
+.apex-safe-meta{font-size:10px;color:var(--muted);margin-bottom:10px}
+.apex-safe-reason{font-size:11px;color:rgba(240,237,232,.55);line-height:1.6}
+.apex-claude-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.apex-claude-card{border-radius:8px;padding:16px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)}
+.apex-claude-card.normal{border-color:rgba(255,69,0,.25);background:linear-gradient(135deg,rgba(255,69,0,.08),rgba(255,107,43,.03))}
+.apex-claude-label{font-size:8px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--orange);margin-bottom:10px}
+@media(max-width:700px){.apex-claude-grid{grid-template-columns:1fr}}
+
 /* BOTTOM NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:300;display:flex;border-top:1px solid var(--border);background:rgba(6,6,8,.92);backdrop-filter:blur(16px)}
 .bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;text-decoration:none;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:color .2s}
@@ -367,6 +393,9 @@ main{position:relative;z-index:2}
   <a class="bottom-nav-item" href="user-progreso.html">
     <span class="bottom-nav-icon">📚</span><span>Historial</span>
   </a>
+  <a class="bottom-nav-item" href="user-bank.html">
+    <span class="bottom-nav-icon">💰</span><span>Bank</span>
+  </a>
   <a class="bottom-nav-item" href="planes.html">
     <span class="bottom-nav-icon">💳</span><span>Planes</span>
   </a>
@@ -489,6 +518,10 @@ function renderCards(picks){
     return;
   }
 
+  // detect apex user
+  const isApex = (typeof getCurrentSubscription === 'function' && getCurrentSubscription()?.id === 'coach_humano') ||
+                 (typeof getSubscriptionPlanSelection === 'function' && getSubscriptionPlanSelection()?.id === 'coach_humano');
+
   container.innerHTML = '';
   filtered.forEach((p, i)=>{
     const conf = parseInt(p.confidence)||50;
@@ -501,6 +534,66 @@ function renderCards(picks){
     const analysis = p.analysis || '';
     const shortAnalysis = analysis.length > 220 ? analysis.slice(0,220)+'…' : analysis;
     const hasMore = analysis.length > 220;
+    const isPremiumPick = (p.planTier || 'free') === 'premium';
+    const uid = `pk${p.id||i}`;
+
+    // parse fullData for apex
+    let fd = null;
+    if(isApex && p.fullData){
+      try { fd = JSON.parse(p.fullData); } catch{}
+    }
+    const gpt = fd?.gptMarkets || null;
+    const claudeNormal = fd?.claudeNormal || null;
+    const claudeSafe = fd?.claudeSafe || null;
+    const gptRows = gpt ? [
+      {name:'1X2 ML', d: gpt.ml},
+      {name:'Goles', d: gpt.goles},
+      {name:'BTTS', d: gpt.btts},
+      {name:'Hándicap', d: gpt.handicap},
+      {name:'Corners', d: gpt.corners},
+    ] : [];
+
+    const apexSection = (isApex && fd) ? `
+      <div class="apex-section">
+        <div class="apex-tabs">
+          <button class="apex-tab on" data-tab="gpt" data-uid="${uid}">Análisis GPT-4o</button>
+          ${claudeNormal ? `<button class="apex-tab" data-tab="claude" data-uid="${uid}">Claude</button>` : ''}
+        </div>
+        <div id="apex-gpt-${uid}">
+          <table class="apex-gpt-table">
+            <thead><tr>
+              <th>Mercado</th><th>Pick</th><th>Conf.</th><th>Nota GPT</th>
+            </tr></thead>
+            <tbody>
+              ${gptRows.map(r=>r.d?`
+                <tr>
+                  <td class="apex-mkt-name">${r.name}</td>
+                  <td class="apex-mkt-pick">${r.d.pick||'—'}</td>
+                  <td class="apex-mkt-conf" style="color:${confColor(r.d.conf||50)}">${r.d.conf||'—'}%</td>
+                  <td style="color:rgba(240,237,232,.5);font-size:10px">${r.d.nota||'—'}</td>
+                </tr>` : '').join('')}
+            </tbody>
+          </table>
+        </div>
+        ${claudeNormal ? `
+        <div id="apex-claude-${uid}" style="display:none">
+          <div class="apex-claude-grid">
+            <div class="apex-claude-card normal">
+              <div class="apex-claude-label">Claude normal</div>
+              <div class="apex-safe-pick" style="color:var(--orange)">${claudeNormal.pick||'—'}</div>
+              <div class="apex-safe-meta">Mercado: ${claudeNormal.mercado||'—'} &nbsp;·&nbsp; Confianza: ${claudeNormal.confianza||'—'}% &nbsp;·&nbsp; Riesgo: ${claudeNormal.riesgo||'MEDIO'}</div>
+              <div class="apex-safe-reason">${claudeNormal.razonamiento||''}</div>
+            </div>
+            ${claudeSafe ? `
+            <div class="apex-safe-card">
+              <div class="apex-safe-label">✓ Versión Segura · Claude Sonnet</div>
+              <div class="apex-safe-pick">${claudeSafe.pick||'—'}</div>
+              <div class="apex-safe-meta">Mercado: ${claudeSafe.mercado||'—'} &nbsp;·&nbsp; Confianza: ${claudeSafe.confianza||'—'}% &nbsp;·&nbsp; Riesgo: ${claudeSafe.riesgo||'BAJO'}</div>
+              <div class="apex-safe-reason">${claudeSafe.razonamiento||''}</div>
+            </div>` : ''}
+          </div>
+        </div>` : ''}
+      </div>` : '';
 
     const card = document.createElement('div');
     card.className = `pick-card risk-${rc}`;
@@ -508,7 +601,9 @@ function renderCards(picks){
     card.innerHTML = `
       <div class="pick-card-head">
         <div class="pick-info">
-          <div class="pick-match">${home} vs ${away}</div>
+          <div class="pick-match">${home} vs ${away}
+            ${isPremiumPick ? '<span class="tier-badge">⭐ PREMIUM</span>' : ''}
+          </div>
           <div class="pick-meta">
             <span class="pick-league">${league}</span>
             ${sport ? `<span class="pick-dot">·</span><span class="pick-time">${sportLabel(sport).replace(/^[^\s]+ /,'')}</span>` : ''}
@@ -548,6 +643,8 @@ function renderCards(picks){
         </div>
       ` : ''}
 
+      ${apexSection}
+
       <div class="pick-footer">
         <div class="pick-teams">
           <div class="pick-team">
@@ -577,6 +674,18 @@ function renderCards(picks){
         extra.classList.toggle('open', !open);
       });
     }
+
+    card.querySelectorAll('.apex-tab').forEach(tab=>{
+      tab.addEventListener('click', ()=>{
+        const mode = tab.dataset.tab;
+        card.querySelectorAll('.apex-tab').forEach(t=>t.classList.remove('on'));
+        tab.classList.add('on');
+        const gptBox = card.querySelector(`#apex-gpt-${uid}`);
+        const claudeBox = card.querySelector(`#apex-claude-${uid}`);
+        if(gptBox) gptBox.style.display = mode === 'gpt' ? '' : 'none';
+        if(claudeBox) claudeBox.style.display = mode === 'claude' ? '' : 'none';
+      });
+    });
 
     container.appendChild(card);
   });

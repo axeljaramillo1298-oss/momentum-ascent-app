@@ -164,6 +164,9 @@ CREATE TABLE IF NOT EXISTS ai_picks (
   risk_level TEXT NOT NULL DEFAULT 'MEDIO',
   model_used TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'generated',
+  plan_tier TEXT NOT NULL DEFAULT 'free',
+  full_data TEXT NOT NULL DEFAULT '',
+  result TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL
 );
 

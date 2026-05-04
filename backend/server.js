@@ -50,6 +50,7 @@ const {
   getLatestAiPickForEvent,
   listPicksByDate,
   listPickHistory,
+  updatePickResult,
   logApiSync,
   listApiSyncLogs,
   savePickCandidates,
@@ -216,6 +217,7 @@ const redactPickForViewer = (pick, planId = "free") => {
       analysisLocked: false,
       analysisPreview: summarizeAnalysis(fullAnalysis),
       analysisUpgradeLabel: "",
+      fullData: pick?.fullData || "",
     };
   }
   const preview = summarizeAnalysis(fullAnalysis);
@@ -226,6 +228,7 @@ const redactPickForViewer = (pick, planId = "free") => {
     analysisLocked: true,
     analysisPreview: preview,
     analysisUpgradeLabel: ANALYSIS_UPSELL,
+    fullData: "",
   };
 };
 const getViewerPlanId = async (req) => {
@@ -1624,7 +1627,7 @@ app.post("/api/picks/publish-candidate/:candidateId", requireAdmin, async (req, 
 // Publish a pick directly from Claude's market decision (no candidate record needed)
 app.post("/api/picks/publish-direct", requireAdmin, async (req, res) => {
   try {
-    const { eventId, pick, market, confidence, analysis, riskLevel, modelUsed } = req.body || {};
+    const { eventId, pick, market, confidence, analysis, riskLevel, modelUsed, planTier, fullData } = req.body || {};
     if (!eventId || !pick || !market) return res.status(400).json({ ok: false, error: "eventId, pick and market required" });
 
     const event = await getSportsEventById(Number(eventId));
@@ -1639,6 +1642,9 @@ app.post("/api/picks/publish-direct", requireAdmin, async (req, res) => {
       riskLevel: String(riskLevel || "MEDIO"),
       modelUsed: String(modelUsed || "claude-decide"),
       status: "published",
+      planTier: String(planTier || "free"),
+      fullData: String(fullData || ""),
+      result: "",
       createdAt: new Date().toISOString(),
     });
 
@@ -1651,17 +1657,31 @@ app.post("/api/picks/publish-direct", requireAdmin, async (req, res) => {
   }
 });
 
+app.put("/api/picks/:id/result", requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { result } = req.body || {};
+    if (!id) return res.status(400).json({ ok: false, error: "pick id required" });
+    const updated = await updatePickResult({ id, result: String(result || "") });
+    res.json({ ok: true, ...updated });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "result_update_failed") });
+  }
+});
+
 app.get("/api/picks/today", async (req, res) => {
   try {
     const viewerPlanId = await getViewerPlanId(req);
+    const isPremiumViewer = viewerPlanId !== "free";
+    const filterByTier = (arr) => arr.filter((p) => (p?.planTier || "free") === "free" || isPremiumViewer);
     const explicitDate = typeof req.query.date === "string" && req.query.date.trim();
     let dateKey = String(req.query.date || toDateKey()).trim();
-    let picks = (await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, dateKey));
+    let picks = filterByTier((await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, dateKey)));
     if (!explicitDate) {
       const tomorrowDate = new Date();
       tomorrowDate.setDate(tomorrowDate.getDate() + 1);
       const tomorrowKey = toDateKey(tomorrowDate);
-      const tomorrowPicks = (await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, tomorrowKey));
+      const tomorrowPicks = filterByTier((await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, tomorrowKey)));
       const todayHasOnlyMock = picks.length > 0 && picks.every((pick) => String(pick?.externalId || "").startsWith("mock-"));
       const tomorrowHasCurated = tomorrowPicks.some((pick) => !String(pick?.externalId || "").startsWith("mock-"));
       if ((!picks.length || todayHasOnlyMock) && tomorrowHasCurated) {
@@ -1675,7 +1695,7 @@ app.get("/api/picks/today", async (req, res) => {
         events = await syncSportsEvents();
         events = events.filter((event) => matchesDateKey(event?.eventDate, dateKey));
       }
-      picks = (await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, dateKey));
+      picks = filterByTier((await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, dateKey)));
       res.json({
         ok: true,
         date: dateKey,
@@ -1697,8 +1717,9 @@ app.get("/api/picks/today", async (req, res) => {
 app.get("/api/picks/history", async (req, res) => {
   try {
     const viewerPlanId = await getViewerPlanId(req);
+    const isPremiumViewer = viewerPlanId !== "free";
     const limit = Number(req.query.limit || 100);
-    const picks = await listPickHistory(limit);
+    const picks = (await listPickHistory(limit)).filter((p) => (p?.planTier || "free") === "free" || isPremiumViewer);
     res.json({
       ok: true,
       picks: picks.map((pick) => redactPickForViewer({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER }, viewerPlanId)),
