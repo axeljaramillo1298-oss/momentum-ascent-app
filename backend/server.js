@@ -1548,7 +1548,7 @@ app.post("/api/picks/publish-candidate/:candidateId", requireAdmin, async (req, 
       analysis: candidate.analysis,
       riskLevel: candidate.riskLevel,
       modelUsed: candidate.modelUsed || candidate.provider,
-      status: "generated",
+      status: "published",
       createdAt: new Date().toISOString(),
     });
 
@@ -1581,7 +1581,7 @@ app.post("/api/picks/publish-direct", requireAdmin, async (req, res) => {
       analysis: String(analysis || "Seleccionado por Claude Sonnet."),
       riskLevel: String(riskLevel || "MEDIO"),
       modelUsed: String(modelUsed || "claude-decide"),
-      status: "generated",
+      status: "published",
       createdAt: new Date().toISOString(),
     });
 

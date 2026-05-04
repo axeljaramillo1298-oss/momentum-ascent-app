@@ -405,9 +405,10 @@ main{position:relative;z-index:2}
   // ── STATS ─────────────────────────────────────────────────
   function updateStats(){
     document.getElementById('stat-eventos').textContent = events.length;
-    const withPick = events.filter(e => e.hasPick).length;
+    const withPick = events.filter(e => e.hasPick || e.latestPick).length;
+    const pending = events.filter(e => !(e.hasPick || e.latestPick)).length;
     document.getElementById('stat-picks').textContent = withPick;
-    document.getElementById('stat-sin-pick').textContent = events.length - withPick;
+    document.getElementById('stat-sin-pick').textContent = pending;
     document.getElementById('stat-sesiones').textContent = aiSessions;
   }
 
@@ -623,17 +624,24 @@ main{position:relative;z-index:2}
 
       btn.textContent = '✓ Publicado';
       btn.classList.add('published');
-
       const ev = events.find(e=>String(e.id)===String(eid));
-      if(ev) ev.hasPick = true;
-      const evCard = document.querySelector(`.event-card[data-event-id="${eid}"]`);
-      if(evCard){
-        const chip = evCard.querySelector('.chip.yellow');
-        if(chip){ chip.className='chip green'; chip.textContent='✓ Pick'; }
+      if(ev){
+        ev.hasPick = true;
+        ev.latestPick = data?.pick || {
+          pick: btn.dataset.pick,
+          market: btn.dataset.market,
+          confidence: Number(btn.dataset.conf || 60),
+          riskLevel: btn.dataset.risk || 'MEDIO',
+          analysis: btn.dataset.reasoning || '',
+          status: 'published',
+        };
       }
+      activeEventId = null;
+      pendingGptMarkets = null;
+      renderEvents(events);
       updateStats();
-      addLog(`Pick publicado: ${btn.dataset.pick} (${btn.dataset.market}) — evento #${eid}`, 'ok');
-      setStatus('Pick publicado correctamente.');
+      addLog(`Pick publicado: ${btn.dataset.pick} (${btn.dataset.market}) - evento #${eid}`, 'ok');
+      setStatus('Pick publicado y retirado de la cola operativa.');
     } catch(err){
       btn.textContent = 'Error — reintentar';
       btn.disabled = false;
@@ -644,14 +652,16 @@ main{position:relative;z-index:2}
   // ── RENDER EVENTS ─────────────────────────────────────────
   function renderEvents(list){
     const container = document.getElementById('events-list');
-    if(!list || !list.length){
-      container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No hay eventos para hoy. Sincroniza primero.</div>';
-      document.getElementById('events-count-label').textContent = '0 eventos';
+    const pendingList = (list || []).filter(ev => !(ev?.hasPick || ev?.latestPick));
+    const publishedCount = (list || []).length - pendingList.length;
+    if(!pendingList.length){
+      container.innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No hay eventos pendientes por publicar.${publishedCount ? `<br><span style="font-size:11px;color:rgba(240,237,232,.28)">${publishedCount} evento(s) ya quedaron publicados y se ocultaron de la cola operativa.</span>` : ''}</div>`;
+      document.getElementById('events-count-label').textContent = publishedCount ? `0 pendientes / ${publishedCount} publicados` : '0 eventos';
       return;
     }
-    document.getElementById('events-count-label').textContent = `${list.length} evento${list.length!==1?'s':''}`;
+    document.getElementById('events-count-label').textContent = publishedCount ? `${pendingList.length} pendiente${pendingList.length!==1?'s':''} / ${publishedCount} publicado${publishedCount!==1?'s':''}` : `${pendingList.length} evento${pendingList.length!==1?'s':''}`;
     container.innerHTML = '';
-    const sportsMap = groupBy(list, ev => sportLabel(ev.sport));
+    const sportsMap = groupBy(pendingList, ev => sportLabel(ev.sport));
     [...sportsMap.entries()].forEach(([sportName, sportEvents]) => {
       const sportWrap = document.createElement('section');
       sportWrap.className = 'sport-group';
