@@ -189,6 +189,63 @@ const isCoachManageableUser = (user) => {
   return subscriptionStatus === "active" || subscriptionStatus === "pending" || plan !== "free";
 };
 
+const ANALYSIS_UPSELL = "Activa Apex para desbloquear el analisis completo.";
+const normalizeViewerPlanId = (value = "") => {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw) return "free";
+  if (raw.includes("coach_humano") || raw.includes("apex") || raw.includes("premium")) return "coach_humano";
+  if (raw.includes("ai_coach") || raw.includes("ai picks") || raw.includes("coach ia")) return "ai_coach";
+  if (raw.includes("reto") || raw.includes("comunidad")) return "retos";
+  return "free";
+};
+const summarizeAnalysis = (text = "", maxLen = 220) => {
+  const clean = String(text || "").replace(/\s+/g, " ").trim();
+  if (!clean) return "";
+  if (clean.length <= maxLen) return clean;
+  const firstSentence = clean.match(/^(.{1,220}?[.!?])(?:\s|$)/);
+  if (firstSentence?.[1]) return firstSentence[1].trim();
+  return `${clean.slice(0, maxLen).trim()}...`;
+};
+const redactPickForViewer = (pick, planId = "free") => {
+  const normalizedPlan = normalizeViewerPlanId(planId);
+  const fullAnalysis = String(pick?.analysis || "").trim();
+  if (normalizedPlan === "coach_humano") {
+    return {
+      ...pick,
+      analysis: fullAnalysis,
+      analysisLocked: false,
+      analysisPreview: summarizeAnalysis(fullAnalysis),
+      analysisUpgradeLabel: "",
+    };
+  }
+  const preview = summarizeAnalysis(fullAnalysis);
+  const lockedText = preview ? `${preview} ${ANALYSIS_UPSELL}` : ANALYSIS_UPSELL;
+  return {
+    ...pick,
+    analysis: lockedText,
+    analysisLocked: true,
+    analysisPreview: preview,
+    analysisUpgradeLabel: ANALYSIS_UPSELL,
+  };
+};
+const getViewerPlanId = async (req) => {
+  if (isGodRequest(req)) return "coach_humano";
+  const email = getRequestEmail(req);
+  if (!email) return "free";
+  if (await isAdminEmail(email)) return "coach_humano";
+  try {
+    const sub = await getSubscription(email);
+    if (sub?.planId) return normalizeViewerPlanId(sub.planId);
+    if (sub?.planLabel) return normalizeViewerPlanId(sub.planLabel);
+  } catch {}
+  try {
+    const user = await getUserByEmail(email);
+    return normalizeViewerPlanId(user?.plan || "free");
+  } catch {
+    return "free";
+  }
+};
+
 const requireGod = (req, res, next) => {
   if (isGodRequest(req)) {
     return next();
@@ -1596,6 +1653,7 @@ app.post("/api/picks/publish-direct", requireAdmin, async (req, res) => {
 
 app.get("/api/picks/today", async (req, res) => {
   try {
+    const viewerPlanId = await getViewerPlanId(req);
     const explicitDate = typeof req.query.date === "string" && req.query.date.trim();
     let dateKey = String(req.query.date || toDateKey()).trim();
     let picks = (await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, dateKey));
@@ -1621,7 +1679,7 @@ app.get("/api/picks/today", async (req, res) => {
       res.json({
         ok: true,
         date: dateKey,
-        picks: picks.map((pick) => ({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER })),
+        picks: picks.map((pick) => redactPickForViewer({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER }, viewerPlanId)),
         eventsAvailable: events.length,
       });
       return;
@@ -1629,7 +1687,7 @@ app.get("/api/picks/today", async (req, res) => {
     res.json({
       ok: true,
       date: dateKey,
-      picks: picks.map((pick) => ({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER })),
+      picks: picks.map((pick) => redactPickForViewer({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER }, viewerPlanId)),
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || "picks_today_failed") });
@@ -1638,11 +1696,12 @@ app.get("/api/picks/today", async (req, res) => {
 
 app.get("/api/picks/history", async (req, res) => {
   try {
+    const viewerPlanId = await getViewerPlanId(req);
     const limit = Number(req.query.limit || 100);
     const picks = await listPickHistory(limit);
     res.json({
       ok: true,
-      picks: picks.map((pick) => ({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER })),
+      picks: picks.map((pick) => redactPickForViewer({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER }, viewerPlanId)),
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || "picks_history_failed") });

@@ -13987,6 +13987,41 @@ body.user-panel-premium #today-yes:hover {
   line-height: 1.65;
 }
 
+.sports-analysis-lock {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: rgba(213, 222, 240, 0.56);
+}
+
+.sports-analysis-lock strong {
+  color: #f5c04a;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.sports-analysis-lock a {
+  color: #ff6b2b;
+  text-decoration: none;
+  border: 1px solid rgba(255, 107, 43, 0.28);
+  background: rgba(255, 107, 43, 0.08);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sports-analysis-lock a:hover {
+  color: #fff;
+  border-color: rgba(255, 107, 43, 0.45);
+  background: rgba(255, 107, 43, 0.18);
+}
+
 .sports-history-section,
 .sports-admin-events {
   margin-top: 26px;

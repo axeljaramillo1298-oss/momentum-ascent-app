@@ -3393,6 +3393,16 @@ const getRiskClass = (riskLevel) => {
   return "risk-medium";
 };
 
+const renderAnalysisAccessNote = (pick) => {
+  if (!pick?.analysisLocked) return "";
+  return `
+    <div class="sports-analysis-lock">
+      <strong>Apex desbloquea el analisis completo.</strong>
+      <a href="planes.html">Subir plan</a>
+    </div>
+  `;
+};
+
 const renderSportsPickCards = (host, picks = []) => {
   if (!host) return;
   if (!Array.isArray(picks) || !picks.length) {
@@ -3425,6 +3435,7 @@ const renderSportsPickCards = (host, picks = []) => {
           </div>
           <p class="sports-pick-selection">${escHtml(pick.pick || "")}</p>
           <p class="sports-pick-analysis">${escHtml(pick.analysis || "")}</p>
+          ${renderAnalysisAccessNote(pick)}
           <p class="sports-disclaimer">${escHtml(pick.disclaimer || "Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.")}</p>
         </article>
       `
@@ -3583,6 +3594,7 @@ const initSportsAnalysisPage = () => {
               <p class="sports-analysis-pick"><strong>Market:</strong> ${escHtml(pick.market || "-")}</p>
               <p class="sports-analysis-pick"><strong>Confianza:</strong> ${Number(pick.confidence || 0)}%</p>
               <p class="sports-pick-analysis">${escHtml(pick.analysis || "")}</p>
+              ${renderAnalysisAccessNote(pick)}
               <p class="sports-disclaimer">${escHtml(pick.disclaimer || "Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.")}</p>
             </article>
           `
@@ -3664,6 +3676,7 @@ const initSportsHistoryPage = () => {
                 <h3>${escHtml(`${pick.homeTeam || "Local"} vs ${pick.awayTeam || "Visita"}`)}</h3>
                 <p class="sports-pick-selection">${escHtml(pick.pick || "")}</p>
                 <p class="sports-pick-analysis">${escHtml(pick.analysis || "")}</p>
+                ${renderAnalysisAccessNote(pick)}
               </article>
             `).join("")
         : notesHost.id === "notes-body"
