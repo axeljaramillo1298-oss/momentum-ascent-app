@@ -737,7 +737,35 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
       { key: "Corners", d: gptMarkets.corners },
     ];
     const best = opts.reduce((a, b) => ((b.d?.conf || 0) > (a.d?.conf || 0) ? b : a), opts[0]);
-    return { mercado: best.key, pick: best.d?.pick || "—", confianza: best.d?.conf || 50, riesgo: "MEDIO", razonamiento: "Seleccion por maxima confianza (Claude no disponible).", tipo: "moderada", model: "fallback" };
+    const pick = best.d?.pick || "—";
+    const mercado = best.key;
+    // derive safe pick from the fallback best
+    let safe_pick = pick;
+    let safe_mercado = mercado;
+    const golesMatch = pick.match(/^(Over|Under)\s+([\d.]+)/i);
+    const cornersMatch = mercado === "Corners" && pick.match(/^Over\s+([\d.]+)/i);
+    if (mercado === "1X2" || mercado === "ML") {
+      safe_pick = pick.toLowerCase().includes("local") || pick.toLowerCase().includes(home.toLowerCase())
+        ? `${home} o Empate`
+        : `${away} o Empate`;
+      safe_mercado = "Doble Oportunidad";
+    } else if (mercado === "BTTS" && /si/i.test(pick)) {
+      safe_pick = "Over 0.5 goles";
+      safe_mercado = "Goles";
+    } else if (cornersMatch) {
+      const val = parseFloat(cornersMatch[1]);
+      safe_pick = `Over ${val - 1}.5 corners`;
+    } else if (golesMatch) {
+      const dir = golesMatch[1];
+      const val = parseFloat(golesMatch[2]);
+      safe_pick = dir.toLowerCase() === "over" ? `Over ${val - 1}.5 goles` : `Under ${val + 1}.5 goles`;
+    }
+    return {
+      mercado, pick, confianza: best.d?.conf || 50, riesgo: "MEDIO",
+      razonamiento: "Seleccion por maxima confianza (Claude no disponible).", tipo: "moderada",
+      safe_pick, safe_mercado, safe_confianza: Math.min(100, (best.d?.conf || 50) + 10), safe_riesgo: "BAJO",
+      safe_razonamiento: "Version mas conservadora del mismo mercado.", model: "fallback",
+    };
   };
 
   if (!apiKey) return mkFallbackDecide();
@@ -759,12 +787,18 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
     "GPT-4o ya analizo 5 mercados de un partido.",
     "Tu rol NO es aceptar ciegamente ese analisis: debes hacer una segunda lectura independiente del evento y contrastarla contra GPT.",
     "Evalua lesiones, bajas, forma de los ultimos 5 partidos, rendimiento local/visita, H2H y odds si existen en Stats.",
-    "Luego elige el mercado que mas conviene publicar, considerando fundamento estadistico y balance del portafolio del dia.",
-    "Responde SOLO JSON valido con esta estructura:",
-    '{"mercado":"1X2|Goles|BTTS|Handicap|Corners","pick":"el pick exacto","confianza":72,"riesgo":"BAJO|MEDIO|ALTO","razonamiento":"2-3 oraciones en espanol explicando la decision","tipo":"segura|moderada|arriesgada"}',
-    "Debes validar si GPT exagero confianza o ignoro riesgos; si encuentras contradicciones entre stats y GPT, corrige a la baja.",
-    "Si falta informacion util, reduce confianza y dilo.",
-    "tipo refleja el equilibrio del portafolio: si ya hay picks seguros propone algo con mas valor y viceversa.",
+    "Luego elige el mercado que mas conviene publicar, y ademas genera una version SEGURA del mismo mercado.",
+    "Reglas para la version segura segun mercado:",
+    "- 1X2 ML (gana Local o Visitante): safe = doble oportunidad 'Local o Empate' / 'Visitante o Empate'",
+    "- Goles Over X.5: safe = Over (X-1).5 (ej: Over 2.5 -> safe Over 1.5)",
+    "- Goles Under X.5: safe = Under (X+1).5 (ej: Under 2.5 -> safe Under 3.5)",
+    "- BTTS Si: safe = Over 0.5 goles (al menos 1 gol)",
+    "- Handicap asiatico -X: safe = handicap -X+0.5 o empate no cuenta (0)",
+    "- Corners Over X.5: safe = Over (X-1).5",
+    "Responde SOLO JSON valido con esta estructura exacta:",
+    '{"mercado":"1X2|Goles|BTTS|Handicap|Corners","pick":"pick normal exacto","confianza":72,"riesgo":"BAJO|MEDIO|ALTO","razonamiento":"2-3 oraciones explicando la decision","tipo":"segura|moderada|arriesgada","safe_pick":"pick seguro exacto","safe_mercado":"mismo mercado en safe","safe_confianza":82,"safe_riesgo":"BAJO","safe_razonamiento":"1-2 oraciones explicando por que la version segura es mas conservadora"}',
+    "Debes validar si GPT exagero confianza o ignoro riesgos.",
+    "tipo refleja el equilibrio del portafolio.",
     "NO prometas ganancias.",
   ].join(" ");
 
@@ -794,6 +828,11 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
       riesgo: normalizeRiskLevel(parsed.riesgo || "MEDIO"),
       razonamiento: safeStr(parsed.razonamiento) || "Claude selecciono el mercado con mayor fundamento.",
       tipo: safeStr(parsed.tipo) || "moderada",
+      safe_pick: safeStr(parsed.safe_pick) || "",
+      safe_mercado: safeStr(parsed.safe_mercado) || "",
+      safe_confianza: Math.max(0, Math.min(100, Number(parsed.safe_confianza || 75))),
+      safe_riesgo: "BAJO",
+      safe_razonamiento: safeStr(parsed.safe_razonamiento) || "",
       model,
     };
   } catch {

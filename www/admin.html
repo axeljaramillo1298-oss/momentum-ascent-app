@@ -137,15 +137,25 @@ main{position:relative;z-index:2}
 .mkt-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(240,237,232,.35)}
 
 /* CLAUDE BOX */
-.claude-box{background:linear-gradient(135deg,rgba(167,139,250,.08),rgba(255,69,0,.05));border:1px solid rgba(167,139,250,.28);border-radius:8px;padding:20px;margin-bottom:16px}
-.claude-label{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--purple);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.claude-label::before{content:'';width:14px;height:1px;background:var(--purple)}
+.claude-dual{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+@media(max-width:600px){.claude-dual{grid-template-columns:1fr}}
+.claude-box{border-radius:8px;padding:20px}
+.claude-box.normal{background:linear-gradient(135deg,rgba(255,69,0,.08),rgba(255,107,43,.04));border:1px solid rgba(255,69,0,.35)}
+.claude-box.safe{background:linear-gradient(135deg,rgba(74,222,128,.07),rgba(74,222,128,.03));border:1px solid rgba(74,222,128,.35)}
+.claude-label{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.claude-box.normal .claude-label{color:var(--orange)}
+.claude-box.normal .claude-label::before{content:'';width:14px;height:1px;background:var(--orange)}
+.claude-box.safe .claude-label{color:var(--green)}
+.claude-box.safe .claude-label::before{content:'';width:14px;height:1px;background:var(--green)}
+.safe-badge{display:inline-flex;align-items:center;font-size:8px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;padding:3px 8px;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.35);color:var(--green);border-radius:20px;margin-left:6px}
 .claude-pick{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:24px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:4px}
 .claude-market{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
 .claude-reasoning{font-size:12px;color:rgba(240,237,232,.6);line-height:1.65;margin-bottom:16px}
-.btn-publish-claude{font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:11px 24px;background:linear-gradient(135deg,var(--purple),rgba(255,69,0,.7));color:#fff;border:none;border-radius:3px;cursor:pointer;transition:opacity .2s}
+.btn-publish-claude{font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:11px 24px;border:none;border-radius:3px;cursor:pointer;transition:opacity .2s;width:100%;color:#fff}
+.claude-box.normal .btn-publish-claude{background:linear-gradient(135deg,var(--orange),var(--orange2))}
+.claude-box.safe .btn-publish-claude{background:linear-gradient(135deg,#16a34a,var(--green))}
 .btn-publish-claude:hover{opacity:.88}
-.btn-publish-claude.published{background:rgba(74,222,128,.15);color:var(--green);border:1px solid rgba(74,222,128,.3);cursor:default;pointer-events:none}
+.btn-publish-claude.published{background:rgba(74,222,128,.15)!important;color:var(--green);border:1px solid rgba(74,222,128,.3);cursor:default;pointer-events:none}
 .tipo-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid;margin-left:8px}
 .tipo-badge.segura{color:var(--green);border-color:rgba(74,222,128,.3)}
 .tipo-badge.moderada{color:var(--yellow);border-color:rgba(245,158,11,.3)}
@@ -594,9 +604,12 @@ main{position:relative;z-index:2}
       const d = data.decision;
       const riskCls = d.riesgo || 'MEDIO';
       const tipoCls = (d.tipo||'moderada').toLowerCase();
-      claudeArea.innerHTML = `
-        <div class="claude-box">
-          <div class="claude-label">Claude Sonnet recomienda publicar</div>
+      const hasSafe = !!(d.safe_pick);
+      const safeRiskCls = d.safe_riesgo || 'BAJO';
+
+      const normalCard = `
+        <div class="claude-box normal">
+          <div class="claude-label">Pick normal · Claude Sonnet</div>
           <div class="claude-pick">
             ${d.pick||'—'}
             <span class="risk-badge ${riskCls}">${riskCls}</span>
@@ -612,15 +625,43 @@ main{position:relative;z-index:2}
             data-risk="${d.riesgo||'MEDIO'}"
             data-reasoning="${(d.razonamiento||'').replace(/"/g,'&quot;')}"
             data-model="${d.model||'claude-decide'}">
-            Publicar este pick
+            Publicar pick normal
           </button>
         </div>`;
+
+      const safeCard = hasSafe ? `
+        <div class="claude-box safe">
+          <div class="claude-label">Versión segura <span class="safe-badge">SEGURA</span></div>
+          <div class="claude-pick">
+            ${d.safe_pick}
+            <span class="risk-badge ${safeRiskCls}">${safeRiskCls}</span>
+          </div>
+          <div class="claude-market">Mercado: ${d.safe_mercado||d.mercado||'—'} &nbsp;·&nbsp; Confianza: ${d.safe_confianza||'—'}%</div>
+          <div class="claude-reasoning">${d.safe_razonamiento||'Versión más conservadora del mismo mercado.'}</div>
+          <button class="btn-publish-claude" id="pub-safe-btn-${eventId}"
+            data-eid="${eventId}"
+            data-pick="${(d.safe_pick||'').replace(/"/g,'&quot;')}"
+            data-market="${d.safe_mercado||d.mercado||''}"
+            data-conf="${d.safe_confianza||75}"
+            data-risk="BAJO"
+            data-reasoning="${(d.safe_razonamiento||'Version segura recomendada por Claude.').replace(/"/g,'&quot;')}"
+            data-model="${d.model||'claude-decide'}">
+            Publicar versión segura
+          </button>
+        </div>` : '';
+
+      claudeArea.innerHTML = `<div class="claude-dual">${normalCard}${safeCard}</div>`;
 
       panel.querySelector('#pub-btn-'+eventId).addEventListener('click', function(){
         if(!this.classList.contains('published')) publishDirect(this);
       });
+      if(hasSafe){
+        panel.querySelector('#pub-safe-btn-'+eventId).addEventListener('click', function(){
+          if(!this.classList.contains('published')) publishDirect(this);
+        });
+      }
       addLog(`Claude recomendó: ${d.pick} en ${d.mercado} (${d.tipo})`, 'ok');
-      setStatus('Claude listo. Revisa y publica cuando quieras.');
+      setStatus('Claude listo. Elige el pick normal o la versión segura.');
     } catch(err){
       claudeArea.innerHTML = `<div class="dual-error">Error Claude: ${err.message}</div>`;
       panel.querySelector('#claude-btn').disabled = false;
