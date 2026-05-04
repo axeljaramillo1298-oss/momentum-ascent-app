@@ -171,8 +171,23 @@ main{position:relative;z-index:2;padding-top:0}
 .sp-ufc{color:rgba(255,69,0,.8);border-color:rgba(255,69,0,.25);background:rgba(255,69,0,.07)}
 .sp-ten{color:rgba(180,255,80,.8);border-color:rgba(180,255,80,.25);background:rgba(180,255,80,.07)}
 
-/* NAV AREA - ensure proper z-index over canvas */
+/* NAV */
 .user-panel-top{position:relative;z-index:200;padding:12px 16px}
+.user-panel-nav{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.nav-logo-link{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{width:32px;height:32px;flex-shrink:0}
+.logo-wordmark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--text)}
+.nav-actions{display:flex;align-items:center;gap:4px}
+.up-nav-link{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;border-radius:3px;text-decoration:none;color:var(--muted);transition:color .2s,background .2s;white-space:nowrap}
+.up-nav-link:hover{color:var(--text)}
+.up-nav-active{color:var(--text)!important;background:rgba(255,255,255,.06)}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:300;display:flex;border-top:1px solid var(--border);background:rgba(6,6,8,.92);backdrop-filter:blur(16px)}
+.bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;text-decoration:none;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:color .2s}
+.bottom-nav-item:hover,.bottom-nav-active{color:var(--orange)}
+.bottom-nav-icon{font-size:18px;display:block}
+
 @media(max-width:920px){
   .page-hero{padding:24px 20px 0}
   .content{padding:28px 20px 56px}
@@ -185,12 +200,11 @@ main{position:relative;z-index:2;padding-top:0}
 }
   </style>
 </head>
-<body class="user-panel-premium sports-dashboard-page">
+<body>
 
   <canvas id="bg-canvas"></canvas>
 
-  <!-- NAV — unchanged from existing site -->
-  <header class="user-panel-top sports-dashboard-top">
+  <header class="user-panel-top">
     <nav class="user-panel-nav">
       <a class="nav-logo-link" href="user-hoy.html" aria-label="Momentum Ascent">
         <svg class="logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -207,10 +221,10 @@ main{position:relative;z-index:2;padding-top:0}
         <span class="logo-wordmark">MOMENTUM ASCENT</span>
       </a>
       <div class="nav-actions">
-        <a class="ghost up-nav-link" href="user-hoy.html">Picks · Análisis</a>
-        <a class="ghost up-nav-link up-nav-active" href="user-progreso.html">Historial</a>
-        <a class="ghost up-nav-link" href="planes.html">Planes</a>
-        <a class="ghost up-nav-link" href="user-checkin.html">Cuenta</a>
+        <a class="up-nav-link" href="user-hoy.html">Picks · Análisis</a>
+        <a class="up-nav-link up-nav-active" href="user-progreso.html">Historial</a>
+        <a class="up-nav-link" href="planes.html">Planes</a>
+        <a class="up-nav-link" href="user-checkin.html">Cuenta</a>
       </div>
     </nav>
   </header>

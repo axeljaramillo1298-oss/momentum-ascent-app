@@ -1,439 +1,423 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Membresia | Momentum Ascent</title>
-    <link rel="stylesheet" href="styles.css" />
-    <style>
-      .plans-grid-3 {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 18px;
-        align-items: stretch;
-      }
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Planes | Momentum Ascent</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#FF4500;
+  --dark:#060608;
+  --border:rgba(255,255,255,0.07);
+  --text:#f0ede8;
+  --muted:rgba(240,237,232,0.4);
+  --green:#4ADE80;
+  --red:#F87171;
+  --yellow:#F59E0B;
+  --gold:#F5C04A;
+}
+html{scroll-behavior:smooth}
+body{background:var(--dark)!important;color:var(--text);font-family:'Barlow',sans-serif;overflow-x:hidden;min-height:100vh}
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+main{position:relative;z-index:2}
+.user-panel-top{position:relative;z-index:200;padding:12px 16px}
 
-      .comparison-table-clean {
-        display: grid;
-        gap: 1px;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 18px;
-        overflow: hidden;
-      }
+/* NAV */
+.user-panel-nav{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.nav-logo-link{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{width:32px;height:32px;flex-shrink:0}
+.logo-wordmark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--text)}
+.nav-actions{display:flex;align-items:center;gap:4px}
+.up-nav-link{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;border-radius:3px;text-decoration:none;color:var(--muted);transition:color .2s,background .2s;white-space:nowrap}
+.up-nav-link:hover{color:var(--text)}
+.up-nav-active{color:var(--text);background:rgba(255,255,255,.06)}
 
-      .comparison-row-clean {
-        display: grid;
-        grid-template-columns: 1.6fr 0.8fr 1fr 1fr;
-        gap: 0;
-        background: rgba(8, 10, 18, 0.96);
-        padding: 14px 16px;
-        align-items: center;
-      }
+/* HERO */
+.page-hero{padding:52px 52px 48px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:420px;background:radial-gradient(ellipse 60% 80% at 20% 20%,rgba(80,20,120,.2) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 80% 40%,rgba(255,69,0,.07) 0%,transparent 70%);pointer-events:none}
+.hero-inner{position:relative;z-index:1;max-width:680px}
+.page-eyebrow{font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;opacity:0;animation:fadeUp .5s .1s forwards}
+.page-eyebrow::before{content:'';width:20px;height:1px;background:var(--muted)}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(56px,7vw,96px);text-transform:uppercase;letter-spacing:-.02em;line-height:.9;opacity:0;animation:fadeUp .6s .2s forwards}
+.page-title span{color:var(--orange)}
+.page-desc{margin-top:16px;font-size:14px;color:var(--muted);max-width:440px;line-height:1.65;font-weight:300;opacity:0;animation:fadeUp .5s .35s forwards}
+.disc{margin-top:14px;font-size:10px;color:var(--orange);letter-spacing:.04em;opacity:0;animation:fadeUp .4s .5s forwards}
 
-      .comparison-row-clean span {
-        display: flex;
-        align-items: center;
-      }
+/* CONTENT */
+.page-content{padding:0 52px 140px;position:relative;z-index:2}
 
-      .comparison-row-clean span:not(:first-child) {
-        justify-content: center;
-        text-align: center;
-      }
+/* SECTION HEADER */
+.sec-hdr{margin-bottom:32px;opacity:0;animation:fadeUp .5s .55s forwards}
+.sec-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(28px,4vw,44px);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px}
+.sec-sub{font-size:13px;color:var(--muted);font-weight:300;line-height:1.6}
 
-      .comparison-row-clean.header {
-        background: rgba(10, 12, 20, 0.98);
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        font-size: 12px;
-      }
+/* FEATURES GRID */
+.feature-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin-bottom:64px;opacity:0;animation:fadeUp .5s .6s forwards}
+.feature-card{background:rgba(255,255,255,.025);border:1px solid var(--border);padding:24px 20px;position:relative;overflow:hidden;transition:border-color .3s,background .3s}
+.feature-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent,var(--orange),transparent);transform:scaleX(0);transform-origin:center;transition:transform .4s}
+.feature-card:hover{background:rgba(255,69,0,.04);border-color:rgba(255,69,0,.2)}
+.feature-card:hover::before{transform:scaleX(1)}
+.feature-icon{font-size:24px;margin-bottom:12px;display:block}
+.feature-name{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+.feature-desc{font-size:12px;color:rgba(240,237,232,.55);line-height:1.6;font-weight:300}
 
-      .comparison-row-clean .premium-col {
-        color: #ff6b35;
-      }
+/* COMPARISON TABLE */
+.compare-wrap{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:64px;opacity:0;animation:fadeUp .5s .65s forwards}
+.compare-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:13px 20px;border-bottom:1px solid rgba(255,255,255,.04);align-items:center}
+.compare-row:last-child{border-bottom:none}
+.compare-row.head{background:rgba(255,255,255,.025);padding:12px 20px}
+.compare-row.head span{font-size:9.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.compare-row.head span:not(:first-child){text-align:center}
+.compare-row span:not(:first-child){display:flex;align-items:center;justify-content:center;text-align:center}
+.compare-feat{font-size:13px;color:rgba(240,237,232,.8)}
+.ok{color:var(--green);font-weight:900;font-size:15px}
+.off{color:rgba(255,255,255,.2);font-size:15px}
+.note{font-size:11px;font-weight:700;color:rgba(240,237,232,.6)}
+.note.orange{color:var(--orange)}
+.note.gold{color:var(--gold)}
 
-      .comparison-row-clean .apex-col {
-        color: #f5c04a;
-      }
+/* PLANS GRID */
+.plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:64px;opacity:0;animation:fadeUp .5s .7s forwards}
+.plan-card{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:8px;padding:28px 24px;position:relative;overflow:hidden;transition:border-color .3s,background .3s;display:flex;flex-direction:column}
+.plan-card:hover{border-color:rgba(255,69,0,.2);background:rgba(255,69,0,.03)}
+.plan-card.highlight{border-color:rgba(255,69,0,.4);background:rgba(255,69,0,.04)}
+.plan-card.apex{background:linear-gradient(160deg,rgba(16,13,2,.9),rgba(12,10,0,.9));border-color:rgba(245,192,74,.35)}
+.plan-card.apex:hover{border-color:rgba(245,192,74,.55)}
+.plan-badge{position:absolute;top:-1px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;padding:4px 16px;border-radius:0 0 20px 20px;white-space:nowrap}
+.plan-badge.pop{background:var(--orange);color:#fff}
+.plan-badge.gold{background:linear-gradient(135deg,#7a5200,#f5c04a);color:#0a0700}
+.plan-name{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;margin-top:12px}
+.plan-price{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:44px;line-height:1;letter-spacing:-.02em;margin-bottom:4px}
+.plan-price span{font-size:16px;font-weight:400;color:var(--muted);letter-spacing:0}
+.plan-desc{font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.5;font-weight:300}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:8px;flex:1;margin-bottom:20px}
+.plan-features li{font-size:13px;color:rgba(240,237,232,.75);display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.plan-features li::before{content:'✓';color:var(--orange);font-weight:900;flex-shrink:0}
+.plan-features li.gold-feat::before{color:var(--gold)}
+.plan-bank{margin-bottom:16px;padding:11px 14px;background:rgba(245,192,74,.07);border:1px solid rgba(245,192,74,.24);border-radius:6px;font-size:13px;font-weight:700;color:var(--gold);display:flex;align-items:center;gap:8px}
+.plan-bank::before{content:'◆';font-size:14px;flex-shrink:0}
+.btn-plan{display:block;width:100%;font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:12px;border-radius:4px;text-align:center;cursor:pointer;transition:all .2s;border:none}
+.btn-plan.primary{background:var(--orange);color:#fff}
+.btn-plan.primary:hover{background:#e03d00}
+.btn-plan.ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-plan.ghost:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+.btn-plan.gold-btn{background:linear-gradient(135deg,#7a5200,#f5c04a);color:#0a0700}
+.btn-plan.gold-btn:hover{opacity:.9}
 
-      .comparison-symbol-ok {
-        color: #4ade80;
-        font-weight: 900;
-      }
+/* PAYMENT SECTION */
+.payment-card{background:rgba(255,255,255,.022);border:1px solid var(--border);border-radius:8px;padding:28px;margin-bottom:64px;opacity:0;animation:fadeUp .5s .75s forwards}
+.payment-card h3{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:20px}
+.pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.pay-field{display:flex;flex-direction:column;gap:5px}
+.pay-label{font-size:9.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.pay-val{font-size:14px;font-weight:600}
+.pay-hint{font-size:11.5px;color:rgba(240,237,232,.45);line-height:1.6;margin-bottom:16px}
+.btn-confirm{font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:12px 28px;background:var(--orange);color:#fff;border:none;border-radius:4px;cursor:pointer;transition:background .2s}
+.btn-confirm:hover{background:#e03d00}
+.pay-feedback{margin-top:12px;font-size:12px;color:var(--green)}
 
-      .comparison-symbol-off {
-        color: rgba(240, 237, 232, 0.28);
-      }
+/* NOTES */
+.notes-section{opacity:0;animation:fadeUp .5s .8s forwards}
+.notes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.note-card{background:rgba(255,255,255,.022);border:1px solid var(--border);padding:24px 20px}
+.note-card blockquote{font-size:13px;color:rgba(240,237,232,.6);line-height:1.7;font-style:italic;font-weight:300;margin-bottom:10px}
+.note-card cite{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 
-      .comparison-note {
-        color: rgba(240, 237, 232, 0.72);
-        font-size: 12px;
-        font-weight: 700;
-      }
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:300;display:flex;border-top:1px solid var(--border);background:rgba(6,6,8,.92);backdrop-filter:blur(16px)}
+.bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;text-decoration:none;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:color .2s}
+.bottom-nav-item:hover,.bottom-nav-active{color:var(--orange)}
+.bottom-nav-icon{font-size:18px;display:block}
 
-      .price-card ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-      }
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-      .price-card ul li {
-        display: flex;
-        gap: 10px;
-        align-items: flex-start;
-        padding: 7px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      }
+@media(max-width:980px){
+  .feature-grid,.plans-grid{grid-template-columns:1fr 1fr}
+  .pay-grid{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .page-hero{padding:28px 20px 32px}
+  .page-content{padding:0 20px 140px}
+  .feature-grid,.plans-grid,.notes-grid{grid-template-columns:1fr}
+  .compare-row{grid-template-columns:1.4fr 0.7fr 0.85fr 0.85fr;padding:10px 12px;font-size:12px}
+  .nav-actions{display:none}
+}
+  </style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
 
-      .price-card ul li:last-child {
-        border-bottom: 0;
-      }
+<header class="user-panel-top">
+  <nav class="user-panel-nav">
+    <a class="nav-logo-link" href="user-hoy.html" aria-label="Momentum Ascent">
+      <svg class="logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="lgNav" x1="0" y1="36" x2="36" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#ff3b30"/>
+            <stop offset="100%" stop-color="#f5c04a"/>
+          </linearGradient>
+        </defs>
+        <circle cx="18" cy="18" r="17" stroke="url(#lgNav)" stroke-width="2" fill="none" opacity="0.35"/>
+        <path d="M18.2 6.2C20.4 9.1 24.8 12 24.8 17.1C24.8 23 21.2 28.4 18 29.6C14.6 28.5 11.2 23.3 11.2 17.4C11.2 13.1 13.8 9.7 16.3 7.8C16.8 10 17.5 11.7 19.2 13.4C18.9 11.3 18.7 8.8 18.2 6.2Z" fill="url(#lgNav)" opacity="0.96"/>
+        <path d="M18.1 13.2C19.4 15 21.4 16.7 21.4 19.6C21.4 22.8 19.5 25.4 18 26C16.2 25.4 14.5 22.5 14.5 19.5C14.5 17.2 15.8 15.4 17.2 14.2C17.4 15.3 17.8 16.2 18.9 17.1C18.7 15.9 18.4 14.6 18.1 13.2Z" fill="rgba(255,248,235,0.72)"/>
+      </svg>
+      <span class="logo-wordmark">MOMENTUM ASCENT</span>
+    </a>
+    <div class="nav-actions">
+      <a class="up-nav-link" href="user-hoy.html">Picks · Análisis</a>
+      <a class="up-nav-link" href="user-progreso.html">Historial</a>
+      <a class="up-nav-link up-nav-active" href="planes.html">Planes</a>
+      <a class="up-nav-link" href="user-checkin.html">Cuenta</a>
+    </div>
+  </nav>
+</header>
 
-      .li-ic {
-        color: #ff6b35;
-        font-size: 12px;
-        font-weight: 900;
-        flex-shrink: 0;
-        margin-top: 2px;
-      }
+<main>
+  <!-- HERO -->
+  <div class="page-hero">
+    <div class="hero-inner">
+      <div class="page-eyebrow">Membresía</div>
+      <h1 class="page-title">Planes<br><span>y Precios</span></h1>
+      <p class="page-desc">Desbloquea picks premium, historial ampliado, mayor cobertura de eventos y análisis dual GPT + Claude.</p>
+      <div class="disc">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</div>
+    </div>
+  </div>
 
-      .price-card.apex {
-        background: linear-gradient(160deg, #100d02, #0c0a00);
-        border: 1.5px solid rgba(245, 192, 74, 0.34);
-        box-shadow: 0 0 0 1px rgba(245, 192, 74, 0.06), 0 24px 64px rgba(245, 192, 74, 0.09), inset 0 1px 0 rgba(245, 192, 74, 0.1);
-        position: relative;
-        overflow: visible !important;
-      }
+  <div class="page-content">
 
-      .price-card.apex::before {
-        content: "";
-        position: absolute;
-        top: -1px;
-        left: 12%;
-        right: 12%;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, #f5c04a 35%, #ff8c42 65%, transparent);
-        border-radius: 2px;
-      }
+    <!-- QUÉ DESBLOQUEA CADA PLAN -->
+    <div class="sec-hdr">
+      <div class="sec-title">Qué desbloquea cada plan</div>
+      <div class="sec-sub">Beneficios pensados para usuarios que quieren más cobertura, más contexto y más historial.</div>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="feature-icon">🎯</span>
+        <div class="feature-name">Picks del día</div>
+        <div class="feature-desc">Dashboard con picks listos para lectura rápida y mejor prioridad sobre eventos top.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🧠</span>
+        <div class="feature-name">Análisis IA Dual</div>
+        <div class="feature-desc">GPT-4o genera candidatos, Claude Sonnet selecciona el mejor. Confianza, riesgo y razonamiento completo.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📚</span>
+        <div class="feature-name">Historial</div>
+        <div class="feature-desc">Memoria operativa para revisar tendencias, picks previos y consistencia del modelo.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">💳</span>
+        <div class="feature-name">Control de Bank</div>
+        <div class="feature-desc">Herramientas para gestión de bankroll y exposición por evento. Solo en Apex.</div>
+      </div>
+    </div>
 
-      .price-card .badge {
-        position: absolute;
-        top: -13px;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 9px;
-        font-weight: 800;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        padding: 4px 16px;
-        border-radius: 20px;
-        white-space: nowrap;
-        z-index: 5;
-      }
+    <!-- COMPARATIVO -->
+    <div class="sec-hdr" style="animation-delay:.6s">
+      <div class="sec-title">Comparativo por plan</div>
+      <div class="sec-sub">Escala de acceso: Free, AI Picks y Apex.</div>
+    </div>
+    <div class="compare-wrap">
+      <div class="compare-row head">
+        <span>Feature</span>
+        <span>Free</span>
+        <span style="color:var(--orange)">AI Picks</span>
+        <span style="color:var(--gold)">Apex</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-feat">Picks del día</span>
+        <span class="ok">✓</span>
+        <span class="ok">✓</span>
+        <span class="ok">✓</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-feat">Análisis IA dual</span>
+        <span class="off">—</span>
+        <span class="note orange">Extendido</span>
+        <span class="note gold">Full IA</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-feat">Historial</span>
+        <span class="note">Limitado</span>
+        <span class="note orange">Ampliado</span>
+        <span class="note gold">Completo</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-feat">Eventos cubiertos</span>
+        <span class="note">Top del día</span>
+        <span class="note orange">Ampliada</span>
+        <span class="note gold">Total</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-feat">Comunidad</span>
+        <span class="off">—</span>
+        <span class="ok">✓</span>
+        <span class="ok">✓</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-feat">Control de bank</span>
+        <span class="off">—</span>
+        <span class="off">—</span>
+        <span class="ok">✓</span>
+      </div>
+    </div>
 
-      .price-card.highlight .badge {
-        background: linear-gradient(135deg, #c42820, #ff3b30, #ff6b35);
-        color: #fff;
-        box-shadow: 0 4px 18px rgba(255, 59, 48, 0.55);
-      }
+    <!-- PLANES -->
+    <div class="sec-hdr" style="animation-delay:.68s">
+      <div class="sec-title">Planes activos</div>
+      <div class="sec-sub">Selecciona tu plan y solicita activación por transferencia.</div>
+    </div>
+    <div class="plans-grid">
+      <div class="plan-card">
+        <div class="plan-name">Free</div>
+        <div class="plan-price">$0<span> / mes</span></div>
+        <div class="plan-desc">Acceso básico para explorar la plataforma.</div>
+        <ul class="plan-features">
+          <li>Picks del día</li>
+          <li>Historial básico</li>
+          <li>Vista general del dashboard</li>
+        </ul>
+        <button class="btn-plan ghost" data-plan-select="free">Elegir Free</button>
+      </div>
 
-      .price-card.apex .badge {
-        background: linear-gradient(135deg, #7a5200, #f5c04a, #ffd97a);
-        color: #0a0700;
-        box-shadow: 0 4px 18px rgba(245, 192, 74, 0.45);
-      }
+      <div class="plan-card highlight">
+        <div class="plan-badge pop">Popular</div>
+        <div class="plan-name">AI Picks</div>
+        <div class="plan-price">$19<span> / mes</span></div>
+        <div class="plan-desc">Análisis IA extendido y más picks por jornada.</div>
+        <ul class="plan-features">
+          <li>Análisis IA extendido</li>
+          <li>Más picks por jornada</li>
+          <li>Historial ampliado</li>
+          <li>Comunidad incluida</li>
+        </ul>
+        <button class="btn-plan primary" data-plan-select="ai_coach">Elegir AI Picks</button>
+      </div>
 
-      .bank-item {
-        margin-top: 12px;
-        padding: 10px 14px;
-        background: rgba(245, 192, 74, 0.07);
-        border: 1px solid rgba(245, 192, 74, 0.24);
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        font-size: 13px;
-        font-weight: 700;
-        color: #f5c04a;
-      }
+      <div class="plan-card apex">
+        <div class="plan-badge gold">Apex</div>
+        <div class="plan-name" style="color:var(--gold)">Apex</div>
+        <div class="plan-price" style="color:var(--gold)">$49<span> / mes</span></div>
+        <div class="plan-desc">Acceso completo con control de bankroll integrado.</div>
+        <ul class="plan-features">
+          <li class="gold-feat">Análisis IA full (GPT + Claude)</li>
+          <li class="gold-feat">Historial completo</li>
+          <li class="gold-feat">Todos los eventos</li>
+          <li class="gold-feat">Comunidad incluida</li>
+        </ul>
+        <div class="plan-bank">Control de bank</div>
+        <button class="btn-plan gold-btn" data-plan-select="coach_humano">Elegir Apex</button>
+      </div>
+    </div>
 
-      .bank-item::before {
-        content: "◆";
-        font-size: 16px;
-        color: #f5c04a;
-        flex-shrink: 0;
-      }
-
-      .feature-grid-clean {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 14px;
-      }
-
-      .feature-card-clean {
-        padding: 18px;
-        border-radius: 18px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.03);
-      }
-
-      .feature-card-clean h3 {
-        margin: 0 0 8px;
-      }
-
-      .feature-card-clean p {
-        margin: 0;
-        color: rgba(240, 237, 232, 0.68);
-      }
-
-      @media (max-width: 980px) {
-        .plans-grid-3,
-        .feature-grid-clean {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      @media (max-width: 720px) {
-        .comparison-row-clean {
-          grid-template-columns: 1.2fr 0.7fr 0.9fr 0.9fr;
-          padding: 12px 10px;
-          font-size: 12px;
-        }
-      }
-
-      @media (max-width: 560px) {
-        .comparison-table-clean {
-          background: transparent;
-          border: 0;
-          gap: 12px;
-        }
-
-        .comparison-row-clean.header {
-          display: none;
-        }
-
-        .comparison-row-clean {
-          min-width: 0;
-          grid-template-columns: 1fr;
-          gap: 8px;
-          padding: 16px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 16px;
-          background: rgba(8, 10, 18, 0.96);
-        }
-
-        .comparison-row-clean span {
-          justify-content: flex-start !important;
-          text-align: left !important;
-        }
-
-        .comparison-row-clean span:nth-child(2)::before,
-        .comparison-row-clean span:nth-child(3)::before,
-        .comparison-row-clean span:nth-child(4)::before {
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: rgba(240, 237, 232, 0.46);
-          margin-right: 8px;
-        }
-
-        .comparison-row-clean span:nth-child(2)::before { content: "Free"; }
-        .comparison-row-clean span:nth-child(3)::before { content: "AI Picks"; }
-        .comparison-row-clean span:nth-child(4)::before { content: "Apex"; }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="noise"></div>
-    <div class="stars"></div>
-    <header class="hero page-hero">
-      <nav class="nav">
-        <div class="logo">MOMENTUM ASCENT</div>
-        <div class="nav-actions">
-          <a class="ghost" href="index.html">Inicio</a>
-          <a class="ghost" href="admin.html" data-role-only="admin">Admin</a>
-          <a class="primary" href="user-hoy.html">Picks</a>
+    <!-- PAGO -->
+    <div class="payment-card">
+      <h3>Datos de pago — Transferencia bancaria</h3>
+      <div class="pay-grid">
+        <div class="pay-field">
+          <span class="pay-label">Banco</span>
+          <span class="pay-val" id="planes-pay-bank">Cargando…</span>
         </div>
-      </nav>
-      <div class="hero-grid">
-        <div class="hero-copy">
-          <p class="eyebrow">Membresia</p>
-          <h1>Planes y precios</h1>
-          <p class="subhead">Desbloquea picks premium, historico ampliado, mayor cobertura de eventos y herramientas operativas adicionales.</p>
-          <p class="sports-disclaimer">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</p>
+        <div class="pay-field">
+          <span class="pay-label">CLABE</span>
+          <span class="pay-val" id="planes-pay-clabe">Cargando…</span>
+        </div>
+        <div class="pay-field">
+          <span class="pay-label">Titular</span>
+          <span class="pay-val" id="planes-pay-holder">Cargando…</span>
+        </div>
+        <div class="pay-field">
+          <span class="pay-label">WhatsApp comprobante</span>
+          <span class="pay-val" id="planes-pay-whatsapp">Cargando…</span>
         </div>
       </div>
-    </header>
+      <div class="pay-hint">Usa tu correo de registro como referencia en la transferencia.</div>
+      <button class="btn-confirm" id="plan-confirm-button">Confirmar plan y continuar</button>
+      <div class="pay-feedback" id="plan-payment-feedback"></div>
+    </div>
 
-    <main>
-      <section class="section" data-role-hide="admin">
-        <div class="section-title">
-          <h2>Que desbloquea cada plan</h2>
-          <p>Beneficios pensados para usuarios que quieren mas cobertura, mas contexto y mas historial.</p>
+    <!-- NOTAS -->
+    <div class="notes-section">
+      <div class="sec-hdr">
+        <div class="sec-title">Notas importantes</div>
+        <div class="sec-sub">La plataforma no promete ganancias ni resultados garantizados.</div>
+      </div>
+      <div class="notes-grid">
+        <div class="note-card">
+          <blockquote>"Úsalo como contenido informativo y criterio adicional, no como garantía."</blockquote>
+          <cite>— Nota operativa</cite>
         </div>
-        <div class="feature-grid-clean">
-          <article class="feature-card-clean">
-            <h3>Picks del dia</h3>
-            <p>Dashboard con picks listos para lectura rapida y mejor prioridad sobre eventos top.</p>
-          </article>
-          <article class="feature-card-clean">
-            <h3>Analisis IA</h3>
-            <p>Confianza, riesgo y explicacion breve por mercado con una capa de contexto adicional.</p>
-          </article>
-          <article class="feature-card-clean">
-            <h3>Historial</h3>
-            <p>Memoria operativa para revisar tendencias, picks previos y consistencia del modelo.</p>
-          </article>
-          <article class="feature-card-clean">
-            <h3>Cobertura</h3>
-            <p>Mas ligas, mas eventos y herramientas premium para operar con mayor orden.</p>
-          </article>
+        <div class="note-card">
+          <blockquote>"La confianza es una estimación estadística, no una certeza de resultado."</blockquote>
+          <cite>— Riesgo y gestión</cite>
         </div>
-      </section>
-
-      <section class="section comparison" id="comparacion" data-role-hide="admin">
-        <div class="section-title">
-          <h2>Comparativo por plan</h2>
-          <p>Escala de acceso: Free, AI Picks y Apex.</p>
+        <div class="note-card">
+          <blockquote>"Apuesta con responsabilidad y evita sobreexposición en un solo evento."</blockquote>
+          <cite>— Momentum Ascent</cite>
         </div>
-        <div class="comparison-table-clean">
-          <div class="comparison-row-clean header">
-            <span>Feature</span>
-            <span>Free</span>
-            <span class="premium-col">AI Picks</span>
-            <span class="apex-col">Apex</span>
-          </div>
-          <div class="comparison-row-clean">
-            <span>Picks del dia</span>
-            <span class="comparison-symbol-ok">✓</span>
-            <span class="comparison-symbol-ok">✓</span>
-            <span class="comparison-symbol-ok">✓</span>
-          </div>
-          <div class="comparison-row-clean">
-            <span>Analisis IA</span>
-            <span class="comparison-symbol-off">-</span>
-            <span class="comparison-note">Extendido</span>
-            <span class="comparison-note apex-col">Full IA</span>
-          </div>
-          <div class="comparison-row-clean">
-            <span>Historial</span>
-            <span class="comparison-note">Limitado</span>
-            <span class="comparison-note premium-col">Ampliado</span>
-            <span class="comparison-note apex-col">Completo</span>
-          </div>
-          <div class="comparison-row-clean">
-            <span>Eventos cubiertos</span>
-            <span class="comparison-note">Top del dia</span>
-            <span class="comparison-note premium-col">Ampliada</span>
-            <span class="comparison-note apex-col">Total</span>
-          </div>
-          <div class="comparison-row-clean">
-            <span>Comunidad</span>
-            <span class="comparison-symbol-off">-</span>
-            <span class="comparison-symbol-ok">✓</span>
-            <span class="comparison-symbol-ok">✓</span>
-          </div>
-          <div class="comparison-row-clean">
-            <span>Control de bank</span>
-            <span class="comparison-symbol-off">-</span>
-            <span class="comparison-symbol-off">-</span>
-            <span class="comparison-symbol-ok">✓</span>
-          </div>
-        </div>
-      </section>
+      </div>
+    </div>
 
-      <section class="section pricing" id="planes" data-role-hide="admin">
-        <div class="section-title">
-          <h2>Planes activos</h2>
-          <p>Selecciona tu plan y solicita activacion por transferencia.</p>
-        </div>
-        <div class="pricing-grid plans-grid-3">
-          <div class="price-card" data-tilt>
-            <h3>Free</h3>
-            <p class="price">$0 / mes</p>
-            <ul>
-              <li><span class="li-ic">✓</span>Picks del dia</li>
-              <li><span class="li-ic">✓</span>Historial basico</li>
-              <li><span class="li-ic">✓</span>Vista general</li>
-            </ul>
-            <button class="ghost full" type="button" data-plan-select="free">Elegir Free</button>
-          </div>
+  </div>
+</main>
 
-          <div class="price-card highlight" data-tilt>
-            <div class="badge">Popular</div>
-            <h3>AI Picks</h3>
-            <p class="price">$19 / mes</p>
-            <ul>
-              <li><span class="li-ic">✓</span>Analisis IA extendido</li>
-              <li><span class="li-ic">✓</span>Mas picks por jornada</li>
-              <li><span class="li-ic">✓</span>Historial ampliado</li>
-              <li><span class="li-ic">✓</span>Comunidad incluida</li>
-            </ul>
-            <button class="primary full" type="button" data-plan-select="ai_coach">Elegir AI Picks</button>
-          </div>
+<nav class="bottom-nav" aria-label="Navegacion principal">
+  <a class="bottom-nav-item" href="user-hoy.html">
+    <span class="bottom-nav-icon">🎯</span><span>Picks</span>
+  </a>
+  <a class="bottom-nav-item" href="user-progreso.html">
+    <span class="bottom-nav-icon">📚</span><span>Historial</span>
+  </a>
+  <a class="bottom-nav-item bottom-nav-active" href="planes.html">
+    <span class="bottom-nav-icon">💳</span><span>Planes</span>
+  </a>
+  <a class="bottom-nav-item" href="user-checkin.html">
+    <span class="bottom-nav-icon">👤</span><span>Cuenta</span>
+  </a>
+</nav>
 
-          <div class="price-card apex" data-tilt>
-            <div class="badge">Apex</div>
-            <h3>Apex</h3>
-            <p class="price">$49 / mes</p>
-            <ul>
-              <li><span class="li-ic">✓</span>Analisis IA full</li>
-              <li><span class="li-ic">✓</span>Historial completo</li>
-              <li><span class="li-ic">✓</span>Todos los eventos</li>
-              <li><span class="li-ic">✓</span>Comunidad incluida</li>
-            </ul>
-            <div class="bank-item">Control de bank</div>
-            <button class="primary full" type="button" data-plan-select="coach_humano" style="margin-top: 18px">Elegir Apex</button>
-          </div>
-        </div>
-
-        <article class="card plan-extras-card">
-          <h3>Extras premium</h3>
-          <p>Activalos segun tu configuracion de plan.</p>
-          <div class="role-actions">
-            <label class="agree-row"><input type="checkbox" id="extra-diet-basic" /><span>Cobertura extendida (+$12/mes)</span></label>
-            <label class="agree-row"><input type="checkbox" id="extra-diet-plus" /><span>Analisis pro (+$24/mes)</span></label>
-          </div>
-          <div id="plan-selection-summary" class="admin-item"></div>
-        </article>
-
-        <article class="card transfer-demo-card">
-          <h3>Datos de pago (transferencia bancaria)</h3>
-          <p><strong>Banco:</strong> <span id="planes-pay-bank">Cargando...</span></p>
-          <p><strong>CLABE:</strong> <span id="planes-pay-clabe">Cargando...</span></p>
-          <p><strong>Titular:</strong> <span id="planes-pay-holder">Cargando...</span></p>
-          <p><strong>Comprobante via WhatsApp:</strong> <span id="planes-pay-whatsapp">Cargando...</span></p>
-          <p class="reg-hint">Usa tu correo de registro como referencia en la transferencia.</p>
-          <button class="primary" type="button" id="plan-confirm-button">Confirmar plan y continuar</button>
-          <p class="reg-feedback" id="plan-payment-feedback" aria-live="polite"></p>
-        </article>
-      </section>
-
-      <section class="section testimonials" id="testimonios" data-role-hide="admin">
-        <div class="section-title">
-          <h2>Notas importantes</h2>
-          <p>La plataforma no promete ganancias ni resultados garantizados.</p>
-        </div>
-        <div class="testimonial-grid">
-          <div class="quote"><p>"Usalo como contenido informativo y criterio adicional, no como garantia."</p><span>- Nota operativa</span></div>
-          <div class="quote"><p>"La confianza es una estimacion, no una certeza."</p><span>- Riesgo y gestion</span></div>
-          <div class="quote"><p>"Apuesta con responsabilidad y evita sobreexposicion."</p><span>- Momentum Ascent</span></div>
-        </div>
-      </section>
-
-      <section class="section" data-role-only="admin">
-        <article class="card">
-          <h3>Operacion centralizada</h3>
-          <p>La gestion de eventos, sincronizacion y generacion de picks ya vive en el panel admin dedicado.</p>
-          <a class="primary" href="admin.html">Abrir Admin Sports</a>
-        </article>
-      </section>
-    </main>
-
-    <footer class="footer"><div>Momentum Ascent • AI Picks Platform</div></footer>
-    <div class="scroll-progress" aria-hidden="true"></div>
-    <script src="app.js"></script>
-  </body>
+<script src="app.js"></script>
+<script>
+(function(){
+  // Three.js bg
+  const bgCanvas = document.getElementById('bg-canvas');
+  if(!bgCanvas || !window.THREE) return;
+  const renderer = new THREE.WebGLRenderer({canvas:bgCanvas,alpha:true,antialias:false});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,100);
+  camera.position.z = 5;
+  function resize(){ renderer.setSize(innerWidth,innerHeight); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); }
+  resize(); window.addEventListener('resize',resize);
+  const N=220, geo=new THREE.BufferGeometry(), pos=new Float32Array(N*3), vel=[];
+  for(let i=0;i<N;i++){
+    pos[i*3]=(Math.random()-.5)*20;pos[i*3+1]=(Math.random()-.5)*14;pos[i*3+2]=(Math.random()-.5)*6;
+    vel.push({vx:(Math.random()-.5)*.003,vy:Math.random()*.004+.001});
+  }
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  scene.add(new THREE.Points(geo,new THREE.PointsMaterial({color:0xFF4500,size:.04,sizeAttenuation:true,transparent:true,opacity:.38,blending:THREE.AdditiveBlending,depthWrite:false})));
+  const geo2=new THREE.BufferGeometry(),pos2=new Float32Array(N*3);
+  for(let i=0;i<N;i++){pos2[i*3]=(Math.random()-.5)*20;pos2[i*3+1]=(Math.random()-.5)*14;pos2[i*3+2]=(Math.random()-.5)*6}
+  geo2.setAttribute('position',new THREE.BufferAttribute(pos2,3));
+  scene.add(new THREE.Points(geo2,new THREE.PointsMaterial({color:0xffffff,size:.022,sizeAttenuation:true,transparent:true,opacity:.10,blending:THREE.AdditiveBlending,depthWrite:false})));
+  let tMX=0,tMY=0,cMX=0,cMY=0;
+  document.addEventListener('mousemove',e=>{tMX=(e.clientX/innerWidth-.5)*2;tMY=(e.clientY/innerHeight-.5)*2});
+  (function loop(){
+    requestAnimationFrame(loop);
+    cMX+=(tMX-cMX)*.03; cMY+=(tMY-cMY)*.03;
+    camera.position.x=cMX*.8; camera.position.y=-cMY*.5;
+    const p=geo.attributes.position.array;
+    for(let i=0;i<N;i++){p[i*3]+=vel[i].vx;p[i*3+1]+=vel[i].vy;if(p[i*3+1]>7)p[i*3+1]=-7}
+    geo.attributes.position.needsUpdate=true;
+    renderer.render(scene,camera);
+  })();
+})();
+</script>
+</body>
 </html>
