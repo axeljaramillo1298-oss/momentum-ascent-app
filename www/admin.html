@@ -318,11 +318,33 @@ main{position:relative;z-index:2}
   try { userEmail = JSON.parse(userRaw)?.email || ''; } catch(_){}
   document.getElementById('nav-user-email').textContent = userEmail || 'no autenticado';
 
+  const API_BASE = (() => {
+    const { protocol, hostname, port, origin } = window.location;
+    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+    if (isLocal && port && port !== '8787') return `${protocol}//${hostname}:8787`;
+    return origin;
+  })();
+
   function apiHeaders(){
     const h = { 'Content-Type':'application/json' };
     if(userEmail) h['x-user-email'] = userEmail;
     if(godToken)  h['x-god-token']  = godToken;
     return h;
+  }
+
+  async function fetchJson(path, options = {}){
+    const res = await fetch(`${API_BASE}${path}`, options);
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch(_){}
+    if(!res.ok){
+      const apiError = data?.error || data?.message || `HTTP ${res.status}`;
+      const err = new Error(apiError);
+      err.status = res.status;
+      err.data = data;
+      throw err;
+    }
+    return data;
   }
 
   // ── LOG ───────────────────────────────────────────────────
@@ -394,9 +416,8 @@ main{position:relative;z-index:2}
     setStatus('GPT-4o analizando…');
 
     try {
-      const res = await fetch(`/api/picks/gpt-markets/${eventId}`, { method:'POST', headers: apiHeaders() });
-      const data = await res.json();
-      if(!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      const data = await fetchJson(`/api/picks/gpt-markets/${eventId}`, { method:'POST', headers: apiHeaders() });
+      if(!data?.ok) throw new Error(data?.error || 'gpt_markets_failed');
 
       pendingGptMarkets = data.markets;
       gptArea.innerHTML = renderMarketsTable(data.markets);
@@ -421,12 +442,11 @@ main{position:relative;z-index:2}
     setStatus('Claude evaluando…');
 
     try {
-      const res = await fetch('/api/picks/claude-decide', {
+      const data = await fetchJson('/api/picks/claude-decide', {
         method:'POST', headers: apiHeaders(),
         body: JSON.stringify({ eventId, gptMarkets: pendingGptMarkets })
       });
-      const data = await res.json();
-      if(!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      if(!data?.ok) throw new Error(data?.error || 'claude_decide_failed');
 
       const d = data.decision;
       const riskCls = d.riesgo || 'MEDIO';
@@ -473,7 +493,7 @@ main{position:relative;z-index:2}
     const eid = btn.dataset.eid;
 
     try {
-      const res = await fetch('/api/picks/publish-direct', {
+      const data = await fetchJson('/api/picks/publish-direct', {
         method:'POST', headers: apiHeaders(),
         body: JSON.stringify({
           eventId: Number(eid),
@@ -485,8 +505,7 @@ main{position:relative;z-index:2}
           modelUsed: btn.dataset.model,
         })
       });
-      const data = await res.json();
-      if(!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      if(!data?.ok) throw new Error(data?.error || 'publish_direct_failed');
 
       btn.textContent = '✓ Publicado';
       btn.classList.add('published');
@@ -527,8 +546,9 @@ main{position:relative;z-index:2}
       const away = ev.away_team || ev.awayTeam || '?';
       const league = ev.league || ev.competition || '—';
       const sport = ev.sport || 'default';
-      const timeStr = ev.start_time ? new Date(ev.start_time).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : '—';
-      const hasPick = !!ev.hasPick;
+      const timeValue = ev.start_time || ev.eventDate || ev.event_date || ev.date;
+      const timeStr = timeValue ? new Date(timeValue).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : '—';
+      const hasPick = !!(ev.hasPick || ev.latestPick);
 
       card.innerHTML = `
         <div class="event-card-head">
@@ -600,16 +620,19 @@ main{position:relative;z-index:2}
   async function loadEvents(){
     try {
       setStatus('Cargando eventos…');
-      const res = await fetch('/api/sports/events/today', { headers: apiHeaders() });
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      events = Array.isArray(data) ? data : (data.events || []);
+      const data = await fetchJson('/api/sports/events/today', { headers: apiHeaders() });
+      events = Array.isArray(data) ? data : (Array.isArray(data?.events) ? data.events : []);
       updateStats();
       renderEvents(events);
       addLog(`${events.length} evento(s) cargado(s)`, 'ok');
       setStatus(`${events.length} eventos cargados — ${new Date().toLocaleTimeString('es-MX')}`);
     } catch(err){
-      document.getElementById('events-list').innerHTML = `<div class="dual-error">No se pudieron cargar eventos: ${err.message}</div>`;
+      const hint = err.status === 404
+        ? `No se encontraron rutas API en ${API_BASE}. Abre esta pantalla desde http://localhost:8787/admin.html`
+        : err.status === 403
+        ? 'Tu sesion no tiene permisos admin. Inicia sesion como admin o usa un x-god-token valido.'
+        : err.message;
+      document.getElementById('events-list').innerHTML = `<div class="dual-error">No se pudieron cargar eventos: ${hint}</div>`;
       addLog(`Error cargando eventos: ${err.message}`, 'err');
       setStatus('Error al cargar eventos.');
     }
@@ -622,12 +645,14 @@ main{position:relative;z-index:2}
     addLog('Iniciando sincronización de eventos…');
     setStatus('Sincronizando…');
     try {
-      const res = await fetch('/api/sports/sync', { method:'POST', headers: apiHeaders() });
-      const data = await res.json();
-      addLog(`Sync completado: ${data.synced||0} evento(s) importado(s)`, 'ok');
+      const data = await fetchJson('/api/sports/sync', { method:'POST', headers: apiHeaders() });
+      addLog(`Sync completado: ${data.count || data.synced || 0} evento(s) importado(s)`, 'ok');
       await loadEvents();
     } catch(err){
-      addLog(`Error en sync: ${err.message}`, 'err');
+      const msg = err.status === 403
+        ? 'Error en sync: sesion sin permisos admin.'
+        : `Error en sync: ${err.message}`;
+      addLog(msg, 'err');
       setStatus('Error en sync.');
     } finally {
       this.disabled = false;
