@@ -335,10 +335,74 @@ const isPickRecent = (pick, maxAgeHours = 8) => {
   return Date.now() - createdAt <= maxAgeHours * 60 * 60 * 1000;
 };
 
+const DEFAULT_TRACKED_LEAGUES = [
+  { key: "uefa-champions-league", label: "UEFA Champions League", sport: "football", priority: 100, enabled: true },
+  { key: "uefa-europa-league", label: "UEFA Europa League", sport: "football", priority: 95, enabled: true },
+  { key: "uefa-conference-league", label: "UEFA Conference League", sport: "football", priority: 90, enabled: true },
+  { key: "premier-league", label: "Premier League", sport: "football", priority: 100, enabled: true },
+  { key: "la-liga", label: "La Liga", sport: "football", priority: 100, enabled: true },
+  { key: "serie-a", label: "Serie A", sport: "football", priority: 98, enabled: true },
+  { key: "bundesliga", label: "Bundesliga", sport: "football", priority: 98, enabled: true },
+  { key: "ligue-1", label: "Ligue 1", sport: "football", priority: 96, enabled: true },
+  { key: "primeira-liga", label: "Primeira Liga", sport: "football", priority: 94, enabled: true },
+  { key: "saudi-pro-league", label: "Saudi Pro League", sport: "football", priority: 92, enabled: true },
+  { key: "liga-mx", label: "Liga MX", sport: "football", priority: 94, enabled: true },
+  { key: "nba", label: "NBA", sport: "basketball", priority: 98, enabled: true },
+];
+
+const safeArray = (value) => (Array.isArray(value) ? value : []);
+const slugify = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+const normalizeLeagueLabel = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+const toObject = (value) => (value && typeof value === "object" && !Array.isArray(value) ? { ...value } : {});
+const mergeObjects = (...values) => Object.assign({}, ...values.map((item) => toObject(item)));
+
+const getTrackedLeagues = async () => {
+  const stored = await getAppSetting("sports_tracked_leagues", DEFAULT_TRACKED_LEAGUES);
+  const list = safeArray(stored)
+    .map((item) => ({
+      key: slugify(item?.key || item?.label || ""),
+      label: String(item?.label || "").trim(),
+      sport: String(item?.sport || "football").trim().toLowerCase(),
+      priority: Math.max(0, Number(item?.priority || 0)),
+      enabled: item?.enabled !== false,
+      externalLeagueId: Number(item?.externalLeagueId || 0) || null,
+    }))
+    .filter((item) => item.key && item.label);
+  return list.length ? list : DEFAULT_TRACKED_LEAGUES;
+};
+
+const eventMatchesTrackedLeagues = (event, trackedLeagues = []) => {
+  const normalizedLeague = normalizeLeagueLabel(event?.league);
+  const normalizedSport = String(event?.sport || "").trim().toLowerCase();
+  const rawLeagueId = Number(event?.rawJson?.league?.id || 0);
+  return trackedLeagues.some((item) => {
+    if (item.enabled === false) return false;
+    if (item.sport && item.sport !== normalizedSport) return false;
+    if (normalizeLeagueLabel(item.label) === normalizedLeague) return true;
+    if (Number(item.externalLeagueId || 0) > 0 && Number(item.externalLeagueId) === rawLeagueId) return true;
+    return false;
+  });
+};
+
 const syncSportsEvents = async () => {
+  const trackedLeagues = await getTrackedLeagues();
   const events = await sportsApiService.getTodayEvents();
+  const filteredEvents = Array.isArray(events) ? events.filter((event) => eventMatchesTrackedLeagues(event, trackedLeagues)) : [];
+  const selectedEvents = filteredEvents.length ? filteredEvents : safeArray(events);
   const saved = [];
-  for (const event of Array.isArray(events) ? events : []) {
+  for (const event of selectedEvents) {
     const row = await upsertSportsEvent(event);
     saved.push(row);
     if (event?.stats && typeof event.stats === "object") {
@@ -353,7 +417,7 @@ const syncSportsEvents = async () => {
     sourceApi: String(process.env.SPORTS_API_PROVIDER || "mock").trim().toLowerCase() || "mock",
     endpoint: "/today",
     status: "ok",
-    message: `Eventos sincronizados: ${saved.length}`,
+    message: `Eventos sincronizados: ${saved.length} de ${safeArray(events).length} (filtrados por ligas objetivo: ${filteredEvents.length})`,
   });
   return saved;
 };
@@ -1090,6 +1154,166 @@ app.get("/api/sports/sync/logs", requireAdmin, async (req, res) => {
     res.json({ ok: true, logs, events });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || "sports_sync_logs_failed") });
+  }
+});
+
+app.get("/api/sports/config/tracked-leagues", requireAdmin, async (req, res) => {
+  try {
+    const trackedLeagues = await getTrackedLeagues();
+    res.json({ ok: true, trackedLeagues });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "tracked_leagues_failed") });
+  }
+});
+
+app.post("/api/sports/config/tracked-leagues", requireAdmin, async (req, res) => {
+  try {
+    const input = safeArray(req.body?.trackedLeagues)
+      .map((item) => ({
+        key: slugify(item?.key || item?.label || ""),
+        label: String(item?.label || "").trim(),
+        sport: String(item?.sport || "football").trim().toLowerCase(),
+        priority: Math.max(0, Number(item?.priority || 0)),
+        enabled: item?.enabled !== false,
+        externalLeagueId: Number(item?.externalLeagueId || 0) || null,
+      }))
+      .filter((item) => item.key && item.label);
+    if (!input.length) {
+      return res.status(400).json({ ok: false, error: "tracked_leagues_required" });
+    }
+    await setAppSetting("sports_tracked_leagues", input);
+    res.json({ ok: true, trackedLeagues: input });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "tracked_leagues_save_failed") });
+  }
+});
+
+app.post("/api/sports/events/manual", requireAdmin, async (req, res) => {
+  try {
+    const sport = String(req.body?.sport || "football").trim().toLowerCase();
+    const league = String(req.body?.league || "").trim();
+    const homeTeam = String(req.body?.homeTeam || "").trim();
+    const awayTeam = String(req.body?.awayTeam || "").trim();
+    const eventDate = String(req.body?.eventDate || "").trim();
+    if (!league || !homeTeam || !awayTeam || !eventDate) {
+      return res.status(400).json({ ok: false, error: "manual_event_fields_required" });
+    }
+    const externalId =
+      String(req.body?.externalId || "").trim() ||
+      `manual-${toDateKey(eventDate)}-${slugify(league)}-${slugify(homeTeam)}-${slugify(awayTeam)}`;
+    const rawJson = mergeObjects(req.body?.rawJson, {
+      source: "manual",
+      curated: true,
+      importedFrom: "admin",
+      tags: safeArray(req.body?.tags),
+    });
+    const event = await upsertSportsEvent({
+      externalId,
+      sport,
+      league,
+      homeTeam,
+      awayTeam,
+      eventDate,
+      status: String(req.body?.status || "scheduled").trim() || "scheduled",
+      rawJson,
+    });
+    if (req.body?.stats && typeof req.body.stats === "object") {
+      await saveEventStats({
+        eventId: event.id,
+        sourceApi: "manual_editor",
+        statsJson: req.body.stats,
+      });
+    }
+    res.status(201).json({ ok: true, event });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "manual_event_failed") });
+  }
+});
+
+app.get("/api/sports/events/:eventId/context", requireAdmin, async (req, res) => {
+  try {
+    const eventId = Number(req.params.eventId || 0);
+    const event = await getSportsEventById(eventId);
+    if (!event) return res.status(404).json({ ok: false, error: "event_not_found" });
+    const latestStats = await getLatestEventStats(eventId);
+    const latestPick = await getLatestAiPickForEvent(eventId);
+    const result = toObject(event.rawJson?.resultManual);
+    res.json({ ok: true, event, latestStats, latestPick, result });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "event_context_failed") });
+  }
+});
+
+app.post("/api/sports/events/:eventId/manual-context", requireAdmin, async (req, res) => {
+  try {
+    const eventId = Number(req.params.eventId || 0);
+    const event = await getSportsEventById(eventId);
+    if (!event) return res.status(404).json({ ok: false, error: "event_not_found" });
+    const payload = mergeObjects(req.body?.stats, {
+      editorialNote: String(req.body?.editorialNote || "").trim(),
+      sourceLinks: safeArray(req.body?.sourceLinks),
+      injuries: safeArray(req.body?.injuries),
+      form: toObject(req.body?.form),
+      h2h: toObject(req.body?.h2h),
+      oddsSnapshot: toObject(req.body?.oddsSnapshot),
+      curated: true,
+    });
+    const stats = await saveEventStats({
+      eventId,
+      sourceApi: String(req.body?.sourceApi || "manual_editor").trim() || "manual_editor",
+      statsJson: payload,
+    });
+    res.json({ ok: true, stats });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "manual_context_failed") });
+  }
+});
+
+app.post("/api/sports/events/:eventId/result", requireAdmin, async (req, res) => {
+  try {
+    const eventId = Number(req.params.eventId || 0);
+    const event = await getSportsEventById(eventId);
+    if (!event) return res.status(404).json({ ok: false, error: "event_not_found" });
+
+    const homeScore = Number(req.body?.homeScore);
+    const awayScore = Number(req.body?.awayScore);
+    if (!Number.isFinite(homeScore) || !Number.isFinite(awayScore)) {
+      return res.status(400).json({ ok: false, error: "result_scores_required" });
+    }
+
+    const resultManual = {
+      homeScore,
+      awayScore,
+      winner:
+        homeScore === awayScore
+          ? "draw"
+          : homeScore > awayScore
+          ? event.homeTeam
+          : event.awayTeam,
+      note: String(req.body?.note || "").trim(),
+      settledAt: new Date().toISOString(),
+    };
+
+    const updatedEvent = await upsertSportsEvent({
+      externalId: event.externalId,
+      sport: event.sport,
+      league: event.league,
+      homeTeam: event.homeTeam,
+      awayTeam: event.awayTeam,
+      eventDate: event.eventDate,
+      status: String(req.body?.status || "finished").trim() || "finished",
+      rawJson: mergeObjects(event.rawJson, { resultManual }),
+    });
+
+    await saveEventStats({
+      eventId,
+      sourceApi: "manual_result",
+      statsJson: { resultManual },
+    });
+
+    res.json({ ok: true, event: updatedEvent, resultManual });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "event_result_failed") });
   }
 });
 
