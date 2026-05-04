@@ -1,9 +1,12 @@
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
+const OPENAI_RESPONSES_API_URL = "https://api.openai.com/v1/responses";
 const OPENAI_TIMEOUT_MS = Math.max(5_000, Number(process.env.OPENAI_TIMEOUT_MS || 25_000));
 const OPENAI_MAX_OUTPUT_TOKENS = Math.max(250, Number(process.env.OPENAI_MAX_OUTPUT_TOKENS || 900));
 const OPENAI_MAX_PROMPT_CHARS = Math.max(300, Number(process.env.OPENAI_MAX_PROMPT_CHARS || 700));
 const OPENAI_MAX_CONTEXT_CHARS = Math.max(800, Number(process.env.OPENAI_MAX_CONTEXT_CHARS || 3500));
 const OPENAI_MAX_USERS_PER_CALL = Math.max(1, Number(process.env.OPENAI_MAX_USERS_PER_CALL || 3));
+const OPENAI_WEB_SEARCH_ENABLED = String(process.env.OPENAI_WEB_SEARCH_ENABLED || "true").trim().toLowerCase() !== "false";
+const OPENAI_WEB_SEARCH_MODEL = String(process.env.OPENAI_WEB_SEARCH_MODEL || "").trim() || "gpt-4.1-mini";
 const { detectSportFallback, buildFallbackPlanForSport } = require("./sport-routine-fallbacks");
 
 const safeStr = (value) => String(value || "").trim();
@@ -111,6 +114,124 @@ const callOpenAiOnce = async ({ apiKey, model, systemPrompt, userPrompt }) => {
   } catch (error) {
     if (error?.name === "AbortError") {
       throw new Error("openai_timeout");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+const extractResponsesText = (payload = {}) => {
+  const direct = safeStr(payload?.output_text);
+  if (direct) return direct;
+  const output = Array.isArray(payload?.output) ? payload.output : [];
+  const textParts = [];
+  for (const item of output) {
+    const content = Array.isArray(item?.content) ? item.content : [];
+    for (const part of content) {
+      const text = safeStr(part?.text || part?.content || "");
+      if (text) textParts.push(text);
+    }
+  }
+  return textParts.join("\n").trim();
+};
+
+const callOpenAiWebSearchOnce = async ({ apiKey, model, instructions, input }) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS + 25_000);
+  try {
+    const response = await fetch(OPENAI_RESPONSES_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        instructions,
+        input,
+        tools: [{ type: "web_search" }],
+        tool_choice: "auto",
+        max_output_tokens: Math.max(900, OPENAI_MAX_OUTPUT_TOKENS),
+        text: {
+          format: {
+            type: "json_schema",
+            name: "sports_market_analysis",
+            schema: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                ml: {
+                  type: "object",
+                  additionalProperties: false,
+                  properties: {
+                    pick: { type: "string" },
+                    conf: { type: "integer" },
+                    nota: { type: "string" },
+                  },
+                  required: ["pick", "conf", "nota"],
+                },
+                goles: {
+                  type: "object",
+                  additionalProperties: false,
+                  properties: {
+                    pick: { type: "string" },
+                    conf: { type: "integer" },
+                    nota: { type: "string" },
+                  },
+                  required: ["pick", "conf", "nota"],
+                },
+                btts: {
+                  type: "object",
+                  additionalProperties: false,
+                  properties: {
+                    pick: { type: "string" },
+                    conf: { type: "integer" },
+                    nota: { type: "string" },
+                  },
+                  required: ["pick", "conf", "nota"],
+                },
+                handicap: {
+                  type: "object",
+                  additionalProperties: false,
+                  properties: {
+                    pick: { type: "string" },
+                    line: { type: "string" },
+                    conf: { type: "integer" },
+                    nota: { type: "string" },
+                  },
+                  required: ["pick", "line", "conf", "nota"],
+                },
+                corners: {
+                  type: "object",
+                  additionalProperties: false,
+                  properties: {
+                    pick: { type: "string" },
+                    conf: { type: "integer" },
+                    nota: { type: "string" },
+                  },
+                  required: ["pick", "conf", "nota"],
+                },
+                resumen: { type: "string" },
+                research_summary: { type: "string" },
+              },
+              required: ["ml", "goles", "btts", "handicap", "corners", "resumen", "research_summary"],
+            },
+          },
+        },
+      }),
+      signal: controller.signal,
+    });
+    const rawText = await response.text().catch(() => "");
+    if (!response.ok) {
+      throw new Error(`openai_web_${response.status}:${rawText.slice(0, 400)}`);
+    }
+    const data = rawText ? JSON.parse(rawText) : {};
+    const content = extractResponsesText(data);
+    return { content, model };
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new Error("openai_web_timeout");
     }
     throw error;
   } finally {
@@ -544,6 +665,35 @@ async function analyzeMarketsGPT({ event = {}, stats = {} } = {}) {
   ].join("\n");
 
   try {
+    if (OPENAI_WEB_SEARCH_ENABLED) {
+      const instructions = [
+        systemPrompt,
+        "Debes consultar la web antes de responder para buscar informacion reciente y relevante del partido.",
+        "Busca, si estan disponibles, lesiones, bajas, forma de los ultimos 5 partidos, rendimiento local/visita, head-to-head reciente, odds o lineas de mercado.",
+        "Si la web no confirma un dato, no lo inventes.",
+        "Usa la busqueda web para complementar Stats, no para contradecirlos sin explicarlo.",
+      ].join(" ");
+      const webInput = [
+        userPrompt,
+        "",
+        "Consulta online informacion reciente y util del evento para completar el analisis.",
+      ].join("\n");
+      try {
+        const { content, model: webModel } = await callOpenAiWebSearchOnce({
+          apiKey,
+          model: OPENAI_WEB_SEARCH_MODEL,
+          instructions,
+          input: webInput,
+        });
+        const parsed = extractJsonObject(content);
+        if (parsed) {
+          return { ...parsed, provider: `openai-web-${webModel}` };
+        }
+      } catch {
+        // Fallback silently to standard non-web analysis below.
+      }
+    }
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS + 10000);
     let content = "";
