@@ -218,6 +218,48 @@ main{position:relative;z-index:2}
 /* ERROR BOX */
 .dual-error{background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.2);border-radius:6px;padding:14px 18px;color:var(--red);font-size:12px;line-height:1.6;margin-top:8px}
 
+/* USERS SECTION */
+.users-section{margin-bottom:48px;opacity:0;animation:fadeUp .5s .85s forwards}
+.users-search{display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+.users-search-input{flex:1;min-width:200px;background:rgba(255,255,255,.03);border:1px solid var(--border);color:var(--text);padding:9px 14px;border-radius:4px;font:500 13px 'Barlow',sans-serif}
+.users-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.users-table th{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.users-table td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--text);vertical-align:middle}
+.users-table tr:last-child td{border-bottom:none}
+.users-table tr:hover td{background:rgba(255,255,255,.02)}
+.plan-select{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:4px;font:600 11px 'Barlow',sans-serif;cursor:pointer}
+.btn-grant{font:700 10px 'Barlow',sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:7px 12px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);color:var(--green);border-radius:3px;cursor:pointer;transition:all .2s}
+.btn-grant:hover{background:rgba(74,222,128,.18)}
+.status-active{color:var(--green);font-weight:700;font-size:11px}
+.status-pending{color:var(--yellow);font-weight:700;font-size:11px}
+.status-inactive{color:var(--muted);font-size:11px}
+
+/* PICK STATS SECTION */
+.pickstats-section{margin-bottom:48px;opacity:0;animation:fadeUp .5s .9s forwards}
+.pstats-row{display:flex;gap:2px;margin-bottom:24px;flex-wrap:wrap}
+.pstat-card{flex:1;min-width:100px;background:rgba(255,255,255,.025);border:1px solid var(--border);padding:16px 20px}
+.pstat-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:36px;line-height:1}
+.pstat-val.green{color:var(--green)}
+.pstat-val.red{color:var(--red)}
+.pstat-val.yellow{color:var(--yellow)}
+.pstat-val.orange{color:var(--orange)}
+.pstat-lbl{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.picks-hist-table{width:100%;border-collapse:collapse;font-size:12px}
+.picks-hist-table th{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.picks-hist-table td{padding:10px 10px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--text);vertical-align:middle}
+.picks-hist-table tr:last-child td{border-bottom:none}
+.picks-hist-table tr:hover td{background:rgba(255,255,255,.015)}
+.res-chip{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;border:1px solid}
+.res-chip.won{color:var(--green);border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.08)}
+.res-chip.lost{color:var(--red);border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.08)}
+.res-chip.void{color:var(--muted);border-color:var(--border);background:rgba(255,255,255,.03)}
+.res-chip.pending{color:var(--yellow);border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.05)}
+.res-btns{display:flex;gap:4px}
+.res-btn-sm{font:700 9px 'Barlow',sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:4px 8px;border-radius:3px;cursor:pointer;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--muted);transition:all .15s}
+.res-btn-sm.won:hover,.res-btn-sm.won.active{background:rgba(74,222,128,.14);border-color:rgba(74,222,128,.3);color:var(--green)}
+.res-btn-sm.lost:hover,.res-btn-sm.lost.active{background:rgba(248,113,113,.14);border-color:rgba(248,113,113,.3);color:var(--red)}
+.res-btn-sm.void:hover,.res-btn-sm.void.active{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.15);color:var(--text)}
+
 /* ANIMATIONS */
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -369,6 +411,74 @@ main{position:relative;z-index:2}
           <div class="step-name">Tú publicas</div>
           <div class="step-desc">Revisas la recomendación de Claude y confirmas la publicación manualmente.</div>
         </div>
+      </div>
+    </section>
+
+    <!-- USUARIOS & PLANES -->
+    <section class="users-section">
+      <div class="section-hdr">
+        <h2 class="section-title">Usuarios & Planes</h2>
+        <span class="section-sub" id="users-count-label">cargando…</span>
+      </div>
+      <div class="users-search">
+        <input class="users-search-input" type="text" id="users-search-input" placeholder="Buscar por email…" />
+        <button class="btn-ghost" id="btn-search-users">Buscar</button>
+        <button class="btn-ghost" id="btn-reload-users">↺ Recargar</button>
+      </div>
+      <div style="overflow-x:auto;background:rgba(255,255,255,.015);border:1px solid var(--border);border-radius:6px">
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Nombre</th>
+              <th>Plan actual</th>
+              <th>Estado</th>
+              <th>Vence</th>
+              <th>Cambiar a</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody">
+            <tr><td colspan="7" style="padding:24px;text-align:center;color:var(--muted)">Cargando usuarios…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- HISTORIAL DE PICKS & STATS -->
+    <section class="pickstats-section">
+      <div class="section-hdr">
+        <h2 class="section-title">Historial de Picks</h2>
+        <button class="btn-ghost" id="btn-reload-pickstats" style="font-size:10px;padding:6px 14px">↺ Recargar</button>
+      </div>
+      <div class="pstats-row">
+        <div class="pstat-card"><div class="pstat-val orange" id="ps-total">0</div><div class="pstat-lbl">Total picks</div></div>
+        <div class="pstat-card"><div class="pstat-val green" id="ps-won">0</div><div class="pstat-lbl">Ganados</div></div>
+        <div class="pstat-card"><div class="pstat-val red" id="ps-lost">0</div><div class="pstat-lbl">Perdidos</div></div>
+        <div class="pstat-card"><div class="pstat-val" id="ps-void">0</div><div class="pstat-lbl">Void</div></div>
+        <div class="pstat-card"><div class="pstat-val green" id="ps-winrate">—</div><div class="pstat-lbl">Win rate</div></div>
+        <div class="pstat-card"><div class="pstat-val yellow" id="ps-streak">0</div><div class="pstat-lbl">Racha actual</div></div>
+        <div class="pstat-card"><div class="pstat-val" id="ps-pending">0</div><div class="pstat-lbl">Sin resultado</div></div>
+      </div>
+      <div style="overflow-x:auto;background:rgba(255,255,255,.015);border:1px solid var(--border);border-radius:6px">
+        <table class="picks-hist-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Partido</th>
+              <th>Mercado</th>
+              <th>Pick</th>
+              <th>Conf.</th>
+              <th>Riesgo</th>
+              <th>Tier</th>
+              <th>Resultado</th>
+              <th>Marcar</th>
+            </tr>
+          </thead>
+          <tbody id="picks-hist-tbody">
+            <tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">Cargando historial…</td></tr>
+          </tbody>
+        </table>
       </div>
     </section>
 
@@ -1023,6 +1133,152 @@ main{position:relative;z-index:2}
 
   // ── INIT ──────────────────────────────────────────────────
   loadEvents();
+})();
+</script>
+
+<script>
+(function(){
+  // ── USUARIOS & PLANES ────────────────────────────────────
+  const PLAN_OPTIONS = [
+    { id:'free',         label:'Free',     days:36500 },
+    { id:'ai_coach',     label:'AI Picks', days:30 },
+    { id:'coach_humano', label:'Apex',     days:30 },
+  ];
+
+  const userRaw2 = localStorage.getItem('discipline_current_user_v1');
+  const godToken2 = localStorage.getItem('discipline_god_token_v1');
+  let userEmail2 = '';
+  try { userEmail2 = JSON.parse(userRaw2)?.email || ''; } catch(_){}
+  const API_BASE2 = (() => {
+    const forced = (localStorage.getItem('discipline_api_base_v1')||'').trim();
+    if(forced) return forced.replace(/\/+$/,'');
+    const {protocol,hostname,port,origin} = window.location;
+    const host = String(hostname||'').trim().toLowerCase();
+    if(host==='app.momentumascent.com'||host==='momentumascent.com'||host==='www.momentumascent.com') return 'https://api.momentumascent.com';
+    const isLocal = host==='localhost'||host==='127.0.0.1';
+    if(isLocal&&port&&port!=='8787') return `${protocol}//${hostname}:8787`;
+    return origin;
+  })();
+  function apiH(){ const h={'Content-Type':'application/json'}; if(userEmail2) h['x-user-email']=userEmail2; if(godToken2) h['x-god-token']=godToken2; return h; }
+  async function apiFetch(path, opts={}){ const r=await fetch(`${API_BASE2}${path}`,opts); const t=await r.text(); let d=null; try{d=t?JSON.parse(t):null;}catch(_){} if(!r.ok) throw new Error(d?.error||`HTTP ${r.status}`); return d; }
+  const logEl2 = document.getElementById('log-list');
+  function log2(msg,type=''){ if(logEl2.querySelector('.log-empty')) logEl2.innerHTML=''; const ts=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); const el=document.createElement('div'); el.className='log-item'; el.innerHTML=`<span class="log-ts">${ts}</span><span class="log-msg ${type}">${msg}</span>`; logEl2.prepend(el); }
+
+  async function loadUsers(search=''){
+    const tbody = document.getElementById('users-tbody');
+    try {
+      const data = await apiFetch(`/users?search=${encodeURIComponent(search)}`, {headers:apiH()});
+      const users = Array.isArray(data?.users) ? data.users : [];
+      document.getElementById('users-count-label').textContent = `${users.length} usuario${users.length!==1?'s':''}`;
+      if(!users.length){ tbody.innerHTML='<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--muted)">No se encontraron usuarios.</td></tr>'; return; }
+      tbody.innerHTML = users.map(u => {
+        const rawPlan = String(u.planId||u.plan||'free').toLowerCase().replace(/\s+/g,'_');
+        const planLabel = u.planLabel||u.plan||'Free';
+        const status = String(u.subscriptionStatus||u.status||'inactive').toLowerCase();
+        const endAt = u.subscriptionEndAt ? new Date(u.subscriptionEndAt).toLocaleDateString('es-MX') : '—';
+        const chipStyle = rawPlan==='coach_humano' ? 'color:#F5C04A;border-color:rgba(245,192,74,.3);background:rgba(245,192,74,.07)' : rawPlan==='ai_coach' ? 'color:var(--orange);border-color:rgba(255,69,0,.25);background:rgba(255,69,0,.07)' : '';
+        const statusClass = status==='active' ? 'status-active' : status==='pending' ? 'status-pending' : 'status-inactive';
+        const opts = PLAN_OPTIONS.map(p=>`<option value="${p.id}" ${rawPlan===p.id?'selected':''}>${p.label}</option>`).join('');
+        return `<tr>
+          <td style="font-weight:600">${u.email||'—'}</td>
+          <td style="color:var(--muted)">${u.name||'—'}</td>
+          <td><span class="chip" style="padding:3px 10px;font-size:9px;${chipStyle}">${planLabel}</span></td>
+          <td><span class="${statusClass}">${status}</span></td>
+          <td style="color:var(--muted);font-size:11px">${endAt}</td>
+          <td><select class="plan-select" data-user-email="${u.email}">${opts}</select></td>
+          <td><button class="btn-grant" data-grant-email="${u.email}">Activar</button></td>
+        </tr>`;
+      }).join('');
+      tbody.querySelectorAll('[data-grant-email]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const email = btn.getAttribute('data-grant-email');
+          const sel = tbody.querySelector(`[data-user-email="${email}"]`);
+          const planId = sel?.value || 'free';
+          const opt = PLAN_OPTIONS.find(p=>p.id===planId) || PLAN_OPTIONS[0];
+          btn.disabled=true; btn.textContent='…';
+          try {
+            await apiFetch('/god/users/grant-plan', {method:'POST', headers:apiH(), body:JSON.stringify({userId:email, planId:opt.id, planLabel:opt.label, durationDays:opt.days, status:'active'})});
+            log2(`Plan ${opt.label} activado para ${email}`, 'ok');
+            await loadUsers(document.getElementById('users-search-input').value);
+          } catch(e) {
+            log2(`Error al activar plan: ${e.message}`, 'err');
+            btn.disabled=false; btn.textContent='Activar';
+          }
+        });
+      });
+    } catch(e) {
+      tbody.innerHTML=`<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--red)">${e.message}</td></tr>`;
+      log2(`Error cargando usuarios: ${e.message}`, 'err');
+    }
+  }
+
+  // ── HISTORIAL DE PICKS & STATS ──────────────────────────
+  async function loadPickStats(){
+    const tbody = document.getElementById('picks-hist-tbody');
+    try {
+      const data = await apiFetch('/api/picks/history?limit=500', {headers:apiH()});
+      const picks = Array.isArray(data?.picks) ? data.picks : [];
+      const won = picks.filter(p=>p.result==='won').length;
+      const lost = picks.filter(p=>p.result==='lost').length;
+      const voidC = picks.filter(p=>p.result==='void').length;
+      const pending = picks.filter(p=>!p.result).length;
+      const resolved = won + lost;
+      const winRate = resolved ? Math.round((won/resolved)*100) : null;
+      let streak = 0;
+      const res2 = picks.filter(p=>p.result==='won'||p.result==='lost');
+      if(res2.length){ const last=res2[0].result; for(const p of res2){ if(p.result===last) streak++; else break; } if(last==='lost') streak=-streak; }
+      document.getElementById('ps-total').textContent = picks.length;
+      document.getElementById('ps-won').textContent = won;
+      document.getElementById('ps-lost').textContent = lost;
+      document.getElementById('ps-void').textContent = voidC;
+      document.getElementById('ps-winrate').textContent = winRate!==null ? `${winRate}%` : '—';
+      document.getElementById('ps-pending').textContent = pending;
+      const sEl = document.getElementById('ps-streak');
+      sEl.textContent = streak>0 ? `+${streak}` : streak;
+      sEl.className = `pstat-val ${streak>0?'green':streak<0?'red':'yellow'}`;
+      if(!picks.length){ tbody.innerHTML='<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">No hay picks publicados aún.</td></tr>'; return; }
+      tbody.innerHTML = picks.map(p => {
+        const date = p.eventDate ? new Date(p.eventDate).toLocaleDateString('es-MX',{day:'2-digit',month:'short'}) : '—';
+        const match = `${p.homeTeam||p.home_team||'?'} vs ${p.awayTeam||p.away_team||'?'}`;
+        const res = p.result||'';
+        const resChip = res==='won' ? '<span class="res-chip won">Ganó ✓</span>' : res==='lost' ? '<span class="res-chip lost">Perdió ✗</span>' : res==='void' ? '<span class="res-chip void">Void</span>' : '<span class="res-chip pending">Pendiente</span>';
+        const tierChip = (p.planTier||'free')==='premium' ? '<span style="color:#F5C04A;font-size:9px;font-weight:800">⭐ PREM</span>' : '<span style="color:var(--muted);font-size:9px">FREE</span>';
+        const confColor = Number(p.confidence)>=70 ? 'var(--green)' : Number(p.confidence)>=60 ? 'var(--yellow)' : 'var(--red)';
+        const id = Number(p.id||0);
+        return `<tr>
+          <td style="color:var(--muted);white-space:nowrap">${date}</td>
+          <td style="font-weight:600;font-size:12px">${match}</td>
+          <td style="color:var(--muted)">${p.market||'—'}</td>
+          <td>${p.pick||'—'}</td>
+          <td style="color:${confColor};font-weight:700">${p.confidence||'—'}%</td>
+          <td>${p.riskLevel||p.risk_level||'—'}</td>
+          <td>${tierChip}</td>
+          <td>${resChip}</td>
+          <td><div class="res-btns">
+            <button class="res-btn-sm won ${res==='won'?'active':''}" onclick="markResultStat(${id},'won',this)">✓</button>
+            <button class="res-btn-sm lost ${res==='lost'?'active':''}" onclick="markResultStat(${id},'lost',this)">✗</button>
+            <button class="res-btn-sm void ${res==='void'?'active':''}" onclick="markResultStat(${id},'void',this)">—</button>
+          </div></td>
+        </tr>`;
+      }).join('');
+    } catch(e) {
+      tbody.innerHTML=`<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--red)">${e.message}</td></tr>`;
+      log2(`Error cargando historial: ${e.message}`, 'err');
+    }
+  }
+
+  window.markResultStat = async (pickId, result, btn) => {
+    if(typeof window.markResult === 'function') await window.markResult(pickId, result, btn);
+    await loadPickStats();
+  };
+
+  document.getElementById('btn-search-users').addEventListener('click', () => loadUsers(document.getElementById('users-search-input').value));
+  document.getElementById('users-search-input').addEventListener('keydown', e => { if(e.key==='Enter') loadUsers(e.target.value); });
+  document.getElementById('btn-reload-users').addEventListener('click', () => loadUsers(''));
+  document.getElementById('btn-reload-pickstats').addEventListener('click', loadPickStats);
+
+  loadUsers('');
+  loadPickStats();
 })();
 </script>
 
