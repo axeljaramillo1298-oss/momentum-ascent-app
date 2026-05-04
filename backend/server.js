@@ -57,6 +57,7 @@ const {
   markCandidatePublished,
 } = require("./db");
 
+const path = require("node:path");
 const app = express();
 const PORT = Number(process.env.PORT || 8787);
 const WHATSAPP_VERIFY_TOKEN = String(process.env.WHATSAPP_VERIFY_TOKEN || "").trim();
@@ -86,6 +87,7 @@ const ADMIN_PASSWORDS = new Map(
 
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
+app.use(express.static(path.join(__dirname, "../www")));
 
 const getRequestEmail = (req) => String(req.headers["x-user-email"] || "").trim().toLowerCase();
 const getGodToken = (req) => String(req.headers["x-god-token"] || "").trim();
