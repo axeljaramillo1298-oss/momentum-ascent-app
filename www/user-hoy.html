@@ -187,6 +187,16 @@ main{position:relative;z-index:2}
   .hero-stats .hs-box{min-width:90px;padding:12px 14px}
   .hs-val{font-size:32px}
 }
+@media(max-width:640px){
+  .nav-actions{display:none}
+  .hero-stats{gap:6px}
+  .hero-stats .hs-box{min-width:72px;padding:10px 10px}
+  .hs-val{font-size:26px}
+  .hs-lbl{font-size:8px}
+  .pick-card{border-radius:6px}
+  .pick-header{padding:14px 14px 10px}
+  .pick-match{font-size:17px}
+}
 @media(max-width:560px){
   .hero-inner{flex-direction:column;gap:20px}
   .hero-right{align-items:flex-start}
@@ -197,7 +207,15 @@ main{position:relative;z-index:2}
   .pick-actions{width:100%;justify-content:flex-end}
   .filter-bar{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
   .filter-bar::-webkit-scrollbar{display:none}
-  .nav-actions{display:none}
+}
+@media(max-width:390px){
+  .page-hero{padding:16px 14px 16px}
+  .page-content{padding:0 14px 140px}
+  .hero-stats{gap:4px}
+  .hero-stats .hs-box{min-width:62px;padding:8px 8px}
+  .hs-val{font-size:22px}
+  .pick-match{font-size:14px}
+  .btn-refresh{padding:8px 14px;font-size:10px}
 }
   </style>
 </head>

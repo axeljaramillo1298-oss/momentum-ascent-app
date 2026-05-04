@@ -190,13 +190,42 @@ main{position:relative;z-index:2;padding-top:0}
 
 @media(max-width:920px){
   .page-hero{padding:24px 20px 0}
-  .content{padding:28px 20px 56px}
+  .content{padding:28px 20px 140px}
+  .bottom-grid{grid-template-columns:1fr}
+  .stat-card{min-width:100px;padding:14px 16px}
+  .sc-val{font-size:32px}
+}
+@media(max-width:640px){
+  .nav-actions{display:none}
+  .page-hero{padding:20px 16px 0}
+  .content{padding:20px 16px 140px}
+  /* Table: scrollable horizontal on mobile */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .table-head,.t-row{grid-template-columns:180px 100px 110px 70px 70px 60px;min-width:590px}
+  .table-head{padding:10px 14px}
+  .t-row{padding:12px 14px}
+  .filter-bar{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+  .filter-bar::-webkit-scrollbar{display:none}
+  .stat-card{min-width:88px;padding:12px 12px}
+  .sc-val{font-size:28px}
+  .sc-lbl{font-size:9px}
+  .page-btn{width:36px;height:36px}
 }
 @media(max-width:560px){
   .filter-bar{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
   .filter-bar::-webkit-scrollbar{display:none}
-  .search-wrap{min-width:210px}
+  .search-wrap{min-width:180px}
   .page-title{font-size:clamp(44px,17vw,60px)}
+  .stats-row{gap:6px}
+  .ring-wrap{flex-direction:column;align-items:flex-start;gap:12px}
+}
+@media(max-width:390px){
+  .page-hero{padding:14px 12px 0}
+  .content{padding:14px 12px 140px}
+  .stats-row{gap:4px}
+  .stat-card{min-width:74px;padding:10px 10px}
+  .sc-val{font-size:24px}
+  .search-input{width:120px}
 }
   </style>
 </head>
