@@ -104,47 +104,50 @@ main{position:relative;z-index:2}
 .btn-dual:hover{background:linear-gradient(135deg,rgba(255,69,0,.25),rgba(167,139,250,.18));border-color:rgba(255,69,0,.5)}
 .btn-dual:disabled{opacity:.4;cursor:not-allowed}
 
-/* DUAL PANEL */
-.dual-panel{display:none;border-top:1px solid var(--border);padding:20px;background:rgba(0,0,0,.2)}
-.dual-panel.open{display:block}
-.dual-loading{display:flex;align-items:center;gap:12px;padding:24px 0;color:var(--muted);font-size:13px}
-.dual-spinner{width:20px;height:20px;border:2px solid rgba(255,69,0,.2);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
-.dual-step{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--orange);margin-bottom:16px;display:flex;align-items:center;gap:8px}
-.dual-step::before{content:'';width:16px;height:1px;background:var(--orange)}
+/* WORKSPACE PANEL */
+.work-panel{display:none;border-top:1px solid var(--border);padding:20px 24px;background:rgba(0,0,0,.25)}
+.work-panel.open{display:block}
+.work-loading{display:flex;align-items:center;gap:12px;padding:20px 0;color:var(--muted);font-size:13px}
+.work-spinner{width:18px;height:18px;border:2px solid rgba(255,69,0,.2);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.work-step{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--orange);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.work-step::before{content:'';width:16px;height:1px;background:var(--orange)}
 
-/* GPT CANDIDATES */
-.candidates-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
-@media(max-width:860px){.candidates-grid{grid-template-columns:1fr}}
-.candidate-card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:6px;padding:16px;position:relative;transition:border-color .25s}
-.candidate-card.is-selected{border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.05)}
-.cand-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.cand-n{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
-.cand-conf{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--orange)}
-.cand-pick{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:16px;letter-spacing:.02em;text-transform:uppercase;margin-bottom:4px;color:var(--text)}
-.cand-market{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
-.cand-analysis{font-size:11.5px;color:rgba(240,237,232,.55);line-height:1.6;margin-bottom:14px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-.cand-risk{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid;margin-bottom:12px}
-.cand-risk.low{color:var(--green);border-color:rgba(74,222,128,.25)}
-.cand-risk.med{color:var(--yellow);border-color:rgba(245,158,11,.25)}
-.cand-risk.high{color:var(--red);border-color:rgba(248,113,113,.25)}
-.btn-publish{width:100%;font-family:'Barlow',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:9px;background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--border);border-radius:3px;cursor:pointer;transition:all .2s}
-.btn-publish:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2)}
-.btn-publish.published{background:rgba(74,222,128,.1);color:var(--green);border-color:rgba(74,222,128,.3);cursor:default}
+/* MARKETS TABLE */
+.markets-table{width:100%;border-collapse:collapse;margin-bottom:18px;font-size:12.5px}
+.markets-table th{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.markets-table td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--text);vertical-align:top}
+.markets-table tr:last-child td{border-bottom:none}
+.markets-table tr:hover td{background:rgba(255,255,255,.02)}
+.mkt-pick{font-weight:700;font-size:13px}
+.mkt-conf{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px}
+.mkt-conf.hi{color:var(--green)}
+.mkt-conf.mid{color:var(--yellow)}
+.mkt-conf.lo{color:var(--orange)}
+.mkt-nota{font-size:11px;color:var(--muted);font-style:italic;margin-top:2px}
+.mkt-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(240,237,232,.35)}
 
-/* CLAUDE SELECTION */
-.claude-box{background:linear-gradient(135deg,rgba(167,139,250,.08),rgba(255,69,0,.06));border:1px solid rgba(167,139,250,.3);border-radius:8px;padding:20px;margin-bottom:16px}
+/* CLAUDE BOX */
+.claude-box{background:linear-gradient(135deg,rgba(167,139,250,.08),rgba(255,69,0,.05));border:1px solid rgba(167,139,250,.28);border-radius:8px;padding:20px;margin-bottom:16px}
 .claude-label{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--purple);margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .claude-label::before{content:'';width:14px;height:1px;background:var(--purple)}
-.claude-pick{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:4px}
+.claude-pick{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:24px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:4px}
 .claude-market{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
-.claude-reasoning-label{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
 .claude-reasoning{font-size:12px;color:rgba(240,237,232,.6);line-height:1.65;margin-bottom:16px}
 .btn-publish-claude{font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:11px 24px;background:linear-gradient(135deg,var(--purple),rgba(255,69,0,.7));color:#fff;border:none;border-radius:3px;cursor:pointer;transition:opacity .2s}
 .btn-publish-claude:hover{opacity:.88}
-.btn-publish-claude.published{background:rgba(74,222,128,.15);color:var(--green);border:1px solid rgba(74,222,128,.3);cursor:default}
+.btn-publish-claude.published{background:rgba(74,222,128,.15);color:var(--green);border:1px solid rgba(74,222,128,.3);cursor:default;pointer-events:none}
+.tipo-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid;margin-left:8px}
+.tipo-badge.segura{color:var(--green);border-color:rgba(74,222,128,.3)}
+.tipo-badge.moderada{color:var(--yellow);border-color:rgba(245,158,11,.3)}
+.tipo-badge.arriesgada{color:var(--red);border-color:rgba(248,113,113,.3)}
+.risk-badge{display:inline-flex;align-items:center;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid}
+.risk-badge.BAJO{color:var(--green);border-color:rgba(74,222,128,.25)}
+.risk-badge.MEDIO{color:var(--yellow);border-color:rgba(245,158,11,.25)}
+.risk-badge.ALTO{color:var(--red);border-color:rgba(248,113,113,.25)}
 
 /* PUBLISHED BADGE */
 .pub-badge{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--green);border:1px solid rgba(74,222,128,.25);background:rgba(74,222,128,.06);padding:4px 10px;border-radius:20px;margin-left:8px}
+.event-card.selected{border-color:rgba(255,69,0,.45);background:rgba(255,69,0,.03)}
 
 /* PIPELINE */
 .pipeline-section{margin-bottom:48px;opacity:0;animation:fadeUp .5s .75s forwards}
@@ -265,23 +268,23 @@ main{position:relative;z-index:2}
       <div class="pipeline-grid">
         <div class="pipeline-step">
           <div class="step-n">01</div>
-          <div class="step-name">Sync de eventos</div>
-          <div class="step-desc">La API real o mock llena la base de datos del día con partidos y metadata.</div>
+          <div class="step-name">Seleccionar evento</div>
+          <div class="step-desc">Elige manualmente el partido más importante de la jornada que quieres analizar.</div>
         </div>
         <div class="pipeline-step">
           <div class="step-n">02</div>
-          <div class="step-name">GPT-4o genera</div>
-          <div class="step-desc">OpenAI analiza el evento y produce 3 picks en mercados distintos con análisis detallado.</div>
+          <div class="step-name">GPT-4o analiza</div>
+          <div class="step-desc">GPT analiza en tiempo real 5 mercados: 1X2, Goles O/U, BTTS, Hándicap Asiático y Corners.</div>
         </div>
         <div class="pipeline-step">
           <div class="step-n">03</div>
-          <div class="step-name">Claude evalúa</div>
-          <div class="step-desc">Claude Sonnet actúa como juez: revisa los 3 candidatos y selecciona el más sólido.</div>
+          <div class="step-name">Claude decide</div>
+          <div class="step-desc">Claude recibe el análisis de GPT y decide cuál mercado publicar balanceando el portafolio del día.</div>
         </div>
         <div class="pipeline-step">
           <div class="step-n">04</div>
-          <div class="step-name">Publicar</div>
-          <div class="step-desc">Tú decides qué pick se publica. Queda guardado en historial y visible para usuarios.</div>
+          <div class="step-name">Tú publicas</div>
+          <div class="step-desc">Revisas la recomendación de Claude y confirmas la publicación manualmente.</div>
         </div>
       </div>
     </section>
@@ -337,7 +340,8 @@ main{position:relative;z-index:2}
   // ── STATE ─────────────────────────────────────────────────
   let events = [];
   let aiSessions = 0;
-  const publishedSet = new Set();
+  let activeEventId = null;
+  let pendingGptMarkets = null;
 
   // ── STATS ─────────────────────────────────────────────────
   function updateStats(){
@@ -348,16 +352,161 @@ main{position:relative;z-index:2}
     document.getElementById('stat-sesiones').textContent = aiSessions;
   }
 
-  // ── STATUS TEXT ───────────────────────────────────────────
   function setStatus(txt){ document.getElementById('ops-status-txt').textContent = txt; }
 
-  // ── SPORT ICON MAP ────────────────────────────────────────
+  // ── HELPERS ───────────────────────────────────────────────
   const SPORT_ICONS = { futbol:'⚽', basketball:'🏀', tenis:'🎾', beisbol:'⚾', nfl:'🏈', default:'🏆' };
-  function sportIcon(sport){ return SPORT_ICONS[(sport||'').toLowerCase()] || SPORT_ICONS.default; }
+  function sportIcon(s){ return SPORT_ICONS[(s||'').toLowerCase()] || SPORT_ICONS.default; }
+  function confClass(v){ return v>=70?'hi':v>=55?'mid':'lo'; }
 
-  // ── RISK COLOR ────────────────────────────────────────────
-  function riskClass(r){ const v=(r||'').toUpperCase(); return v==='BAJO'?'low':v==='ALTO'?'high':'med'; }
-  function confColor(v){ return v>=75?'green':v>=55?'yellow':'orange'; }
+  // ── RENDER MARKETS TABLE (GPT output) ─────────────────────
+  function renderMarketsTable(markets){
+    const rows = [
+      { label:'1X2 (Moneyline)', pick: markets.ml?.pick, conf: markets.ml?.conf, nota: markets.ml?.nota },
+      { label:'Goles Over/Under', pick: markets.goles?.pick, conf: markets.goles?.conf, nota: markets.goles?.nota },
+      { label:'BTTS (Ambos anotan)', pick: markets.btts?.pick, conf: markets.btts?.conf, nota: markets.btts?.nota },
+      { label:'Hándicap Asiático', pick: `${markets.handicap?.pick||'—'} (${markets.handicap?.line||'—'})`, conf: markets.handicap?.conf, nota: markets.handicap?.nota },
+      { label:'Corners', pick: markets.corners?.pick, conf: markets.corners?.conf, nota: markets.corners?.nota },
+    ];
+    const rowsHtml = rows.map(r => `
+      <tr>
+        <td><span class="mkt-label">${r.label}</span></td>
+        <td><span class="mkt-pick">${r.pick||'—'}</span>${r.nota?`<div class="mkt-nota">${r.nota}</div>`:''}</td>
+        <td><span class="mkt-conf ${confClass(r.conf||0)}">${r.conf||'—'}%</span></td>
+      </tr>`).join('');
+    return `
+      <table class="markets-table">
+        <thead><tr><th>Mercado</th><th>Recomendación GPT-4o</th><th>Confianza</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      ${markets.resumen ? `<div style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:16px">📊 ${markets.resumen}</div>` : ''}`;
+  }
+
+  // ── GPT STEP ──────────────────────────────────────────────
+  async function runGptAnalysis(eventId, panel){
+    pendingGptMarkets = null;
+    panel.querySelector('#gpt-btn').disabled = true;
+    const gptArea = panel.querySelector('#gpt-area');
+    gptArea.innerHTML = `<div class="work-loading"><div class="work-spinner"></div><span>GPT-4o analizando 5 mercados en tiempo real…</span></div>`;
+    aiSessions++;
+    updateStats();
+    addLog(`GPT-4o analizando evento #${eventId}…`);
+    setStatus('GPT-4o analizando…');
+
+    try {
+      const res = await fetch(`/api/picks/gpt-markets/${eventId}`, { method:'POST', headers: apiHeaders() });
+      const data = await res.json();
+      if(!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+      pendingGptMarkets = data.markets;
+      gptArea.innerHTML = renderMarketsTable(data.markets);
+      panel.querySelector('#claude-btn').disabled = false;
+      addLog(`GPT completó análisis de 5 mercados — evento #${eventId}`, 'ok');
+      setStatus('GPT listo. Pasa a Claude cuando quieras.');
+    } catch(err){
+      gptArea.innerHTML = `<div class="dual-error">Error GPT: ${err.message}</div>`;
+      panel.querySelector('#gpt-btn').disabled = false;
+      addLog(`Error GPT evento #${eventId}: ${err.message}`, 'err');
+      setStatus('Error en GPT.');
+    }
+  }
+
+  // ── CLAUDE STEP ───────────────────────────────────────────
+  async function runClaudeDecide(eventId, panel){
+    if(!pendingGptMarkets){ addLog('Ejecuta GPT primero.','warn'); return; }
+    panel.querySelector('#claude-btn').disabled = true;
+    const claudeArea = panel.querySelector('#claude-area');
+    claudeArea.innerHTML = `<div class="work-loading"><div class="work-spinner"></div><span>Claude revisando mercados y balanceando portafolio…</span></div>`;
+    addLog(`Claude decidiendo pick para evento #${eventId}…`);
+    setStatus('Claude evaluando…');
+
+    try {
+      const res = await fetch('/api/picks/claude-decide', {
+        method:'POST', headers: apiHeaders(),
+        body: JSON.stringify({ eventId, gptMarkets: pendingGptMarkets })
+      });
+      const data = await res.json();
+      if(!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+      const d = data.decision;
+      const riskCls = d.riesgo || 'MEDIO';
+      const tipoCls = (d.tipo||'moderada').toLowerCase();
+      claudeArea.innerHTML = `
+        <div class="claude-box">
+          <div class="claude-label">Claude Sonnet recomienda publicar</div>
+          <div class="claude-pick">
+            ${d.pick||'—'}
+            <span class="risk-badge ${riskCls}">${riskCls}</span>
+            <span class="tipo-badge ${tipoCls}">${d.tipo||'moderada'}</span>
+          </div>
+          <div class="claude-market">Mercado: ${d.mercado||'—'} &nbsp;·&nbsp; Confianza: ${d.confianza||'—'}%</div>
+          <div class="claude-reasoning">${d.razonamiento||'—'}</div>
+          <button class="btn-publish-claude" id="pub-btn-${eventId}"
+            data-eid="${eventId}"
+            data-pick="${(d.pick||'').replace(/"/g,'&quot;')}"
+            data-market="${d.mercado||''}"
+            data-conf="${d.confianza||60}"
+            data-risk="${d.riesgo||'MEDIO'}"
+            data-reasoning="${(d.razonamiento||'').replace(/"/g,'&quot;')}"
+            data-model="${d.model||'claude-decide'}">
+            Publicar este pick
+          </button>
+        </div>`;
+
+      panel.querySelector('#pub-btn-'+eventId).addEventListener('click', function(){
+        if(!this.classList.contains('published')) publishDirect(this);
+      });
+      addLog(`Claude recomendó: ${d.pick} en ${d.mercado} (${d.tipo})`, 'ok');
+      setStatus('Claude listo. Revisa y publica cuando quieras.');
+    } catch(err){
+      claudeArea.innerHTML = `<div class="dual-error">Error Claude: ${err.message}</div>`;
+      panel.querySelector('#claude-btn').disabled = false;
+      addLog(`Error Claude evento #${eventId}: ${err.message}`, 'err');
+      setStatus('Error en Claude.');
+    }
+  }
+
+  // ── PUBLISH DIRECT ────────────────────────────────────────
+  async function publishDirect(btn){
+    btn.textContent = 'Publicando…';
+    btn.disabled = true;
+    const eid = btn.dataset.eid;
+
+    try {
+      const res = await fetch('/api/picks/publish-direct', {
+        method:'POST', headers: apiHeaders(),
+        body: JSON.stringify({
+          eventId: Number(eid),
+          pick: btn.dataset.pick,
+          market: btn.dataset.market,
+          confidence: Number(btn.dataset.conf||60),
+          analysis: btn.dataset.reasoning,
+          riskLevel: btn.dataset.risk,
+          modelUsed: btn.dataset.model,
+        })
+      });
+      const data = await res.json();
+      if(!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+      btn.textContent = '✓ Publicado';
+      btn.classList.add('published');
+
+      const ev = events.find(e=>String(e.id)===String(eid));
+      if(ev) ev.hasPick = true;
+      const evCard = document.querySelector(`.event-card[data-event-id="${eid}"]`);
+      if(evCard){
+        const chip = evCard.querySelector('.chip.yellow');
+        if(chip){ chip.className='chip green'; chip.textContent='✓ Pick'; }
+      }
+      updateStats();
+      addLog(`Pick publicado: ${btn.dataset.pick} (${btn.dataset.market}) — evento #${eid}`, 'ok');
+      setStatus('Pick publicado correctamente.');
+    } catch(err){
+      btn.textContent = 'Error — reintentar';
+      btn.disabled = false;
+      addLog(`Error al publicar: ${err.message}`, 'err');
+    }
+  }
 
   // ── RENDER EVENTS ─────────────────────────────────────────
   function renderEvents(list){
@@ -393,160 +542,58 @@ main{position:relative;z-index:2}
           </div>
           <div class="event-pick-status">
             ${hasPick ? '<span class="chip green">✓ Pick</span>' : '<span class="chip yellow">Sin pick</span>'}
-            <button class="btn-dual" data-eid="${ev.id}">
-              Análisis Dual IA
+            <button class="btn-dual" data-eid="${ev.id}">Seleccionar</button>
+          </div>
+        </div>
+        <div class="work-panel" id="work-${ev.id}">
+          <div class="work-step">Paso 1 — Evento seleccionado · ${home} vs ${away}</div>
+
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+            <button class="btn-primary" id="gpt-btn" style="background:linear-gradient(135deg,rgba(255,69,0,.9),rgba(245,158,11,.7))">
+              Analizar con GPT-4o (5 mercados)
+            </button>
+            <button class="btn-ghost" id="claude-btn" disabled style="border-color:rgba(167,139,250,.3);color:rgba(167,139,250,.7)">
+              Pasar a Claude →
             </button>
           </div>
-        </div>
-        <div class="dual-panel" id="dual-${ev.id}"></div>
-      `;
+
+          <div id="gpt-area" style="margin-bottom:8px"></div>
+          <div id="claude-area"></div>
+        </div>`;
+
+      card.querySelector('.btn-dual').addEventListener('click', function(){
+        const eid = parseInt(this.dataset.eid);
+        selectEvent(eid, card);
+      });
+      card.querySelector('#gpt-btn').addEventListener('click', () => {
+        runGptAnalysis(ev.id, card.querySelector(`#work-${ev.id}`));
+      });
+      card.querySelector('#claude-btn').addEventListener('click', () => {
+        runClaudeDecide(ev.id, card.querySelector(`#work-${ev.id}`));
+      });
+
       container.appendChild(card);
     });
-
-    container.addEventListener('click', e => {
-      const btn = e.target.closest('.btn-dual');
-      if(btn) launchDual(parseInt(btn.dataset.eid), btn);
-      const pub = e.target.closest('.btn-publish, .btn-publish-claude');
-      if(pub && !pub.classList.contains('published')) publishCandidate(pub);
-    });
   }
 
-  // ── LAUNCH DUAL ANALYSIS ──────────────────────────────────
-  async function launchDual(eventId, btn){
-    const panel = document.getElementById(`dual-${eventId}`);
-    if(panel.classList.contains('open') && panel.dataset.loaded){
-      panel.classList.toggle('open');
+  // ── SELECT EVENT (manual) ─────────────────────────────────
+  function selectEvent(eid, card){
+    // collapse all panels, deselect all cards
+    document.querySelectorAll('.work-panel.open').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.event-card.selected').forEach(c => c.classList.remove('selected'));
+
+    if(activeEventId === eid){
+      activeEventId = null;
+      pendingGptMarkets = null;
       return;
     }
+    activeEventId = eid;
+    pendingGptMarkets = null;
+    card.classList.add('selected');
+    const panel = card.querySelector('.work-panel');
     panel.classList.add('open');
-    panel.dataset.loaded = '1';
-    btn.disabled = true;
-    aiSessions++;
-    updateStats();
-
-    panel.innerHTML = `
-      <div class="dual-loading">
-        <div class="dual-spinner"></div>
-        <span id="dual-step-txt-${eventId}">GPT-4o analizando el evento…</span>
-      </div>`;
-    addLog(`Iniciando análisis dual para evento #${eventId}`, 'ok');
-    setStatus(`Analizando evento #${eventId}…`);
-
-    try {
-      const stepTxt = document.getElementById(`dual-step-txt-${eventId}`);
-      if(stepTxt) stepTxt.textContent = 'GPT-4o generando 3 picks…';
-
-      const res = await fetch(`/api/picks/generate-dual/${eventId}`, {
-        method:'POST', headers: apiHeaders()
-      });
-      const data = await res.json();
-
-      if(!res.ok || !data.ok){
-        throw new Error(data.error || `HTTP ${res.status}`);
-      }
-
-      if(stepTxt) stepTxt.textContent = 'Claude evaluando candidatos…';
-      // brief delay for UX (Claude already ran on backend)
-      await new Promise(r => setTimeout(r,400));
-
-      renderDualResult(panel, data, eventId);
-      addLog(`Dual completo: evento #${eventId} — Claude eligió candidato ${(data.claudeSelection?.selectedIndex ?? 0)+1}`, 'ok');
-      setStatus(`Análisis completado — evento #${eventId}`);
-    } catch(err){
-      panel.innerHTML = `<div class="dual-error">Error: ${err.message}</div>`;
-      addLog(`Error en dual #${eventId}: ${err.message}`, 'err');
-      setStatus('Error en análisis.');
-    } finally {
-      btn.disabled = false;
-    }
-  }
-
-  // ── RENDER DUAL RESULT ────────────────────────────────────
-  function renderDualResult(panel, data, eventId){
-    const { candidates, claudeSelection, event: ev } = data;
-    const selectedIdx = claudeSelection?.selectedIndex ?? 0;
-
-    let candidatesHtml = '';
-    (candidates || []).forEach((c, i) => {
-      const isSelected = i === selectedIdx;
-      const rc = riskClass(c.risk_level || c.riskLevel);
-      const cc = confColor(parseInt(c.confidence)||60);
-      candidatesHtml += `
-        <div class="candidate-card ${isSelected?'is-selected':''}">
-          <div class="cand-header">
-            <span class="cand-n">Candidato ${i+1}${isSelected?' · ★ Elegido por Claude':''}</span>
-            <span class="cand-conf" style="color:var(--${cc})">${c.confidence}%</span>
-          </div>
-          <div class="cand-pick">${c.pick||'—'}</div>
-          <div class="cand-market">${c.market||'—'}</div>
-          <span class="cand-risk ${rc}">${c.risk_level||c.riskLevel||'MEDIO'}</span>
-          <div class="cand-analysis">${c.analysis||'—'}</div>
-          <button class="btn-publish" data-cid="${c.dbId||''}" data-eid="${eventId}">
-            Publicar este pick
-          </button>
-        </div>`;
-    });
-
-    const cs = claudeSelection || {};
-    const fp = cs.finalPick || {};
-    const rc2 = riskClass(fp.risk_level || fp.riskLevel || 'MEDIO');
-    const cc2 = confColor(parseInt(fp.confidence)||60);
-
-    panel.innerHTML = `
-      <div style="padding:8px 0 16px">
-        <div class="dual-step">Paso 2 · Generado por GPT-4o</div>
-        <div class="candidates-grid">${candidatesHtml}</div>
-
-        <div class="dual-step">Paso 3 · Selección de Claude Sonnet</div>
-        <div class="claude-box">
-          <div class="claude-label">Claude eligió este pick</div>
-          <div class="claude-pick">${fp.pick||cs.refinedPick||'—'} <span style="font-size:14px;color:var(--${cc2})">${fp.confidence||cs.confidenceAdjustment||'—'}%</span></div>
-          <div class="claude-market">${fp.market||'—'} · <span class="cand-risk ${rc2}" style="display:inline;padding:2px 8px">${fp.risk_level||fp.riskLevel||'MEDIO'}</span></div>
-          <div class="claude-reasoning-label" style="margin-top:14px">Razonamiento de Claude</div>
-          <div class="claude-reasoning">${cs.reasoning||'—'}</div>
-          <button class="btn-publish-claude" data-cid="${cs.claudePickId||''}" data-eid="${eventId}">
-            Publicar selección de Claude
-          </button>
-        </div>
-      </div>`;
-  }
-
-  // ── PUBLISH CANDIDATE ─────────────────────────────────────
-  async function publishCandidate(btn){
-    const cid = btn.dataset.cid;
-    const eid = btn.dataset.eid;
-    if(!cid){ addLog('Sin ID de candidato para publicar.','warn'); return; }
-
-    btn.textContent = 'Publicando…';
-    btn.disabled = true;
-
-    try {
-      const res = await fetch(`/api/picks/publish-candidate/${cid}`, {
-        method:'POST', headers: apiHeaders()
-      });
-      const data = await res.json();
-      if(!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
-
-      btn.textContent = '✓ Publicado';
-      btn.classList.add('published');
-      publishedSet.add(cid);
-
-      // mark event as having pick
-      const evCard = document.querySelector(`.event-card[data-event-id="${eid}"]`);
-      if(evCard){
-        const chip = evCard.querySelector('.chip.yellow');
-        if(chip){ chip.className='chip green'; chip.textContent='✓ Pick'; }
-        const ev = events.find(e=>String(e.id)===String(eid));
-        if(ev) ev.hasPick = true;
-        updateStats();
-      }
-      addLog(`Pick publicado: evento #${eid} — candidato #${cid}`, 'ok');
-      setStatus('Pick publicado correctamente.');
-    } catch(err){
-      btn.textContent = 'Error — reintentar';
-      btn.disabled = false;
-      addLog(`Error al publicar: ${err.message}`, 'err');
-    }
+    panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    addLog(`Evento #${eid} seleccionado para análisis`, 'ok');
   }
 
   // ── LOAD EVENTS ───────────────────────────────────────────
@@ -588,7 +635,6 @@ main{position:relative;z-index:2}
     }
   });
 
-  // ── REFRESH ───────────────────────────────────────────────
   document.getElementById('btn-refresh').addEventListener('click', () => loadEvents());
 
   // ── THREE.JS BG ───────────────────────────────────────────

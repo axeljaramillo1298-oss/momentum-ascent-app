@@ -483,6 +483,146 @@ async function runDualAnalysis({ event = {}, stats = {}, historicalContext = [] 
   return { candidates, claudeResult };
 }
 
+// ── GPT: analyze 5 key betting markets — short and direct ──────────────
+async function analyzeMarketsGPT({ event = {}, stats = {} } = {}) {
+  const apiKey = safeStr(process.env.OPENAI_API_KEY);
+  const model = safeStr(process.env.OPENAI_MODEL) || "gpt-4o";
+  const home = safeStr(event.home_team || event.homeTeam || "Local");
+  const away = safeStr(event.away_team || event.awayTeam || "Visita");
+  const league = safeStr(event.league || "Liga");
+  const sport = safeStr(event.sport || "futbol");
+  const date = safeStr(event.event_date || event.eventDate || "");
+
+  const mkFallback = () => ({
+    ml: { pick: home, conf: 55, nota: "Favorito local por localia." },
+    goles: { pick: "Over 2.5", conf: 52, nota: "Promedio de goles del torneo." },
+    btts: { pick: "Si", conf: 50, nota: "Ambos equipos tienen capacidad ofensiva." },
+    handicap: { pick: `${home} -0.5`, line: "-0.5", conf: 48, nota: "Leve ventaja local." },
+    corners: { pick: "Over 9.5", conf: 45, nota: "Ritmo de juego abierto esperado." },
+    resumen: `${home} vs ${away} — analisis con datos limitados.`,
+    provider: "fallback",
+  });
+
+  if (!apiKey) return mkFallback();
+
+  const systemPrompt = [
+    "Eres un analista de apuestas deportivas experto.",
+    "Para el evento dado, analiza 5 mercados clave de forma CORTA y DIRECTA.",
+    "Responde SOLO JSON valido con esta estructura exacta:",
+    '{"ml":{"pick":"Local|Empate|Visitante","conf":65,"nota":"max 1 oracion"},"goles":{"pick":"Over 2.5|Under 2.5","conf":60,"nota":"max 1 oracion"},"btts":{"pick":"Si|No","conf":55,"nota":"max 1 oracion"},"handicap":{"pick":"descripcion del handicap","line":"0.5|1|etc","conf":58,"nota":"max 1 oracion"},"corners":{"pick":"Over 9.5|Under 9.5","conf":52,"nota":"max 1 oracion"},"resumen":"1 oracion de contexto del partido"}',
+    "Sin relleno. Solo recomendaciones directas con porcentaje de confianza.",
+    "No uses garantizado, seguro, apuesta segura.",
+  ].join(" ");
+
+  const userPrompt = [
+    `Evento: ${league} | ${home} vs ${away}`,
+    `Deporte: ${sport}`,
+    `Fecha: ${date}`,
+    stats && Object.keys(stats).length ? `Stats: ${JSON.stringify(stats).slice(0, 2000)}` : "Stats: limitados",
+    "Analiza los 5 mercados. Sin relleno.",
+  ].join("\n");
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS + 10000);
+    let content = "";
+    try {
+      const response = await fetch(OPENAI_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({ model, temperature: 0.3, max_tokens: 800, response_format: { type: "json_object" }, messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }] }),
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      const rawText = await response.text().catch(() => "");
+      if (!response.ok) throw new Error(`openai_${response.status}`);
+      const data = rawText ? JSON.parse(rawText) : {};
+      content = safeStr(data?.choices?.[0]?.message?.content);
+    } catch {
+      clearTimeout(timer);
+      return mkFallback();
+    }
+    const parsed = extractJsonObject(content);
+    if (!parsed) return mkFallback();
+    return { ...parsed, provider: `openai-${model}` };
+  } catch {
+    return mkFallback();
+  }
+}
+
+// ── Claude: pick the best market from GPT analysis + portfolio balance ──
+async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday = [] } = {}) {
+  const apiKey = safeStr(process.env.ANTHROPIC_API_KEY);
+  const home = safeStr(event.home_team || event.homeTeam || "Local");
+  const away = safeStr(event.away_team || event.awayTeam || "Visita");
+  const league = safeStr(event.league || "Liga");
+
+  const mkFallbackDecide = () => {
+    const opts = [
+      { key: "1X2", d: gptMarkets.ml },
+      { key: "Goles", d: gptMarkets.goles },
+      { key: "BTTS", d: gptMarkets.btts },
+      { key: "Handicap", d: gptMarkets.handicap },
+      { key: "Corners", d: gptMarkets.corners },
+    ];
+    const best = opts.reduce((a, b) => ((b.d?.conf || 0) > (a.d?.conf || 0) ? b : a), opts[0]);
+    return { mercado: best.key, pick: best.d?.pick || "—", confianza: best.d?.conf || 50, riesgo: "MEDIO", razonamiento: "Seleccion por maxima confianza (Claude no disponible).", tipo: "moderada", model: "fallback" };
+  };
+
+  if (!apiKey) return mkFallbackDecide();
+
+  const marketsText = [
+    `1X2 (ML): ${gptMarkets.ml?.pick} — Conf: ${gptMarkets.ml?.conf}% — ${gptMarkets.ml?.nota}`,
+    `Goles: ${gptMarkets.goles?.pick} — Conf: ${gptMarkets.goles?.conf}% — ${gptMarkets.goles?.nota}`,
+    `BTTS: ${gptMarkets.btts?.pick} — Conf: ${gptMarkets.btts?.conf}% — ${gptMarkets.btts?.nota}`,
+    `Handicap: ${gptMarkets.handicap?.pick} (${gptMarkets.handicap?.line}) — Conf: ${gptMarkets.handicap?.conf}% — ${gptMarkets.handicap?.nota}`,
+    `Corners: ${gptMarkets.corners?.pick} — Conf: ${gptMarkets.corners?.conf}% — ${gptMarkets.corners?.nota}`,
+  ].join("\n");
+
+  const publishedText = publishedToday.length
+    ? publishedToday.map((p) => `${p.market}: ${p.pick} (riesgo: ${p.riskLevel})`).join(", ")
+    : "Ninguno aun";
+
+  const systemPrompt = [
+    "Eres el selector de picks de Momentum Ascent.",
+    "GPT-4o analizo 5 mercados de un partido.",
+    "Tu rol: elegir el mercado que mas conviene publicar, considerando fundamento estadistico Y balance del portafolio del dia.",
+    "Responde SOLO JSON valido con esta estructura:",
+    '{"mercado":"1X2|Goles|BTTS|Handicap|Corners","pick":"el pick exacto","confianza":72,"riesgo":"BAJO|MEDIO|ALTO","razonamiento":"2-3 oraciones en espanol explicando la decision","tipo":"segura|moderada|arriesgada"}',
+    "tipo refleja el equilibrio del portafolio: si ya hay picks seguros propone algo con mas valor y viceversa.",
+    "NO prometas ganancias.",
+  ].join(" ");
+
+  const userPrompt = [
+    `Evento: ${league} | ${home} vs ${away}`,
+    `Contexto: ${safeStr(gptMarkets.resumen || "")}`,
+    ``,
+    `Analisis GPT-4o por mercado:`,
+    marketsText,
+    ``,
+    `Picks publicados hoy: ${publishedText}`,
+    ``,
+    `Elige el mejor mercado para publicar. Sin relleno.`,
+  ].join("\n");
+
+  try {
+    const { content, model } = await callClaudeOnce({ apiKey, systemPrompt, userPrompt, maxTokens: 600 });
+    const parsed = extractJsonObject(content);
+    if (!parsed) throw new Error("claude_invalid_json");
+    return {
+      mercado: safeStr(parsed.mercado) || "1X2",
+      pick: safeStr(parsed.pick),
+      confianza: Math.max(0, Math.min(100, Number(parsed.confianza || 60))),
+      riesgo: normalizeRiskLevel(parsed.riesgo || "MEDIO"),
+      razonamiento: safeStr(parsed.razonamiento) || "Claude selecciono el mercado con mayor fundamento.",
+      tipo: safeStr(parsed.tipo) || "moderada",
+      model,
+    };
+  } catch {
+    return mkFallbackDecide();
+  }
+}
+
 module.exports = {
   generateAiPlan,
   buildFallbackPlan,
@@ -490,4 +630,6 @@ module.exports = {
   generateMultiplePicksGPT,
   selectBestPickWithClaude,
   runDualAnalysis,
+  analyzeMarketsGPT,
+  claudeDecideMarket,
 };

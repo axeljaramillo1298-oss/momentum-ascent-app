@@ -3,7 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const crypto = require("node:crypto");
-const { generateAiPlan, buildFallbackPlan, generateSportsPick, runDualAnalysis } = require("./ai");
+const { generateAiPlan, buildFallbackPlan, generateSportsPick, runDualAnalysis, analyzeMarketsGPT, claudeDecideMarket } = require("./ai");
 const sportsApiService = require("./sportsApiService");
 const { sendWhatsAppText, getWhatsAppConfigStatus } = require("./whatsapp");
 const { startCoachOnboardingForUser, handleIncomingCoachMessage } = require("./coach-whatsapp");
@@ -1233,6 +1233,56 @@ app.post("/api/picks/generate-dual/:eventId", requireAdmin, async (req, res) => 
   }
 });
 
+// GPT analyzes 5 markets for a single event — admin reviews before passing to Claude
+app.post("/api/picks/gpt-markets/:eventId", requireAdmin, async (req, res) => {
+  try {
+    const eventId = Number(req.params.eventId || 0);
+    const event = await getSportsEventById(eventId);
+    if (!event) return res.status(404).json({ ok: false, error: "event_not_found" });
+
+    let stats = await getLatestEventStats(eventId);
+    if (!stats) {
+      const pulledStats = await sportsApiService.getEventStats(event);
+      stats = await saveEventStats({ eventId, sourceApi: pulledStats.sourceApi, statsJson: pulledStats.statsJson });
+    }
+
+    const markets = await analyzeMarketsGPT({
+      event: { sport: event.sport, league: event.league, home_team: event.homeTeam, away_team: event.awayTeam, event_date: event.eventDate },
+      stats: stats?.statsJson || {},
+    });
+
+    res.json({ ok: true, eventId, event: { sport: event.sport, league: event.league, homeTeam: event.homeTeam, awayTeam: event.awayTeam, eventDate: event.eventDate }, markets });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "gpt_markets_failed") });
+  }
+});
+
+// Claude selects the best market from GPT analysis + today's portfolio context
+app.post("/api/picks/claude-decide", requireAdmin, async (req, res) => {
+  try {
+    const { eventId, gptMarkets } = req.body || {};
+    if (!eventId || !gptMarkets) return res.status(400).json({ ok: false, error: "eventId and gptMarkets required" });
+
+    const event = await getSportsEventById(Number(eventId));
+    if (!event) return res.status(404).json({ ok: false, error: "event_not_found" });
+
+    const publishedToday = (await listPickHistory(20))
+      .filter((p) => p.createdAt && p.createdAt.slice(0, 10) === toDateKey())
+      .slice(0, 8)
+      .map((p) => ({ market: p.market, pick: p.pick, riskLevel: p.riskLevel }));
+
+    const decision = await claudeDecideMarket({
+      event: { sport: event.sport, league: event.league, home_team: event.homeTeam, away_team: event.awayTeam, event_date: event.eventDate },
+      gptMarkets,
+      publishedToday,
+    });
+
+    res.json({ ok: true, eventId, decision });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "claude_decide_failed") });
+  }
+});
+
 // Publish a candidate (GPT or Claude) to the official ai_picks table
 app.post("/api/picks/publish-candidate/:candidateId", requireAdmin, async (req, res) => {
   try {
@@ -1261,6 +1311,36 @@ app.post("/api/picks/publish-candidate/:candidateId", requireAdmin, async (req, 
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || "publish_failed") });
+  }
+});
+
+// Publish a pick directly from Claude's market decision (no candidate record needed)
+app.post("/api/picks/publish-direct", requireAdmin, async (req, res) => {
+  try {
+    const { eventId, pick, market, confidence, analysis, riskLevel, modelUsed } = req.body || {};
+    if (!eventId || !pick || !market) return res.status(400).json({ ok: false, error: "eventId, pick and market required" });
+
+    const event = await getSportsEventById(Number(eventId));
+    if (!event) return res.status(404).json({ ok: false, error: "event_not_found" });
+
+    const savedPick = await saveAiPick({
+      eventId: Number(eventId),
+      pick: String(pick),
+      market: String(market),
+      confidence: Number(confidence || 60),
+      analysis: String(analysis || "Seleccionado por Claude Sonnet."),
+      riskLevel: String(riskLevel || "MEDIO"),
+      modelUsed: String(modelUsed || "claude-decide"),
+      status: "generated",
+      createdAt: new Date().toISOString(),
+    });
+
+    res.json({
+      ok: true,
+      pick: { ...savedPick, sport: event.sport, league: event.league, homeTeam: event.homeTeam, awayTeam: event.awayTeam, eventDate: event.eventDate, disclaimer: SPORTS_PICK_DISCLAIMER },
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "publish_direct_failed") });
   }
 });
 
