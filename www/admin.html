@@ -91,6 +91,14 @@ main{position:relative;z-index:2}
 
 /* EVENTS GRID */
 .events-section{margin-bottom:48px;opacity:0;animation:fadeUp .5s .65s forwards}
+.sport-group{margin-bottom:28px}
+.sport-group-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.06)}
+.sport-group-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;letter-spacing:.06em;text-transform:uppercase}
+.sport-group-count{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.league-group{margin-bottom:18px}
+.league-group-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.league-group-title{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(240,237,232,.82)}
+.league-group-count{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(240,237,232,.35)}
 .event-card{background:rgba(255,255,255,.022);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden;transition:border-color .25s}
 .event-card:hover{border-color:rgba(255,69,0,.2)}
 .event-card-head{display:flex;align-items:center;gap:16px;padding:16px 20px;cursor:default}
@@ -409,6 +417,81 @@ main{position:relative;z-index:2}
   const SPORT_ICONS = { futbol:'⚽', basketball:'🏀', tenis:'🎾', beisbol:'⚾', nfl:'🏈', default:'🏆' };
   function sportIcon(s){ return SPORT_ICONS[(s||'').toLowerCase()] || SPORT_ICONS.default; }
   function confClass(v){ return v>=70?'hi':v>=55?'mid':'lo'; }
+  function sportLabel(value){
+    const key = String(value || '').trim().toLowerCase();
+    if(key === 'football' || key === 'futbol' || key === 'soccer') return 'Fútbol';
+    if(key === 'basketball' || key === 'nba') return 'Basketball';
+    if(key === 'baseball' || key === 'mlb') return 'Baseball';
+    if(key === 'hockey' || key === 'nhl') return 'Hockey';
+    if(key === 'tennis' || key === 'tenis') return 'Tenis';
+    if(key === 'nfl' || key === 'football_american') return 'NFL';
+    return key ? key.charAt(0).toUpperCase() + key.slice(1) : 'General';
+  }
+  function groupBy(items, keyFn){
+    const map = new Map();
+    (items || []).forEach(item => {
+      const key = keyFn(item);
+      if(!map.has(key)) map.set(key, []);
+      map.get(key).push(item);
+    });
+    return map;
+  }
+  function createEventCard(ev){
+    const card = document.createElement('div');
+    card.className = 'event-card';
+    card.dataset.eventId = ev.id;
+
+    const home = ev.home_team || ev.homeTeam || '?';
+    const away = ev.away_team || ev.awayTeam || '?';
+    const league = ev.league || ev.competition || '—';
+    const sport = ev.sport || 'default';
+    const timeValue = ev.start_time || ev.eventDate || ev.event_date || ev.date;
+    const timeStr = timeValue ? new Date(timeValue).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : '—';
+    const hasPick = !!(ev.hasPick || ev.latestPick);
+
+    card.innerHTML = `
+      <div class="event-card-head">
+        <div class="event-sport-icon">${sportIcon(sport)}</div>
+        <div class="event-info">
+          <div class="event-match">${home} vs ${away}</div>
+          <div class="event-meta">
+            <span class="event-league">${league}</span>
+            <span class="event-time">${timeStr}</span>
+          </div>
+        </div>
+        <div class="event-pick-status">
+          ${hasPick ? '<span class="chip green">✓ Pick</span>' : '<span class="chip yellow">Sin pick</span>'}
+          <button class="btn-dual" data-eid="${ev.id}">Seleccionar</button>
+        </div>
+      </div>
+      <div class="work-panel" id="work-${ev.id}">
+        <div class="work-step">Paso 1 — Evento seleccionado · ${home} vs ${away}</div>
+
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+          <button class="btn-primary" id="gpt-btn" style="background:linear-gradient(135deg,rgba(255,69,0,.9),rgba(245,158,11,.7))">
+            Analizar con GPT-4o (5 mercados)
+          </button>
+          <button class="btn-ghost" id="claude-btn" disabled style="border-color:rgba(167,139,250,.3);color:rgba(167,139,250,.7)">
+            Pasar a Claude →
+          </button>
+        </div>
+
+        <div id="gpt-area" style="margin-bottom:8px"></div>
+        <div id="claude-area"></div>
+      </div>`;
+
+    card.querySelector('.btn-dual').addEventListener('click', function(){
+      const eid = parseInt(this.dataset.eid);
+      selectEvent(eid, card);
+    });
+    card.querySelector('#gpt-btn').addEventListener('click', () => {
+      runGptAnalysis(ev.id, card.querySelector(`#work-${ev.id}`));
+    });
+    card.querySelector('#claude-btn').addEventListener('click', () => {
+      runClaudeDecide(ev.id, card.querySelector(`#work-${ev.id}`));
+    });
+    return card;
+  }
 
   // ── RENDER MARKETS TABLE (GPT output) ─────────────────────
   function renderMarketsTable(markets){
@@ -568,62 +651,34 @@ main{position:relative;z-index:2}
     }
     document.getElementById('events-count-label').textContent = `${list.length} evento${list.length!==1?'s':''}`;
     container.innerHTML = '';
-    list.forEach(ev => {
-      const card = document.createElement('div');
-      card.className = 'event-card';
-      card.dataset.eventId = ev.id;
-
-      const home = ev.home_team || ev.homeTeam || '?';
-      const away = ev.away_team || ev.awayTeam || '?';
-      const league = ev.league || ev.competition || '—';
-      const sport = ev.sport || 'default';
-      const timeValue = ev.start_time || ev.eventDate || ev.event_date || ev.date;
-      const timeStr = timeValue ? new Date(timeValue).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : '—';
-      const hasPick = !!(ev.hasPick || ev.latestPick);
-
-      card.innerHTML = `
-        <div class="event-card-head">
-          <div class="event-sport-icon">${sportIcon(sport)}</div>
-          <div class="event-info">
-            <div class="event-match">${home} vs ${away}</div>
-            <div class="event-meta">
-              <span class="event-league">${league}</span>
-              <span class="event-time">${timeStr}</span>
-            </div>
-          </div>
-          <div class="event-pick-status">
-            ${hasPick ? '<span class="chip green">✓ Pick</span>' : '<span class="chip yellow">Sin pick</span>'}
-            <button class="btn-dual" data-eid="${ev.id}">Seleccionar</button>
-          </div>
-        </div>
-        <div class="work-panel" id="work-${ev.id}">
-          <div class="work-step">Paso 1 — Evento seleccionado · ${home} vs ${away}</div>
-
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-            <button class="btn-primary" id="gpt-btn" style="background:linear-gradient(135deg,rgba(255,69,0,.9),rgba(245,158,11,.7))">
-              Analizar con GPT-4o (5 mercados)
-            </button>
-            <button class="btn-ghost" id="claude-btn" disabled style="border-color:rgba(167,139,250,.3);color:rgba(167,139,250,.7)">
-              Pasar a Claude →
-            </button>
-          </div>
-
-          <div id="gpt-area" style="margin-bottom:8px"></div>
-          <div id="claude-area"></div>
+    const sportsMap = groupBy(list, ev => sportLabel(ev.sport));
+    [...sportsMap.entries()].forEach(([sportName, sportEvents]) => {
+      const sportWrap = document.createElement('section');
+      sportWrap.className = 'sport-group';
+      sportWrap.innerHTML = `
+        <div class="sport-group-head">
+          <div class="sport-group-title">${sportName}</div>
+          <div class="sport-group-count">${sportEvents.length} evento${sportEvents.length !== 1 ? 's' : ''}</div>
         </div>`;
 
-      card.querySelector('.btn-dual').addEventListener('click', function(){
-        const eid = parseInt(this.dataset.eid);
-        selectEvent(eid, card);
-      });
-      card.querySelector('#gpt-btn').addEventListener('click', () => {
-        runGptAnalysis(ev.id, card.querySelector(`#work-${ev.id}`));
-      });
-      card.querySelector('#claude-btn').addEventListener('click', () => {
-        runClaudeDecide(ev.id, card.querySelector(`#work-${ev.id}`));
+      const leagueMap = groupBy(
+        [...sportEvents].sort((a,b) => new Date(a.eventDate || a.event_date || a.date || 0) - new Date(b.eventDate || b.event_date || b.date || 0)),
+        ev => ev.league || ev.competition || 'Sin liga'
+      );
+
+      [...leagueMap.entries()].forEach(([leagueName, leagueEvents]) => {
+        const leagueWrap = document.createElement('div');
+        leagueWrap.className = 'league-group';
+        leagueWrap.innerHTML = `
+          <div class="league-group-head">
+            <div class="league-group-title">${leagueName}</div>
+            <div class="league-group-count">${leagueEvents.length} partido${leagueEvents.length !== 1 ? 's' : ''}</div>
+          </div>`;
+        leagueEvents.forEach(ev => leagueWrap.appendChild(createEventCard(ev)));
+        sportWrap.appendChild(leagueWrap);
       });
 
-      container.appendChild(card);
+      container.appendChild(sportWrap);
     });
   }
 
