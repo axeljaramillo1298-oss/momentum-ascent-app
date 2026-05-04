@@ -506,20 +506,41 @@ async function analyzeMarketsGPT({ event = {}, stats = {} } = {}) {
   if (!apiKey) return mkFallback();
 
   const systemPrompt = [
-    "Eres un analista de apuestas deportivas experto.",
-    "Para el evento dado, analiza 5 mercados clave de forma CORTA y DIRECTA.",
+    "Eres un analista deportivo senior enfocado en picks informativos para una plataforma premium de apuestas deportivas con IA.",
+    "Para el evento dado, analiza EXACTAMENTE 5 mercados clave de forma corta, directa y basada en datos.",
     "Responde SOLO JSON valido con esta estructura exacta:",
     '{"ml":{"pick":"Local|Empate|Visitante","conf":65,"nota":"max 1 oracion"},"goles":{"pick":"Over 2.5|Under 2.5","conf":60,"nota":"max 1 oracion"},"btts":{"pick":"Si|No","conf":55,"nota":"max 1 oracion"},"handicap":{"pick":"descripcion del handicap","line":"0.5|1|etc","conf":58,"nota":"max 1 oracion"},"corners":{"pick":"Over 9.5|Under 9.5","conf":52,"nota":"max 1 oracion"},"resumen":"1 oracion de contexto del partido"}',
-    "Sin relleno. Solo recomendaciones directas con porcentaje de confianza.",
-    "No uses garantizado, seguro, apuesta segura.",
+    "Reglas obligatorias:",
+    "1. No prometas ganancias.",
+    "2. No uses palabras como seguro, garantizado, apuesta segura o free money.",
+    "3. La confianza debe ser un entero de 0 a 100.",
+    "4. Cada nota debe ser corta, directa y basada en datos.",
+    "5. Si faltan datos relevantes, reduce la confianza y dilo de forma breve.",
+    "6. No inventes lesiones, odds, bajas ni resultados.",
+    "7. Usa primero los datos entregados en Stats.",
+    "8. Si hay datos de lesiones, bajas, forma reciente, head-to-head, rendimiento local/visita u odds, debes considerarlos obligatoriamente.",
+    "9. Evalua patrones en los ultimos 5 partidos de cada equipo si esa informacion esta disponible.",
+    "10. Si odds y estadistica se contradicen, reflejalo con menor confianza.",
+    "11. Da prioridad a coherencia estadistica sobre narrativas.",
+    "12. El resumen final debe mencionar de forma compacta que factores pesaron mas.",
+    "Criterios de analisis por orden:",
+    "1. Forma ultimos 5 partidos.",
+    "2. Lesiones o bajas relevantes.",
+    "3. Rendimiento local/visita.",
+    "4. Historial H2H si existe.",
+    "5. Odds disponibles y movimientos si existen.",
+    "6. Produccion ofensiva/defensiva o tendencia de totales/corners si existe.",
   ].join(" ");
 
   const userPrompt = [
     `Evento: ${league} | ${home} vs ${away}`,
     `Deporte: ${sport}`,
     `Fecha: ${date}`,
-    stats && Object.keys(stats).length ? `Stats: ${JSON.stringify(stats).slice(0, 2000)}` : "Stats: limitados",
-    "Analiza los 5 mercados. Sin relleno.",
+    stats && Object.keys(stats).length ? `Stats: ${JSON.stringify(stats).slice(0, 3200)}` : "Stats: limitados",
+    "Instruccion:",
+    "Analiza los 5 mercados usando SOLO la informacion disponible.",
+    "Si hay forma reciente, lesiones, bajas, odds snapshot, rendimiento local/visita o H2H, incorporalos explicitamente en la logica de cada mercado.",
+    "Si no hay datos suficientes para algun mercado, baja confianza.",
   ].join("\n");
 
   try {
@@ -550,8 +571,8 @@ async function analyzeMarketsGPT({ event = {}, stats = {} } = {}) {
   }
 }
 
-// ── Claude: pick the best market from GPT analysis + portfolio balance ──
-async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday = [] } = {}) {
+// ── Claude: independent second-pass review + choose best market ──
+async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday = [], stats = {} } = {}) {
   const apiKey = safeStr(process.env.ANTHROPIC_API_KEY);
   const home = safeStr(event.home_team || event.homeTeam || "Local");
   const away = safeStr(event.away_team || event.awayTeam || "Visita");
@@ -585,10 +606,14 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
 
   const systemPrompt = [
     "Eres el selector de picks de Momentum Ascent.",
-    "GPT-4o analizo 5 mercados de un partido.",
-    "Tu rol: elegir el mercado que mas conviene publicar, considerando fundamento estadistico Y balance del portafolio del dia.",
+    "GPT-4o ya analizo 5 mercados de un partido.",
+    "Tu rol NO es aceptar ciegamente ese analisis: debes hacer una segunda lectura independiente del evento y contrastarla contra GPT.",
+    "Evalua lesiones, bajas, forma de los ultimos 5 partidos, rendimiento local/visita, H2H y odds si existen en Stats.",
+    "Luego elige el mercado que mas conviene publicar, considerando fundamento estadistico y balance del portafolio del dia.",
     "Responde SOLO JSON valido con esta estructura:",
     '{"mercado":"1X2|Goles|BTTS|Handicap|Corners","pick":"el pick exacto","confianza":72,"riesgo":"BAJO|MEDIO|ALTO","razonamiento":"2-3 oraciones en espanol explicando la decision","tipo":"segura|moderada|arriesgada"}',
+    "Debes validar si GPT exagero confianza o ignoro riesgos; si encuentras contradicciones entre stats y GPT, corrige a la baja.",
+    "Si falta informacion util, reduce confianza y dilo.",
     "tipo refleja el equilibrio del portafolio: si ya hay picks seguros propone algo con mas valor y viceversa.",
     "NO prometas ganancias.",
   ].join(" ");
@@ -597,11 +622,14 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
     `Evento: ${league} | ${home} vs ${away}`,
     `Contexto: ${safeStr(gptMarkets.resumen || "")}`,
     ``,
+    `Stats disponibles: ${stats && Object.keys(stats).length ? JSON.stringify(stats).slice(0, 3200) : "limitados"}`,
+    ``,
     `Analisis GPT-4o por mercado:`,
     marketsText,
     ``,
     `Picks publicados hoy: ${publishedText}`,
     ``,
+    `Haz una segunda validacion independiente usando los Stats y compara contra GPT antes de decidir.`,
     `Elige el mejor mercado para publicar. Sin relleno.`,
   ].join("\n");
 

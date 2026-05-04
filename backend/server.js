@@ -1512,6 +1512,7 @@ app.post("/api/picks/claude-decide", requireAdmin, async (req, res) => {
 
     const decision = await claudeDecideMarket({
       event: { sport: event.sport, league: event.league, home_team: event.homeTeam, away_team: event.awayTeam, event_date: event.eventDate },
+      stats: stats?.statsJson || {},
       gptMarkets,
       publishedToday,
     });
