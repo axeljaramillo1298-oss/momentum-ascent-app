@@ -24,6 +24,95 @@ const defaultBaseUrlByProvider = {
 const baseUrl = safeStr(process.env.SPORTS_API_BASE_URL) || defaultBaseUrlByProvider[provider] || "";
 
 const todayKey = () => new Date().toISOString().slice(0, 10);
+const MAX_EVENTS = Number.parseInt(process.env.SPORTS_API_MAX_EVENTS || "18", 10) || 18;
+
+const TOP_LEAGUE_PATTERNS = [
+  /uefa champions league/i,
+  /uefa europa league/i,
+  /uefa conference league/i,
+  /\bpremier league\b/i,
+  /\bla liga\b/i,
+  /\bserie a\b/i,
+  /\bbundesliga\b/i,
+  /\bligue 1\b/i,
+  /\bprimeira liga\b/i,
+  /\bsaudi pro league\b/i,
+  /\bliga mx\b/i,
+  /\beredivisie\b/i,
+  /\bcopa libertadores\b/i,
+  /\bcopa sudamericana\b/i,
+];
+
+const LOW_PRIORITY_LEAGUE_PATTERNS = [
+  /\bwomen\b/i,
+  /\bfemenil\b/i,
+  /\bfeminine\b/i,
+  /\bfeminina\b/i,
+  /\bu-?2[013]\b/i,
+  /\bunder[- ]?\d+\b/i,
+  /\byouth\b/i,
+  /\breserve\b/i,
+  /\bii\b/i,
+  /\bu23\b/i,
+  /\bu21\b/i,
+  /\bu20\b/i,
+  /\bu19\b/i,
+  /\bnext pro\b/i,
+  /\bsegunda\b/i,
+  /\bdivision di honor\b/i,
+  /\bcopa de la liga\b/i,
+];
+
+const FEATURED_TEAM_PATTERNS = [
+  /real madrid/i,
+  /barcelona/i,
+  /atletico madrid/i,
+  /manchester city/i,
+  /manchester united/i,
+  /liverpool/i,
+  /arsenal/i,
+  /chelsea/i,
+  /tottenham/i,
+  /newcastle/i,
+  /psg/i,
+  /marseille/i,
+  /milan/i,
+  /inter/i,
+  /juventus/i,
+  /napoli/i,
+  /roma/i,
+  /bayern/i,
+  /dortmund/i,
+  /leverkusen/i,
+  /sporting/i,
+  /benfica/i,
+  /porto/i,
+  /al hilal/i,
+  /al nassr/i,
+  /al ittihad/i,
+  /club america/i,
+  /tigres/i,
+  /monterrey/i,
+  /chivas/i,
+  /pumas/i,
+];
+
+const matchesAnyPattern = (value, patterns = []) => patterns.some((pattern) => pattern.test(safeStr(value)));
+
+const scoreFootballFixture = (row = {}) => {
+  const leagueName = safeStr(row?.league?.name);
+  const home = safeStr(row?.teams?.home?.name);
+  const away = safeStr(row?.teams?.away?.name);
+  let score = 0;
+
+  if (matchesAnyPattern(leagueName, TOP_LEAGUE_PATTERNS)) score += 100;
+  if (matchesAnyPattern(leagueName, LOW_PRIORITY_LEAGUE_PATTERNS)) score -= 80;
+  if (matchesAnyPattern(home, FEATURED_TEAM_PATTERNS)) score += 20;
+  if (matchesAnyPattern(away, FEATURED_TEAM_PATTERNS)) score += 20;
+  if (/regular season|round|semi-finals|quarter-finals|final/i.test(safeStr(row?.league?.round))) score += 5;
+
+  return score;
+};
 
 const buildMockEvents = () => {
   const day = todayKey();
@@ -149,7 +238,18 @@ const fetchApiFootballToday = async () => {
     "x-apisports-key": apiKey,
   });
   const rows = Array.isArray(data?.response) ? data.response : [];
-  return rows.slice(0, 12).map((row) =>
+  const rankedRows = [...rows]
+    .map((row) => ({ row, score: scoreFootballFixture(row) }))
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return safeStr(a.row?.fixture?.date).localeCompare(safeStr(b.row?.fixture?.date));
+    })
+    .map((item) => item.row);
+
+  const prioritizedRows = rankedRows.filter((row) => scoreFootballFixture(row) > 0);
+  const selectedRows = (prioritizedRows.length ? prioritizedRows : rankedRows).slice(0, MAX_EVENTS);
+
+  return selectedRows.map((row) =>
     normalizeEvent({
       externalId: row?.fixture?.id,
       sport: "football",
