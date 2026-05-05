@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Track Record | Momentum Ascent</title>
+<meta name="description" content="Historial público de picks deportivos con IA. Win rate, racha y resultados verificables." />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#FF4500;
+  --dark:#060608;
+  --border:rgba(255,255,255,0.07);
+  --text:#f0ede8;
+  --muted:rgba(240,237,232,0.42);
+  --green:#4ADE80;
+  --red:#F87171;
+  --yellow:#F59E0B;
+}
+html{scroll-behavior:smooth}
+body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;overflow-x:hidden;min-height:100vh}
+
+/* NAV */
+.nav-wrap{position:sticky;top:0;z-index:200;padding:0 12px;background:rgba(6,6,8,.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 0;max-width:1200px;margin:0 auto}
+.nav-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:16px;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;color:var(--text)}
+.nav-logo span{color:var(--orange)}
+.nav-links{display:flex;align-items:center;gap:6px}
+.nav-lnk{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:7px 12px;border-radius:3px;transition:color .2s}
+.nav-lnk:hover{color:var(--text)}
+.nav-cta{padding:8px 18px;border-radius:999px;background:var(--orange);color:#fff;font:700 11px 'Barlow',sans-serif;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;transition:opacity .2s}
+.nav-cta:hover{opacity:.85}
+
+/* HERO */
+.hero{padding:64px 24px 56px;text-align:center;position:relative;overflow:hidden;max-width:1200px;margin:0 auto}
+.hero::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:700px;height:400px;background:radial-gradient(ellipse at center,rgba(255,69,0,.12) 0%,transparent 70%);pointer-events:none}
+.eyebrow{font-size:10px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--orange);margin-bottom:14px;opacity:0;animation:up .5s .05s forwards}
+.hero-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(52px,8vw,100px);text-transform:uppercase;line-height:.88;letter-spacing:-.01em;opacity:0;animation:up .6s .15s forwards}
+.hero-title em{color:var(--orange);font-style:normal}
+.hero-sub{margin-top:16px;font-size:15px;color:var(--muted);max-width:480px;margin-left:auto;margin-right:auto;line-height:1.65;font-weight:300;opacity:0;animation:up .5s .28s forwards}
+
+/* STAT STRIP */
+.stat-strip{display:flex;justify-content:center;gap:2px;margin:44px auto 0;max-width:900px;opacity:0;animation:up .6s .4s forwards;flex-wrap:wrap}
+.stat-tile{flex:1;min-width:140px;padding:22px 20px;background:rgba(255,255,255,.025);border:1px solid var(--border);text-align:center;position:relative;overflow:hidden}
+.stat-tile::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--orange),transparent);transform:scaleX(0);transform-origin:center;transition:transform .4s}
+.stat-tile:hover::after{transform:scaleX(1)}
+.stat-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:clamp(42px,6vw,68px);line-height:1;letter-spacing:-.02em}
+.stat-val.green{color:var(--green)}
+.stat-val.red{color:var(--red)}
+.stat-val.orange{color:var(--orange)}
+.stat-val.yellow{color:var(--yellow)}
+.stat-lbl{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.stat-note{font-size:11px;color:rgba(240,237,232,.28);margin-top:4px}
+
+/* CONTENT */
+.content{max-width:1100px;margin:0 auto;padding:56px 24px 80px}
+
+/* SECTION HDR */
+.sec-hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+.sec-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(22px,3vw,32px);text-transform:uppercase;letter-spacing:.02em}
+.sec-sub{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* FILTERS */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.filter-btn{font:700 10px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:6px 14px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--muted);cursor:pointer;transition:all .2s}
+.filter-btn:hover,.filter-btn.active{border-color:rgba(255,69,0,.4);background:rgba(255,69,0,.08);color:var(--orange)}
+
+/* PICKS TABLE */
+.picks-wrap{background:rgba(255,255,255,.015);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:56px;opacity:0;animation:up .5s .5s forwards}
+.picks-table{width:100%;border-collapse:collapse;font-size:13px}
+.picks-table th{font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+.picks-table td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.picks-table tr:last-child td{border-bottom:none}
+.picks-table tr:hover td{background:rgba(255,255,255,.02)}
+.match-name{font-weight:700;font-size:13px;line-height:1.2}
+.match-league{font-size:11px;color:var(--muted);margin-top:2px}
+.pick-text{color:var(--text)}
+.market-text{color:var(--muted);font-size:12px}
+.conf-bar{display:flex;align-items:center;gap:8px}
+.conf-num{font-weight:700;font-size:13px;min-width:32px}
+.conf-track{flex:1;height:3px;background:rgba(255,255,255,.08);border-radius:2px;min-width:40px}
+.conf-fill{height:100%;border-radius:2px;transition:width .4s}
+.res-chip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;border:1px solid;white-space:nowrap}
+.res-chip.won{color:var(--green);border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.08)}
+.res-chip.lost{color:var(--red);border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.08)}
+.res-chip.void{color:var(--muted);border-color:var(--border);background:rgba(255,255,255,.03)}
+.res-chip.pending{color:var(--yellow);border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.05)}
+.tier-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px}
+.tier-dot.premium{background:#F5C04A}
+.tier-dot.free{background:rgba(255,255,255,.25)}
+.empty-row{padding:40px;text-align:center;color:var(--muted);font-size:13px}
+
+/* RACHA BAR */
+.streak-section{margin-bottom:56px;opacity:0;animation:up .5s .55s forwards}
+.streak-wrap{display:flex;gap:4px;flex-wrap:wrap;margin-top:16px}
+.streak-dot{width:28px;height:28px;border-radius:6px;flex-shrink:0}
+.streak-dot.won{background:rgba(74,222,128,.25);border:1px solid rgba(74,222,128,.4)}
+.streak-dot.lost{background:rgba(248,113,113,.18);border:1px solid rgba(248,113,113,.3)}
+.streak-dot.void{background:rgba(255,255,255,.06);border:1px solid var(--border)}
+.streak-dot.pending{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2)}
+
+/* CTA */
+.cta-section{text-align:center;padding:56px 24px;background:linear-gradient(135deg,rgba(255,69,0,.07),rgba(167,139,250,.05));border:1px solid rgba(255,69,0,.14);border-radius:8px;opacity:0;animation:up .5s .6s forwards}
+.cta-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(32px,5vw,56px);text-transform:uppercase;line-height:.92;margin-bottom:16px}
+.cta-title em{color:var(--orange);font-style:normal}
+.cta-copy{color:var(--muted);font-size:14px;line-height:1.65;max-width:440px;margin:0 auto 28px;font-weight:300}
+.cta-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn-primary{padding:13px 28px;border-radius:4px;background:var(--orange);color:#fff;font:700 12px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;transition:opacity .2s}
+.btn-primary:hover{opacity:.85}
+.btn-ghost{padding:13px 24px;border-radius:4px;border:1px solid var(--border);color:var(--muted);font:700 12px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;transition:all .2s}
+.btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+.disc{margin-top:20px;font-size:10px;color:rgba(240,237,232,.25);line-height:1.6}
+
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media(max-width:700px){
+  .stat-strip{gap:1px}
+  .stat-tile{min-width:100px;padding:16px 12px}
+  .stat-val{font-size:clamp(32px,8vw,52px)}
+  .picks-table th:nth-child(3),.picks-table td:nth-child(3),
+  .picks-table th:nth-child(5),.picks-table td:nth-child(5){display:none}
+  .content{padding:40px 16px 60px}
+  .nav-lnk{display:none}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav-wrap">
+  <div class="nav-inner">
+    <a class="nav-logo" href="index.html">MOMENTUM <span>ASCENT</span></a>
+    <div class="nav-links">
+      <a class="nav-lnk" href="index.html">Inicio</a>
+      <a class="nav-lnk" href="planes.html">Planes</a>
+      <a class="nav-cta" href="registro.html">Empezar gratis</a>
+    </div>
+  </div>
+</nav>
+
+<div style="max-width:1200px;margin:0 auto">
+  <div class="hero">
+    <div class="eyebrow">Resultados verificables · Picks con IA</div>
+    <h1 class="hero-title">Track<br><em>Record</em></h1>
+    <p class="hero-sub">Cada pick publicado queda registrado. Gana, pierde o void — todo es público. Sin ediciones retroactivas.</p>
+
+    <div class="stat-strip">
+      <div class="stat-tile">
+        <div class="stat-val orange" id="tr-total">—</div>
+        <div class="stat-lbl">Picks totales</div>
+        <div class="stat-note">publicados</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-val green" id="tr-winrate">—</div>
+        <div class="stat-lbl">Win rate</div>
+        <div class="stat-note">picks con resultado</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-val green" id="tr-won">—</div>
+        <div class="stat-lbl">Ganados</div>
+        <div class="stat-note" id="tr-won-note"></div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-val red" id="tr-lost">—</div>
+        <div class="stat-lbl">Perdidos</div>
+        <div class="stat-note" id="tr-lost-note"></div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-val yellow" id="tr-streak">—</div>
+        <div class="stat-lbl">Racha actual</div>
+        <div class="stat-note" id="tr-streak-note">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- VISUAL STREAK -->
+  <div class="streak-section">
+    <div class="sec-hdr">
+      <div class="sec-title">Últimos resultados</div>
+      <span class="sec-sub" id="tr-streak-label">—</span>
+    </div>
+    <div class="streak-wrap" id="tr-streak-dots"></div>
+  </div>
+
+  <!-- PICKS TABLE -->
+  <div class="sec-hdr" style="opacity:0;animation:up .5s .48s forwards">
+    <div class="sec-title">Historial de picks</div>
+    <span class="sec-sub" id="tr-table-label">cargando…</span>
+  </div>
+  <div class="filters" id="tr-filters" style="opacity:0;animation:up .5s .49s forwards">
+    <button class="filter-btn active" data-filter="all">Todos</button>
+    <button class="filter-btn" data-filter="won">Ganados ✓</button>
+    <button class="filter-btn" data-filter="lost">Perdidos ✗</button>
+    <button class="filter-btn" data-filter="void">Void</button>
+    <button class="filter-btn" data-filter="pending">Pendientes</button>
+  </div>
+  <div class="picks-wrap">
+    <table class="picks-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Partido</th>
+          <th>Mercado · Pick</th>
+          <th>Confianza</th>
+          <th>Modelo</th>
+          <th>Resultado</th>
+        </tr>
+      </thead>
+      <tbody id="tr-tbody">
+        <tr><td colspan="6" class="empty-row">Cargando historial…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-section">
+    <div class="cta-title">¿Quieres los picks<br><em>en tiempo real?</em></div>
+    <p class="cta-copy">Accede a picks diarios con análisis GPT + Claude antes de cada partido. Plan Free sin costo, Premium desde $129 MXN/mes.</p>
+    <div class="cta-btns">
+      <a class="btn-primary" href="registro.html">Crear cuenta gratis</a>
+      <a class="btn-ghost" href="planes.html">Ver planes</a>
+    </div>
+    <div class="disc">Contenido informativo. La confianza es una estimación estadística, no garantía de resultado. Apuesta con responsabilidad.</div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const API_BASE = (() => {
+    const forced = (localStorage.getItem('discipline_api_base_v1')||'').trim();
+    if(forced) return forced.replace(/\/+$/,'');
+    const {protocol,hostname,port,origin} = window.location;
+    const host = String(hostname||'').trim().toLowerCase();
+    if(host==='app.momentumascent.com'||host==='momentumascent.com'||host==='www.momentumascent.com') return 'https://api.momentumascent.com';
+    if((host==='localhost'||host==='127.0.0.1')&&port&&port!=='8787') return `${protocol}//${hostname}:8787`;
+    return origin;
+  })();
+
+  let allPicks = [];
+  let activeFilter = 'all';
+
+  function confColor(c){ return Number(c)>=70 ? 'var(--green)' : Number(c)>=60 ? 'var(--yellow)' : 'var(--red)'; }
+  function fmtDate(d){ try{ return new Date(d).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}); }catch{ return d||'—'; } }
+  function resultOf(p){ return p.result||'pending'; }
+
+  function calcStats(picks){
+    const resolved = picks.filter(p=>p.result==='won'||p.result==='lost');
+    const won = picks.filter(p=>p.result==='won').length;
+    const lost = picks.filter(p=>p.result==='lost').length;
+    const voidC = picks.filter(p=>p.result==='void').length;
+    const pending = picks.filter(p=>!p.result).length;
+    const winRate = resolved.length ? Math.round(won/resolved.length*100) : null;
+    let streak = 0, streakType = '';
+    const res2 = picks.filter(p=>p.result==='won'||p.result==='lost');
+    if(res2.length){ streakType=res2[0].result; for(const p of res2){ if(p.result===streakType) streak++; else break; } }
+    return { total:picks.length, won, lost, voidC, pending, winRate, streak, streakType, resolved:resolved.length };
+  }
+
+  function renderStats(s){
+    document.getElementById('tr-total').textContent = s.total;
+    document.getElementById('tr-winrate').textContent = s.winRate!==null ? `${s.winRate}%` : '—';
+    const wrEl = document.getElementById('tr-winrate');
+    wrEl.className = `stat-val ${s.winRate>=60?'green':s.winRate>=50?'yellow':'red'}`;
+    document.getElementById('tr-won').textContent = s.won;
+    document.getElementById('tr-won-note').textContent = s.resolved ? `de ${s.resolved} con resultado` : '';
+    document.getElementById('tr-lost').textContent = s.lost;
+    document.getElementById('tr-lost-note').textContent = s.pending ? `${s.pending} pendientes` : '';
+    const sEl = document.getElementById('tr-streak');
+    sEl.textContent = s.streak ? (s.streakType==='won'?`+${s.streak}`:`-${s.streak}`) : '—';
+    sEl.className = `stat-val ${s.streakType==='won'?'green':s.streakType==='lost'?'red':'yellow'}`;
+    document.getElementById('tr-streak-note').textContent = s.streak
+      ? `${s.streak} ${s.streakType==='won'?'ganados':'perdidos'} seguidos`
+      : 'sin racha activa';
+  }
+
+  function renderDots(picks){
+    const dotsEl = document.getElementById('tr-streak-dots');
+    const last50 = picks.slice(0,50).reverse();
+    document.getElementById('tr-streak-label').textContent = `últimos ${Math.min(picks.length,50)} picks`;
+    dotsEl.innerHTML = last50.map(p=>{
+      const r = resultOf(p);
+      const label = r==='won'?'✓ Ganó':r==='lost'?'✗ Perdió':r==='void'?'— Void':'· Pendiente';
+      return `<div class="streak-dot ${r}" title="${p.homeTeam||''} vs ${p.awayTeam||''} · ${label}"></div>`;
+    }).join('');
+  }
+
+  function renderTable(picks){
+    const filtered = activeFilter==='all' ? picks : picks.filter(p=>resultOf(p)===activeFilter);
+    document.getElementById('tr-table-label').textContent = `${filtered.length} pick${filtered.length!==1?'s':''}`;
+    const tbody = document.getElementById('tr-tbody');
+    if(!filtered.length){
+      tbody.innerHTML = `<tr><td colspan="6" class="empty-row">No hay picks con ese filtro.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = filtered.map(p=>{
+      const r = resultOf(p);
+      const resChip = r==='won' ? '<span class="res-chip won">✓ Ganó</span>'
+        : r==='lost' ? '<span class="res-chip lost">✗ Perdió</span>'
+        : r==='void' ? '<span class="res-chip void">— Void</span>'
+        : '<span class="res-chip pending">· Pendiente</span>';
+      const conf = Number(p.confidence||0);
+      const confFill = `background:${confColor(conf)};width:${conf}%`;
+      const isPremium = (p.planTier||'free')==='premium';
+      const modelLabel = String(p.modelUsed||p.model_used||'IA').replace('claude-','Claude ').replace('gpt-4','GPT-4').replace(/-\d{8}$/,'');
+      const pickDisplay = p.pickLocked
+        ? '<span style="color:var(--muted);font-size:11px">⭐ Solo Premium</span>'
+        : (p.pick||'—');
+      return `<tr>
+        <td style="color:var(--muted);white-space:nowrap;font-size:12px">${fmtDate(p.eventDate)}</td>
+        <td>
+          <div class="match-name">
+            <span class="tier-dot ${isPremium?'premium':'free'}"></span>
+            ${p.homeTeam||p.home_team||'?'} vs ${p.awayTeam||p.away_team||'?'}
+          </div>
+          <div class="match-league">${p.league||''}</div>
+        </td>
+        <td>
+          <div class="pick-text">${pickDisplay}</div>
+          <div class="market-text">${p.pickLocked?'':p.market||''}</div>
+        </td>
+        <td>
+          <div class="conf-bar">
+            <span class="conf-num" style="color:${confColor(conf)}">${conf}%</span>
+            <div class="conf-track"><div class="conf-fill" style="${confFill}"></div></div>
+          </div>
+        </td>
+        <td style="color:var(--muted);font-size:11px">${modelLabel}</td>
+        <td>${resChip}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function load(){
+    try{
+      const r = await fetch(`${API_BASE}/api/picks/history?limit=200`);
+      const data = await r.json();
+      allPicks = Array.isArray(data?.picks) ? data.picks : [];
+      const s = calcStats(allPicks);
+      renderStats(s);
+      renderDots(allPicks);
+      renderTable(allPicks);
+    } catch(e) {
+      document.getElementById('tr-tbody').innerHTML = `<tr><td colspan="6" class="empty-row">No se pudo cargar el historial.</td></tr>`;
+    }
+  }
+
+  document.getElementById('tr-filters').addEventListener('click', e=>{
+    const btn = e.target.closest('[data-filter]');
+    if(!btn) return;
+    activeFilter = btn.getAttribute('data-filter');
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active', b===btn));
+    renderTable(allPicks);
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>
