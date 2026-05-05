@@ -397,23 +397,31 @@ main{position:relative;z-index:2}
         <h2 class="section-title">Picks publicados</h2>
         <span class="section-sub" id="published-count-label">0 publicados</span>
       </div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Resultados de hoy</div>
       <div class="daily-stats-wrap" id="daily-stats-wrap" style="display:none">
         <table class="daily-stats-table">
           <thead>
             <tr>
-              <th>Tier</th>
-              <th>Picks</th>
-              <th>Ganados</th>
-              <th>Perdidos</th>
-              <th>Void</th>
-              <th>Pendientes</th>
-              <th>Win %</th>
+              <th>Tier</th><th>Picks</th><th>Ganados</th><th>Perdidos</th><th>Void</th><th>Pendientes</th><th>Win %</th>
             </tr>
           </thead>
           <tbody id="daily-stats-body"></tbody>
         </table>
       </div>
-      <div id="published-list">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:18px;margin-bottom:8px">Total histórico</div>
+      <div class="daily-stats-wrap" id="total-stats-wrap">
+        <table class="daily-stats-table">
+          <thead>
+            <tr>
+              <th>Tier</th><th>Picks</th><th>Ganados</th><th>Perdidos</th><th>Void</th><th>Pendientes</th><th>Win %</th>
+            </tr>
+          </thead>
+          <tbody id="total-stats-body">
+            <tr><td colspan="7" style="padding:12px 14px;color:var(--muted)">Cargando historial…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="published-list" style="margin-top:18px">
         <div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Todavía no hay picks publicados para esta fecha.</div>
       </div>
     </section>
@@ -1313,6 +1321,52 @@ main{position:relative;z-index:2}
     }
   }
 
+  // ── TOTAL HISTÓRICO STATS ────────────────────────────────
+  async function loadTotalStats(){
+    const tbody = document.getElementById('total-stats-body');
+    try {
+      const data = await apiFetch('/api/picks/history?limit=500', {headers:apiH()});
+      const picks = Array.isArray(data?.picks) ? data.picks : [];
+      function gs(arr){
+        const won=arr.filter(p=>p.result==='won').length;
+        const lost=arr.filter(p=>p.result==='lost').length;
+        const voidC=arr.filter(p=>p.result==='void').length;
+        const pending=arr.filter(p=>!p.result).length;
+        const resolved=won+lost;
+        const winPct=resolved?Math.round(won/resolved*100):null;
+        return {total:arr.length,won,lost,voidC,pending,winPct};
+      }
+      function pc(pct){return pct===null?'muted':pct>=60?'green':pct>=50?'yellow':'red';}
+      function pt(pct){return pct===null?'—':`${pct}%`;}
+      const free=picks.filter(p=>String(p.planTier||'free')!=='premium');
+      const prem=picks.filter(p=>String(p.planTier||'free')==='premium');
+      const fs=gs(free),ps=gs(prem),ts=gs(picks);
+      const row=(label,cls,s)=>`<tr>
+        <td><span class="${cls}">${label}</span></td>
+        <td>${s.total}</td>
+        <td class="dst-win">${s.won}</td>
+        <td class="dst-lost">${s.lost}</td>
+        <td style="color:var(--muted)">${s.voidC}</td>
+        <td style="color:var(--yellow)">${s.pending}</td>
+        <td><span class="dst-pct ${pc(s.winPct)}">${pt(s.winPct)}</span></td>
+      </tr>`;
+      tbody.innerHTML =
+        (free.length ? row('🌍 Free','dst-tier-free',fs) : '') +
+        (prem.length ? row('⭐ Premium','dst-tier-premium',ps) : '') +
+        `<tr class="total-row">
+          <td><span class="dst-tier-total">Total</span></td>
+          <td>${ts.total}</td>
+          <td class="dst-win">${ts.won}</td>
+          <td class="dst-lost">${ts.lost}</td>
+          <td style="color:var(--muted)">${ts.voidC}</td>
+          <td style="color:var(--yellow)">${ts.pending}</td>
+          <td><span class="dst-pct ${pc(ts.winPct)}">${pt(ts.winPct)}</span></td>
+        </tr>`;
+    } catch(e) {
+      document.getElementById('total-stats-body').innerHTML=`<tr><td colspan="7" style="padding:12px 14px;color:var(--red)">${e.message}</td></tr>`;
+    }
+  }
+
   // ── HISTORIAL DE PICKS & STATS ──────────────────────────
   async function loadPickStats(){
     const tbody = document.getElementById('picks-hist-tbody');
@@ -1338,16 +1392,24 @@ main{position:relative;z-index:2}
       sEl.textContent = streak>0 ? `+${streak}` : streak;
       sEl.className = `pstat-val ${streak>0?'green':streak<0?'red':'yellow'}`;
       if(!picks.length){ tbody.innerHTML='<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">No hay picks publicados aún.</td></tr>'; return; }
-      tbody.innerHTML = picks.map(p => {
-        const date = p.eventDate ? new Date(p.eventDate).toLocaleDateString('es-MX',{day:'2-digit',month:'short'}) : '—';
+
+      // group picks by date
+      const byDate = new Map();
+      picks.forEach(p => {
+        const dk = p.eventDate ? String(p.eventDate).slice(0,10) : 'sin-fecha';
+        if(!byDate.has(dk)) byDate.set(dk, []);
+        byDate.get(dk).push(p);
+      });
+
+      function pickRow(p){
         const match = `${p.homeTeam||p.home_team||'?'} vs ${p.awayTeam||p.away_team||'?'}`;
         const res = p.result||'';
-        const resChip = res==='won' ? '<span class="res-chip won">Ganó ✓</span>' : res==='lost' ? '<span class="res-chip lost">Perdió ✗</span>' : res==='void' ? '<span class="res-chip void">Void</span>' : '<span class="res-chip pending">Pendiente</span>';
-        const tierChip = (p.planTier||'free')==='premium' ? '<span style="color:#F5C04A;font-size:9px;font-weight:800">⭐ PREM</span>' : '<span style="color:var(--muted);font-size:9px">FREE</span>';
-        const confColor = Number(p.confidence)>=70 ? 'var(--green)' : Number(p.confidence)>=60 ? 'var(--yellow)' : 'var(--red)';
+        const resChip = res==='won'?'<span class="res-chip won">Ganó ✓</span>':res==='lost'?'<span class="res-chip lost">Perdió ✗</span>':res==='void'?'<span class="res-chip void">Void</span>':'<span class="res-chip pending">Pendiente</span>';
+        const tierChip = (p.planTier||'free')==='premium'?'<span style="color:#F5C04A;font-size:9px;font-weight:800">⭐ PREM</span>':'<span style="color:var(--muted);font-size:9px">FREE</span>';
+        const confColor = Number(p.confidence)>=70?'var(--green)':Number(p.confidence)>=60?'var(--yellow)':'var(--red)';
         const id = Number(p.id||0);
         return `<tr>
-          <td style="color:var(--muted);white-space:nowrap">${date}</td>
+          <td></td>
           <td style="font-weight:600;font-size:12px">${match}</td>
           <td style="color:var(--muted)">${p.market||'—'}</td>
           <td>${p.pick||'—'}</td>
@@ -1361,7 +1423,25 @@ main{position:relative;z-index:2}
             <button class="res-btn-sm void ${res==='void'?'active':''}" onclick="markResultStat(${id},'void',this)">—</button>
           </div></td>
         </tr>`;
-      }).join('');
+      }
+
+      let html = '';
+      byDate.forEach((dayPicks, dk) => {
+        const dateLabel = dk !== 'sin-fecha'
+          ? new Date(dk+'T12:00:00').toLocaleDateString('es-MX',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})
+          : 'Sin fecha';
+        const dayWon = dayPicks.filter(p=>p.result==='won').length;
+        const dayLost = dayPicks.filter(p=>p.result==='lost').length;
+        const dayResolved = dayWon+dayLost;
+        const dayPct = dayResolved ? Math.round(dayWon/dayResolved*100) : null;
+        const pctStr = dayPct!==null ? ` · ${dayPct}% win` : '';
+        html += `<tr><td colspan="9" style="padding:8px 10px 6px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border);border-top:1px solid var(--border)">
+          <span style="font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">${dateLabel}</span>
+          <span style="font-size:9px;color:rgba(240,237,232,.3);margin-left:8px">${dayPicks.length} pick${dayPicks.length!==1?'s':''}${pctStr}</span>
+        </td></tr>`;
+        html += dayPicks.map(pickRow).join('');
+      });
+      tbody.innerHTML = html;
     } catch(e) {
       tbody.innerHTML=`<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--red)">${e.message}</td></tr>`;
       log2(`Error cargando historial: ${e.message}`, 'err');
@@ -1370,7 +1450,7 @@ main{position:relative;z-index:2}
 
   window.markResultStat = async (pickId, result, btn) => {
     if(typeof window.markResult === 'function') await window.markResult(pickId, result, btn);
-    await loadPickStats();
+    await Promise.all([loadPickStats(), loadTotalStats()]);
   };
 
   document.getElementById('btn-search-users').addEventListener('click', () => loadUsers(document.getElementById('users-search-input').value));
@@ -1380,6 +1460,7 @@ main{position:relative;z-index:2}
 
   loadUsers('');
   loadPickStats();
+  loadTotalStats();
 })();
 </script>
 
