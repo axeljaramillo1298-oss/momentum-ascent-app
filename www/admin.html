@@ -493,6 +493,7 @@ main{position:relative;z-index:2}
         <h2 class="section-title">Historial de Picks</h2>
         <button class="btn-ghost" id="btn-reload-pickstats" style="font-size:10px;padding:6px 14px">↺ Recargar</button>
       </div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Total histórico</div>
       <div class="pstats-row">
         <div class="pstat-card"><div class="pstat-val orange" id="ps-total">0</div><div class="pstat-lbl">Total picks</div></div>
         <div class="pstat-card"><div class="pstat-val green" id="ps-won">0</div><div class="pstat-lbl">Ganados</div></div>
@@ -501,6 +502,16 @@ main{position:relative;z-index:2}
         <div class="pstat-card"><div class="pstat-val green" id="ps-winrate">—</div><div class="pstat-lbl">Win rate</div></div>
         <div class="pstat-card"><div class="pstat-val yellow" id="ps-streak">0</div><div class="pstat-lbl">Racha actual</div></div>
         <div class="pstat-card"><div class="pstat-val" id="ps-pending">0</div><div class="pstat-lbl">Sin resultado</div></div>
+      </div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:18px;margin-bottom:8px" id="ps-day-label">Hoy</div>
+      <div class="pstats-row" style="margin-bottom:24px">
+        <div class="pstat-card"><div class="pstat-val orange" id="psd-total">0</div><div class="pstat-lbl">Total picks</div></div>
+        <div class="pstat-card"><div class="pstat-val green" id="psd-won">0</div><div class="pstat-lbl">Ganados</div></div>
+        <div class="pstat-card"><div class="pstat-val red" id="psd-lost">0</div><div class="pstat-lbl">Perdidos</div></div>
+        <div class="pstat-card"><div class="pstat-val" id="psd-void">0</div><div class="pstat-lbl">Void</div></div>
+        <div class="pstat-card"><div class="pstat-val green" id="psd-winrate">—</div><div class="pstat-lbl">Win rate</div></div>
+        <div class="pstat-card"><div class="pstat-val yellow" id="psd-streak">0</div><div class="pstat-lbl">Racha día</div></div>
+        <div class="pstat-card"><div class="pstat-val" id="psd-pending">0</div><div class="pstat-lbl">Sin resultado</div></div>
       </div>
       <div style="overflow-x:auto;background:rgba(255,255,255,.015);border:1px solid var(--border);border-radius:6px">
         <table class="picks-hist-table">
@@ -1391,6 +1402,35 @@ main{position:relative;z-index:2}
       const sEl = document.getElementById('ps-streak');
       sEl.textContent = streak>0 ? `+${streak}` : streak;
       sEl.className = `pstat-val ${streak>0?'green':streak<0?'red':'yellow'}`;
+
+      // ── daily stat cards ────────────────────────────────────
+      // find the most recent date that has picks
+      const allDates = picks.map(p=>String(p.eventDate||'').slice(0,10)).filter(Boolean).sort().reverse();
+      const latestDate = allDates[0] || '';
+      const todayStr = (()=>{ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
+      const dayKey = latestDate || todayStr;
+      const dayPicks = picks.filter(p=>String(p.eventDate||'').slice(0,10)===dayKey);
+      const dayWon = dayPicks.filter(p=>p.result==='won').length;
+      const dayLost = dayPicks.filter(p=>p.result==='lost').length;
+      const dayVoid = dayPicks.filter(p=>p.result==='void').length;
+      const dayPending = dayPicks.filter(p=>!p.result).length;
+      const dayResolved = dayWon+dayLost;
+      const dayWinRate = dayResolved ? Math.round(dayWon/dayResolved*100) : null;
+      let dayStreak = 0;
+      const dayRes2 = dayPicks.filter(p=>p.result==='won'||p.result==='lost');
+      if(dayRes2.length){ const last=dayRes2[0].result; for(const p of dayRes2){ if(p.result===last) dayStreak++; else break; } if(last==='lost') dayStreak=-dayStreak; }
+      const dayLabel = dayKey ? new Date(dayKey+'T12:00:00').toLocaleDateString('es-MX',{weekday:'long',day:'2-digit',month:'long'}) : 'Hoy';
+      document.getElementById('ps-day-label').textContent = dayLabel.charAt(0).toUpperCase()+dayLabel.slice(1);
+      document.getElementById('psd-total').textContent = dayPicks.length;
+      document.getElementById('psd-won').textContent = dayWon;
+      document.getElementById('psd-lost').textContent = dayLost;
+      document.getElementById('psd-void').textContent = dayVoid;
+      document.getElementById('psd-winrate').textContent = dayWinRate!==null ? `${dayWinRate}%` : '—';
+      document.getElementById('psd-pending').textContent = dayPending;
+      const sdEl = document.getElementById('psd-streak');
+      sdEl.textContent = dayStreak>0 ? `+${dayStreak}` : dayStreak;
+      sdEl.className = `pstat-val ${dayStreak>0?'green':dayStreak<0?'red':'yellow'}`;
+
       if(!picks.length){ tbody.innerHTML='<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">No hay picks publicados aún.</td></tr>'; return; }
 
       // group picks by date
