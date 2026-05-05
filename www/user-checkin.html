@@ -307,6 +307,20 @@ main{position:relative;z-index:2}
   document.getElementById('dr-email').textContent = userEmail || '—';
   document.getElementById('dr-plan').textContent = planLabel;
 
+  // Sync plan from server — fixes stale localStorage after admin grants plan
+  function applyPlanLabel(label){
+    if(!label || label === planLabel) return;
+    planLabel = label;
+    document.getElementById('user-plan-chip').textContent = 'Plan ' + label;
+    document.getElementById('dr-plan').textContent = label;
+  }
+  if(typeof syncCurrentSubscriptionFromApi === 'function'){
+    syncCurrentSubscriptionFromApi().then(sub => {
+      const fresh = sub?.planLabel || sub?.plan || '';
+      if(fresh) applyPlanLabel(fresh);
+    }).catch(()=>{});
+  }
+
   // Admin flag
   const adminEl = document.getElementById('dr-admin');
   const adminLink = document.getElementById('link-admin');

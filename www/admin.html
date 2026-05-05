@@ -192,6 +192,24 @@ main{position:relative;z-index:2}
 .pub-modal-cancel{width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:10px;border-radius:3px;cursor:pointer;transition:all .2s}
 .pub-modal-cancel:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
 
+/* DAILY STATS TABLE */
+.daily-stats-wrap{margin-bottom:20px;background:rgba(255,255,255,.015);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.daily-stats-table{width:100%;border-collapse:collapse;font-size:12px}
+.daily-stats-table th{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:9px 14px;text-align:left;border-bottom:1px solid var(--border)}
+.daily-stats-table td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.daily-stats-table tr:last-child td{border-bottom:none}
+.daily-stats-table tr.total-row td{background:rgba(255,255,255,.025);font-weight:700}
+.dst-tier-free{color:var(--muted);font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.dst-tier-premium{color:#F5C04A;font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.dst-tier-total{color:var(--text);font-weight:800;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.dst-win{color:var(--green);font-weight:700}
+.dst-lost{color:var(--red);font-weight:700}
+.dst-pct{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;line-height:1}
+.dst-pct.green{color:var(--green)}
+.dst-pct.yellow{color:var(--yellow)}
+.dst-pct.red{color:var(--red)}
+.dst-pct.muted{color:var(--muted)}
+
 /* PIPELINE */
 .pipeline-section{margin-bottom:48px;opacity:0;animation:fadeUp .5s .75s forwards}
 .pipeline-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px}
@@ -378,6 +396,22 @@ main{position:relative;z-index:2}
       <div class="section-hdr">
         <h2 class="section-title">Picks publicados</h2>
         <span class="section-sub" id="published-count-label">0 publicados</span>
+      </div>
+      <div class="daily-stats-wrap" id="daily-stats-wrap" style="display:none">
+        <table class="daily-stats-table">
+          <thead>
+            <tr>
+              <th>Tier</th>
+              <th>Picks</th>
+              <th>Ganados</th>
+              <th>Perdidos</th>
+              <th>Void</th>
+              <th>Pendientes</th>
+              <th>Win %</th>
+            </tr>
+          </thead>
+          <tbody id="daily-stats-body"></tbody>
+        </table>
       </div>
       <div id="published-list">
         <div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Todavía no hay picks publicados para esta fecha.</div>
@@ -919,9 +953,75 @@ main{position:relative;z-index:2}
         body: JSON.stringify({ result })
       });
       addLog(`Resultado marcado: ${result} (pick #${pickId})`, 'ok');
+      // refresh daily stats table without full reload
+      const published = Array.from(document.querySelectorAll('#published-list .event-card')).map(card => {
+        const wonBtn = card.querySelector('.btn-result.won');
+        const lostBtn = card.querySelector('.btn-result.lost');
+        const voidBtn = card.querySelector('.btn-result.void');
+        const tierChip = card.querySelector('.chip.orange, .chip.muted:last-child');
+        const isWon = wonBtn?.classList.contains('active');
+        const isLost = lostBtn?.classList.contains('active');
+        const isVoid = voidBtn?.classList.contains('active');
+        const isPremium = tierChip?.textContent?.trim() === 'Premium';
+        return { latestPick: {
+          result: isWon?'won':isLost?'lost':isVoid?'void':'',
+          planTier: isPremium?'premium':'free',
+          status:'published',
+        }};
+      });
+      if(published.length) renderDailyStats(published);
     } catch(err){
       addLog(`Error marcando resultado: ${err.message}`, 'err');
     }
+  }
+
+  function renderDailyStats(published){
+    const statsWrap = document.getElementById('daily-stats-wrap');
+    const tbody = document.getElementById('daily-stats-body');
+    if(!published.length){ statsWrap.style.display='none'; return; }
+    statsWrap.style.display='';
+
+    function groupStats(picks){
+      const won = picks.filter(p=>p.result==='won').length;
+      const lost = picks.filter(p=>p.result==='lost').length;
+      const voidC = picks.filter(p=>p.result==='void').length;
+      const pending = picks.filter(p=>!p.result).length;
+      const resolved = won + lost;
+      const winPct = resolved ? Math.round(won/resolved*100) : null;
+      return { total:picks.length, won, lost, voidC, pending, winPct };
+    }
+    function pctClass(pct){ return pct===null?'muted':pct>=60?'green':pct>=50?'yellow':'red'; }
+    function pctText(pct){ return pct===null?'—':`${pct}%`; }
+
+    const freePicks  = published.map(ev=>ev.latestPick).filter(p=>String(p.planTier||'free')!=='premium');
+    const premPicks  = published.map(ev=>ev.latestPick).filter(p=>String(p.planTier||'free')==='premium');
+    const allPicks   = published.map(ev=>ev.latestPick);
+    const fs = groupStats(freePicks);
+    const ps = groupStats(premPicks);
+    const ts = groupStats(allPicks);
+
+    const row = (tierLabel, tierClass, s) => `<tr>
+      <td><span class="${tierClass}">${tierLabel}</span></td>
+      <td>${s.total}</td>
+      <td class="dst-win">${s.won}</td>
+      <td class="dst-lost">${s.lost}</td>
+      <td style="color:var(--muted)">${s.voidC}</td>
+      <td style="color:var(--yellow)">${s.pending}</td>
+      <td><span class="dst-pct ${pctClass(s.winPct)}">${pctText(s.winPct)}</span></td>
+    </tr>`;
+
+    tbody.innerHTML =
+      (freePicks.length ? row('🌍 Free','dst-tier-free',fs) : '') +
+      (premPicks.length ? row('⭐ Premium','dst-tier-premium',ps) : '') +
+      `<tr class="total-row">
+        <td><span class="dst-tier-total">Total</span></td>
+        <td>${ts.total}</td>
+        <td class="dst-win">${ts.won}</td>
+        <td class="dst-lost">${ts.lost}</td>
+        <td style="color:var(--muted)">${ts.voidC}</td>
+        <td style="color:var(--yellow)">${ts.pending}</td>
+        <td><span class="dst-pct ${pctClass(ts.winPct)}">${pctText(ts.winPct)}</span></td>
+      </tr>`;
   }
 
   function renderPublishedPicks(list){
@@ -929,6 +1029,7 @@ main{position:relative;z-index:2}
     const label = document.getElementById('published-count-label');
     const published = (list || []).filter(ev => ev?.latestPick && String(ev.latestPick.status || '').toLowerCase() === 'published');
     label.textContent = `${published.length} publicado${published.length!==1?'s':''}`;
+    renderDailyStats(published);
     if(!published.length){
       container.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Todavía no hay picks publicados para esta fecha.</div>`;
       return;
