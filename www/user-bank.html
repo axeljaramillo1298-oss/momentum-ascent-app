@@ -3,476 +3,501 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Bank | Momentum Ascent</title>
+  <title>Control de Bank | Momentum Ascent</title>
   <link rel="stylesheet" href="styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <style>
-    body{background:#060608;color:#f0ede8;font-family:'Barlow',sans-serif}
-    .bank-wrap{max-width:1240px;margin:0 auto;padding:18px 18px 140px}
-    .bank-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
-    .bank-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
-    .bank-nav a,.bank-nav button{font:700 11px 'Barlow',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(240,237,232,.6);text-decoration:none;background:transparent;border:1px solid rgba(255,255,255,.08);padding:10px 14px;border-radius:999px;cursor:pointer}
-    .bank-hero{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;align-items:start;margin-bottom:18px}
-    .bank-card{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:18px}
-    .bank-kicker{font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(240,237,232,.42);margin-bottom:12px}
-    .bank-title{font-family:'Barlow Condensed',sans-serif;font-style:italic;font-weight:900;font-size:clamp(42px,7vw,78px);line-height:.9;text-transform:uppercase}
-    .bank-title span{color:#ff5c1a}
-    .bank-copy{margin-top:14px;max-width:560px;color:rgba(240,237,232,.62);line-height:1.7}
-    .bank-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,92,26,.3);background:rgba(255,92,26,.08);color:#ff8e61;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
-    .bank-status{font-size:13px;color:rgba(240,237,232,.6)}
-    .bank-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    .bank-row{padding:14px;border-radius:14px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06)}
-    .bank-row span{display:block;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(240,237,232,.38);margin-bottom:7px}
-    .bank-row strong{display:block;font-size:18px;line-height:1.35;word-break:break-word}
-    .bank-note{margin-top:14px;padding:14px;border-radius:14px;background:linear-gradient(135deg,rgba(167,139,250,.08),rgba(255,92,26,.06));border:1px solid rgba(167,139,250,.18);color:rgba(240,237,232,.7);line-height:1.7}
-    .bank-side-list{display:grid;gap:10px}
-    .bank-side-item{padding:14px;border-radius:14px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06)}
-    .bank-side-item strong{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
-    .bank-side-item p{color:rgba(240,237,232,.62);line-height:1.65;font-size:13px}
-    .bank-side-item .cta{display:inline-flex;margin-top:10px;padding:10px 14px;border-radius:999px;background:#ff5c1a;color:#fff;text-decoration:none;font:700 11px 'Barlow',sans-serif;letter-spacing:.08em;text-transform:uppercase}
-    .bank-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:18px}
-    .metric-tile{padding:14px;border-radius:14px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06)}
-    .metric-tile span{display:block;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(240,237,232,.34);margin-bottom:8px}
-    .metric-tile strong{display:block;font-family:'Barlow Condensed',sans-serif;font-size:34px;line-height:1;color:#f0ede8}
-    .metric-tile p{margin-top:6px;font-size:12px;color:rgba(240,237,232,.52);line-height:1.5}
-    .bank-config{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}
-    .bank-field{display:grid;gap:6px}
-    .bank-field label{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(240,237,232,.4)}
-    .bank-field input,.bank-field textarea{width:100%;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;color:#f0ede8;padding:12px 14px;font:500 14px 'Barlow',sans-serif}
-    .bank-field textarea{min-height:92px;resize:vertical}
-    .bank-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-    .bank-btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:#f0ede8;font:700 11px 'Barlow',sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
-    .bank-btn.primary{background:#ff5c1a;border-color:#ff5c1a}
-    .bank-picks{display:grid;gap:12px;margin-top:18px}
-    .bank-pick-card{padding:16px;border-radius:16px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07)}
-    .bank-pick-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
-    .bank-pick-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:24px;line-height:.95;text-transform:uppercase}
-    .bank-pick-meta{margin-top:6px;font-size:12px;color:rgba(240,237,232,.5);display:flex;gap:8px;flex-wrap:wrap}
-    .bank-pill{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.08);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
-    .bank-pill.low{color:#4ADE80;border-color:rgba(74,222,128,.32)}
-    .bank-pill.mid{color:#F59E0B;border-color:rgba(245,158,11,.32)}
-    .bank-pill.high{color:#F87171;border-color:rgba(248,113,113,.32)}
-    .bank-reco{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
-    .bank-reco-box{padding:12px;border-radius:12px;background:rgba(0,0,0,.24);border:1px solid rgba(255,255,255,.05)}
-    .bank-reco-box span{display:block;font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(240,237,232,.34);margin-bottom:6px}
-    .bank-reco-box strong{display:block;font-size:17px;line-height:1.2}
-    .bank-track{display:grid;grid-template-columns:1.2fr .8fr .8fr auto;gap:10px;align-items:end}
-    .bank-track-status{font-size:11px;color:rgba(240,237,232,.56)}
-    .bank-pro-lock{margin-top:18px;padding:16px;border-radius:16px;border:1px solid rgba(255,92,26,.2);background:linear-gradient(135deg,rgba(255,92,26,.08),rgba(167,139,250,.05));color:rgba(240,237,232,.7);line-height:1.7}
-    .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:300;display:flex;border-top:1px solid rgba(255,255,255,.08);background:rgba(6,6,8,.92);backdrop-filter:blur(16px)}
-    .bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;text-decoration:none;color:rgba(240,237,232,.45);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
-    .bottom-nav-active,.bottom-nav-item:hover{color:#ff5c1a}
-    .bottom-nav-icon{font-size:18px}
-    @media(max-width:860px){.bank-hero,.bank-grid,.bank-config,.bank-reco,.bank-metrics,.bank-track{grid-template-columns:1fr}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#FF4500;
+  --dark:#060608;
+  --border:rgba(255,255,255,0.07);
+  --text:#f0ede8;
+  --muted:rgba(240,237,232,0.4);
+  --green:#4ADE80;
+  --red:#F87171;
+  --yellow:#F59E0B;
+  --purple:#A78BFA;
+}
+html{scroll-behavior:smooth}
+body{background:var(--dark)!important;color:var(--text);font-family:'Barlow',sans-serif;overflow-x:hidden;min-height:100vh}
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+main{position:relative;z-index:2}
+.user-panel-top{position:relative;z-index:200;padding:12px 16px}
+.user-panel-nav{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.nav-logo-link{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{width:32px;height:32px;flex-shrink:0}
+.logo-wordmark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--text)}
+.nav-actions{display:flex;align-items:center;gap:4px}
+.up-nav-link{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;border-radius:3px;text-decoration:none;color:var(--muted);transition:color .2s,background .2s;white-space:nowrap}
+.up-nav-link:hover{color:var(--text)}
+.up-nav-active{color:var(--text);background:rgba(255,255,255,.06)}
+
+/* HERO */
+.page-hero{padding:36px 52px 32px;position:relative}
+.page-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:360px;background:radial-gradient(ellipse 60% 80% at 20% 20%,rgba(80,20,120,.18) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 80% 40%,rgba(255,69,0,.05) 0%,transparent 70%);pointer-events:none}
+.hero-inner{display:flex;justify-content:space-between;align-items:flex-start;gap:40px;position:relative;z-index:1}
+.hero-left{flex:1}
+.page-eyebrow{font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;opacity:0;animation:fadeUp .5s .1s forwards}
+.page-eyebrow::before{content:'';width:20px;height:1px;background:var(--muted)}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(56px,8vw,104px);text-transform:uppercase;letter-spacing:-.02em;line-height:.88;opacity:0;animation:fadeUp .6s .2s forwards}
+.page-title span{color:var(--orange)}
+.page-desc{margin-top:16px;font-size:14px;color:var(--muted);max-width:420px;line-height:1.65;font-weight:300;opacity:0;animation:fadeUp .5s .35s forwards}
+.hero-chip-row{display:flex;gap:10px;margin-top:18px;align-items:center;flex-wrap:wrap;opacity:0;animation:fadeUp .4s .45s forwards}
+.plan-chip{display:inline-flex;align-items:center;gap:6px;font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,69,0,.4);background:rgba(255,69,0,.08);color:var(--orange)}
+.plan-chip.apex{border-color:rgba(245,192,74,.4);background:rgba(245,192,74,.08);color:#F5C04A}
+.plan-status-txt{font-size:12px;color:var(--muted)}
+
+/* CONTENT */
+.page-content{padding:0 52px 140px;position:relative;z-index:2}
+
+/* SECTION CARD */
+.section-card{background:rgba(255,255,255,.022);border:1px solid var(--border);border-radius:8px;padding:24px 28px;margin-bottom:20px;opacity:0;animation:fadeUp .5s forwards}
+.section-kicker{font-size:9.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.section-kicker::before{content:'';width:16px;height:1px;background:var(--muted)}
+.section-subtitle{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(28px,4vw,44px);text-transform:uppercase;letter-spacing:-.01em;line-height:.9;margin-bottom:12px}
+.section-subtitle span{color:var(--orange)}
+
+/* DATA GRID */
+.data-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:16px}
+.data-cell{background:rgba(255,255,255,.018);border:1px solid var(--border);border-radius:6px;padding:14px 16px}
+.data-cell-lbl{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.data-cell-val{font-size:16px;font-weight:600;line-height:1.3}
+.data-note{margin-top:14px;padding:14px 18px;background:linear-gradient(135deg,rgba(167,139,250,.07),rgba(255,69,0,.04));border:1px solid rgba(167,139,250,.18);border-radius:6px;font-size:12.5px;color:rgba(240,237,232,.6);line-height:1.7}
+
+/* METRICS ROW */
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
+.metric-box{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:16px}
+.metric-box-lbl{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.metric-box-val{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;line-height:1}
+.metric-box-sub{margin-top:4px;font-size:11px;color:var(--muted);line-height:1.45}
+
+/* CONFIG GRID */
+.config-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:16px}
+.field-group{display:grid;gap:5px}
+.field-lbl{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.field-input{width:100%;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:10px 12px;font:500 14px 'Barlow',sans-serif;transition:border-color .2s}
+.field-input:focus{outline:none;border-color:rgba(255,69,0,.4)}
+textarea.field-input{min-height:80px;resize:vertical}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.btn-primary{font:700 11px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:10px 22px;background:var(--orange);color:#fff;border:none;border-radius:3px;cursor:pointer;transition:background .2s}
+.btn-primary:hover{background:#e03d00}
+.btn-secondary{font:700 11px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:10px 20px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:3px;cursor:pointer;transition:all .2s}
+.btn-secondary:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+.config-note{margin-top:12px;font-size:11.5px;color:var(--muted);padding:12px 14px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:4px;line-height:1.6}
+
+/* PICK BANK CARDS */
+.pick-bank-list{display:grid;gap:12px;margin-top:16px}
+.pick-bank-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:18px}
+.pbk-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.pbk-match{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.01em}
+.pbk-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:4px}
+.risk-pill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;border:1px solid;font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.risk-pill.low{color:var(--green);border-color:rgba(74,222,128,.32)}
+.risk-pill.mid{color:var(--yellow);border-color:rgba(245,158,11,.32)}
+.risk-pill.high{color:var(--red);border-color:rgba(248,113,113,.32)}
+.pbk-reco{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.pbk-reco-box{background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.05);border-radius:4px;padding:10px 12px}
+.pbk-reco-box span{display:block;font-size:8.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.pbk-reco-box strong{display:block;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;line-height:1.1}
+.pbk-track{display:grid;grid-template-columns:1.2fr .8fr .8fr auto;gap:8px;align-items:end}
+.pbk-track-note{font-size:11px;color:var(--muted);margin-top:8px}
+
+/* ── UPSELL (non-Apex) ── */
+.upsell-section{opacity:0;animation:fadeUp .5s .4s forwards}
+.upsell-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+.upsell-card{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:8px;padding:24px 22px;position:relative;overflow:hidden;transition:border-color .3s,background .3s}
+.upsell-card:hover{border-color:rgba(255,69,0,.25);background:rgba(255,69,0,.03)}
+.upsell-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--orange),transparent);transform:scaleX(0);transform-origin:center;transition:transform .4s}
+.upsell-card:hover::before{transform:scaleX(1)}
+.upsell-icon{font-size:28px;margin-bottom:14px;display:block}
+.upsell-name{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+.upsell-desc{font-size:12.5px;color:var(--muted);line-height:1.65}
+.upsell-cta-block{background:linear-gradient(135deg,rgba(255,69,0,.08),rgba(167,139,250,.06));border:1px solid rgba(255,69,0,.25);border-radius:8px;padding:28px 32px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.upsell-cta-left{}
+.upsell-cta-eyebrow{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.upsell-cta-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:32px;text-transform:uppercase;line-height:.95;margin-bottom:6px}
+.upsell-cta-title span{color:var(--orange)}
+.upsell-cta-sub{font-size:13px;color:var(--muted);line-height:1.55}
+.upsell-cta-btn{display:inline-flex;align-items:center;font:700 12px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:13px 28px;background:var(--orange);color:#fff;border:none;border-radius:3px;cursor:pointer;text-decoration:none;white-space:nowrap;transition:background .2s;flex-shrink:0}
+.upsell-cta-btn:hover{background:#e03d00}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:300;display:flex;border-top:1px solid var(--border);background:rgba(6,6,8,.92);backdrop-filter:blur(16px)}
+.bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;text-decoration:none;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:color .2s}
+.bottom-nav-item:hover,.bottom-nav-active{color:var(--orange)}
+.bottom-nav-icon{font-size:18px;display:block}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:920px){
+  .page-hero{padding:24px 20px 20px}
+  .page-content{padding:0 20px 140px}
+  .metrics-row{grid-template-columns:repeat(2,1fr)}
+  .pbk-reco{grid-template-columns:repeat(2,1fr)}
+  .upsell-grid{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .nav-actions{display:none}
+  .data-grid{grid-template-columns:1fr}
+  .config-grid{grid-template-columns:1fr}
+  .pbk-track{grid-template-columns:1fr 1fr}
+  .metrics-row{grid-template-columns:repeat(2,1fr)}
+  .upsell-cta-block{flex-direction:column;align-items:flex-start}
+}
+@media(max-width:480px){
+  .metrics-row{grid-template-columns:1fr 1fr}
+  .pbk-reco{grid-template-columns:1fr 1fr}
+}
   </style>
 </head>
 <body>
-  <div class="bank-wrap">
-    <div class="bank-nav">
-      <div class="bank-logo">Momentum Ascent</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <a href="user-hoy.html">Picks</a>
-        <a href="planes.html">Planes</a>
-        <button type="button" id="bank-logout">Salir</button>
+<canvas id="bg-canvas"></canvas>
+
+<header class="user-panel-top">
+  <nav class="user-panel-nav">
+    <a class="nav-logo-link" href="user-hoy.html" aria-label="Momentum Ascent">
+      <svg class="logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><linearGradient id="lgNav" x1="0" y1="36" x2="36" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#ff3b30"/><stop offset="100%" stop-color="#f5c04a"/></linearGradient></defs>
+        <circle cx="18" cy="18" r="17" stroke="url(#lgNav)" stroke-width="2" fill="none" opacity="0.35"/>
+        <path d="M18.2 6.2C20.4 9.1 24.8 12 24.8 17.1C24.8 23 21.2 28.4 18 29.6C14.6 28.5 11.2 23.3 11.2 17.4C11.2 13.1 13.8 9.7 16.3 7.8C16.8 10 17.5 11.7 19.2 13.4C18.9 11.3 18.7 8.8 18.2 6.2Z" fill="url(#lgNav)" opacity="0.96"/>
+        <path d="M18.1 13.2C19.4 15 21.4 16.7 21.4 19.6C21.4 22.8 19.5 25.4 18 26C16.2 25.4 14.5 22.5 14.5 19.5C14.5 17.2 15.8 15.4 17.2 14.2C17.4 15.3 17.8 16.2 18.9 17.1C18.7 15.9 18.4 14.6 18.1 13.2Z" fill="rgba(255,248,235,0.72)"/>
+      </svg>
+      <span class="logo-wordmark">MOMENTUM ASCENT</span>
+    </a>
+    <div class="nav-actions">
+      <a class="up-nav-link" href="user-hoy.html">Picks</a>
+      <a class="up-nav-link up-nav-active" href="user-bank.html">Bank</a>
+      <a class="up-nav-link" href="planes.html">Planes</a>
+      <a class="up-nav-link" href="user-checkin.html">Cuenta</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <div class="page-hero">
+    <div class="hero-inner">
+      <div class="hero-left">
+        <div class="page-eyebrow">Bank + Apex Layer</div>
+        <h1 class="page-title">Control<br>de <span>Bank</span></h1>
+        <p class="page-desc" id="hero-desc">Define tu capital, limita la exposición diaria y deja que el sistema te diga cuánto arriesgar por pick sin operar por emoción.</p>
+        <div class="hero-chip-row">
+          <span class="plan-chip" id="plan-chip-el">Plan Free</span>
+          <span class="plan-status-txt" id="plan-status-txt">Cargando…</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-content">
+
+    <!-- ── UPSELL (non-Apex) ─────────────────────────────── -->
+    <div id="upsell-view" class="upsell-section" style="display:none">
+      <div class="upsell-grid">
+        <div class="upsell-card">
+          <span class="upsell-icon">🎯</span>
+          <div class="upsell-name">Stake por pick</div>
+          <div class="upsell-desc">El sistema calcula cuánto arriesgar por cada pick según su nivel de confianza y riesgo. Sin adivinar, sin operar por impulso.</div>
+        </div>
+        <div class="upsell-card">
+          <span class="upsell-icon">🛡️</span>
+          <div class="upsell-name">Stop-loss + Exposición</div>
+          <div class="upsell-desc">Define tu límite diario de pérdida y tu exposición máxima. El sistema te avisa cuando estás a punto de quemar el bank en un mal día.</div>
+        </div>
+        <div class="upsell-card">
+          <span class="upsell-icon">📊</span>
+          <div class="upsell-name">P&L real</div>
+          <div class="upsell-desc">Registra cuánto apostaste y cuánto ganaste o perdiste pick a pick. Construye un historial real de tu operación, no de lo que recuerdas.</div>
+        </div>
+      </div>
+
+      <div class="upsell-cta-block">
+        <div class="upsell-cta-left">
+          <div class="upsell-cta-eyebrow">Plan Apex · $399 MXN/mes</div>
+          <div class="upsell-cta-title">Gestión seria<br>de tu <span>bank</span></div>
+          <div class="upsell-cta-sub">Picks con análisis dual GPT + Claude, cuenta bancaria de pago, stake sugerido por pick y tracking completo de ganancias y pérdidas.</div>
+        </div>
+        <a class="upsell-cta-btn" href="planes.html">Activar Apex →</a>
       </div>
     </div>
 
-    <section class="bank-hero">
-      <article class="bank-card">
-        <div class="bank-kicker">Bank + Apex Layer</div>
-        <div class="bank-title">Control de <span>Bank</span></div>
-        <p class="bank-copy">Aquí el usuario no solo ve dónde pagar. También define su capital, cuánto arriesga por pick, cuánto puede exponer al día y cuánto ganó o perdió para no operar por emoción.</p>
-        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <span class="bank-chip" id="bank-plan-chip">Plan Free</span>
-          <span class="bank-status" id="bank-plan-status">Cargando estado…</span>
+    <!-- ── APEX FULL VIEW ────────────────────────────────── -->
+    <div id="apex-view" style="display:none">
+
+      <!-- DATOS BANCARIOS -->
+      <div class="section-card" style="animation-delay:.4s">
+        <div class="section-kicker">Datos bancarios</div>
+        <div class="data-grid">
+          <div class="data-cell"><div class="data-cell-lbl">Banco</div><div class="data-cell-val" id="bank-name">—</div></div>
+          <div class="data-cell"><div class="data-cell-lbl">Titular</div><div class="data-cell-val" id="bank-holder">—</div></div>
+          <div class="data-cell"><div class="data-cell-lbl">CLABE</div><div class="data-cell-val" id="bank-clabe">—</div></div>
+          <div class="data-cell"><div class="data-cell-lbl">Número de cuenta</div><div class="data-cell-val" id="bank-account">—</div></div>
+          <div class="data-cell"><div class="data-cell-lbl">WhatsApp confirmación</div><div class="data-cell-val" id="bank-whatsapp">—</div></div>
+          <div class="data-cell"><div class="data-cell-lbl">Usuario</div><div class="data-cell-val" id="bank-user-email">—</div></div>
         </div>
-      </article>
-
-      <aside class="bank-side-list">
-        <div class="bank-side-item">
-          <strong>Qué hace esta capa</strong>
-          <p>Momentum calcula stake sugerido por pick y deja trazado manual de cuánto apostaste y cuál fue el resultado neto real.</p>
-        </div>
-        <div class="bank-side-item">
-          <strong>Acceso Apex</strong>
-          <p id="bank-upsell-copy">Apex desbloquea análisis completo, lectura dual GPT + Claude y la operación completa del bank.</p>
-          <a class="cta" href="planes.html">Ver planes</a>
-        </div>
-      </aside>
-    </section>
-
-    <section class="bank-card">
-      <div class="bank-kicker">Datos bancarios</div>
-      <div class="bank-grid">
-        <div class="bank-row"><span>Banco</span><strong id="bank-name">—</strong></div>
-        <div class="bank-row"><span>Titular</span><strong id="bank-holder">—</strong></div>
-        <div class="bank-row"><span>CLABE</span><strong id="bank-clabe">—</strong></div>
-        <div class="bank-row"><span>Número de cuenta</span><strong id="bank-account">—</strong></div>
-        <div class="bank-row"><span>WhatsApp confirmación</span><strong id="bank-whatsapp">—</strong></div>
-        <div class="bank-row"><span>Usuario</span><strong id="bank-user-email">—</strong></div>
-      </div>
-      <div class="bank-note" id="bank-note">Cargando instrucciones…</div>
-    </section>
-
-    <section class="bank-card">
-      <div class="bank-kicker">Gestión operativa</div>
-      <div class="bank-title" style="font-size:clamp(34px,5vw,54px)">Disciplina de <span>Stake</span></div>
-      <p class="bank-copy">Define tu bank, limita la exposición y deja que el sistema te sugiera cuánto arriesgar por pick según confianza y riesgo.</p>
-
-      <div class="bank-metrics">
-        <div class="metric-tile"><span>Bank actual</span><strong id="bank-metric-total">$0</strong><p>Capital base más resultado neto registrado.</p></div>
-        <div class="metric-tile"><span>Exposición activa</span><strong id="bank-metric-exposure">$0</strong><p id="bank-metric-exposure-copy">0 picks abiertos.</p></div>
-        <div class="metric-tile"><span>Resultado neto</span><strong id="bank-metric-pnl">$0</strong><p>Ganancia o pérdida guardada por el usuario.</p></div>
-        <div class="metric-tile"><span>Stop-loss</span><strong id="bank-metric-stop">$0</strong><p id="bank-metric-stop-copy">Límite emocional del día.</p></div>
+        <div class="data-note" id="bank-note">Cargando instrucciones…</div>
       </div>
 
-      <div class="bank-config">
-        <div class="bank-field">
-          <label for="bank-total-input">Bank total</label>
-          <input id="bank-total-input" type="number" min="0" step="0.01" placeholder="10000" />
-        </div>
-        <div class="bank-field">
-          <label for="bank-unit-input">Unidad base %</label>
-          <input id="bank-unit-input" type="number" min="0.25" max="10" step="0.25" placeholder="2" />
-        </div>
-        <div class="bank-field">
-          <label for="bank-stop-input">Stop-loss diario %</label>
-          <input id="bank-stop-input" type="number" min="1" max="30" step="0.5" placeholder="6" />
-        </div>
-        <div class="bank-field">
-          <label for="bank-exposure-input">Máx. exposición total %</label>
-          <input id="bank-exposure-input" type="number" min="1" max="40" step="0.5" placeholder="10" />
-        </div>
-        <div class="bank-field">
-          <label for="bank-target-input">Objetivo diario %</label>
-          <input id="bank-target-input" type="number" min="1" max="30" step="0.5" placeholder="8" />
-        </div>
-        <div class="bank-field">
-          <label for="bank-notes-input">Regla personal</label>
-          <textarea id="bank-notes-input" placeholder="Ejemplo: no subir stake si vengo de dos derrotas seguidas."></textarea>
-        </div>
-      </div>
-      <div class="bank-actions">
-        <button class="bank-btn primary" id="bank-save-btn" type="button">Guardar control</button>
-        <button class="bank-btn" id="bank-reset-btn" type="button">Resetear sesión</button>
-      </div>
-      <div class="bank-note" id="bank-rules-note">El sistema calculará stake sugerido por pick con base en tu unidad y el riesgo de cada selección.</div>
-    </section>
+      <!-- GESTIÓN OPERATIVA -->
+      <div class="section-card" style="animation-delay:.5s">
+        <div class="section-kicker">Gestión operativa</div>
+        <div class="section-subtitle">Momentum de <span>Stake</span></div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.65">Define tu bank, limita la exposición y deja que el sistema te sugiera cuánto arriesgar por pick según confianza y riesgo.</p>
 
-    <section class="bank-card">
-      <div class="bank-kicker">Picks del día + stake sugerido</div>
-      <div id="bank-picks-list" class="bank-picks">
-        <div style="padding:20px;text-align:center;color:rgba(240,237,232,.46)">Cargando picks…</div>
+        <div class="metrics-row">
+          <div class="metric-box"><div class="metric-box-lbl">Bank actual</div><div class="metric-box-val" id="bank-metric-total">$0</div><div class="metric-box-sub">Capital base + resultado neto.</div></div>
+          <div class="metric-box"><div class="metric-box-lbl">Exposición activa</div><div class="metric-box-val" id="bank-metric-exposure">$0</div><div class="metric-box-sub" id="bank-metric-exposure-copy">0 picks abiertos.</div></div>
+          <div class="metric-box"><div class="metric-box-lbl">Resultado neto</div><div class="metric-box-val" id="bank-metric-pnl">$0</div><div class="metric-box-sub">Ganancia o pérdida registrada.</div></div>
+          <div class="metric-box"><div class="metric-box-lbl">Stop-loss</div><div class="metric-box-val" id="bank-metric-stop">$0</div><div class="metric-box-sub" id="bank-metric-stop-copy">Límite emocional del día.</div></div>
+        </div>
+
+        <div class="config-grid">
+          <div class="field-group"><label class="field-lbl" for="bank-total-input">Bank total</label><input class="field-input" id="bank-total-input" type="number" min="0" step="0.01" placeholder="10000" /></div>
+          <div class="field-group"><label class="field-lbl" for="bank-unit-input">Unidad base %</label><input class="field-input" id="bank-unit-input" type="number" min="0.25" max="10" step="0.25" placeholder="2" /></div>
+          <div class="field-group"><label class="field-lbl" for="bank-stop-input">Stop-loss diario %</label><input class="field-input" id="bank-stop-input" type="number" min="1" max="30" step="0.5" placeholder="6" /></div>
+          <div class="field-group"><label class="field-lbl" for="bank-exposure-input">Máx. exposición total %</label><input class="field-input" id="bank-exposure-input" type="number" min="1" max="40" step="0.5" placeholder="10" /></div>
+          <div class="field-group"><label class="field-lbl" for="bank-target-input">Objetivo diario %</label><input class="field-input" id="bank-target-input" type="number" min="1" max="30" step="0.5" placeholder="8" /></div>
+          <div class="field-group"><label class="field-lbl" for="bank-notes-input">Regla personal</label><textarea class="field-input" id="bank-notes-input" placeholder="Ej: no subir stake si vengo de dos derrotas seguidas."></textarea></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-primary" id="bank-save-btn" type="button">Guardar control</button>
+          <button class="btn-secondary" id="bank-reset-btn" type="button">Resetear sesión</button>
+        </div>
+        <div class="config-note" id="bank-rules-note">El sistema calculará stake sugerido por pick con base en tu unidad y el riesgo de cada selección.</div>
       </div>
-      <div id="bank-pro-lock" class="bank-pro-lock" style="display:none"></div>
-    </section>
+
+      <!-- PICKS + STAKE -->
+      <div class="section-card" style="animation-delay:.6s">
+        <div class="section-kicker">Picks del día + stake sugerido</div>
+        <div class="pick-bank-list" id="bank-picks-list">
+          <div style="padding:24px;text-align:center;color:var(--muted)">Cargando picks…</div>
+        </div>
+      </div>
+
+    </div>
   </div>
+</main>
 
-  <nav class="bottom-nav">
-    <a class="bottom-nav-item" href="user-hoy.html"><span class="bottom-nav-icon">🎯</span><span>Picks</span></a>
-    <a class="bottom-nav-item" href="user-progreso.html"><span class="bottom-nav-icon">📚</span><span>Historial</span></a>
-    <a class="bottom-nav-item bottom-nav-active" href="user-bank.html"><span class="bottom-nav-icon">💰</span><span>Bank</span></a>
-    <a class="bottom-nav-item" href="planes.html"><span class="bottom-nav-icon">💳</span><span>Planes</span></a>
-    <a class="bottom-nav-item" href="user-checkin.html"><span class="bottom-nav-icon">👤</span><span>Cuenta</span></a>
-  </nav>
+<nav class="bottom-nav" aria-label="Navegación principal">
+  <a class="bottom-nav-item" href="user-hoy.html"><span class="bottom-nav-icon">🎯</span><span>Picks</span></a>
+  <a class="bottom-nav-item" href="user-progreso.html"><span class="bottom-nav-icon">📚</span><span>Historial</span></a>
+  <a class="bottom-nav-item bottom-nav-active" href="user-bank.html"><span class="bottom-nav-icon">💰</span><span>Bank</span></a>
+  <a class="bottom-nav-item" href="planes.html"><span class="bottom-nav-icon">💳</span><span>Planes</span></a>
+  <a class="bottom-nav-item" href="user-checkin.html"><span class="bottom-nav-icon">👤</span><span>Cuenta</span></a>
+</nav>
 
-  <script src="app.js"></script>
-  <script>
-    (async function(){
-      const BANK_STATE_KEY = 'momentum_bank_control_v1';
-      const BANK_TRACK_KEY = 'momentum_bank_tracking_v1';
-      const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
-      const sub = typeof syncCurrentSubscriptionFromApi === 'function'
-        ? (await syncCurrentSubscriptionFromApi()) || (typeof getCurrentSubscription === 'function' ? getCurrentSubscription() : null)
-        : (typeof getCurrentSubscription === 'function' ? getCurrentSubscription() : null);
-      const selected = typeof getSubscriptionPlanSelection === 'function'
-        ? (getSubscriptionPlanSelection(sub) || getEffectivePlanSelection?.())
-        : null;
-      const planId = String(selected?.id || user?.planId || 'free').toLowerCase();
-      const planLabel = selected?.label || sub?.planLabel || user?.plan || 'Free';
-      const planStatus = String(sub?.status || 'inactive').toLowerCase();
-      const isApex = planId === 'coach_humano';
-      const userKey = String(user?.id || user?.email || 'guest').toLowerCase();
-      const loadScoped = (key, fallback) => {
-        try {
-          const raw = localStorage.getItem(key);
-          const parsed = raw ? JSON.parse(raw) : {};
-          return parsed && typeof parsed === 'object' && parsed[userKey] ? parsed[userKey] : fallback;
-        } catch {
-          return fallback;
-        }
-      };
-      const saveScoped = (key, value) => {
-        let parsed = {};
-        try { parsed = JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch {}
-        parsed[userKey] = value;
-        localStorage.setItem(key, JSON.stringify(parsed));
-      };
-      const formatMoney = (value) => new Intl.NumberFormat('es-MX', { style:'currency', currency:'MXN', maximumFractionDigits:2 }).format(Number(value || 0));
-      const toPct = (value) => `${Number(value || 0).toFixed(2).replace(/\.00$/, '')}%`;
-      const localFallbackState = {
-        totalBank: 10000,
-        unitPercent: 2,
-        stopLossPercent: 6,
-        maxExposurePercent: 10,
-        targetPercent: 8,
-        personalRule: '',
-        ...loadScoped(BANK_STATE_KEY, {}),
-      };
-      let bankState = { ...localFallbackState };
-      let tracking = loadScoped(BANK_TRACK_KEY, {});
-      const persistLocalFallback = () => {
-        saveScoped(BANK_STATE_KEY, {
-          totalBank: bankState.totalBank,
-          unitPercent: bankState.unitPercent,
-          stopLossPercent: bankState.stopLossPercent,
-          maxExposurePercent: bankState.maxExposurePercent,
-          targetPercent: bankState.targetPercent,
-          personalRule: bankState.personalRule,
-        });
-        saveScoped(BANK_TRACK_KEY, tracking);
-      };
-      const loadBankControlRemote = async () => {
-        if (!user?.id || typeof apiGet !== 'function') return;
-        try {
-          const remote = await apiGet(`/bank-control/${encodeURIComponent(user.id)}`);
-          const payload = remote?.bankControl || null;
-          if (payload && typeof payload === 'object') {
-            bankState = {
-              totalBank: Number(payload.totalBank || localFallbackState.totalBank),
-              unitPercent: Number(payload.unitPercent || localFallbackState.unitPercent),
-              stopLossPercent: Number(payload.stopLossPercent || localFallbackState.stopLossPercent),
-              maxExposurePercent: Number(payload.maxExposurePercent || localFallbackState.maxExposurePercent),
-              targetPercent: Number(payload.targetPercent || localFallbackState.targetPercent),
-              personalRule: String(payload.personalRule || ''),
-            };
-            tracking = payload.tracking && typeof payload.tracking === 'object' ? payload.tracking : {};
-            persistLocalFallback();
-          }
-        } catch {}
-      };
-      const saveBankControlRemote = async () => {
-        persistLocalFallback();
-        if (!user?.id || typeof apiRequest !== 'function') return;
-        try {
-          await apiRequest(`/bank-control/${encodeURIComponent(user.id)}`, {
-            method: 'POST',
-            body: {
-              totalBank: bankState.totalBank,
-              unitPercent: bankState.unitPercent,
-              stopLossPercent: bankState.stopLossPercent,
-              maxExposurePercent: bankState.maxExposurePercent,
-              targetPercent: bankState.targetPercent,
-              personalRule: bankState.personalRule,
-              tracking,
-            },
-          });
-        } catch {}
-      };
+<script src="app.js"></script>
+<script>
+(async function(){
+  const BANK_STATE_KEY = 'momentum_bank_control_v1';
+  const BANK_TRACK_KEY = 'momentum_bank_tracking_v1';
+  const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+  const sub = typeof syncCurrentSubscriptionFromApi === 'function'
+    ? (await syncCurrentSubscriptionFromApi()) || (typeof getCurrentSubscription === 'function' ? getCurrentSubscription() : null)
+    : (typeof getCurrentSubscription === 'function' ? getCurrentSubscription() : null);
+  const selected = typeof getSubscriptionPlanSelection === 'function'
+    ? (getSubscriptionPlanSelection(sub) || getEffectivePlanSelection?.())
+    : null;
+  const planId = String(selected?.id || user?.planId || 'free').toLowerCase();
+  const planLabel = selected?.label || sub?.planLabel || user?.plan || 'Free';
+  const planStatus = String(sub?.status || 'inactive').toLowerCase();
+  const isApex = planId === 'coach_humano';
+  const userKey = String(user?.id || user?.email || 'guest').toLowerCase();
 
-      const riskClass = (risk) => {
-        const raw = String(risk || '').toUpperCase();
-        if (raw === 'BAJO') return 'low';
-        if (raw === 'ALTO') return 'high';
-        return 'mid';
-      };
-      const recommendedPercent = (pick) => {
-        const confidence = Number(pick?.confidence || 0);
-        const risk = String(pick?.riskLevel || pick?.risk_level || '').toUpperCase();
-        const base = Number(bankState.unitPercent || 2);
-        let multiplier = 1;
-        if (confidence >= 75) multiplier = 1.8;
-        else if (confidence >= 68) multiplier = 1.45;
-        else if (confidence >= 62) multiplier = 1.15;
-        else if (confidence >= 56) multiplier = 0.9;
-        else multiplier = 0.65;
-        if (risk === 'ALTO') multiplier *= 0.6;
-        if (risk === 'MEDIO') multiplier *= 0.9;
-        if (risk === 'BAJO') multiplier *= 1.1;
-        return Number(Math.min(Math.max(base * multiplier, 0.5), Math.max(base * 2, 4.5)).toFixed(2));
-      };
-      const computeMetrics = (picks) => {
-        const rows = Object.values(tracking || {});
-        const realizedPnl = rows.reduce((sum, row) => sum + Number(row?.net || 0), 0);
-        const exposure = (picks || []).reduce((sum, pick) => {
-          const row = tracking[String(pick.id)] || {};
-          if (String(row?.status || 'open') === 'closed') return sum;
-          return sum + Number(row?.stake || 0);
-        }, 0);
-        const currentBank = Number(bankState.totalBank || 0) + realizedPnl;
-        return {
-          realizedPnl,
-          exposure,
-          currentBank,
-          stopLossAmount: Number(bankState.totalBank || 0) * (Number(bankState.stopLossPercent || 0) / 100),
-          targetAmount: Number(bankState.totalBank || 0) * (Number(bankState.targetPercent || 0) / 100),
-        };
-      };
-      const paintMetrics = (picks) => {
-        const metrics = computeMetrics(picks);
-        document.getElementById('bank-metric-total').textContent = formatMoney(metrics.currentBank);
-        document.getElementById('bank-metric-exposure').textContent = formatMoney(metrics.exposure);
-        document.getElementById('bank-metric-pnl').textContent = formatMoney(metrics.realizedPnl);
-        document.getElementById('bank-metric-stop').textContent = formatMoney(metrics.stopLossAmount);
-        document.getElementById('bank-metric-exposure-copy').textContent = `${(picks || []).length} pick${(picks || []).length !== 1 ? 's' : ''} cargados · tope ${toPct(bankState.maxExposurePercent)}`;
-        document.getElementById('bank-metric-stop-copy').textContent = `Stop-loss ${toPct(bankState.stopLossPercent)} · target ${formatMoney(metrics.targetAmount)}`;
-      };
-      const bindConfig = () => {
-        document.getElementById('bank-total-input').value = bankState.totalBank;
-        document.getElementById('bank-unit-input').value = bankState.unitPercent;
-        document.getElementById('bank-stop-input').value = bankState.stopLossPercent;
-        document.getElementById('bank-exposure-input').value = bankState.maxExposurePercent;
-        document.getElementById('bank-target-input').value = bankState.targetPercent;
-        document.getElementById('bank-notes-input').value = bankState.personalRule || '';
-        document.getElementById('bank-rules-note').textContent = bankState.personalRule
-          ? `Regla activa: ${bankState.personalRule}`
-          : 'El sistema calculará stake sugerido por pick con base en tu unidad y el riesgo de cada selección.';
-      };
-      const saveConfig = async () => {
-        bankState.totalBank = Number(document.getElementById('bank-total-input').value || bankState.totalBank || 0);
-        bankState.unitPercent = Number(document.getElementById('bank-unit-input').value || bankState.unitPercent || 2);
-        bankState.stopLossPercent = Number(document.getElementById('bank-stop-input').value || bankState.stopLossPercent || 6);
-        bankState.maxExposurePercent = Number(document.getElementById('bank-exposure-input').value || bankState.maxExposurePercent || 10);
-        bankState.targetPercent = Number(document.getElementById('bank-target-input').value || bankState.targetPercent || 8);
-        bankState.personalRule = String(document.getElementById('bank-notes-input').value || '').trim();
-        await saveBankControlRemote();
-        bindConfig();
-        if (typeof showToast === 'function') showToast('Control de bank actualizado.', 'success');
-      };
-      const resetSession = async () => {
-        tracking = {};
-        await saveBankControlRemote();
-        if (typeof showToast === 'function') showToast('Sesión de bank reiniciada.', 'info');
-      };
-      const renderPicksBank = async () => {
-        const listEl = document.getElementById('bank-picks-list');
-        const lockEl = document.getElementById('bank-pro-lock');
-        try {
-          const remote = typeof apiGet === 'function' ? await apiGet('/api/picks/today') : { picks: [] };
-          const picks = Array.isArray(remote?.picks) ? remote.picks : [];
-          paintMetrics(picks);
-          if (!isApex) {
-            lockEl.style.display = 'block';
-            lockEl.innerHTML = 'Activa Apex para ver el stake recomendado por pick, registrar cuánto apostaste y seguir la ganancia/pérdida real sin operar por emoción.';
-            listEl.innerHTML = `<div style="padding:20px;text-align:center;color:rgba(240,237,232,.46)">La capa de gestión operativa completa está disponible solo para Apex.</div>`;
-            return;
-          }
-          lockEl.style.display = 'none';
-          if (!picks.length) {
-            listEl.innerHTML = `<div style="padding:20px;text-align:center;color:rgba(240,237,232,.46)">No hay picks cargados para calcular stake.</div>`;
-            return;
-          }
-          listEl.innerHTML = '';
-          picks.forEach((pick) => {
-            const stakePct = recommendedPercent(pick);
-            const suggestedStake = Number(bankState.totalBank || 0) * (stakePct / 100);
-            const rowState = tracking[String(pick.id)] || { stake: suggestedStake.toFixed(2), net: '', status: 'open' };
-            const card = document.createElement('article');
-            card.className = 'bank-pick-card';
-            card.innerHTML = `
-              <div class="bank-pick-top">
-                <div>
-                  <div class="bank-pick-title">${pick.homeTeam || pick.home_team || '—'} vs ${pick.awayTeam || pick.away_team || '—'}</div>
-                  <div class="bank-pick-meta">
-                    <span>${pick.league || '—'}</span>
-                    <span>·</span>
-                    <span>${pick.market || 'Mercado'}</span>
-                    <span>·</span>
-                    <span>${pick.pick || 'Selección'}</span>
-                  </div>
-                </div>
-                <span class="bank-pill ${riskClass(pick.riskLevel || pick.risk_level)}">${pick.riskLevel || pick.risk_level || 'MEDIO'}</span>
-              </div>
-              <div class="bank-reco">
-                <div class="bank-reco-box"><span>Confianza</span><strong>${Number(pick.confidence || 0)}%</strong></div>
-                <div class="bank-reco-box"><span>Stake sugerido</span><strong>${toPct(stakePct)}</strong></div>
-                <div class="bank-reco-box"><span>Monto sugerido</span><strong>${formatMoney(suggestedStake)}</strong></div>
-                <div class="bank-reco-box"><span>Límite emocional</span><strong>${toPct(Math.min(stakePct, bankState.maxExposurePercent))}</strong></div>
-              </div>
-              <div class="bank-track">
-                <div class="bank-field">
-                  <label>Stake real apostado</label>
-                  <input data-bank-stake="${pick.id}" type="number" min="0" step="0.01" value="${rowState.stake || ''}" />
-                </div>
-                <div class="bank-field">
-                  <label>Resultado neto</label>
-                  <input data-bank-net="${pick.id}" type="number" step="0.01" value="${rowState.net || ''}" placeholder="+350 / -200" />
-                </div>
-                <div class="bank-field">
-                  <label>Estado</label>
-                  <input data-bank-status="${pick.id}" value="${rowState.status || 'open'}" placeholder="open / closed" />
-                </div>
-                <button class="bank-btn primary" type="button" data-bank-save="${pick.id}">Guardar</button>
-              </div>
-              <div class="bank-track-status" id="bank-track-status-${pick.id}">Sugerencia: no sobrepasar ${formatMoney(Number(bankState.totalBank || 0) * (Number(bankState.maxExposurePercent || 0) / 100))} de exposición total en el día.</div>`;
-            listEl.appendChild(card);
-          });
-          listEl.querySelectorAll('[data-bank-save]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-              const id = String(btn.getAttribute('data-bank-save'));
-              tracking[id] = {
-                stake: Number(listEl.querySelector(`[data-bank-stake="${id}"]`)?.value || 0),
-                net: Number(listEl.querySelector(`[data-bank-net="${id}"]`)?.value || 0),
-                status: String(listEl.querySelector(`[data-bank-status="${id}"]`)?.value || 'open').trim().toLowerCase() || 'open',
-              };
-              saveBankControlRemote();
-              paintMetrics(picks);
-              const statusEl = document.getElementById(`bank-track-status-${id}`);
-              if (statusEl) statusEl.textContent = `Stake registrado: ${formatMoney(tracking[id].stake)} · neto: ${formatMoney(tracking[id].net)} · estado: ${tracking[id].status}.`;
-              if (typeof showToast === 'function') showToast('Movimiento de bank guardado.', 'success');
-            });
-          });
-        } catch {
-          listEl.innerHTML = `<div style="padding:20px;text-align:center;color:rgba(240,237,232,.46)">No se pudo cargar el stake sugerido de los picks.</div>`;
-        }
-      };
+  // plan chip
+  const chipEl = document.getElementById('plan-chip-el');
+  chipEl.textContent = planLabel;
+  if(isApex) chipEl.classList.add('apex');
+  document.getElementById('plan-status-txt').textContent =
+    planStatus === 'active' ? 'Acceso activo' :
+    planStatus === 'pending' ? 'Pago pendiente de validación' :
+    isApex ? 'Plan activo' : 'Sin plan Apex activo';
 
-      document.getElementById('bank-plan-chip').textContent = planLabel;
-      document.getElementById('bank-plan-status').textContent =
-        planStatus === 'active' ? 'Acceso activo' :
-        planStatus === 'pending' ? 'Pago pendiente de validación' :
-        'Sin acceso premium activo';
-      document.getElementById('bank-user-email').textContent = user?.email || '—';
-      document.getElementById('bank-upsell-copy').textContent = isApex
-        ? 'Tu cuenta Apex ya puede consumir cuenta operativa, stake recomendado y tracking real de ganancias/pérdidas.'
-        : 'Apex desbloquea análisis completo, lectura dual GPT + Claude y la operación completa del bank.';
+  // show correct view
+  document.getElementById(isApex ? 'apex-view' : 'upsell-view').style.display = '';
 
-      try {
-        const billing = typeof getBillingTarget === 'function'
-          ? await getBillingTarget()
-          : { bankName:'—', accountHolder:'—', clabe:'—', accountNumber:'—', whatsapp:'—', note:'' };
-        const masked = 'Disponible solo para Apex';
-        document.getElementById('bank-name').textContent = billing.bankName || '—';
-        document.getElementById('bank-holder').textContent = isApex ? (billing.accountHolder || '—') : masked;
-        document.getElementById('bank-clabe').textContent = isApex ? (billing.clabe || '—') : masked;
-        document.getElementById('bank-account').textContent = isApex ? (billing.accountNumber || '—') : masked;
-        document.getElementById('bank-whatsapp').textContent = isApex ? (billing.whatsapp || '—') : masked;
-        document.getElementById('bank-note').textContent = isApex
-          ? (billing.note || 'Si ya hiciste la transferencia, envía el comprobante al WhatsApp configurado para validar tu acceso.')
-          : 'Activa Apex para ver la cuenta operativa completa, el canal de confirmación y la nota interna del bank.';
-      } catch {
-        document.getElementById('bank-note').textContent = 'No se pudo cargar la cuenta bancaria en este momento.';
+  if(!isApex) return; // no more work for non-Apex
+
+  // ── Scoped local storage ──────────────────────────────────
+  const loadScoped = (key, fallback) => {
+    try { const r=JSON.parse(localStorage.getItem(key)||'{}'); return r&&r[userKey]?r[userKey]:fallback; } catch{ return fallback; }
+  };
+  const saveScoped = (key, value) => {
+    let p={}; try{ p=JSON.parse(localStorage.getItem(key)||'{}')||{}; }catch{} p[userKey]=value; localStorage.setItem(key,JSON.stringify(p));
+  };
+  const formatMoney = v => new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:2}).format(Number(v||0));
+  const toPct = v => `${Number(v||0).toFixed(2).replace(/\.00$/,'')}%`;
+
+  const localFallback = { totalBank:10000, unitPercent:2, stopLossPercent:6, maxExposurePercent:10, targetPercent:8, personalRule:'', ...loadScoped(BANK_STATE_KEY,{}) };
+  let bankState = { ...localFallback };
+  let tracking = loadScoped(BANK_TRACK_KEY, {});
+
+  const persistLocal = () => {
+    saveScoped(BANK_STATE_KEY, { totalBank:bankState.totalBank, unitPercent:bankState.unitPercent, stopLossPercent:bankState.stopLossPercent, maxExposurePercent:bankState.maxExposurePercent, targetPercent:bankState.targetPercent, personalRule:bankState.personalRule });
+    saveScoped(BANK_TRACK_KEY, tracking);
+  };
+  const loadRemote = async () => {
+    if(!user?.id || typeof apiGet !== 'function') return;
+    try {
+      const r = await apiGet(`/bank-control/${encodeURIComponent(user.id)}`);
+      const p = r?.bankControl;
+      if(p && typeof p === 'object'){
+        bankState = { totalBank:Number(p.totalBank||localFallback.totalBank), unitPercent:Number(p.unitPercent||localFallback.unitPercent), stopLossPercent:Number(p.stopLossPercent||localFallback.stopLossPercent), maxExposurePercent:Number(p.maxExposurePercent||localFallback.maxExposurePercent), targetPercent:Number(p.targetPercent||localFallback.targetPercent), personalRule:String(p.personalRule||'') };
+        tracking = p.tracking&&typeof p.tracking==='object'?p.tracking:{};
+        persistLocal();
       }
+    } catch{}
+  };
+  const saveRemote = async () => {
+    persistLocal();
+    if(!user?.id || typeof apiRequest !== 'function') return;
+    try { await apiRequest(`/bank-control/${encodeURIComponent(user.id)}`,{method:'POST',body:{...bankState,tracking}}); } catch{}
+  };
 
-      await loadBankControlRemote();
-      bindConfig();
-      await renderPicksBank();
-      document.getElementById('bank-save-btn').addEventListener('click', async () => {
-        await saveConfig();
-        await renderPicksBank();
+  const riskClass = r => { const v=String(r||'').toUpperCase(); return v==='BAJO'?'low':v==='ALTO'?'high':'mid'; };
+  const recommendedPct = pick => {
+    const c=Number(pick?.confidence||0), r=String(pick?.riskLevel||pick?.risk_level||'').toUpperCase(), base=Number(bankState.unitPercent||2);
+    let m=c>=75?1.8:c>=68?1.45:c>=62?1.15:c>=56?0.9:0.65;
+    if(r==='ALTO') m*=.6; if(r==='MEDIO') m*=.9; if(r==='BAJO') m*=1.1;
+    return Number(Math.min(Math.max(base*m,.5),Math.max(base*2,4.5)).toFixed(2));
+  };
+  const computeMetrics = picks => {
+    const rows=Object.values(tracking||{});
+    const pnl=rows.reduce((s,r)=>s+Number(r?.net||0),0);
+    const exp=(picks||[]).reduce((s,p)=>{const r=tracking[String(p.id)]||{}; return String(r?.status||'open')==='closed'?s:s+Number(r?.stake||0);},0);
+    return { pnl, exp, currentBank:Number(bankState.totalBank||0)+pnl, stopLoss:Number(bankState.totalBank||0)*(Number(bankState.stopLossPercent||0)/100), target:Number(bankState.totalBank||0)*(Number(bankState.targetPercent||0)/100) };
+  };
+  const paintMetrics = picks => {
+    const m=computeMetrics(picks);
+    document.getElementById('bank-metric-total').textContent = formatMoney(m.currentBank);
+    document.getElementById('bank-metric-exposure').textContent = formatMoney(m.exp);
+    document.getElementById('bank-metric-pnl').textContent = formatMoney(m.pnl);
+    document.getElementById('bank-metric-stop').textContent = formatMoney(m.stopLoss);
+    document.getElementById('bank-metric-exposure-copy').textContent = `${(picks||[]).length} pick${(picks||[]).length!==1?'s':''} cargados · tope ${toPct(bankState.maxExposurePercent)}`;
+    document.getElementById('bank-metric-stop-copy').textContent = `Stop-loss ${toPct(bankState.stopLossPercent)} · target ${formatMoney(m.target)}`;
+  };
+  const bindConfig = () => {
+    document.getElementById('bank-total-input').value = bankState.totalBank;
+    document.getElementById('bank-unit-input').value = bankState.unitPercent;
+    document.getElementById('bank-stop-input').value = bankState.stopLossPercent;
+    document.getElementById('bank-exposure-input').value = bankState.maxExposurePercent;
+    document.getElementById('bank-target-input').value = bankState.targetPercent;
+    document.getElementById('bank-notes-input').value = bankState.personalRule||'';
+    document.getElementById('bank-rules-note').textContent = bankState.personalRule
+      ? `Regla activa: ${bankState.personalRule}`
+      : 'El sistema calculará stake sugerido por pick con base en tu unidad y el riesgo de cada selección.';
+  };
+  const saveConfig = async () => {
+    bankState.totalBank = Number(document.getElementById('bank-total-input').value||bankState.totalBank||0);
+    bankState.unitPercent = Number(document.getElementById('bank-unit-input').value||bankState.unitPercent||2);
+    bankState.stopLossPercent = Number(document.getElementById('bank-stop-input').value||bankState.stopLossPercent||6);
+    bankState.maxExposurePercent = Number(document.getElementById('bank-exposure-input').value||bankState.maxExposurePercent||10);
+    bankState.targetPercent = Number(document.getElementById('bank-target-input').value||bankState.targetPercent||8);
+    bankState.personalRule = String(document.getElementById('bank-notes-input').value||'').trim();
+    await saveRemote(); bindConfig();
+    if(typeof showToast==='function') showToast('Control de bank actualizado.','success');
+  };
+
+  const renderPicks = async () => {
+    const listEl = document.getElementById('bank-picks-list');
+    try {
+      const remote = typeof apiGet==='function' ? await apiGet('/api/picks/today') : {picks:[]};
+      const picks = Array.isArray(remote?.picks) ? remote.picks : [];
+      paintMetrics(picks);
+      if(!picks.length){ listEl.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted)">No hay picks cargados para hoy.</div>'; return; }
+      listEl.innerHTML='';
+      picks.forEach(pick => {
+        const stakePct=recommendedPct(pick);
+        const suggested=Number(bankState.totalBank||0)*(stakePct/100);
+        const row=tracking[String(pick.id)]||{stake:suggested.toFixed(2),net:'',status:'open'};
+        const card=document.createElement('article');
+        card.className='pick-bank-card';
+        card.innerHTML=`
+          <div class="pbk-top">
+            <div>
+              <div class="pbk-match">${pick.homeTeam||pick.home_team||'—'} vs ${pick.awayTeam||pick.away_team||'—'}</div>
+              <div class="pbk-meta">
+                <span>${pick.league||'—'}</span><span>·</span>
+                <span>${pick.market||'Mercado'}</span><span>·</span>
+                <span>${pick.pick||'Selección'}</span>
+              </div>
+            </div>
+            <span class="risk-pill ${riskClass(pick.riskLevel||pick.risk_level)}">${pick.riskLevel||pick.risk_level||'MEDIO'}</span>
+          </div>
+          <div class="pbk-reco">
+            <div class="pbk-reco-box"><span>Confianza</span><strong>${Number(pick.confidence||0)}%</strong></div>
+            <div class="pbk-reco-box"><span>Stake sugerido</span><strong>${toPct(stakePct)}</strong></div>
+            <div class="pbk-reco-box"><span>Monto sugerido</span><strong>${formatMoney(suggested)}</strong></div>
+            <div class="pbk-reco-box"><span>Límite emocional</span><strong>${toPct(Math.min(stakePct,bankState.maxExposurePercent))}</strong></div>
+          </div>
+          <div class="pbk-track">
+            <div class="field-group"><label class="field-lbl">Stake real apostado</label><input class="field-input" data-bank-stake="${pick.id}" type="number" min="0" step="0.01" value="${row.stake||''}" /></div>
+            <div class="field-group"><label class="field-lbl">Resultado neto</label><input class="field-input" data-bank-net="${pick.id}" type="number" step="0.01" value="${row.net||''}" placeholder="+350 / -200" /></div>
+            <div class="field-group"><label class="field-lbl">Estado</label><input class="field-input" data-bank-status="${pick.id}" value="${row.status||'open'}" placeholder="open / closed" /></div>
+            <button class="btn-primary" type="button" data-bank-save="${pick.id}">Guardar</button>
+          </div>
+          <div class="pbk-track-note" id="pbk-note-${pick.id}">Sugerencia: no sobrepasar ${formatMoney(Number(bankState.totalBank||0)*(Number(bankState.maxExposurePercent||0)/100))} de exposición total en el día.</div>`;
+        listEl.appendChild(card);
       });
-      document.getElementById('bank-reset-btn').addEventListener('click', async () => {
-        await resetSession();
-        await renderPicksBank();
+      listEl.querySelectorAll('[data-bank-save]').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          const id=String(btn.getAttribute('data-bank-save'));
+          tracking[id]={
+            stake:Number(listEl.querySelector(`[data-bank-stake="${id}"]`)?.value||0),
+            net:Number(listEl.querySelector(`[data-bank-net="${id}"]`)?.value||0),
+            status:String(listEl.querySelector(`[data-bank-status="${id}"]`)?.value||'open').trim().toLowerCase()||'open',
+          };
+          saveRemote(); paintMetrics(picks);
+          const n=document.getElementById(`pbk-note-${id}`);
+          if(n) n.textContent=`Stake registrado: ${formatMoney(tracking[id].stake)} · neto: ${formatMoney(tracking[id].net)} · estado: ${tracking[id].status}.`;
+          if(typeof showToast==='function') showToast('Movimiento guardado.','success');
+        });
       });
-      document.getElementById('bank-logout').addEventListener('click', () => {
-        if (typeof logoutCurrentUser === 'function') {
-          logoutCurrentUser();
-        } else {
-          location.href = 'registro.html#login';
-        }
-      });
-    })();
-  </script>
+    } catch {
+      listEl.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted)">No se pudo cargar el stake sugerido.</div>';
+    }
+  };
+
+  // billing info
+  try {
+    const billing = typeof getBillingTarget==='function' ? await getBillingTarget() : {bankName:'—',accountHolder:'—',clabe:'—',accountNumber:'—',whatsapp:'—',note:''};
+    document.getElementById('bank-name').textContent = billing.bankName||'—';
+    document.getElementById('bank-holder').textContent = billing.accountHolder||'—';
+    document.getElementById('bank-clabe').textContent = billing.clabe||'—';
+    document.getElementById('bank-account').textContent = billing.accountNumber||'—';
+    document.getElementById('bank-whatsapp').textContent = billing.whatsapp||'—';
+    document.getElementById('bank-note').textContent = billing.note || 'Envía el comprobante al WhatsApp configurado para validar tu acceso.';
+  } catch { document.getElementById('bank-note').textContent='No se pudo cargar la cuenta bancaria.'; }
+  document.getElementById('bank-user-email').textContent = user?.email||'—';
+
+  await loadRemote();
+  bindConfig();
+  await renderPicks();
+
+  document.getElementById('bank-save-btn').addEventListener('click', async()=>{ await saveConfig(); await renderPicks(); });
+  document.getElementById('bank-reset-btn').addEventListener('click', async()=>{ tracking={}; await saveRemote(); await renderPicks(); if(typeof showToast==='function') showToast('Sesión reiniciada.','info'); });
+})();
+</script>
+
+<script>
+(function initBg(){
+  const c=document.getElementById('bg-canvas');
+  if(!c||!window.THREE) return;
+  const renderer=new THREE.WebGLRenderer({canvas:c,alpha:true,antialias:false});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+  const scene=new THREE.Scene(), camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,100);
+  camera.position.z=5;
+  function resize(){ renderer.setSize(innerWidth,innerHeight); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); }
+  resize(); window.addEventListener('resize',resize);
+  const N=200, geo=new THREE.BufferGeometry(), pos=new Float32Array(N*3), vel=[];
+  for(let i=0;i<N;i++){ pos[i*3]=(Math.random()-.5)*20; pos[i*3+1]=(Math.random()-.5)*14; pos[i*3+2]=(Math.random()-.5)*6; vel.push({vx:(Math.random()-.5)*.002,vy:Math.random()*.0025+.0006}); }
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  scene.add(new THREE.Points(geo,new THREE.PointsMaterial({color:0xFF4500,size:.04,transparent:true,opacity:.32,blending:THREE.AdditiveBlending,depthWrite:false})));
+  let mx=0,my=0; document.addEventListener('mousemove',e=>{mx=(e.clientX/innerWidth-.5)*2; my=(e.clientY/innerHeight-.5)*2;});
+  (function loop(){ requestAnimationFrame(loop); camera.position.x+=( mx*.6-camera.position.x)*.04; camera.position.y+=(-my*.4-camera.position.y)*.04; const p=geo.attributes.position.array; for(let i=0;i<N;i++){p[i*3]+=vel[i].vx;p[i*3+1]+=vel[i].vy;if(p[i*3+1]>7)p[i*3+1]=-7;} geo.attributes.position.needsUpdate=true; renderer.render(scene,camera); })();
+})();
+</script>
 </body>
 </html>
