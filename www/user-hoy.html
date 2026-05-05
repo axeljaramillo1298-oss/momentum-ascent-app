@@ -205,6 +205,13 @@ main{position:relative;z-index:2}
 .apex-claude-label{font-size:8px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--orange);margin-bottom:10px}
 @media(max-width:700px){.apex-claude-grid{grid-template-columns:1fr}}
 
+/* DATE NAV */
+.date-nav{display:flex;align-items:center;gap:6px;margin-bottom:20px;opacity:0;animation:fadeUp .5s .58s forwards;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.date-nav::-webkit-scrollbar{display:none}
+.date-chip{flex-shrink:0;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap;font-family:'Barlow',sans-serif}
+.date-chip:hover{color:var(--text);border-color:rgba(255,255,255,.18)}
+.date-chip.active{background:var(--orange);color:#fff;border-color:var(--orange)}
+
 /* BOTTOM NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:300;display:flex;border-top:1px solid var(--border);background:rgba(6,6,8,.92);backdrop-filter:blur(16px)}
 .bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;text-decoration:none;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:color .2s}
@@ -316,6 +323,9 @@ main{position:relative;z-index:2}
   </div>
 
   <div class="page-content">
+    <div class="date-nav" id="date-nav"></div>
+    <input type="date" id="date-picker-hidden" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0" />
+
     <div class="filter-bar" id="filter-bar">
       <button class="filter-btn on" data-filter="all">Todos</button>
     </div>
@@ -444,16 +454,45 @@ function svgRing(conf){
 }
 
 // ── DATE ──────────────────────────────────────────────────
-const now = new Date();
 const MONTHS = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
-const dateStr = `${now.getDate()} DE ${MONTHS[now.getMonth()]} · ${now.getFullYear()}`;
-const chipStr = `${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
-document.getElementById('hero-date').textContent = dateStr;
-document.getElementById('side-date-chip').textContent = chipStr;
+const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+function toLocalKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+function updateHeroDate(dateKey){
+  const d = new Date(dateKey+'T12:00:00');
+  document.getElementById('hero-date').textContent = `${d.getDate()} DE ${MONTHS[d.getMonth()]} · ${d.getFullYear()}`;
+  document.getElementById('side-date-chip').textContent = `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+updateHeroDate(toLocalKey(new Date()));
 
 // ── STATE ─────────────────────────────────────────────────
 let allPicks = [];
 let activeFilter = 'all';
+let selectedDateKey = toLocalKey(new Date());
+
+// ── DATE NAV ──────────────────────────────────────────────
+function buildDateNav(){
+  const nav = document.getElementById('date-nav');
+  const today = new Date();
+  const chips = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(today);
+    d.setDate(today.getDate()-i);
+    const key = toLocalKey(d);
+    const label = i===0 ? 'Hoy' : `${DAY_SHORT[d.getDay()]} ${d.getDate()}`;
+    chips.push({key,label});
+  }
+  nav.innerHTML = chips.map(c=>`<button class="date-chip${selectedDateKey===c.key?' active':''}" data-key="${c.key}">${c.label}</button>`).join('')
+    + `<button class="date-chip" id="btn-cal-open" title="Elegir fecha">📅</button>`;
+  nav.querySelectorAll('[data-key]').forEach(btn=>{
+    btn.addEventListener('click',()=>{ selectedDateKey=btn.dataset.key; buildDateNav(); loadPicks(); });
+  });
+  document.getElementById('btn-cal-open').addEventListener('click',()=>{ document.getElementById('date-picker-hidden').click(); });
+}
+document.getElementById('date-picker-hidden').addEventListener('change', e=>{
+  if(e.target.value){ selectedDateKey=e.target.value; buildDateNav(); loadPicks(); }
+});
 
 // ── STATS ─────────────────────────────────────────────────
 function updateStats(picks){
@@ -733,21 +772,23 @@ function renderCards(picks){
 // ── LOAD PICKS ────────────────────────────────────────────
 async function loadPicks(){
   const container = document.getElementById('picks-container');
-  container.innerHTML = '<div class="loading-state"><div class="loading-spinner"></div>Cargando picks del día…</div>';
+  container.innerHTML = '<div class="loading-state"><div class="loading-spinner"></div>Cargando picks…</div>';
   document.getElementById('btn-refresh').disabled = true;
 
   try {
-    // Use apiGet from app.js if available, else raw fetch
-    let picks = [];
+    const dateParam = `?date=${encodeURIComponent(selectedDateKey)}`;
+    let picks = [], responseDate = selectedDateKey;
     if(typeof apiGet === 'function'){
-      const res = await apiGet('/api/picks/today');
+      const res = await apiGet(`/api/picks/today${dateParam}`);
       picks = Array.isArray(res?.picks) ? res.picks : [];
+      if(res?.date) responseDate = res.date;
     } else {
-      const res = await fetch('/api/picks/today');
+      const res = await fetch(`/api/picks/today${dateParam}`);
       const data = await res.json();
       picks = Array.isArray(data?.picks) ? data.picks : [];
+      if(data?.date) responseDate = data.date;
     }
-
+    updateHeroDate(responseDate);
     allPicks = picks;
     updateStats(picks);
     buildFilterBar(picks);
@@ -807,7 +848,7 @@ document.getElementById('btn-refresh').addEventListener('click', loadPicks);
 })();
 
 // ── INIT ──────────────────────────────────────────────────
-// Wait for app.js apiGet to be ready
+buildDateNav();
 if(document.readyState==='loading'){
   document.addEventListener('DOMContentLoaded', loadPicks);
 } else {
