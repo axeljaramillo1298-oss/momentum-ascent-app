@@ -1404,12 +1404,13 @@ main{position:relative;z-index:2}
       sEl.className = `pstat-val ${streak>0?'green':streak<0?'red':'yellow'}`;
 
       // ── daily stat cards ────────────────────────────────────
+      function localDateKey(dateVal){ if(!dateVal) return ''; const d=new Date(dateVal); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
       // find the most recent date that has picks
-      const allDates = picks.map(p=>String(p.eventDate||'').slice(0,10)).filter(Boolean).sort().reverse();
+      const allDates = picks.map(p=>localDateKey(p.eventDate)).filter(Boolean).sort().reverse();
       const latestDate = allDates[0] || '';
-      const todayStr = (()=>{ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
+      const todayStr = localDateKey(new Date());
       const dayKey = latestDate || todayStr;
-      const dayPicks = picks.filter(p=>String(p.eventDate||'').slice(0,10)===dayKey);
+      const dayPicks = picks.filter(p=>localDateKey(p.eventDate)===dayKey);
       const dayWon = dayPicks.filter(p=>p.result==='won').length;
       const dayLost = dayPicks.filter(p=>p.result==='lost').length;
       const dayVoid = dayPicks.filter(p=>p.result==='void').length;
@@ -1433,10 +1434,10 @@ main{position:relative;z-index:2}
 
       if(!picks.length){ tbody.innerHTML='<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">No hay picks publicados aún.</td></tr>'; return; }
 
-      // group picks by date
+      // group picks by local date
       const byDate = new Map();
       picks.forEach(p => {
-        const dk = p.eventDate ? String(p.eventDate).slice(0,10) : 'sin-fecha';
+        const dk = p.eventDate ? localDateKey(p.eventDate) : 'sin-fecha';
         if(!byDate.has(dk)) byDate.set(dk, []);
         byDate.get(dk).push(p);
       });
