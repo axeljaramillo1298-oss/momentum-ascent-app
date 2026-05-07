@@ -44,7 +44,7 @@ body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;ov
   body{cursor:auto}
   #cur,#cur-r{display:none}
   .nav-wrap{top:8px;padding:0 8px}
-  .nav-pill{padding:10px 12px;border-radius:16px}
+  .nav-pill{padding:10px 12px;border-radius:16px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
   .nav-actions{margin-left:0;gap:6px;overflow-x:auto;scrollbar-width:none}
   .nav-actions::-webkit-scrollbar{display:none}
   .nav-ghost{padding:7px 10px;font-size:11px;white-space:nowrap}
@@ -53,6 +53,9 @@ body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;ov
   .ticker-badge{padding:0 12px;font-size:10px;letter-spacing:.12em}
   .t-item{padding:0 18px;font-size:11px}
   .hero{min-height:auto;padding-bottom:24px}
+  .hero-grid-floor{display:none}
+  .hero-vlight{display:none}
+  .hero::after{display:none}
   .hero-content{padding:26px 16px 18px;max-width:none}
   .hero-h1{font-size:clamp(48px,15vw,74px)}
   .hero-sub{max-width:none;font-size:14px;line-height:1.55}
@@ -66,6 +69,9 @@ body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;ov
   .s-val{font-size:42px}
   .sec{padding:56px 16px}
   .feat-grid,.steps{grid-template-columns:1fr}
+  .feat-card::after{animation:none;display:none}
+  .step{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(255,255,255,.045)}
+  .step:hover{transform:none;box-shadow:none}
   .cta{padding:72px 16px}
   footer{padding:28px 16px;justify-content:flex-start}
 }
@@ -559,10 +565,11 @@ document.querySelectorAll('a,button,.feat-card,.s-item,.pick-row,.step').forEach
 });
 
 // THREE.JS — enhanced ball animation
+const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.innerWidth<768||(window.matchMedia&&window.matchMedia('(hover:none),(pointer:coarse)').matches);
 const canvas=document.getElementById('three-canvas'),hero=document.querySelector('.hero');
-const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:!isMobile});
+renderer.setPixelRatio(isMobile?1:Math.min(window.devicePixelRatio,2));
+if(!isMobile){renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;}
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.5;
 const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(52,1,0.1,200);
 camera.position.set(0,0,13);
@@ -574,10 +581,8 @@ const key=new THREE.DirectionalLight(0xFF6030,5.0);key.position.set(6,8,10);key.
 const fill=new THREE.DirectionalLight(0x2040FF,2.0);fill.position.set(-8,3,5);scene.add(fill);
 const rim=new THREE.DirectionalLight(0xFF2200,2.8);rim.position.set(0,-5,-8);scene.add(rim);
 scene.add(new THREE.AmbientLight(0x101015,3.0));
-const orb1=new THREE.PointLight(0xFF4500,4.5,28);
-const orb2=new THREE.PointLight(0x0055FF,3.0,22);
-const orb3=new THREE.PointLight(0xFFCC00,2.5,18);
-scene.add(orb1,orb2,orb3);
+let orb1,orb2,orb3;
+if(!isMobile){orb1=new THREE.PointLight(0xFF4500,4.5,28);orb2=new THREE.PointLight(0x0055FF,3.0,22);orb3=new THREE.PointLight(0xFFCC00,2.5,18);scene.add(orb1,orb2,orb3);}
 
 function mkCvs(s,fn){const c=document.createElement('canvas');c.width=c.height=s;fn(c.getContext('2d'),s);return new THREE.CanvasTexture(c)}
 
@@ -630,12 +635,13 @@ function baseballTex(s){return mkCvs(s,(ctx,s)=>{
 })}
 
 function mkBall(texFn,rx,ry,rz,elipse=false){
-  const geo=new THREE.SphereGeometry(1,72,72);
-  const mat=new THREE.MeshStandardMaterial({map:texFn(512),roughness:.25,metalness:.1,envMapIntensity:1.6});
+  const segs=isMobile?24:72,texSize=isMobile?128:512;
+  const geo=new THREE.SphereGeometry(1,segs,segs);
+  const mat=new THREE.MeshStandardMaterial({map:texFn(texSize),roughness:.25,metalness:.1,envMapIntensity:isMobile?.6:1.6});
   const m=new THREE.Mesh(geo,mat);
   if(elipse)m.scale.set(1.5,1,1);
-  m.castShadow=true;
-  m.position.set(rx,ry+16,rz); // start above for entry
+  if(!isMobile)m.castShadow=true;
+  m.position.set(rx,ry+16,rz);
   scene.add(m);return m;
 }
 
@@ -643,38 +649,40 @@ function mkBall(texFn,rx,ry,rz,elipse=false){
 const soccer  =mkBall(soccerTex,   0.6,  0.2,  3.0);
 const basket  =mkBall(basketTex,   4.2,  1.6, -1.5);
 const tennis  =mkBall(tennisTex,  -3.0,  2.0,  0.5);
-const football=mkBall(footballTex, 3.0, -1.8,  1.5,true);
-const baseball=mkBall(baseballTex,-0.5, -1.6, -2.0);
+const football=isMobile?null:mkBall(footballTex, 3.0, -1.8,  1.5,true);
+const baseball=isMobile?null:mkBall(baseballTex,-0.5, -1.6, -2.0);
 soccer.scale.setScalar(1.22);basket.scale.setScalar(1.02);tennis.scale.setScalar(0.68);
-football.scale.set(1.45,0.96,0.96);baseball.scale.setScalar(0.66);
+if(!isMobile){football.scale.set(1.45,0.96,0.96);baseball.scale.setScalar(0.66);}
 
-// Environment
-const pmremGen=new THREE.PMREMGenerator(renderer);pmremGen.compileEquirectangularShader();
-const ec=document.createElement('canvas');ec.width=256;ec.height=128;
-const ectx=ec.getContext('2d');
-const eg=ectx.createLinearGradient(0,0,0,128);
-eg.addColorStop(0,'#1a0800');eg.addColorStop(.3,'#0a0510');eg.addColorStop(.6,'#050210');eg.addColorStop(1,'#000');
-ectx.fillStyle=eg;ectx.fillRect(0,0,256,128);
-const og2=ectx.createRadialGradient(60,35,0,60,35,95);og2.addColorStop(0,'rgba(255,100,0,.55)');og2.addColorStop(1,'rgba(0,0,0,0)');
-ectx.fillStyle=og2;ectx.fillRect(0,0,256,128);
-const et=new THREE.CanvasTexture(ec);et.mapping=THREE.EquirectangularReflectionMapping;
-scene.environment=pmremGen.fromEquirectangular(et).texture;et.dispose();
+// Environment (skip expensive PMREM on mobile)
+if(!isMobile){
+  const pmremGen=new THREE.PMREMGenerator(renderer);pmremGen.compileEquirectangularShader();
+  const ec=document.createElement('canvas');ec.width=256;ec.height=128;
+  const ectx=ec.getContext('2d');
+  const eg=ectx.createLinearGradient(0,0,0,128);
+  eg.addColorStop(0,'#1a0800');eg.addColorStop(.3,'#0a0510');eg.addColorStop(.6,'#050210');eg.addColorStop(1,'#000');
+  ectx.fillStyle=eg;ectx.fillRect(0,0,256,128);
+  const og2=ectx.createRadialGradient(60,35,0,60,35,95);og2.addColorStop(0,'rgba(255,100,0,.55)');og2.addColorStop(1,'rgba(0,0,0,0)');
+  ectx.fillStyle=og2;ectx.fillRect(0,0,256,128);
+  const et=new THREE.CanvasTexture(ec);et.mapping=THREE.EquirectangularReflectionMapping;
+  scene.environment=pmremGen.fromEquirectangular(et).texture;et.dispose();
+}
 
 // Particles — orange rising layer
-const PC=350,pg=new THREE.BufferGeometry(),pp=new Float32Array(PC*3),pv=[];
+const PC=isMobile?60:350,pg=new THREE.BufferGeometry(),pp=new Float32Array(PC*3),pv=[];
 for(let i=0;i<PC;i++){pp[i*3]=(Math.random()-.5)*22;pp[i*3+1]=(Math.random()-.5)*14;pp[i*3+2]=(Math.random()-.5)*10;pv.push({vx:(Math.random()-.5)*.005,vy:Math.random()*.007+.001,vz:(Math.random()-.5)*.003})}
 pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
 scene.add(new THREE.Points(pg,new THREE.PointsMaterial({color:0xFF5500,size:.07,sizeAttenuation:true,transparent:true,opacity:.62,blending:THREE.AdditiveBlending,depthWrite:false})));
 
 // Particles — blue falling layer
-const PC2=220,pg2=new THREE.BufferGeometry(),pp2=new Float32Array(PC2*3),pv2=[];
+const PC2=isMobile?30:220,pg2=new THREE.BufferGeometry(),pp2=new Float32Array(PC2*3),pv2=[];
 for(let i=0;i<PC2;i++){pp2[i*3]=(Math.random()-.5)*20;pp2[i*3+1]=(Math.random()-.5)*14;pp2[i*3+2]=(Math.random()-.5)*8;pv2.push({vx:(Math.random()-.5)*.003,vy:-(Math.random()*.005+.001),vz:(Math.random()-.5)*.002})}
 pg2.setAttribute('position',new THREE.BufferAttribute(pp2,3));
 scene.add(new THREE.Points(pg2,new THREE.PointsMaterial({color:0x3366FF,size:.04,sizeAttenuation:true,transparent:true,opacity:.38,blending:THREE.AdditiveBlending,depthWrite:false})));
 
 // Target rest positions
 const TP=[{x:0.6,y:0.2,z:3},{x:4.2,y:1.6,z:-1.5},{x:-3.0,y:2.0,z:0.5},{x:3.0,y:-1.8,z:1.5},{x:-0.5,y:-1.6,z:-2.0}];
-const balls=[soccer,basket,tennis,football,baseball];
+const balls=[soccer,basket,tennis,football,baseball].filter(Boolean);
 
 // Float: dual-frequency oscillation for organic feel
 const fd=[
@@ -692,8 +700,14 @@ document.addEventListener('mousemove',e=>{tmx=(e.clientX/window.innerWidth-.5)*2
 
 const clk=new THREE.Clock();
 const BASE_SCALES=[1.22,1.02,0.68,1.0,0.66];
-function animate(){
-  requestAnimationFrame(animate);const t=clk.getElapsedTime();
+let heroVisible=true,lastFrame=0;
+if(isMobile){new IntersectionObserver(es=>heroVisible=es[0].isIntersecting,{threshold:0}).observe(hero);}
+function animate(timestamp){
+  requestAnimationFrame(animate);
+  if(!heroVisible)return;
+  if(isMobile&&timestamp-lastFrame<33)return; // ~30fps cap on mobile
+  lastFrame=timestamp;
+  const t=clk.getElapsedTime();
   mouseX+=(tmx-mouseX)*.055;mouseY+=(tmy-mouseY)*.055;
   camera.position.x+=(mouseX*1.5-camera.position.x)*.028;
   camera.position.y+=(-mouseY*1.0-camera.position.y)*.028;
@@ -704,7 +718,6 @@ function animate(){
     const ep=Math.min(1,Math.max(0,(t-STAGGER[i])/ENTRY_DUR));
     const ee=easeOutElastic(ep);
 
-    // Dual-frequency float
     const floatY=Math.sin(t*f.sp+f.ph)*f.amp+Math.cos(t*f.sp2+f.ph2)*f.amp2;
     const floatX=Math.sin(t*f.sp3+f.ph3)*f.ampX;
 
@@ -715,37 +728,34 @@ function animate(){
     b.position.x=tp.x+(tgX-tp.x)*Math.min(1,ep*1.6);
     b.position.z=tp.z;
 
-    // Subtle scale breath
     const breath=1+Math.sin(t*.85+f.ph)*.022;
-    if(i===3) b.scale.set(1.45*breath,.96*breath,.96*breath);
+    if(!isMobile&&i===3) b.scale.set(1.45*breath,.96*breath,.96*breath);
     else b.scale.setScalar(BASE_SCALES[i]*breath);
 
-    // Rotation — faster during entry drop
     const spin=0.5+(1-Math.min(1,ep))*2.0;
     b.rotation.x+=f.rs.x*spin;b.rotation.y+=f.rs.y*spin;b.rotation.z+=f.rs.z*spin;
   });
 
-  // Orbiting colored lights — sweep across balls
-  orb1.position.set(Math.sin(t*.55)*6.5,Math.cos(t*.42)*3.5,Math.cos(t*.38)*4+2);
-  orb2.position.set(Math.cos(t*.38)*7,Math.sin(t*.50)*4.5,Math.sin(t*.44)*3+1);
-  orb3.position.set(Math.sin(t*.28+2)*5.5,Math.cos(t*.33+1)*2.5,Math.sin(t*.62)*3);
-  orb1.intensity=4.0+Math.sin(t*1.4)*.9;
-  orb2.intensity=2.6+Math.sin(t*1.1+1)*.7;
-  orb3.intensity=2.2+Math.cos(t*.9+2)*.6;
+  if(!isMobile){
+    orb1.position.set(Math.sin(t*.55)*6.5,Math.cos(t*.42)*3.5,Math.cos(t*.38)*4+2);
+    orb2.position.set(Math.cos(t*.38)*7,Math.sin(t*.50)*4.5,Math.sin(t*.44)*3+1);
+    orb3.position.set(Math.sin(t*.28+2)*5.5,Math.cos(t*.33+1)*2.5,Math.sin(t*.62)*3);
+    orb1.intensity=4.0+Math.sin(t*1.4)*.9;
+    orb2.intensity=2.6+Math.sin(t*1.1+1)*.7;
+    orb3.intensity=2.2+Math.cos(t*.9+2)*.6;
+  }
 
-  // Particles orange (rise)
   const pos=pg.attributes.position.array;
   for(let i=0;i<PC;i++){pos[i*3]+=pv[i].vx;pos[i*3+1]+=pv[i].vy;pos[i*3+2]+=pv[i].vz;if(pos[i*3+1]>7.5)pos[i*3+1]=-7;}
   pg.attributes.position.needsUpdate=true;
 
-  // Particles blue (fall)
   const pos2=pg2.attributes.position.array;
   for(let i=0;i<PC2;i++){pos2[i*3]+=pv2[i].vx;pos2[i*3+1]+=pv2[i].vy;pos2[i*3+2]+=pv2[i].vz;if(pos2[i*3+1]<-7.5)pos2[i*3+1]=7;}
   pg2.attributes.position.needsUpdate=true;
 
   renderer.render(scene,camera);
 }
-animate();
+animate(0);
 
 // Scroll reveal
 const ro=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('vis')}),{threshold:.1});
