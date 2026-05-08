@@ -654,6 +654,30 @@ const getSportMarketConfig = (sport, home, away) => {
       fallback: { ml: { pick: "Local", conf: 55, nota: "Ventaja de campo local." }, goles: { pick: "Over 48.5 pts", conf: 52, nota: "Ritmo de anotacion esperado." }, btts: { pick: "Local 1ra mitad", conf: 50, nota: "Local domina inicio." }, handicap: { pick: "Local -6.5", line: "-6.5", conf: 48, nota: "Local favorito por spread." }, corners: { pick: "Over 3.5 TDs", conf: 45, nota: "Partido con ritmo ofensivo." }, resumen: `${home} vs ${away} — NFL, datos limitados.` },
     };
   }
+  if (s.includes("ufc") || s.includes("mma")) {
+    return {
+      label: "UFC/MMA",
+      markets: "ml (ganador de la pelea), total rounds (Over/Under), llega o no a decision, handicap de rounds, metodo de victoria",
+      jsonSchema: '{"ml":{"pick":"Peleador A|Peleador B","conf":65,"nota":""},"goles":{"pick":"Over 2.5 rounds|Under 2.5 rounds","conf":60,"nota":""},"btts":{"pick":"Si llega a decision|No llega a decision","conf":55,"nota":""},"handicap":{"pick":"Peleador A -1.5 rounds|Peleador B +1.5 rounds","line":"-1.5","conf":58,"nota":""},"corners":{"pick":"Peleador A por KO/TKO o SUB|Peleador B por KO/TKO o SUB","conf":52,"nota":""},"resumen":"1 oracion"}',
+      criteria: [
+        "Forma en ultimas 5 peleas y racha reciente.",
+        "Metodo de victoria/derrota en ultimas 5 peleas.",
+        "Volumen de golpeo, defensa de golpeo y absorcion si hay datos.",
+        "Takedown accuracy, takedown defense y amenaza de sumision.",
+        "Corte de peso, short notice, lesiones o bajas confirmadas.",
+        "Durabilidad, cardio, alcance, stance y nivel del oponente reciente.",
+        "Odds de moneyline, rounds y method props si existen.",
+      ],
+      fallback: {
+        ml: { pick: home, conf: 55, nota: "Ligera ventaja por perfil reciente." },
+        goles: { pick: "Over 2.5 rounds", conf: 52, nota: "Combate con espacio para lectura media." },
+        btts: { pick: "No llega a decision", conf: 50, nota: "Posible definicion antes de las tarjetas." },
+        handicap: { pick: `${home} -1.5 rounds`, line: "-1.5", conf: 48, nota: "Mayor presión ofensiva esperada." },
+        corners: { pick: `${home} por KO/TKO o SUB`, conf: 45, nota: "Ruta de finalizacion mas probable." },
+        resumen: `${home} vs ${away} — UFC/MMA, datos limitados.`,
+      },
+    };
+  }
   // Default: soccer/futbol
   return {
     label: "fútbol",
