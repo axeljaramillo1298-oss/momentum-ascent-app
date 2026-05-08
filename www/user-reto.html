@@ -341,11 +341,22 @@ main{position:relative;z-index:2}
 (function(){
 'use strict';
 
-const userRaw = localStorage.getItem('discipline_current_user_v1');
+// discipline_current_user_v1 stores only the email string (not a JSON object)
+const userRaw = localStorage.getItem('discipline_current_user_v1') || '';
 const godToken = localStorage.getItem('discipline_god_token_v1');
-let userEmail = '';
+let userEmail = userRaw.includes('@') ? userRaw.trim() : '';
+if (!userEmail) { try { userEmail = JSON.parse(userRaw)?.email || ''; } catch(_){} }
 let planId = '';
-try { const u = JSON.parse(userRaw); userEmail = u?.email || ''; planId = u?.planId || u?.plan || ''; } catch(_){}
+// Read plan from discipline_plan_selection_v1 (set by app.js after subscription sync)
+try { planId = JSON.parse(localStorage.getItem('discipline_plan_selection_v1') || '{}')?.id || ''; } catch(_){}
+// Fallback: look up user object in discipline_users_v1 array
+if (!planId && userEmail) {
+  try {
+    const _users = JSON.parse(localStorage.getItem('discipline_users_v1') || '[]');
+    const _u = Array.isArray(_users) ? _users.find(x => x.id === userEmail || x.email === userEmail) : null;
+    planId = _u?.planId || _u?.plan || '';
+  } catch(_){}
+}
 
 const API_BASE = (() => {
   const forced = (localStorage.getItem('discipline_api_base_v1') || '').trim();
