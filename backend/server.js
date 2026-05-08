@@ -93,7 +93,15 @@ const ADMIN_PASSWORDS = new Map(
 
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
-app.use(express.static(path.join(__dirname, "../www")));
+app.use(express.static(path.join(__dirname, "../www"), {
+  setHeaders(res, filePath) {
+    if (filePath.endsWith(".html")) {
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+    }
+  },
+}));
 
 const getRequestEmail = (req) => String(req.headers["x-user-email"] || "").trim().toLowerCase();
 const getGodToken = (req) => String(req.headers["x-god-token"] || "").trim();
