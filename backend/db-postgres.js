@@ -257,6 +257,22 @@ CREATE TABLE IF NOT EXISTS ai_pick_candidates (
   published_pick_id BIGINT REFERENCES ai_picks(id),
   created_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS reto_parlays (
+  id BIGSERIAL PRIMARY KEY,
+  status TEXT NOT NULL DEFAULT 'draft',
+  meta REAL NOT NULL DEFAULT 0,
+  inversion REAL NOT NULL DEFAULT 0,
+  legs_json TEXT NOT NULL DEFAULT '[]',
+  combined_odds REAL NOT NULL DEFAULT 1,
+  projected_win REAL NOT NULL DEFAULT 0,
+  analysis TEXT NOT NULL DEFAULT '',
+  current_leg INTEGER NOT NULL DEFAULT 0,
+  result TEXT NOT NULL DEFAULT '',
+  plan_tier TEXT NOT NULL DEFAULT 'reto_escalera',
+  published_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL
+);
 `;
 
 async function initDb() {
@@ -1866,6 +1882,108 @@ async function listApiSyncLogs(limit = 20) {
   return result.rows.map((row) => ({ ...row, id: Number(row.id) }));
 }
 
+function parseRetoRow(row) {
+  if (!row) return null;
+  let legs = [];
+  try { legs = JSON.parse(row.legs_json || '[]'); } catch { legs = []; }
+  return {
+    id: Number(row.id),
+    status: row.status || 'draft',
+    meta: Number(row.meta || 0),
+    inversion: Number(row.inversion || 0),
+    legs,
+    combinedOdds: Number(row.combined_odds || 1),
+    projectedWin: Number(row.projected_win || 0),
+    analysis: row.analysis || '',
+    currentLeg: Number(row.current_leg || 0),
+    result: row.result || '',
+    planTier: row.plan_tier || 'reto_escalera',
+    publishedAt: row.published_at || '',
+    createdAt: row.created_at || '',
+  };
+}
+
+async function saveRetoDraft(payload) {
+  const now = new Date().toISOString();
+  const result = await pool.query(
+    `INSERT INTO reto_parlays
+      (status, meta, inversion, legs_json, combined_odds, projected_win, analysis,
+       current_leg, result, plan_tier, created_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+     RETURNING id`,
+    [
+      'draft',
+      Number(payload.meta || 0),
+      Number(payload.inversion || 0),
+      JSON.stringify(payload.legs || []),
+      Number(payload.combinedOdds || 1),
+      Number(payload.projectedWin || 0),
+      String(payload.analysis || ''),
+      0,
+      '',
+      String(payload.planTier || 'reto_escalera'),
+      now,
+    ]
+  );
+  return { id: Number(result.rows[0].id) };
+}
+
+async function publishReto(id) {
+  const now = new Date().toISOString();
+  await pool.query(
+    `UPDATE reto_parlays SET status='active', published_at=$1 WHERE id=$2`,
+    [now, Number(id)]
+  );
+}
+
+async function getActiveReto() {
+  const result = await pool.query(
+    `SELECT * FROM reto_parlays WHERE status='active' ORDER BY published_at DESC LIMIT 1`
+  );
+  return parseRetoRow(result.rows[0]);
+}
+
+async function getRetoById(id) {
+  const result = await pool.query(
+    `SELECT * FROM reto_parlays WHERE id=$1`,
+    [Number(id)]
+  );
+  return parseRetoRow(result.rows[0]);
+}
+
+async function listRetos(limit = 20) {
+  const result = await pool.query(
+    `SELECT * FROM reto_parlays WHERE status != 'draft'
+     ORDER BY created_at DESC LIMIT $1`,
+    [Math.max(1, Math.min(100, Number(limit || 20)))]
+  );
+  return result.rows.map(parseRetoRow);
+}
+
+async function updateRetoLegResult({ retoId, legIndex, result: legResult }) {
+  const reto = await getRetoById(retoId);
+  if (!reto) throw new Error('Reto not found');
+
+  const legs = reto.legs;
+  if (legIndex < 0 || legIndex >= legs.length) throw new Error('Invalid legIndex');
+
+  legs[legIndex] = { ...legs[legIndex], result: legResult };
+
+  const anyLost = legs.some(l => l.result === 'lost');
+  const allWon = legs.every(l => l.result === 'won');
+  const newCurrentLeg = anyLost ? legIndex : allWon ? legs.length - 1 : legIndex;
+  const newStatus = anyLost ? 'failed' : allWon ? 'completed' : 'active';
+  const newResult = anyLost ? 'lost' : allWon ? 'won' : 'in_progress';
+
+  await pool.query(
+    `UPDATE reto_parlays
+     SET legs_json=$1, current_leg=$2, status=$3, result=$4
+     WHERE id=$5`,
+    [JSON.stringify(legs), newCurrentLeg, newStatus, newResult, Number(retoId)]
+  );
+  return getRetoById(retoId);
+}
+
 module.exports = {
   DB_META,
   initDb,
@@ -1916,4 +2034,10 @@ module.exports = {
   getAdminDashboard,
   getAdminTimeline,
   getAdminCsvReport,
+  saveRetoDraft,
+  publishReto,
+  getActiveReto,
+  getRetoById,
+  listRetos,
+  updateRetoLegResult,
 };
