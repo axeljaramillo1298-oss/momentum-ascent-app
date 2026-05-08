@@ -278,6 +278,49 @@ main{position:relative;z-index:2}
 .res-btn-sm.lost:hover,.res-btn-sm.lost.active{background:rgba(248,113,113,.14);border-color:rgba(248,113,113,.3);color:var(--red)}
 .res-btn-sm.void:hover,.res-btn-sm.void.active{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.15);color:var(--text)}
 
+/* RETO MODAL */
+.reto-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:9500;display:flex;align-items:center;justify-content:center;padding:16px}
+.reto-modal-box{background:#0e0e12;border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:36px;max-width:520px;width:100%;box-shadow:0 40px 100px rgba(0,0,0,.7),0 0 60px rgba(59,130,246,.05)}
+.reto-modal-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:28px;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:4px;color:var(--text)}
+.reto-modal-title span{color:#60a5fa}
+.reto-modal-sub{font-size:12px;color:var(--muted);margin-bottom:24px;line-height:1.6}
+.reto-field{margin-bottom:16px}
+.reto-field label{display:block;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.reto-input{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text);padding:12px 16px;border-radius:5px;font:700 18px 'Barlow Condensed',sans-serif;letter-spacing:.04em}
+.reto-input:focus{outline:none;border-color:rgba(59,130,246,.5)}
+.reto-quick-btns{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.reto-quick{font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--muted);cursor:pointer;transition:all .15s}
+.reto-quick:hover{border-color:rgba(59,130,246,.4);color:#60a5fa}
+.reto-preview{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:6px;padding:14px 16px;margin-bottom:20px;display:none}
+.reto-preview-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+.reto-preview-row:last-child{margin-bottom:0}
+.reto-preview-lbl{color:var(--muted)}
+.reto-preview-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;color:#93c5fd}
+.reto-btn-gen{width:100%;padding:14px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);border:none;border-radius:5px;color:#fff;font:800 13px 'Barlow',sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:opacity .2s;margin-bottom:10px}
+.reto-btn-gen:hover{opacity:.88}
+.reto-btn-gen:disabled{opacity:.35;cursor:not-allowed}
+.reto-cancel{width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:10px;border-radius:3px;cursor:pointer;transition:all .2s}
+.reto-cancel:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+/* RETO RESULT CARD */
+.reto-result-wrap{margin-top:16px}
+.reto-result-title{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#60a5fa;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.reto-result-title::before{content:'';width:14px;height:1px;background:#60a5fa}
+.reto-leg{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:rgba(59,130,246,.04);border:1px solid rgba(59,130,246,.15);border-radius:6px;margin-bottom:8px}
+.reto-leg-n{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:rgba(59,130,246,.35);line-height:1;flex-shrink:0;width:28px;text-align:center}
+.reto-leg-body{flex:1;min-width:0}
+.reto-leg-match{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:16px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reto-leg-pick{font-size:13px;font-weight:700;color:#93c5fd;margin-top:2px}
+.reto-leg-meta{font-size:10px;color:var(--muted);margin-top:2px}
+.reto-leg-note{font-size:11px;color:rgba(240,237,232,.45);font-style:italic;margin-top:3px;line-height:1.5}
+.reto-leg-odds{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;color:#60a5fa;flex-shrink:0}
+.reto-summary-row{display:flex;gap:2px;margin-bottom:14px;flex-wrap:wrap}
+.reto-sum-card{flex:1;min-width:120px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.18);padding:14px 18px;border-radius:4px}
+.reto-sum-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:#60a5fa;line-height:1}
+.reto-sum-lbl{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.reto-alert{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:12px 16px;font-size:12px;color:var(--yellow);line-height:1.6;margin-bottom:14px}
+.reto-pub-btn{width:100%;padding:13px;background:linear-gradient(135deg,#0f3d91,#1d4ed8);border:none;border-radius:5px;color:#fff;font:800 12px 'Barlow',sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:opacity .2s}
+.reto-pub-btn:hover{opacity:.88}
+.reto-pub-btn.published{background:rgba(74,222,128,.15)!important;color:var(--green);border:1px solid rgba(74,222,128,.3);cursor:default;pointer-events:none}
 /* SCOUT HIGHLIGHTS */
 .event-card.scout-high{border-color:rgba(59,130,246,.55)!important;background:rgba(59,130,246,.04)!important;position:relative}
 .event-card.scout-high::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#3b82f6,transparent);pointer-events:none}
@@ -400,6 +443,13 @@ main{position:relative;z-index:2}
       <span class="chip muted" id="chip-provider">Proveedor: mock</span>
       <span class="chip green" id="chip-ai">IA lista</span>
       <span class="ops-status" id="ops-status-txt">—</span>
+    </div>
+
+    <!-- RETO SCOUT BAR (shows after scout runs) -->
+    <div id="reto-scout-bar" style="display:none;margin-bottom:24px;padding:14px 20px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:6px;display:none;align-items:center;gap:12px;flex-wrap:wrap">
+      <span style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#60a5fa">🔵 Reto Escalera</span>
+      <span style="font-size:12px;color:var(--muted);flex:1" id="reto-scout-summary">GPT identificó eventos recomendados. Genera el reto escalera con Claude.</span>
+      <button class="btn-ghost" id="btn-gen-reto" style="border-color:rgba(59,130,246,.4);color:#60a5fa;font-size:11px">⚡ Generar Reto con Claude</button>
     </div>
 
     <!-- EVENTS SECTION -->
@@ -1134,6 +1184,147 @@ main{position:relative;z-index:2}
       });
   }
 
+  // ── RETO ESCALERA MODAL ───────────────────────────────────
+  let currentRetoId = null;
+  let currentRetoDraft = null;
+
+  function openRetoModal(){
+    document.getElementById('reto-modal').style.display = 'flex';
+    showRetoForm();
+    updateRetoPreview();
+  }
+  function closeRetoModal(){
+    document.getElementById('reto-modal').style.display = 'none';
+    currentRetoDraft = null;
+    currentRetoId = null;
+  }
+  function showRetoForm(){
+    document.getElementById('reto-form-section').style.display = '';
+    document.getElementById('reto-loading-section').style.display = 'none';
+    document.getElementById('reto-result-section').style.display = 'none';
+    document.getElementById('reto-btn-analyze').disabled = false;
+    document.getElementById('reto-btn-analyze').textContent = '⚡ Analizar con Claude';
+  }
+
+  function updateRetoPreview(){
+    const inv = Number(document.getElementById('reto-inversion').value) || 0;
+    const meta = Number(document.getElementById('reto-meta').value) || 0;
+    const preview = document.getElementById('reto-preview');
+    if(!inv || !meta || meta <= inv){ preview.style.display = 'none'; return; }
+    preview.style.display = '';
+    const ratio = meta / inv;
+    const legs = ratio <= 6 ? 3 : 4;
+    const oddsPerLeg = Math.pow(ratio, 1/legs);
+    document.getElementById('rp-ratio').textContent = `${ratio.toFixed(1)}x`;
+    document.getElementById('rp-legs').textContent = `${legs} legs`;
+    document.getElementById('rp-odds').textContent = `~${oddsPerLeg.toFixed(2)}`;
+  }
+
+  document.getElementById('reto-inversion').addEventListener('input', updateRetoPreview);
+  document.getElementById('reto-meta').addEventListener('input', updateRetoPreview);
+  document.querySelectorAll('.reto-quick').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.dataset.inv) document.getElementById('reto-inversion').value = btn.dataset.inv;
+      if(btn.dataset.meta) document.getElementById('reto-meta').value = btn.dataset.meta;
+      updateRetoPreview();
+    });
+  });
+
+  document.getElementById('reto-btn-analyze').addEventListener('click', async () => {
+    const inv = Number(document.getElementById('reto-inversion').value);
+    const meta = Number(document.getElementById('reto-meta').value);
+    if(!inv || !meta || meta <= inv){ alert('La meta debe ser mayor a la inversión.'); return; }
+    if(!scoutResults.size){ alert('Primero ejecuta "Analizar jornada" para que GPT identifique los mejores eventos.'); return; }
+
+    document.getElementById('reto-form-section').style.display = 'none';
+    document.getElementById('reto-loading-section').style.display = '';
+
+    // Build event list from scout results
+    const scoutEventIds = [...scoutResults.keys()];
+    const retoEvents = events.filter(ev => scoutEventIds.includes(Number(ev.id))).map(ev => ({
+      id: ev.id, sport: ev.sport, league: ev.league || ev.competition,
+      homeTeam: ev.homeTeam || ev.home_team, awayTeam: ev.awayTeam || ev.away_team,
+      eventDate: ev.eventDate || ev.event_date || ev.date,
+    }));
+
+    // Build gptMarketsMap from stored analysis state
+    const gptMarketsMap = {};
+    retoEvents.forEach(ev => {
+      const state = getEventState(ev.id);
+      if(state.gptMarkets) gptMarketsMap[ev.id] = state.gptMarkets;
+    });
+
+    try {
+      const data = await fetchJson('/api/reto/generate', {
+        method:'POST', headers: apiHeaders(),
+        body: JSON.stringify({ events: retoEvents, inversion: inv, meta, gptMarketsMap }),
+      });
+      if(!data?.ok) throw new Error(data?.error || 'reto_generate_failed');
+
+      currentRetoId = data.retoId;
+      currentRetoDraft = data;
+      renderRetoDraft(data, inv, meta);
+      document.getElementById('reto-loading-section').style.display = 'none';
+      document.getElementById('reto-result-section').style.display = '';
+      addLog(`Reto escalera generado por Claude: ${data.legs?.length || 0} legs, odds ${data.combinedOdds}x, ganancia proyectada $${data.projectedWin}`, 'ok');
+    } catch(err){
+      document.getElementById('reto-loading-section').style.display = 'none';
+      document.getElementById('reto-form-section').style.display = '';
+      document.getElementById('reto-btn-analyze').disabled = false;
+      addLog(`Error generando reto: ${err.message}`, 'err');
+      alert(`Error: ${err.message}`);
+    }
+  });
+
+  function renderRetoDraft(data, inv, meta){
+    const body = document.getElementById('reto-result-body');
+    const alert = data.alert && !data.feasible ? `<div class="reto-alert">⚠️ ${data.alert}</div>` : '';
+    const sumCards = `
+      <div class="reto-summary-row">
+        <div class="reto-sum-card"><div class="reto-sum-val">$${Number(inv).toLocaleString('es-MX')}</div><div class="reto-sum-lbl">Inversión</div></div>
+        <div class="reto-sum-card"><div class="reto-sum-val">${data.combinedOdds}x</div><div class="reto-sum-lbl">Odds combinadas</div></div>
+        <div class="reto-sum-card"><div class="reto-sum-val">$${Number(data.projectedWin).toLocaleString('es-MX')}</div><div class="reto-sum-lbl">Ganancia aprox</div></div>
+        <div class="reto-sum-card"><div class="reto-sum-val">$${Number(meta).toLocaleString('es-MX')}</div><div class="reto-sum-lbl">Meta</div></div>
+      </div>`;
+    const legs = (data.legs || []).map((leg, i) => {
+      const dateStr = leg.eventDate ? new Date(leg.eventDate).toLocaleString('es-MX',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'America/Mexico_City'}) : '—';
+      return `<div class="reto-leg">
+        <div class="reto-leg-n">${i+1}</div>
+        <div class="reto-leg-body">
+          <div class="reto-leg-match">${leg.match || '?'}</div>
+          <div class="reto-leg-pick">${leg.market} · ${leg.pick}</div>
+          <div class="reto-leg-meta">${leg.league} · ${dateStr} · Confianza ${leg.confidence}%</div>
+          ${leg.analysis ? `<div class="reto-leg-note">${leg.analysis}</div>` : ''}
+        </div>
+        <div class="reto-leg-odds">${leg.odds}</div>
+      </div>`;
+    }).join('');
+    const analysis = data.analysis ? `<div style="font-size:12px;color:rgba(240,237,232,.55);font-style:italic;margin-bottom:14px;line-height:1.6">📊 ${data.analysis}</div>` : '';
+    body.innerHTML = `<div class="reto-result-title">Reto Al Cielo — ${data.legs?.length || 0} Legs</div>${alert}${sumCards}${legs}${analysis}`;
+  }
+
+  document.getElementById('reto-pub-btn').addEventListener('click', async function(){
+    if(!currentRetoId || this.classList.contains('published')) return;
+    this.disabled = true;
+    this.textContent = 'Publicando…';
+    try {
+      const data = await fetchJson(`/api/reto/${currentRetoId}/publish`, { method:'POST', headers: apiHeaders() });
+      if(!data?.ok) throw new Error(data?.error || 'publish_failed');
+      this.textContent = '✓ Reto Publicado';
+      this.classList.add('published');
+      addLog(`Reto Escalera #${currentRetoId} publicado`, 'ok');
+      setStatus('Reto al Cielo publicado y visible para usuarios.');
+    } catch(err){
+      this.disabled = false;
+      this.textContent = '🚀 Publicar Reto al Cielo';
+      addLog(`Error publicando reto: ${err.message}`, 'err');
+    }
+  });
+
+  document.getElementById('btn-gen-reto').addEventListener('click', openRetoModal);
+  window.closeRetoModal = closeRetoModal;
+  window.showRetoForm = showRetoForm;
+
   window.openPubModal = openPubModal;
   window.closePubModal = closePubModal;
   window.confirmPublish = confirmPublish;
@@ -1286,6 +1477,14 @@ main{position:relative;z-index:2}
       const midCount = scoutResults.size - topCount;
       addLog(`Scout GPT completado: ${topCount} top pick${topCount!==1?'s':''}, ${midCount} recomendado${midCount!==1?'s':''}${data.summary?' — '+data.summary:''}`, 'ok');
       setStatus(data.summary || `${scoutResults.size} eventos recomendados por GPT.`);
+
+      // Show reto bar
+      const retoBar = document.getElementById('reto-scout-bar');
+      const retoSummary = document.getElementById('reto-scout-summary');
+      if(retoBar){
+        retoBar.style.display = 'flex';
+        if(retoSummary) retoSummary.textContent = data.summary || `${scoutResults.size} eventos seleccionados por GPT. Genera el Reto Escalera con Claude.`;
+      }
     } catch(err){
       addLog(`Error en scout: ${err.message}`,'err');
       setStatus('Error en análisis de jornada.');
@@ -1420,9 +1619,10 @@ main{position:relative;z-index:2}
 (function(){
   // ── USUARIOS & PLANES ────────────────────────────────────
   const PLAN_OPTIONS = [
-    { id:'free',         label:'Free',     days:36500 },
-    { id:'ai_coach',     label:'AI Picks', days:30 },
-    { id:'coach_humano', label:'Apex',     days:30 },
+    { id:'free',           label:'Free',     days:36500 },
+    { id:'ai_coach',       label:'AI Picks', days:30 },
+    { id:'reto_escalera',  label:'Reto',     days:30 },
+    { id:'coach_humano',   label:'Apex',     days:30 },
   ];
 
   const userRaw2 = localStorage.getItem('discipline_current_user_v1');
@@ -1664,6 +1864,62 @@ main{position:relative;z-index:2}
   loadTotalStats();
 })();
 </script>
+
+<!-- RETO ESCALERA MODAL -->
+<div id="reto-modal" class="reto-modal-overlay" style="display:none" onclick="if(event.target===this)closeRetoModal()">
+  <div class="reto-modal-box">
+    <div class="reto-modal-title">Reto <span>Al Cielo</span></div>
+    <p class="reto-modal-sub">Claude analizará los eventos recomendados por GPT y construirá el parlay óptimo según tu inversión y meta.</p>
+
+    <div id="reto-form-section">
+      <div class="reto-field">
+        <label>Inversión inicial (MXN)</label>
+        <input class="reto-input" type="number" id="reto-inversion" value="500" min="1" placeholder="500" />
+        <div class="reto-quick-btns">
+          <button class="reto-quick" data-inv="100">$100</button>
+          <button class="reto-quick" data-inv="200">$200</button>
+          <button class="reto-quick" data-inv="500">$500</button>
+          <button class="reto-quick" data-inv="1000">$1,000</button>
+          <button class="reto-quick" data-inv="2000">$2,000</button>
+        </div>
+      </div>
+      <div class="reto-field">
+        <label>Meta de ganancia (MXN)</label>
+        <input class="reto-input" type="number" id="reto-meta" value="5000" min="1" placeholder="5000" />
+        <div class="reto-quick-btns">
+          <button class="reto-quick" data-meta="1000">$1,000</button>
+          <button class="reto-quick" data-meta="3000">$3,000</button>
+          <button class="reto-quick" data-meta="5000">$5,000</button>
+          <button class="reto-quick" data-meta="10000">$10,000</button>
+          <button class="reto-quick" data-meta="20000">$20,000</button>
+        </div>
+      </div>
+      <div class="reto-preview" id="reto-preview">
+        <div class="reto-preview-row"><span class="reto-preview-lbl">Ratio objetivo</span><span class="reto-preview-val" id="rp-ratio">—</span></div>
+        <div class="reto-preview-row"><span class="reto-preview-lbl">Legs estimados</span><span class="reto-preview-val" id="rp-legs">—</span></div>
+        <div class="reto-preview-row"><span class="reto-preview-lbl">Odds por leg (aprox)</span><span class="reto-preview-val" id="rp-odds">—</span></div>
+      </div>
+      <button class="reto-btn-gen" id="reto-btn-analyze">⚡ Analizar con Claude</button>
+      <button class="reto-cancel" onclick="closeRetoModal()">Cancelar</button>
+    </div>
+
+    <div id="reto-loading-section" style="display:none;padding:24px 0;text-align:center">
+      <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:12px">
+        <div class="work-spinner"></div>
+        <span style="font-size:13px;color:var(--muted)">Claude construyendo el reto escalera…</span>
+      </div>
+      <div style="font-size:11px;color:rgba(96,165,250,.5)">Analizando mercados por deporte y balance inversión/meta</div>
+    </div>
+
+    <div id="reto-result-section" style="display:none">
+      <div class="reto-result-wrap" id="reto-result-body"></div>
+      <button class="reto-pub-btn" id="reto-pub-btn">🚀 Publicar Reto al Cielo</button>
+      <div style="margin-top:8px">
+        <button class="reto-cancel" onclick="showRetoForm()">↩ Cambiar parámetros</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- PUBLISH TIER MODAL -->
 <div id="pub-modal" class="pub-modal-overlay" style="display:none" onclick="if(event.target===this)closePubModal()">

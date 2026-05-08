@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Reto Al Cielo | Momentum Ascent</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#3b82f6;
+  --blue2:#60a5fa;
+  --orange:#FF4500;
+  --dark:#060608;
+  --dark2:#0a0a0d;
+  --surface:rgba(255,255,255,0.03);
+  --border:rgba(255,255,255,0.07);
+  --text:#f0ede8;
+  --muted:rgba(240,237,232,0.4);
+  --green:#4ADE80;
+  --red:#F87171;
+  --yellow:#F59E0B;
+}
+html{scroll-behavior:smooth}
+body{background:var(--dark)!important;color:var(--text);font-family:'Barlow',sans-serif;overflow-x:hidden;min-height:100vh}
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+main{position:relative;z-index:2}
+
+/* NAV */
+.user-panel-top{position:relative;z-index:200;padding:12px 16px}
+.user-panel-nav{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.nav-logo-link{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{width:32px;height:32px;flex-shrink:0}
+.logo-wordmark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--text)}
+.nav-actions{display:flex;align-items:center;gap:4px}
+.up-nav-link{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;border-radius:3px;text-decoration:none;color:var(--muted);transition:color .2s,background .2s;white-space:nowrap}
+.up-nav-link:hover{color:var(--text)}
+
+/* HERO */
+.page-hero{padding:36px 20px 24px;position:relative}
+.page-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:360px;background:radial-gradient(ellipse 60% 80% at 20% 20%,rgba(30,58,138,.25) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 80% 40%,rgba(59,130,246,.07) 0%,transparent 70%);pointer-events:none}
+.hero-inner{position:relative;z-index:1}
+.page-eyebrow{font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;opacity:0;animation:fadeUp .5s .1s forwards}
+.page-eyebrow::before{content:'';width:20px;height:1px;background:var(--muted)}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(52px,10vw,100px);text-transform:uppercase;letter-spacing:-.02em;line-height:.88;opacity:0;animation:fadeUp .6s .2s forwards}
+.page-title span{color:var(--blue2)}
+.page-desc{margin-top:16px;font-size:14px;color:var(--muted);max-width:380px;line-height:1.65;font-weight:300;opacity:0;animation:fadeUp .5s .35s forwards}
+
+/* CONTENT */
+.page-content{padding:0 20px 140px;position:relative;z-index:2}
+
+/* UPSELL */
+.upsell-view{opacity:0;animation:fadeUp .5s .4s forwards}
+.upsell-hero-badge{display:inline-flex;align-items:center;gap:8px;font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;padding:6px 16px;border-radius:20px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.08);color:var(--blue2);margin-bottom:20px}
+.upsell-cards{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:28px}
+@media(min-width:480px){.upsell-cards{grid-template-columns:1fr 1fr}}
+.upsell-card{background:rgba(59,130,246,.04);border:1px solid rgba(59,130,246,.18);border-radius:10px;padding:20px}
+.upsell-card-icon{font-size:26px;margin-bottom:10px}
+.upsell-card-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:16px;text-transform:uppercase;letter-spacing:.04em;color:var(--blue2);margin-bottom:6px}
+.upsell-card-desc{font-size:12px;color:var(--muted);line-height:1.6}
+.upsell-cta-block{background:linear-gradient(135deg,rgba(30,58,138,.3),rgba(59,130,246,.1));border:1px solid rgba(59,130,246,.3);border-radius:12px;padding:28px 24px;text-align:center}
+.upsell-cta-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:26px;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:8px}
+.upsell-cta-price{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:42px;color:var(--blue2);line-height:1;margin-bottom:4px}
+.upsell-cta-sub{font-size:11px;color:var(--muted);margin-bottom:20px}
+.btn-upsell{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:14px 32px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;border:none;border-radius:4px;cursor:pointer;text-decoration:none;transition:opacity .2s}
+.btn-upsell:hover{opacity:.88}
+
+/* ACTIVE RETO VIEW */
+.reto-view{opacity:0;animation:fadeUp .5s .4s forwards}
+.reto-status-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:6px;margin-bottom:24px;flex-wrap:wrap;gap:10px}
+.reto-status-title{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--blue2)}
+.reto-status-badge{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:4px 12px;border-radius:20px;border:1px solid}
+.reto-status-badge.active{color:var(--green);border-color:rgba(74,222,128,.4);background:rgba(74,222,128,.08)}
+.reto-status-badge.completed{color:var(--blue2);border-color:rgba(59,130,246,.4);background:rgba(59,130,246,.08)}
+.reto-status-badge.failed{color:var(--red);border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.08)}
+
+/* SUMMARY CARDS */
+.reto-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:24px}
+@media(min-width:480px){.reto-summary{grid-template-columns:repeat(4,1fr)}}
+.reto-sum-card{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.18);padding:14px 16px;border-radius:6px}
+.reto-sum-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:26px;color:var(--blue2);line-height:1}
+.reto-sum-lbl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+
+/* PROGRESS BAR */
+.reto-progress-wrap{margin-bottom:28px}
+.reto-progress-label{display:flex;justify-content:space-between;margin-bottom:8px}
+.reto-prog-lbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.reto-prog-val{font-size:10px;font-weight:700;color:var(--blue2)}
+.reto-progress-track{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.reto-progress-fill{height:100%;background:linear-gradient(90deg,#1d4ed8,#60a5fa);border-radius:3px;transition:width 1.2s cubic-bezier(.22,1,.36,1)}
+
+/* LADDER / LEGS */
+.ladder-section{margin-bottom:32px}
+.ladder-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:18px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:16px;color:var(--text)}
+.leg-card{display:flex;align-items:stretch;gap:0;margin-bottom:10px;border-radius:8px;overflow:hidden;border:1px solid;transition:border-color .2s}
+.leg-card.pending{border-color:rgba(59,130,246,.2);background:rgba(59,130,246,.03)}
+.leg-card.won{border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.04)}
+.leg-card.lost{border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.04)}
+.leg-card.current{border-color:rgba(59,130,246,.5);background:rgba(59,130,246,.06)}
+.leg-card.current::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;background:var(--blue);border-radius:3px 0 0 3px}
+.leg-n{width:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative}
+.leg-n-inner{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;opacity:.35;line-height:1}
+.leg-card.won .leg-n-inner{opacity:1;color:var(--green)}
+.leg-card.lost .leg-n-inner{opacity:1;color:var(--red)}
+.leg-card.current .leg-n-inner{opacity:1;color:var(--blue2)}
+.leg-body{flex:1;padding:14px 14px 14px 0;min-width:0}
+.leg-match{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.leg-pick{font-size:13px;font-weight:700;color:var(--blue2);margin-bottom:3px}
+.leg-card.won .leg-pick{color:var(--green)}
+.leg-card.lost .leg-pick{color:rgba(248,113,113,.8);text-decoration:line-through}
+.leg-meta{font-size:10px;color:var(--muted)}
+.leg-note{font-size:10.5px;color:rgba(240,237,232,.4);font-style:italic;margin-top:3px;line-height:1.4}
+.leg-right{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:6px;padding:12px 14px;flex-shrink:0}
+.leg-odds{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:24px;color:var(--blue2);line-height:1}
+.leg-card.won .leg-odds{color:var(--green)}
+.leg-card.lost .leg-odds{color:var(--red)}
+.leg-time{font-size:9.5px;color:rgba(240,237,232,.3);text-align:right}
+.leg-result-chip{font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid}
+.leg-result-chip.won{color:var(--green);border-color:rgba(74,222,128,.4);background:rgba(74,222,128,.1)}
+.leg-result-chip.lost{color:var(--red);border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.1)}
+.leg-result-chip.pending{color:var(--blue2);border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.06)}
+
+/* WINNINGS CALC */
+.calc-card{background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:20px;margin-bottom:24px}
+.calc-title{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--blue2);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.calc-title::before{content:'';width:14px;height:1px;background:var(--blue2)}
+.calc-rows{display:flex;flex-direction:column;gap:6px}
+.calc-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(59,130,246,.1)}
+.calc-row:last-child{border-bottom:none;padding-top:12px;border-top:1px solid rgba(59,130,246,.2)}
+.calc-row-lbl{font-size:12px;color:var(--muted)}
+.calc-row-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px;color:var(--blue2)}
+.calc-row.total .calc-row-val{font-size:28px;color:#93c5fd}
+.calc-input{width:120px;background:rgba(255,255,255,.04);border:1px solid rgba(59,130,246,.25);color:var(--text);padding:7px 10px;border-radius:4px;font:700 15px 'Barlow Condensed',sans-serif;text-align:right}
+.calc-input:focus{outline:none;border-color:rgba(59,130,246,.5)}
+
+/* HISTORY */
+.history-section{margin-bottom:32px}
+.history-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:18px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:16px}
+.history-empty{padding:32px;text-align:center;color:var(--muted);background:rgba(59,130,246,.03);border:1px solid rgba(59,130,246,.1);border-radius:8px}
+.hist-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:16px;cursor:default;transition:background .2s}
+.hist-card:hover{background:rgba(255,255,255,.04)}
+.hist-legs-col{flex:1;min-width:0}
+.hist-date{font-size:10px;color:var(--muted);margin-bottom:4px}
+.hist-legs-preview{font-size:12px;color:rgba(240,237,232,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.hist-odds{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;color:var(--blue2)}
+.hist-result-chip{font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:20px;border:1px solid}
+.hist-result-chip.won{color:var(--green);border-color:rgba(74,222,128,.4);background:rgba(74,222,128,.1)}
+.hist-result-chip.lost{color:var(--red);border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.1)}
+.hist-result-chip.in_progress{color:var(--blue2);border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.06)}
+
+/* WAITING / NO ACTIVE */
+.waiting-card{background:rgba(59,130,246,.04);border:1px dashed rgba(59,130,246,.25);border-radius:12px;padding:40px 24px;text-align:center;margin-bottom:28px}
+.waiting-icon{font-size:44px;margin-bottom:16px;opacity:.5}
+.waiting-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:24px;text-transform:uppercase;letter-spacing:-.01em;color:rgba(96,165,250,.7);margin-bottom:8px}
+.waiting-desc{font-size:13px;color:var(--muted);line-height:1.6;max-width:300px;margin:0 auto}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:300;display:flex;border-top:1px solid var(--border);background:rgba(6,6,8,.92);backdrop-filter:blur(16px)}
+.bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;text-decoration:none;color:var(--muted);font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:color .2s}
+.bottom-nav-item:hover,.bottom-nav-active{color:var(--orange)}
+.bottom-nav-active.reto-nav{color:var(--blue2)}
+.bottom-nav-icon{font-size:18px;display:block}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
+.loading-spinner{width:18px;height:18px;border:2px solid rgba(59,130,246,.2);border-top-color:var(--blue2);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.leg-card.current .leg-odds{animation:pulse 2s ease infinite}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(59,130,246,.3);border-radius:2px}
+
+@media(max-width:480px){
+  .page-hero{padding:24px 16px 20px}
+  .page-content{padding:0 16px 120px}
+  .reto-summary{grid-template-columns:1fr 1fr}
+  .upsell-cards{grid-template-columns:1fr}
+}
+  </style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<div class="user-panel-top">
+  <nav class="user-panel-nav">
+    <a class="nav-logo-link" href="index.html">
+      <svg class="logo-icon" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="19" stroke="#FF4500" stroke-width="1.5" opacity=".35"/>
+        <path d="M12 28L20 10L28 28" stroke="#FF4500" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M14.5 22H25.5" stroke="#FF4500" stroke-width="1.4" stroke-linecap="round" opacity=".6"/>
+      </svg>
+      <span class="logo-wordmark">Momentum Ascent</span>
+    </a>
+    <div class="nav-actions">
+      <a class="up-nav-link" href="user-hoy.html">Picks</a>
+    </div>
+  </nav>
+</div>
+
+<main>
+  <section class="page-hero">
+    <div class="hero-inner">
+      <p class="page-eyebrow">Modo Reto</p>
+      <h1 class="page-title">RETO<br><span>AL CIELO</span></h1>
+      <p class="page-desc">Parlay curado por IA. Cada leg es analizado por Claude para maximizar la probabilidad de completar la escalera.</p>
+    </div>
+  </section>
+
+  <div class="page-content">
+
+    <!-- UPSELL VIEW (no tiene plan) -->
+    <div id="upsell-view" style="display:none">
+      <div class="upsell-view">
+        <div class="upsell-hero-badge">🏔️ Reto al Cielo · $79 MXN/mes</div>
+        <div class="upsell-cards">
+          <div class="upsell-card">
+            <div class="upsell-card-icon">🎯</div>
+            <div class="upsell-card-title">Parlay curado por IA</div>
+            <div class="upsell-card-desc">Claude analiza cada evento para construir el parlay más probable de completarse. No cualquier multi, uno inteligente.</div>
+          </div>
+          <div class="upsell-card">
+            <div class="upsell-card-icon">📈</div>
+            <div class="upsell-card-title">Odds combinadas</div>
+            <div class="upsell-card-desc">3 a 4 legs seleccionados por predicibilidad. Sabes exactamente cuánto ganarías con tu inversión antes de apostar.</div>
+          </div>
+          <div class="upsell-card">
+            <div class="upsell-card-icon">🏆</div>
+            <div class="upsell-card-title">Escalera de progreso</div>
+            <div class="upsell-card-desc">Visualiza cada paso del reto en tiempo real. Ve cuándo se juega cada leg y qué queda para la meta.</div>
+          </div>
+          <div class="upsell-card">
+            <div class="upsell-card-icon">🔔</div>
+            <div class="upsell-card-title">Historial completo</div>
+            <div class="upsell-card-desc">Consulta todos los retos anteriores con sus resultados, odds y análisis de Claude.</div>
+          </div>
+        </div>
+        <div class="upsell-cta-block">
+          <div class="upsell-cta-title">Activa el Reto</div>
+          <div class="upsell-cta-price">$79</div>
+          <div class="upsell-cta-sub">MXN / mes · Incluido en Plan Apex</div>
+          <a class="btn-upsell" href="planes.html">🏔️ Activar Reto al Cielo</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- RETO VIEW (tiene plan) -->
+    <div id="reto-view" style="display:none">
+      <div class="reto-view">
+
+        <!-- Active reto section -->
+        <div id="active-reto-section">
+          <div class="waiting-card" id="waiting-card">
+            <div class="waiting-icon">🏔️</div>
+            <div class="waiting-title">Próximo reto en preparación</div>
+            <div class="waiting-desc">El equipo de análisis está seleccionando los mejores eventos. El reto se publica cuando Claude confirma las mejores odds.</div>
+          </div>
+
+          <div id="active-reto-content" style="display:none">
+            <div class="reto-status-bar">
+              <div class="reto-status-title">Reto Activo</div>
+              <span class="reto-status-badge active" id="reto-status-badge">⚡ En juego</span>
+            </div>
+
+            <div class="reto-summary" id="reto-summary"></div>
+
+            <div class="reto-progress-wrap">
+              <div class="reto-progress-label">
+                <span class="reto-prog-lbl" id="reto-prog-lbl">Progreso</span>
+                <span class="reto-prog-val" id="reto-prog-val">0 / 0 legs</span>
+              </div>
+              <div class="reto-progress-track">
+                <div class="reto-progress-fill" id="reto-progress-fill" style="width:0%"></div>
+              </div>
+            </div>
+
+            <div class="calc-card">
+              <div class="calc-title">Calculadora de ganancias</div>
+              <div class="calc-rows">
+                <div class="calc-row">
+                  <span class="calc-row-lbl">Tu inversión</span>
+                  <input class="calc-input" type="number" id="calc-inv" value="500" min="1" placeholder="500" />
+                </div>
+                <div class="calc-row">
+                  <span class="calc-row-lbl">Odds combinadas</span>
+                  <span class="calc-row-val" id="calc-odds">—</span>
+                </div>
+                <div class="calc-row total">
+                  <span class="calc-row-lbl">Ganarías si completas</span>
+                  <span class="calc-row-val" id="calc-win">—</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="ladder-section">
+              <div class="ladder-title">La Escalera</div>
+              <div id="legs-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- History -->
+        <div class="history-section">
+          <div class="history-title">Historial de Retos</div>
+          <div id="history-list">
+            <div class="history-empty">Sin retos anteriores aún.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<nav class="bottom-nav" aria-label="Navegacion principal">
+  <a class="bottom-nav-item" href="user-hoy.html">
+    <span class="bottom-nav-icon">🎯</span><span>Picks</span>
+  </a>
+  <a class="bottom-nav-item bottom-nav-active reto-nav" href="user-reto.html">
+    <span class="bottom-nav-icon">🏔️</span><span>Reto</span>
+  </a>
+  <a class="bottom-nav-item" href="user-bank.html">
+    <span class="bottom-nav-icon">💰</span><span>Bank</span>
+  </a>
+  <a class="bottom-nav-item" href="planes.html">
+    <span class="bottom-nav-icon">💳</span><span>Planes</span>
+  </a>
+  <a class="bottom-nav-item" href="user-checkin.html">
+    <span class="bottom-nav-icon">👤</span><span>Cuenta</span>
+  </a>
+</nav>
+
+<script src="app.js"></script>
+<script>
+(function(){
+'use strict';
+
+const userRaw = localStorage.getItem('discipline_current_user_v1');
+const godToken = localStorage.getItem('discipline_god_token_v1');
+let userEmail = '';
+let planId = '';
+try { const u = JSON.parse(userRaw); userEmail = u?.email || ''; planId = u?.planId || u?.plan || ''; } catch(_){}
+
+const API_BASE = (() => {
+  const forced = (localStorage.getItem('discipline_api_base_v1') || '').trim();
+  if(forced) return forced.replace(/\/+$/, '');
+  const host = (window.location.hostname || '').toLowerCase();
+  if(window.location.protocol === 'file:') return 'http://localhost:8787';
+  if(host === 'localhost' || host === '127.0.0.1') return 'http://localhost:8787';
+  if(host.endsWith('momentumascent.com')) return 'https://api.momentumascent.com';
+  return `${window.location.protocol}//${window.location.host}`;
+})();
+
+function apiHeaders(){
+  const h = {'Content-Type':'application/json'};
+  if(userEmail) h['x-user-email'] = userEmail;
+  if(godToken) h['x-god-token'] = godToken;
+  return h;
+}
+
+async function fetchJson(path, opts = {}){
+  const res = await fetch(`${API_BASE}${path}`, opts);
+  const text = await res.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch(_){}
+  if(!res.ok){ const e = new Error(data?.error || `HTTP ${res.status}`); e.status = res.status; e.data = data; throw e; }
+  return data;
+}
+
+// ── Plan gating ─────────────────────────────────────────────
+const RETO_PLANS = ['reto_escalera', 'coach_humano'];
+const hasReto = RETO_PLANS.includes(planId) || !!godToken;
+
+document.getElementById(hasReto ? 'reto-view' : 'upsell-view').style.display = '';
+if(!hasReto) { initBg(); return; }
+
+// ── Format helpers ───────────────────────────────────────────
+const fmtMxn = n => `$${Number(n||0).toLocaleString('es-MX',{minimumFractionDigits:0,maximumFractionDigits:0})}`;
+const fmtDate = iso => iso ? new Date(iso).toLocaleString('es-MX',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'America/Mexico_City'}) : '—';
+const fmtDateShort = iso => iso ? new Date(iso).toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'}) : '—';
+
+// ── Render active reto ───────────────────────────────────────
+function renderActiveReto(reto){
+  document.getElementById('waiting-card').style.display = 'none';
+  document.getElementById('active-reto-content').style.display = '';
+
+  // Status badge
+  const badge = document.getElementById('reto-status-badge');
+  if(reto.result === 'won'){ badge.textContent = '✓ Completado'; badge.className = 'reto-status-badge completed'; }
+  else if(reto.result === 'lost'){ badge.textContent = '✗ Fallido'; badge.className = 'reto-status-badge failed'; }
+  else { badge.textContent = '⚡ En juego'; badge.className = 'reto-status-badge active'; }
+
+  // Summary cards
+  const legs = reto.legs || [];
+  const wonLegs = legs.filter(l => l.result === 'won').length;
+  const combinedOdds = Number(reto.combinedOdds || 1);
+  document.getElementById('reto-summary').innerHTML = `
+    <div class="reto-sum-card"><div class="reto-sum-val">${legs.length}</div><div class="reto-sum-lbl">Legs totales</div></div>
+    <div class="reto-sum-card"><div class="reto-sum-val">${wonLegs}</div><div class="reto-sum-lbl">Completados</div></div>
+    <div class="reto-sum-card"><div class="reto-sum-val">${combinedOdds}x</div><div class="reto-sum-lbl">Odds totales</div></div>
+    <div class="reto-sum-card"><div class="reto-sum-val">${fmtMxn(reto.projectedWin)}</div><div class="reto-sum-lbl">Meta aprox</div></div>`;
+
+  // Progress bar
+  const resolved = legs.filter(l => l.result === 'won' || l.result === 'lost').length;
+  const pct = legs.length ? Math.round(wonLegs / legs.length * 100) : 0;
+  document.getElementById('reto-prog-lbl').textContent = reto.result === 'won' ? '¡Reto completado!' : reto.result === 'lost' ? 'Reto fallido' : 'Progreso del reto';
+  document.getElementById('reto-prog-val').textContent = `${wonLegs} / ${legs.length} legs`;
+  requestAnimationFrame(() => { document.getElementById('reto-progress-fill').style.width = `${pct}%`; });
+
+  // Calculadora
+  const calcInv = document.getElementById('calc-inv');
+  document.getElementById('calc-odds').textContent = `${combinedOdds}x`;
+  function updateCalc(){
+    const inv = Number(calcInv.value) || 0;
+    document.getElementById('calc-win').textContent = inv ? fmtMxn(inv * combinedOdds) : '—';
+  }
+  calcInv.addEventListener('input', updateCalc);
+  updateCalc();
+
+  // Legs
+  const currentLeg = reto.currentLeg || 0;
+  document.getElementById('legs-list').innerHTML = legs.map((leg, i) => {
+    const statusClass = leg.result === 'won' ? 'won' : leg.result === 'lost' ? 'lost' : i === currentLeg && !reto.result ? 'current' : 'pending';
+    const resultChip = leg.result === 'won'
+      ? '<span class="leg-result-chip won">✓ Ganó</span>'
+      : leg.result === 'lost'
+      ? '<span class="leg-result-chip lost">✗ Perdió</span>'
+      : i === currentLeg && !reto.result
+      ? '<span class="leg-result-chip pending">⚡ Próximo</span>'
+      : '<span class="leg-result-chip pending">Por jugar</span>';
+    return `<div class="leg-card ${statusClass}">
+      <div class="leg-n"><div class="leg-n-inner">${i+1}</div></div>
+      <div class="leg-body">
+        <div class="leg-match">${leg.match || '?'}</div>
+        <div class="leg-pick">${leg.market} · ${leg.pick}</div>
+        <div class="leg-meta">${leg.league || '—'} · ${fmtDate(leg.eventDate)}</div>
+        ${leg.analysis ? `<div class="leg-note">${leg.analysis}</div>` : ''}
+      </div>
+      <div class="leg-right">
+        <div class="leg-odds">${leg.odds}</div>
+        ${resultChip}
+        <div class="leg-time">${leg.confidence ? `${leg.confidence}% conf.` : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render history ───────────────────────────────────────────
+function renderHistory(retos){
+  const container = document.getElementById('history-list');
+  if(!retos.length){ container.innerHTML = '<div class="history-empty">Sin retos anteriores aún.</div>'; return; }
+  container.innerHTML = retos.map(r => {
+    const legs = r.legs || [];
+    const preview = legs.map(l => l.pick || '?').join(' → ');
+    const resultMap = { won:'won', lost:'lost', in_progress:'in_progress', '':'in_progress' };
+    const chipLabel = r.result === 'won' ? '✓ Completado' : r.result === 'lost' ? '✗ Fallido' : '⚡ En progreso';
+    return `<div class="hist-card">
+      <div class="hist-legs-col">
+        <div class="hist-date">${fmtDateShort(r.publishedAt || r.createdAt)} · ${legs.length} legs</div>
+        <div class="hist-legs-preview">${preview}</div>
+      </div>
+      <div class="hist-right">
+        <div class="hist-odds">${r.combinedOdds}x</div>
+        <span class="hist-result-chip ${resultMap[r.result || '']}">${chipLabel}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Load data ────────────────────────────────────────────────
+async function loadReto(){
+  try {
+    const [activeData, histData] = await Promise.all([
+      fetchJson('/api/reto/active', { headers: apiHeaders() }),
+      fetchJson('/api/reto/history?limit=10', { headers: apiHeaders() }),
+    ]);
+    if(activeData?.reto){
+      renderActiveReto(activeData.reto);
+    }
+    // Show history (exclude active from list)
+    const histList = (histData?.retos || []).filter(r => !activeData?.reto || r.id !== activeData.reto.id);
+    renderHistory(histList);
+  } catch(e){
+    console.error('Error loading reto:', e);
+  }
+}
+
+loadReto();
+
+// ── THREE.JS BG ──────────────────────────────────────────────
+function initBg(){
+  if(typeof THREE === 'undefined') return;
+  const canvas = document.getElementById('bg-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias:false, alpha:true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
+  camera.position.z = 60;
+  const geo = new THREE.BufferGeometry();
+  const N = 500;
+  const pos = new Float32Array(N*3);
+  const col = new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    pos[i*3]=(Math.random()-.5)*160; pos[i*3+1]=(Math.random()-.5)*120; pos[i*3+2]=(Math.random()-.5)*80;
+    const isBlue = Math.random() > .4;
+    col[i*3]=isBlue?.24:.9; col[i*3+1]=isBlue?.51:.88; col[i*3+2]=isBlue?.99:.86;
+  }
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+  scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ size:.5, vertexColors:true, transparent:true, opacity:.45 })));
+  let mx=0,my=0;
+  window.addEventListener('mousemove',e=>{mx=(e.clientX/innerWidth-.5)*2;my=(e.clientY/innerHeight-.5)*2});
+  function resize(){ renderer.setSize(innerWidth,innerHeight); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); }
+  resize(); window.addEventListener('resize',resize);
+  let t=0;
+  (function loop(){
+    requestAnimationFrame(loop); t+=.002;
+    scene.rotation.y=mx*.04+Math.sin(t)*.04; scene.rotation.x=-my*.03+Math.cos(t*.7)*.02;
+    renderer.render(scene,camera);
+  })();
+}
+initBg();
+
+})();
+</script>
+</body>
+</html>

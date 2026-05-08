@@ -191,6 +191,22 @@ CREATE TABLE IF NOT EXISTS api_sync_logs (
   message TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS reto_parlays (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  status TEXT NOT NULL DEFAULT 'draft',
+  meta REAL NOT NULL DEFAULT 0,
+  inversion REAL NOT NULL DEFAULT 0,
+  legs_json TEXT NOT NULL DEFAULT '[]',
+  combined_odds REAL NOT NULL DEFAULT 1,
+  projected_win REAL NOT NULL DEFAULT 0,
+  analysis TEXT NOT NULL DEFAULT '',
+  current_leg INTEGER NOT NULL DEFAULT 0,
+  result TEXT NOT NULL DEFAULT '',
+  plan_tier TEXT NOT NULL DEFAULT 'reto_escalera',
+  published_at TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL
+);
 `);
 
 const assignmentColumns = db.prepare("PRAGMA table_info(assignments)").all().map((row) => String(row.name || "").toLowerCase());
@@ -1861,6 +1877,99 @@ function listApiSyncLogs(limit = 20) {
   }));
 }
 
+// ── RETO PARLAYS ────────────────────────────────────────────────────────────
+const insertRetoStmt = db.prepare(`
+  INSERT INTO reto_parlays (status, meta, inversion, legs_json, combined_odds, projected_win, analysis, current_leg, result, plan_tier, published_at, created_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, 0, '', ?, '', ?)
+`);
+
+const updateRetoPublishStmt = db.prepare(`
+  UPDATE reto_parlays SET status='active', published_at=? WHERE id=?
+`);
+
+const updateRetoLegResultStmt = db.prepare(`
+  UPDATE reto_parlays SET legs_json=?, current_leg=?, result=?, status=? WHERE id=?
+`);
+
+const getActiveRetoStmt = db.prepare(`
+  SELECT * FROM reto_parlays WHERE status='active' ORDER BY published_at DESC LIMIT 1
+`);
+
+const getRetoByIdStmt = db.prepare(`SELECT * FROM reto_parlays WHERE id=?`);
+
+const listRetosStmt = db.prepare(`
+  SELECT * FROM reto_parlays WHERE status != 'draft' ORDER BY created_at DESC LIMIT ?
+`);
+
+function parseRetoRow(row) {
+  if (!row) return null;
+  let legs = [];
+  try { legs = JSON.parse(row.legs_json || "[]"); } catch { legs = []; }
+  return {
+    id: Number(row.id),
+    status: row.status || "draft",
+    meta: Number(row.meta || 0),
+    inversion: Number(row.inversion || 0),
+    legs,
+    combinedOdds: Number(row.combined_odds || 1),
+    projectedWin: Number(row.projected_win || 0),
+    analysis: row.analysis || "",
+    currentLeg: Number(row.current_leg || 0),
+    result: row.result || "",
+    planTier: row.plan_tier || "reto_escalera",
+    publishedAt: row.published_at || "",
+    createdAt: row.created_at || "",
+  };
+}
+
+function saveRetoDraft(payload) {
+  const meta = Number(payload.meta || 0);
+  const inversion = Number(payload.inversion || 0);
+  const legs = Array.isArray(payload.legs) ? payload.legs : [];
+  const combinedOdds = Number(payload.combinedOdds || 1);
+  const projectedWin = Number(payload.projectedWin || 0);
+  const analysis = safeStr(payload.analysis);
+  const planTier = safeStr(payload.planTier || "reto_escalera");
+  const info = insertRetoStmt.run("draft", meta, inversion, JSON.stringify(legs), combinedOdds, projectedWin, analysis, planTier, nowIso());
+  return { id: Number(info.lastInsertRowid) };
+}
+
+function publishReto(id) {
+  updateRetoPublishStmt.run(nowIso(), Number(id));
+}
+
+function getActiveReto() {
+  return parseRetoRow(getActiveRetoStmt.get());
+}
+
+function getRetoById(id) {
+  return parseRetoRow(getRetoByIdStmt.get(Number(id)));
+}
+
+function listRetos(limit = 20) {
+  return listRetosStmt.all(Math.min(50, Number(limit || 20))).map(parseRetoRow);
+}
+
+function updateRetoLegResult({ retoId, legIndex, result }) {
+  const reto = getRetoById(Number(retoId));
+  if (!reto) throw new Error("reto_not_found");
+  const legs = [...reto.legs];
+  const idx = Number(legIndex);
+  if (idx < 0 || idx >= legs.length) throw new Error("leg_index_out_of_range");
+  legs[idx] = { ...legs[idx], result };
+
+  // Determine overall status
+  const anyLost = legs.some((l) => l.result === "lost");
+  const allResolved = legs.every((l) => l.result === "won" || l.result === "lost" || l.result === "void");
+  const allWon = legs.every((l) => l.result === "won" || l.result === "void");
+  const newResult = anyLost ? "lost" : allResolved && allWon ? "won" : "in_progress";
+  const newStatus = anyLost ? "failed" : allResolved && allWon ? "completed" : "active";
+  const nextLeg = legs.findIndex((l) => !l.result);
+
+  updateRetoLegResultStmt.run(JSON.stringify(legs), nextLeg < 0 ? legs.length : nextLeg, newResult, newStatus, Number(retoId));
+  return getRetoById(Number(retoId));
+}
+
 const DB_META = {
   client: "sqlite",
   path: DB_PATH,
@@ -1918,4 +2027,10 @@ module.exports = {
   updatePickResult: async (payload) => updatePickResult(payload),
   logApiSync: async (payload) => logApiSync(payload),
   listApiSyncLogs: async (limit) => listApiSyncLogs(limit),
+  saveRetoDraft: async (payload) => saveRetoDraft(payload),
+  publishReto: async (id) => publishReto(id),
+  getActiveReto: async () => getActiveReto(),
+  getRetoById: async (id) => getRetoById(id),
+  listRetos: async (limit) => listRetos(limit),
+  updateRetoLegResult: async (payload) => updateRetoLegResult(payload),
 };

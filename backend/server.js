@@ -3,7 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const crypto = require("node:crypto");
-const { generateAiPlan, buildFallbackPlan, generateSportsPick, runDualAnalysis, analyzeMarketsGPT, claudeDecideMarket, scoutDayEventsGPT } = require("./ai");
+const { generateAiPlan, buildFallbackPlan, generateSportsPick, runDualAnalysis, analyzeMarketsGPT, claudeDecideMarket, scoutDayEventsGPT, generateRetoEscalera } = require("./ai");
 const sportsApiService = require("./sportsApiService");
 const { sendWhatsAppText, getWhatsAppConfigStatus } = require("./whatsapp");
 const { startCoachOnboardingForUser, handleIncomingCoachMessage } = require("./coach-whatsapp");
@@ -52,6 +52,11 @@ const {
   listPickHistory,
   updatePickResult,
   logApiSync,
+  saveRetoDraft,
+  publishReto,
+  getActiveReto,
+  listRetos,
+  updateRetoLegResult,
   listApiSyncLogs,
   savePickCandidates,
   getPickCandidateById,
@@ -1782,6 +1787,84 @@ app.post("/api/picks/publish-direct", requireAdmin, async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || "publish_direct_failed") });
+  }
+});
+
+// ── RETO ESCALERA ENDPOINTS ───────────────────────────────────────────────
+
+// Generate reto with Claude from scouted events
+app.post("/api/reto/generate", requireAdmin, async (req, res) => {
+  try {
+    const { events: eventList, inversion, meta, gptMarketsMap } = req.body || {};
+    if (!Array.isArray(eventList) || !eventList.length) {
+      return res.status(400).json({ ok: false, error: "events array required" });
+    }
+    const inv = Number(inversion || 500);
+    const tgt = Number(meta || 5000);
+    if (inv <= 0 || tgt <= inv) return res.status(400).json({ ok: false, error: "meta must be greater than inversion" });
+
+    const result = await generateRetoEscalera({ events: eventList, inversion: inv, meta: tgt, gptMarketsMap: gptMarketsMap || {} });
+
+    // Save as draft
+    const saved = await saveRetoDraft({
+      meta: tgt,
+      inversion: inv,
+      legs: result.legs,
+      combinedOdds: result.combinedOdds,
+      projectedWin: result.projectedWin,
+      analysis: result.analysis,
+      planTier: "reto_escalera",
+    });
+
+    res.json({ ok: true, retoId: saved.id, ...result });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "reto_generate_failed") });
+  }
+});
+
+// Publish a draft reto
+app.post("/api/reto/:id/publish", requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    await publishReto(id);
+    res.json({ ok: true, retoId: id });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "reto_publish_failed") });
+  }
+});
+
+// Get active reto (user-facing — requires auth but not admin)
+app.get("/api/reto/active", async (req, res) => {
+  try {
+    const reto = await getActiveReto();
+    res.json({ ok: true, reto: reto || null });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "reto_fetch_failed") });
+  }
+});
+
+// Get reto history (user-facing)
+app.get("/api/reto/history", async (req, res) => {
+  try {
+    const limit = Math.min(20, Number(req.query.limit || 10));
+    const retos = await listRetos(limit);
+    res.json({ ok: true, retos });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "reto_history_failed") });
+  }
+});
+
+// Mark a leg result (admin only)
+app.put("/api/reto/:id/leg/:legIndex/result", requireAdmin, async (req, res) => {
+  try {
+    const retoId = Number(req.params.id);
+    const legIndex = Number(req.params.legIndex);
+    const { result } = req.body || {};
+    if (!result) return res.status(400).json({ ok: false, error: "result required" });
+    const updated = await updateRetoLegResult({ retoId, legIndex, result: String(result) });
+    res.json({ ok: true, reto: updated });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "leg_result_failed") });
   }
 });
 

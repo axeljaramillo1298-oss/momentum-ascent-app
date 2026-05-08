@@ -893,6 +893,98 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
   }
 }
 
+// ── Claude: generate Reto Escalera from scouted events ───────────────────
+async function generateRetoEscalera({ events = [], inversion = 500, meta = 5000, gptMarketsMap = {} } = {}) {
+  const apiKey = safeStr(process.env.ANTHROPIC_API_KEY);
+
+  // Build odds target — how many legs of what odds do we need
+  const ratio = meta / inversion;
+  // prefer 3-4 legs; choose based on ratio
+  const suggestedLegs = ratio <= 6 ? 3 : 4;
+  const targetOddsPerLeg = Math.pow(ratio, 1 / suggestedLegs);
+
+  const mkFallback = () => ({
+    legs: events.slice(0, suggestedLegs).map((ev, i) => ({
+      legIndex: i,
+      eventId: ev.id,
+      match: `${ev.homeTeam || ev.home_team} vs ${ev.awayTeam || ev.away_team}`,
+      league: ev.league,
+      sport: ev.sport,
+      eventDate: ev.eventDate,
+      market: "1X2",
+      pick: ev.homeTeam || ev.home_team || "Local",
+      odds: parseFloat(targetOddsPerLeg.toFixed(2)),
+      confidence: 60,
+      analysis: "Selección automática por defecto.",
+      result: null,
+    })),
+    combinedOdds: parseFloat(Math.pow(targetOddsPerLeg, suggestedLegs).toFixed(2)),
+    projectedWin: parseFloat((inversion * Math.pow(targetOddsPerLeg, suggestedLegs)).toFixed(2)),
+    analysis: `Reto de ${suggestedLegs} legs generado automáticamente. Inversión: $${inversion} · Meta: $${meta}.`,
+    legsNeeded: suggestedLegs,
+    feasible: true,
+    alert: "",
+  });
+
+  if (!apiKey || !events.length) return mkFallback();
+
+  // Build per-event GPT context
+  const eventsContext = events.map((ev) => {
+    const sportCfg = getSportMarketConfig(safeStr(ev.sport), safeStr(ev.homeTeam || ev.home_team), safeStr(ev.awayTeam || ev.away_team));
+    const gptM = gptMarketsMap[ev.id] || null;
+    const gptSummary = gptM
+      ? [
+          `ML: ${gptM.ml?.pick || "—"} (${gptM.ml?.conf || "—"}%)`,
+          `Goles/Totales: ${gptM.goles?.pick || "—"} (${gptM.goles?.conf || "—"}%)`,
+          `BTTS/Equiv: ${gptM.btts?.pick || "—"} (${gptM.btts?.conf || "—"}%)`,
+          `Handicap: ${gptM.handicap?.pick || "—"} (${gptM.handicap?.conf || "—"}%)`,
+          `Corners/Equiv: ${gptM.corners?.pick || "—"} (${gptM.corners?.conf || "—"}%)`,
+          `Resumen: ${gptM.resumen || "sin resumen"}`,
+        ].join(" | ")
+      : "sin análisis GPT previo";
+    return `[${ev.id}] ${sportCfg.label} | ${ev.league} | ${ev.homeTeam || ev.home_team} vs ${ev.awayTeam || ev.away_team} | ${ev.eventDate ? new Date(ev.eventDate).toLocaleString("es-MX", { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Mexico_City" }) : "—"}\nMercados por deporte (${sportCfg.label}): ${sportCfg.markets}\nAnálisis GPT previo: ${gptSummary}`;
+  }).join("\n\n");
+
+  const systemPrompt = [
+    "Eres un analista senior de apuestas deportivas especializado en parlays/escaleras para una plataforma premium.",
+    "Tu objetivo es generar el RETO ESCALERA óptimo con los eventos disponibles.",
+    "Para cada leg elige el mercado MÁS PREDECIBLE y SEGURO del deporte correspondiente (no el de mayor confianza individual, sino el más resistente al parlay).",
+    "Para fútbol prefiere handicap asiático o totales sobre 1X2. Para basketball prefiere spread o totales. Para UFC prefiere método o rounds. Para baseball prefiere run line o totales.",
+    `Inversión: $${inversion} MXN · Meta: $${meta} MXN · Ratio objetivo: ${ratio.toFixed(2)}x.`,
+    `Sugiere entre 3 y 4 legs. Con ${suggestedLegs} legs necesitarías odds de ~${targetOddsPerLeg.toFixed(2)} por leg.`,
+    "Si los eventos disponibles no alcanzan para la meta indicada, o no hay suficiente confianza, pon feasible:false y explica en alert.",
+    "Si feasible:false, sugiere en alert qué tipo de evento de días posteriores podría completar el reto.",
+    "Responde SOLO JSON sin texto adicional:",
+    '{"legs":[{"legIndex":0,"eventId":N,"match":"X vs Y","league":"Liga","sport":"sport","eventDate":"ISO","market":"nombre del mercado","pick":"pick exacto","odds":1.85,"confidence":70,"analysis":"1 oración"}],"combinedOdds":X.XX,"projectedWin":XXXX,"analysis":"2 oraciones de razonamiento global","legsNeeded":N,"feasible":true,"alert":""}',
+  ].join(" ");
+
+  const userPrompt = `Genera el Reto Escalera óptimo con estos eventos:\n\n${eventsContext}\n\nInversión: $${inversion} · Meta: $${meta} · Elige los mejores ${suggestedLegs} legs (o 3 si con 3 ya alcanza la meta con odds reales disponibles).`;
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({
+        model: safeStr(process.env.ANTHROPIC_MODEL) || "claude-sonnet-4-6",
+        max_tokens: 1200,
+        messages: [{ role: "user", content: `${systemPrompt}\n\n${userPrompt}` }],
+      }),
+    });
+    const rawText = await response.text().catch(() => "");
+    if (!response.ok) throw new Error(`anthropic_${response.status}`);
+    const data = rawText ? JSON.parse(rawText) : {};
+    const content = safeStr(data?.content?.[0]?.text);
+    const parsed = extractJsonObject(content);
+    if (!parsed || !Array.isArray(parsed.legs)) return mkFallback();
+    // Ensure leg results are null
+    parsed.legs = parsed.legs.map((l, i) => ({ ...l, legIndex: i, result: null }));
+    parsed.projectedWin = parsed.projectedWin || parseFloat((inversion * (parsed.combinedOdds || 1)).toFixed(2));
+    return parsed;
+  } catch {
+    return mkFallback();
+  }
+}
+
 // ── GPT: scout/rank day events — which ones are best to analyze ───────────
 async function scoutDayEventsGPT(events = []) {
   const apiKey = safeStr(process.env.OPENAI_API_KEY);
@@ -966,4 +1058,5 @@ module.exports = {
   analyzeMarketsGPT,
   claudeDecideMarket,
   scoutDayEventsGPT,
+  generateRetoEscalera,
 };
