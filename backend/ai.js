@@ -893,6 +893,69 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
   }
 }
 
+// ── GPT: scout/rank day events — which ones are best to analyze ───────────
+async function scoutDayEventsGPT(events = []) {
+  const apiKey = safeStr(process.env.OPENAI_API_KEY);
+  const model = safeStr(process.env.OPENAI_MODEL) || "gpt-4o";
+
+  const mkFallback = () => ({
+    recommended: events.slice(0, 3).map((ev, i) => ({
+      eventId: ev.id,
+      priority: i === 0 ? "high" : "medium",
+      reason: "Liga de alto nivel seleccionada por defecto.",
+    })),
+    summary: "Selección automática — sin clave OpenAI.",
+  });
+  if (!apiKey || !events.length) return mkFallback();
+
+  const list = events
+    .map((ev) => {
+      const sport = safeStr(ev.sport || "football").toUpperCase();
+      const time = ev.eventDate ? new Date(ev.eventDate).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", timeZone: "America/Mexico_City" }) : "—";
+      return `[${ev.id}] ${sport} | ${safeStr(ev.league)} | ${safeStr(ev.homeTeam || ev.home_team)} vs ${safeStr(ev.awayTeam || ev.away_team)} | ${time}`;
+    })
+    .join("\n");
+
+  const systemPrompt = [
+    "Eres un analista senior de apuestas deportivas. Recibes una lista de eventos del día.",
+    "Identifica cuáles ofrecen las mejores oportunidades basándote en: importancia y prestigio de la liga, predictibilidad del resultado, valor de mercado esperado y variedad deportiva.",
+    "Prioriza: Champions, NBA, Premier, LaLiga, NFL, MLB sobre ligas menores.",
+    "Selecciona entre 1 y 5 eventos máximo. Solo incluye los que realmente valen la pena analizar.",
+    "Responde SOLO JSON válido sin texto adicional:",
+    '{"recommended":[{"eventId":N,"priority":"high|medium","reason":"1 oración corta"}],"summary":"1 oración del panorama del día"}',
+  ].join(" ");
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model,
+        temperature: 0.4,
+        max_tokens: 500,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Eventos del día:\n${list}\n\nIdentifica los mejores para apostar hoy.` },
+        ],
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    const rawText = await response.text().catch(() => "");
+    if (!response.ok) throw new Error(`openai_${response.status}`);
+    const data = rawText ? JSON.parse(rawText) : {};
+    const content = safeStr(data?.choices?.[0]?.message?.content);
+    const parsed = content ? JSON.parse(content) : null;
+    if (parsed?.recommended) return parsed;
+    return mkFallback();
+  } catch {
+    return mkFallback();
+  }
+}
+
 module.exports = {
   generateAiPlan,
   buildFallbackPlan,
@@ -902,4 +965,5 @@ module.exports = {
   runDualAnalysis,
   analyzeMarketsGPT,
   claudeDecideMarket,
+  scoutDayEventsGPT,
 };

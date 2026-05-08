@@ -278,6 +278,26 @@ main{position:relative;z-index:2}
 .res-btn-sm.lost:hover,.res-btn-sm.lost.active{background:rgba(248,113,113,.14);border-color:rgba(248,113,113,.3);color:var(--red)}
 .res-btn-sm.void:hover,.res-btn-sm.void.active{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.15);color:var(--text)}
 
+/* SCOUT HIGHLIGHTS */
+.event-card.scout-high{border-color:rgba(59,130,246,.55)!important;background:rgba(59,130,246,.04)!important;position:relative}
+.event-card.scout-high::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#3b82f6,transparent);pointer-events:none}
+.event-card.scout-medium{border-color:rgba(59,130,246,.28)!important;background:rgba(59,130,246,.02)!important}
+.scout-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.1);color:#60a5fa}
+.scout-badge.high{border-color:rgba(59,130,246,.6);background:rgba(59,130,246,.14);color:#93c5fd}
+.scout-tip{font-size:10px;color:rgba(96,165,250,.7);font-style:italic;margin-top:2px}
+/* ODDS TABLE */
+.odds-wrap{margin-bottom:14px;border:1px solid rgba(59,130,246,.15);border-radius:6px;overflow:hidden;background:rgba(59,130,246,.03)}
+.odds-header{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(96,165,250,.7);padding:7px 14px;border-bottom:1px solid rgba(59,130,246,.12);display:flex;align-items:center;gap:8px}
+.odds-bm{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.03)}
+.odds-bm:last-child{border-bottom:none}
+.odds-bm-name{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.odds-markets{display:flex;flex-wrap:wrap;gap:8px}
+.odds-market-block{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:4px;padding:6px 10px}
+.odds-mkt-lbl{font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(240,237,232,.3);margin-bottom:4px}
+.odds-outcomes{display:flex;gap:8px;flex-wrap:wrap}
+.odds-outcome{display:flex;flex-direction:column;align-items:center;gap:1px}
+.odds-outcome-name{font-size:9px;color:var(--muted)}
+.odds-outcome-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:16px;color:#60a5fa}
 /* ANIMATIONS */
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -374,6 +394,7 @@ main{position:relative;z-index:2}
       <input class="date-input" type="date" id="events-date" />
       <button class="btn-ghost" id="btn-tomorrow">Mañana</button>
       <button class="btn-primary" id="btn-sync">Sincronizar eventos</button>
+      <button class="btn-ghost" id="btn-scout" title="GPT analiza qué eventos son los mejores del día">🔍 Analizar jornada</button>
       <button class="btn-ghost" id="btn-refresh">Actualizar panel</button>
       <div class="ops-sep"></div>
       <span class="chip muted" id="chip-provider">Proveedor: mock</span>
@@ -441,7 +462,7 @@ main{position:relative;z-index:2}
         <div class="pipeline-step">
           <div class="step-n">02</div>
           <div class="step-name">GPT-4o analiza</div>
-          <div class="step-desc">GPT analiza en tiempo real 5 mercados: 1X2, Goles O/U, BTTS, Hándicap Asiático y Corners.</div>
+          <div class="step-desc">GPT analiza 5 mercados adaptados al deporte: Fútbol (1X2, Goles, BTTS, Hándicap, Corners) · Basketball (ML, Puntos, Spread, 1ra mitad, Cuartos) · UFC (ML, Rounds, Decisión, Método…)</div>
         </div>
         <div class="pipeline-step">
           <div class="step-n">03</div>
@@ -710,6 +731,8 @@ main{position:relative;z-index:2}
       <div class="work-panel" id="work-${ev.id}">
         <div class="work-step">Paso 1 — Evento seleccionado · ${home} vs ${away}</div>
 
+        <div id="odds-area-${ev.id}" style="margin-bottom:12px"></div>
+
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
           <button class="btn-primary" id="gpt-btn" style="background:linear-gradient(135deg,rgba(255,69,0,.9),rgba(245,158,11,.7))">
             Analizar con GPT-4o (5 mercados)
@@ -736,14 +759,36 @@ main{position:relative;z-index:2}
     return card;
   }
 
+  // ── SPORT-SPECIFIC MARKET LABELS ──────────────────────────
+  function getMarketLabels(sport){
+    const s = (sport || '').toLowerCase();
+    if(s.includes('basket') || s.includes('nba')) return {
+      ml:'ML (Ganador partido)', goles:'Total Puntos (Over/Under)', btts:'Primera Mitad (Ganador)', handicap:'Spread (Hándicap puntos)', corners:'Cuartos (Total pts)',
+    };
+    if(s.includes('beisbol') || s.includes('baseball') || s.includes('mlb')) return {
+      ml:'ML (Ganador)', goles:'Total Carreras (Over/Under)', btts:'1ra Entrada (Anota o no)', handicap:'Run Line (±1.5)', corners:'Ponches Pitcher abridor',
+    };
+    if(s.includes('tenis') || s.includes('tennis')) return {
+      ml:'ML (Ganador partido)', goles:'Juegos Totales (Over/Under)', btts:'Ganador 1er Set', handicap:'Hándicap de Juegos', corners:'Break de Servicio 1er Set',
+    };
+    if(s.includes('nfl') || s.includes('americano')) return {
+      ml:'ML (Ganador)', goles:'Total Puntos (Over/Under)', btts:'Primera Mitad (Ganador)', handicap:'Spread (Puntos)', corners:'Total Touchdowns',
+    };
+    if(s.includes('ufc') || s.includes('mma')) return {
+      ml:'ML (Ganador pelea)', goles:'Total Rounds (Over/Under)', btts:'¿Llega a decisión?', handicap:'Hándicap de Rounds', corners:'Método de Victoria',
+    };
+    return { ml:'1X2 (Moneyline)', goles:'Goles Over/Under', btts:'BTTS (Ambos anotan)', handicap:'Hándicap Asiático', corners:'Corners Over/Under' };
+  }
+
   // ── RENDER MARKETS TABLE (GPT output) ─────────────────────
-  function renderMarketsTable(markets){
+  function renderMarketsTable(markets, sport){
+    const lbl = getMarketLabels(sport);
     const rows = [
-      { label:'1X2 (Moneyline)', pick: markets.ml?.pick, conf: markets.ml?.conf, nota: markets.ml?.nota },
-      { label:'Goles Over/Under', pick: markets.goles?.pick, conf: markets.goles?.conf, nota: markets.goles?.nota },
-      { label:'BTTS (Ambos anotan)', pick: markets.btts?.pick, conf: markets.btts?.conf, nota: markets.btts?.nota },
-      { label:'Hándicap Asiático', pick: `${markets.handicap?.pick||'—'} (${markets.handicap?.line||'—'})`, conf: markets.handicap?.conf, nota: markets.handicap?.nota },
-      { label:'Corners', pick: markets.corners?.pick, conf: markets.corners?.conf, nota: markets.corners?.nota },
+      { label:lbl.ml,       pick: markets.ml?.pick,       conf: markets.ml?.conf,       nota: markets.ml?.nota },
+      { label:lbl.goles,    pick: markets.goles?.pick,    conf: markets.goles?.conf,    nota: markets.goles?.nota },
+      { label:lbl.btts,     pick: markets.btts?.pick,     conf: markets.btts?.conf,     nota: markets.btts?.nota },
+      { label:lbl.handicap, pick: markets.handicap?.line ? `${markets.handicap?.pick||'—'} (${markets.handicap.line})` : markets.handicap?.pick||'—', conf: markets.handicap?.conf, nota: markets.handicap?.nota },
+      { label:lbl.corners,  pick: markets.corners?.pick,  conf: markets.corners?.conf,  nota: markets.corners?.nota },
     ];
     const rowsHtml = rows.map(r => `
       <tr>
@@ -777,7 +822,8 @@ main{position:relative;z-index:2}
       if(!data?.ok) throw new Error(data?.error || 'gpt_markets_failed');
 
       setEventState(eventId, { gptMarkets:data.markets, decision:null });
-      gptArea.innerHTML = renderMarketsTable(data.markets);
+      const evSport = data.event?.sport || (events.find(e=>String(e.id)===String(eventId))?.sport) || '';
+      gptArea.innerHTML = renderMarketsTable(data.markets, evSport);
       panel.querySelector('#claude-btn').disabled = false;
       addLog(`GPT completó análisis de 5 mercados — evento #${eventId} — proveedor ${data.markets?.provider || 'desconocido'}`, 'ok');
       setStatus(`GPT listo (${data.markets?.provider || 'sin proveedor visible'}). Pasa a Claude cuando quieras.`);
@@ -1137,6 +1183,118 @@ main{position:relative;z-index:2}
     });
   }
 
+  // ── ODDS DISPLAY ──────────────────────────────────────────
+  async function loadEventOdds(eventId, panel){
+    const oddsArea = panel.querySelector(`#odds-area-${eventId}`);
+    if(!oddsArea) return;
+    oddsArea.innerHTML = `<div style="font-size:10px;color:rgba(96,165,250,.5);padding:4px 0">Cargando momios de casas de apuestas…</div>`;
+    try {
+      const data = await fetchJson(`/api/sports/events/${eventId}/odds`, { headers: apiHeaders() });
+      if(!data?.hasOdds || (!data.bookmakers?.length && !data.oddsSnapshot)){
+        oddsArea.innerHTML = `<div style="font-size:10px;color:var(--muted);padding:4px 0;font-style:italic">Sin momios disponibles para este evento en el proveedor configurado.</div>`;
+        return;
+      }
+      let html = `<div class="odds-wrap"><div class="odds-header">📊 Momios de casas de apuestas</div>`;
+
+      // from the-odds-api bookmakers
+      if(data.bookmakers?.length){
+        data.bookmakers.slice(0,3).forEach(bm => {
+          html += `<div class="odds-bm"><div class="odds-bm-name">${bm.bookmaker}</div><div class="odds-markets">`;
+          bm.markets.forEach(mkt => {
+            html += `<div class="odds-market-block"><div class="odds-mkt-lbl">${mkt.label||mkt.key}</div><div class="odds-outcomes">`;
+            mkt.outcomes.forEach(o => {
+              const dec = o.price > 0 ? (o.price/100+1).toFixed(2) : (1-100/o.price).toFixed(2);
+              const amText = o.price > 0 ? `+${o.price}` : String(o.price);
+              html += `<div class="odds-outcome"><span class="odds-outcome-name">${o.name}</span><span class="odds-outcome-val">${dec}</span><span style="font-size:8px;color:rgba(96,165,250,.5)">${amText}</span></div>`;
+            });
+            html += `</div></div>`;
+          });
+          html += `</div></div>`;
+        });
+      }
+
+      // from manual oddsSnapshot
+      if(data.oddsSnapshot && typeof data.oddsSnapshot === 'object'){
+        html += `<div class="odds-bm"><div class="odds-bm-name">Snapshot manual</div><div class="odds-markets">`;
+        Object.entries(data.oddsSnapshot).forEach(([k,v]) => {
+          html += `<div class="odds-market-block"><div class="odds-mkt-lbl">${k}</div><div class="odds-outcome-val" style="font-size:14px">${JSON.stringify(v)}</div></div>`;
+        });
+        html += `</div></div>`;
+      }
+
+      html += `</div>`;
+      oddsArea.innerHTML = html;
+    } catch(e){
+      oddsArea.innerHTML = `<div style="font-size:10px;color:var(--muted);padding:4px 0;font-style:italic">Sin momios disponibles.</div>`;
+    }
+  }
+
+  // ── DAY SCOUT (GPT ranks all events) ─────────────────────
+  const scoutResults = new Map(); // eventId → { priority, reason }
+  async function runDayScout(){
+    if(!events.length){ addLog('Carga eventos primero para analizar la jornada.','warn'); return; }
+    const btn = document.getElementById('btn-scout');
+    btn.disabled = true;
+    btn.textContent = '🔍 Analizando…';
+    setStatus('GPT analizando jornada…');
+    addLog(`Enviando ${events.length} eventos a GPT para scout de jornada…`);
+    try {
+      const payload = events.map(ev => ({
+        id: ev.id,
+        sport: ev.sport,
+        league: ev.league || ev.competition,
+        homeTeam: ev.home_team || ev.homeTeam,
+        awayTeam: ev.away_team || ev.awayTeam,
+        eventDate: ev.eventDate || ev.event_date || ev.date,
+      }));
+      const data = await fetchJson('/api/picks/gpt-scout', { method:'POST', headers: apiHeaders(), body: JSON.stringify({ events: payload }) });
+      if(!data?.ok) throw new Error(data?.error || 'scout_failed');
+
+      scoutResults.clear();
+      (data.recommended || []).forEach(r => scoutResults.set(Number(r.eventId), r));
+
+      // Apply highlights to event cards
+      document.querySelectorAll('.event-card[data-event-id]').forEach(card => {
+        const eid = Number(card.dataset.eventId);
+        card.classList.remove('scout-high','scout-medium');
+        const existing = card.querySelector('.scout-badge');
+        if(existing) existing.remove();
+        const existingTip = card.querySelector('.scout-tip');
+        if(existingTip) existingTip.remove();
+
+        const rec = scoutResults.get(eid);
+        if(rec){
+          card.classList.add(rec.priority==='high' ? 'scout-high' : 'scout-medium');
+          const statusDiv = card.querySelector('.event-pick-status');
+          if(statusDiv){
+            const badge = document.createElement('span');
+            badge.className = `scout-badge ${rec.priority==='high'?'high':''}`;
+            badge.textContent = rec.priority==='high' ? '🔵 Top pick' : '🔷 Recomendado';
+            statusDiv.prepend(badge);
+          }
+          const infoDiv = card.querySelector('.event-meta');
+          if(infoDiv && rec.reason){
+            const tip = document.createElement('span');
+            tip.className = 'scout-tip';
+            tip.textContent = rec.reason;
+            infoDiv.appendChild(tip);
+          }
+        }
+      });
+
+      const topCount = [...scoutResults.values()].filter(r=>r.priority==='high').length;
+      const midCount = scoutResults.size - topCount;
+      addLog(`Scout GPT completado: ${topCount} top pick${topCount!==1?'s':''}, ${midCount} recomendado${midCount!==1?'s':''}${data.summary?' — '+data.summary:''}`, 'ok');
+      setStatus(data.summary || `${scoutResults.size} eventos recomendados por GPT.`);
+    } catch(err){
+      addLog(`Error en scout: ${err.message}`,'err');
+      setStatus('Error en análisis de jornada.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔍 Analizar jornada';
+    }
+  }
+
   // ── SELECT EVENT (manual) ─────────────────────────────────
   function selectEvent(eid, card){
     // collapse all panels, deselect all cards
@@ -1153,6 +1311,7 @@ main{position:relative;z-index:2}
     panel.classList.add('open');
     panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
     addLog(`Evento #${eid} seleccionado para análisis`, 'ok');
+    loadEventOdds(eid, panel);
   }
 
   // ── LOAD EVENTS ───────────────────────────────────────────
@@ -1201,6 +1360,7 @@ main{position:relative;z-index:2}
   });
 
   document.getElementById('btn-refresh').addEventListener('click', () => loadEvents());
+  document.getElementById('btn-scout').addEventListener('click', runDayScout);
   document.getElementById('btn-tomorrow').addEventListener('click', () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate()+1);

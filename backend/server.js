@@ -3,7 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const crypto = require("node:crypto");
-const { generateAiPlan, buildFallbackPlan, generateSportsPick, runDualAnalysis, analyzeMarketsGPT, claudeDecideMarket } = require("./ai");
+const { generateAiPlan, buildFallbackPlan, generateSportsPick, runDualAnalysis, analyzeMarketsGPT, claudeDecideMarket, scoutDayEventsGPT } = require("./ai");
 const sportsApiService = require("./sportsApiService");
 const { sendWhatsAppText, getWhatsAppConfigStatus } = require("./whatsapp");
 const { startCoachOnboardingForUser, handleIncomingCoachMessage } = require("./coach-whatsapp");
@@ -1391,6 +1391,42 @@ app.get("/api/sports/events/:eventId/context", requireAdmin, async (req, res) =>
   }
 });
 
+// ── Odds for a specific event (from rawJson bookmakers or statsJson oddsSnapshot) ──
+app.get("/api/sports/events/:eventId/odds", requireAdmin, async (req, res) => {
+  try {
+    const eventId = Number(req.params.eventId || 0);
+    const event = await getSportsEventById(eventId);
+    if (!event) return res.status(404).json({ ok: false, error: "event_not_found" });
+
+    const rawJson = (() => { try { return typeof event.rawJson === "string" ? JSON.parse(event.rawJson) : (event.rawJson || {}); } catch { return {}; } })();
+    const bookmakers = Array.isArray(rawJson?.bookmakers) ? rawJson.bookmakers : [];
+
+    // Also pull from statsJson oddsSnapshot if present
+    const stats = await getLatestEventStats(eventId);
+    const statsJson = (() => { try { return typeof stats?.statsJson === "string" ? JSON.parse(stats.statsJson) : (stats?.statsJson || {}); } catch { return {}; } })();
+    const oddsSnapshot = statsJson?.oddsSnapshot || null;
+
+    const MARKET_LABELS = { h2h: "1X2 / Moneyline", spreads: "Spread / Hándicap", totals: "Total O/U", btts: "Ambos Anotan" };
+
+    const normalized = bookmakers.map((bm) => ({
+      bookmaker: String(bm.title || bm.key || "Casa"),
+      markets: (Array.isArray(bm.markets) ? bm.markets : []).map((mkt) => ({
+        key: String(mkt.key || ""),
+        label: MARKET_LABELS[mkt.key] || String(mkt.key || ""),
+        outcomes: (Array.isArray(mkt.outcomes) ? mkt.outcomes : []).map((o) => ({
+          name: String(o.name || ""),
+          price: Number(o.price || 0),
+          decimal: o.price > 0 ? Number((o.price / 100 + 1).toFixed(2)) : Number((1 - 100 / o.price).toFixed(2)),
+        })),
+      })),
+    }));
+
+    res.json({ ok: true, eventId, bookmakers: normalized, oddsSnapshot, hasOdds: normalized.length > 0 || !!oddsSnapshot });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "odds_failed") });
+  }
+});
+
 app.post("/api/sports/events/:eventId/manual-context", requireAdmin, async (req, res) => {
   try {
     const eventId = Number(req.params.eventId || 0);
@@ -1627,6 +1663,20 @@ app.post("/api/picks/gpt-markets/:eventId", requireAdmin, async (req, res) => {
     res.json({ ok: true, eventId, event: { sport: event.sport, league: event.league, homeTeam: event.homeTeam, awayTeam: event.awayTeam, eventDate: event.eventDate }, markets });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || "gpt_markets_failed") });
+  }
+});
+
+// ── Scout/rank today's events to find best betting opportunities ──────────
+app.post("/api/picks/gpt-scout", requireAdmin, async (req, res) => {
+  try {
+    const { events: eventList } = req.body || {};
+    if (!Array.isArray(eventList) || !eventList.length) {
+      return res.status(400).json({ ok: false, error: "events array required" });
+    }
+    const result = await scoutDayEventsGPT(eventList);
+    res.json({ ok: true, ...result });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "scout_failed") });
   }
 });
 
