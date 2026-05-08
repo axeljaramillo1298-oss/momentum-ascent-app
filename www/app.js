@@ -332,10 +332,15 @@ function mapLegacyPlanToId(value) {
     .trim()
     .toLowerCase();
   if (!raw) return "free";
+  // canonical IDs — pass through unchanged
+  if (raw === "coach_humano") return "coach_humano";
+  if (raw === "ai_coach") return "ai_coach";
+  if (raw === "retos") return "retos";
+  // label / legacy mappings
   if (raw.includes("apex")) return "coach_humano";
   if (raw.includes("premium")) return "coach_humano";
-  if (raw.includes("coach + humano") || raw.includes("coach humano")) return "coach_humano";
-  if (raw.includes("coach ia") || raw.includes("ia coach") || raw.includes("solo ia") || raw.includes("ai picks")) return "ai_coach";
+  if (raw.includes("coach_humano") || raw.includes("coach + humano") || raw.includes("coach humano")) return "coach_humano";
+  if (raw.includes("ai_coach") || raw.includes("coach ia") || raw.includes("ia coach") || raw.includes("solo ia") || raw.includes("ai picks")) return "ai_coach";
   if (raw.includes("comunidad") || raw.includes("reto")) return "retos";
   if (raw.includes("basico") || raw.includes("basic") || raw.includes("free") || raw.includes("gratis")) return "free";
   return "free";
