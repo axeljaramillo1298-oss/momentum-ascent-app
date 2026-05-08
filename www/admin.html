@@ -625,6 +625,62 @@ main{position:relative;z-index:2}
   <span style="font-size:10px;color:rgba(240,237,232,.18)">Contenido informativo. No garantiza ganancias.</span>
 </footer>
 
+<!-- RETO ESCALERA MODAL -->
+<div id="reto-modal" class="reto-modal-overlay" style="display:none" onclick="if(event.target===this)closeRetoModal()">
+  <div class="reto-modal-box">
+    <div class="reto-modal-title">Reto <span>Al Cielo</span></div>
+    <p class="reto-modal-sub">Claude analizará los eventos recomendados por GPT y construirá el parlay óptimo según tu inversión y meta.</p>
+
+    <div id="reto-form-section">
+      <div class="reto-field">
+        <label>Inversión inicial (MXN)</label>
+        <input class="reto-input" type="number" id="reto-inversion" value="500" min="1" placeholder="500" />
+        <div class="reto-quick-btns">
+          <button class="reto-quick" data-inv="100">$100</button>
+          <button class="reto-quick" data-inv="200">$200</button>
+          <button class="reto-quick" data-inv="500">$500</button>
+          <button class="reto-quick" data-inv="1000">$1,000</button>
+          <button class="reto-quick" data-inv="2000">$2,000</button>
+        </div>
+      </div>
+      <div class="reto-field">
+        <label>Meta de ganancia (MXN)</label>
+        <input class="reto-input" type="number" id="reto-meta" value="5000" min="1" placeholder="5000" />
+        <div class="reto-quick-btns">
+          <button class="reto-quick" data-meta="1000">$1,000</button>
+          <button class="reto-quick" data-meta="3000">$3,000</button>
+          <button class="reto-quick" data-meta="5000">$5,000</button>
+          <button class="reto-quick" data-meta="10000">$10,000</button>
+          <button class="reto-quick" data-meta="20000">$20,000</button>
+        </div>
+      </div>
+      <div class="reto-preview" id="reto-preview">
+        <div class="reto-preview-row"><span class="reto-preview-lbl">Ratio objetivo</span><span class="reto-preview-val" id="rp-ratio">—</span></div>
+        <div class="reto-preview-row"><span class="reto-preview-lbl">Legs estimados</span><span class="reto-preview-val" id="rp-legs">—</span></div>
+        <div class="reto-preview-row"><span class="reto-preview-lbl">Odds por leg (aprox)</span><span class="reto-preview-val" id="rp-odds">—</span></div>
+      </div>
+      <button class="reto-btn-gen" id="reto-btn-analyze">⚡ Analizar con Claude</button>
+      <button class="reto-cancel" onclick="closeRetoModal()">Cancelar</button>
+    </div>
+
+    <div id="reto-loading-section" style="display:none;padding:24px 0;text-align:center">
+      <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:12px">
+        <div class="work-spinner"></div>
+        <span style="font-size:13px;color:var(--muted)">Claude construyendo el reto escalera…</span>
+      </div>
+      <div style="font-size:11px;color:rgba(96,165,250,.5)">Analizando mercados por deporte y balance inversión/meta</div>
+    </div>
+
+    <div id="reto-result-section" style="display:none">
+      <div class="reto-result-wrap" id="reto-result-body"></div>
+      <button class="reto-pub-btn" id="reto-pub-btn">🚀 Publicar Reto al Cielo</button>
+      <div style="margin-top:8px">
+        <button class="reto-cancel" onclick="showRetoForm()">↩ Cambiar parámetros</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="app.js"></script>
 <script>
 (function(){
@@ -1864,62 +1920,6 @@ main{position:relative;z-index:2}
   loadTotalStats();
 })();
 </script>
-
-<!-- RETO ESCALERA MODAL -->
-<div id="reto-modal" class="reto-modal-overlay" style="display:none" onclick="if(event.target===this)closeRetoModal()">
-  <div class="reto-modal-box">
-    <div class="reto-modal-title">Reto <span>Al Cielo</span></div>
-    <p class="reto-modal-sub">Claude analizará los eventos recomendados por GPT y construirá el parlay óptimo según tu inversión y meta.</p>
-
-    <div id="reto-form-section">
-      <div class="reto-field">
-        <label>Inversión inicial (MXN)</label>
-        <input class="reto-input" type="number" id="reto-inversion" value="500" min="1" placeholder="500" />
-        <div class="reto-quick-btns">
-          <button class="reto-quick" data-inv="100">$100</button>
-          <button class="reto-quick" data-inv="200">$200</button>
-          <button class="reto-quick" data-inv="500">$500</button>
-          <button class="reto-quick" data-inv="1000">$1,000</button>
-          <button class="reto-quick" data-inv="2000">$2,000</button>
-        </div>
-      </div>
-      <div class="reto-field">
-        <label>Meta de ganancia (MXN)</label>
-        <input class="reto-input" type="number" id="reto-meta" value="5000" min="1" placeholder="5000" />
-        <div class="reto-quick-btns">
-          <button class="reto-quick" data-meta="1000">$1,000</button>
-          <button class="reto-quick" data-meta="3000">$3,000</button>
-          <button class="reto-quick" data-meta="5000">$5,000</button>
-          <button class="reto-quick" data-meta="10000">$10,000</button>
-          <button class="reto-quick" data-meta="20000">$20,000</button>
-        </div>
-      </div>
-      <div class="reto-preview" id="reto-preview">
-        <div class="reto-preview-row"><span class="reto-preview-lbl">Ratio objetivo</span><span class="reto-preview-val" id="rp-ratio">—</span></div>
-        <div class="reto-preview-row"><span class="reto-preview-lbl">Legs estimados</span><span class="reto-preview-val" id="rp-legs">—</span></div>
-        <div class="reto-preview-row"><span class="reto-preview-lbl">Odds por leg (aprox)</span><span class="reto-preview-val" id="rp-odds">—</span></div>
-      </div>
-      <button class="reto-btn-gen" id="reto-btn-analyze">⚡ Analizar con Claude</button>
-      <button class="reto-cancel" onclick="closeRetoModal()">Cancelar</button>
-    </div>
-
-    <div id="reto-loading-section" style="display:none;padding:24px 0;text-align:center">
-      <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:12px">
-        <div class="work-spinner"></div>
-        <span style="font-size:13px;color:var(--muted)">Claude construyendo el reto escalera…</span>
-      </div>
-      <div style="font-size:11px;color:rgba(96,165,250,.5)">Analizando mercados por deporte y balance inversión/meta</div>
-    </div>
-
-    <div id="reto-result-section" style="display:none">
-      <div class="reto-result-wrap" id="reto-result-body"></div>
-      <button class="reto-pub-btn" id="reto-pub-btn">🚀 Publicar Reto al Cielo</button>
-      <div style="margin-top:8px">
-        <button class="reto-cancel" onclick="showRetoForm()">↩ Cambiar parámetros</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- PUBLISH TIER MODAL -->
 <div id="pub-modal" class="pub-modal-overlay" style="display:none" onclick="if(event.target===this)closePubModal()">
