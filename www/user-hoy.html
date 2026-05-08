@@ -428,6 +428,11 @@ main{position:relative;z-index:2}
 (function(){
 'use strict';
 
+// ── AUTH GUARD ────────────────────────────────────────────
+if (typeof getCurrentUser === 'function' && !getCurrentUser()) {
+  window.location.replace('registro.html');
+}
+
 // ── HELPERS ───────────────────────────────────────────────
 function riskClass(r){const v=(r||'').toUpperCase();return v==='BAJO'?'low':v==='ALTO'?'high':'med'}
 function confColor(v){return v>=75?'var(--green)':v>=60?'var(--yellow)':'var(--orange)'}
@@ -549,7 +554,9 @@ function buildFilterBar(picks){
 }
 
 // ── RENDER CARDS ──────────────────────────────────────────
+let cardObserver = null;
 function renderCards(picks){
+  if (cardObserver) { cardObserver.disconnect(); cardObserver = null; }
   const filtered = activeFilter==='all' ? picks : picks.filter(p=>sportKey(p.sport||'')=== activeFilter);
   const container = document.getElementById('picks-container');
   const label = document.getElementById('picks-count-label');
@@ -576,7 +583,10 @@ function renderCards(picks){
     const sport = p.sport || '';
     const timeStr = p.eventDate ? new Date(p.eventDate).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : '—';
     const analysis = p.analysis || '';
-    const shortAnalysis = analysis.length > 220 ? analysis.slice(0,220)+'…' : analysis;
+    const MAX = 220;
+    const shortAnalysis = analysis.length > MAX
+      ? analysis.slice(0, analysis.lastIndexOf(' ', MAX)) + '…'
+      : analysis;
     const hasMore = analysis.length > 220;
     const isPremiumPick = (p.planTier || 'free') === 'premium';
     const uid = `pk${p.id||i}`;
@@ -729,8 +739,8 @@ function renderCards(picks){
           </div>
         </div>
         <div class="pick-actions">
-          <button class="btn-share" onclick="navigator.share ? navigator.share({title:'Pick: ${home} vs ${away}',text:'${p.pick||''} — ${conf}% confianza'}) : alert('Pick copiado!')">Compartir</button>
-          <button class="btn-save">Guardar Pick</button>
+          <button class="btn-share" data-share="1" data-home="${escHtml(home)}" data-away="${escHtml(away)}" data-pick="${escHtml(p.pick||'')}" data-conf="${conf}">Compartir</button>
+          <button class="btn-save" data-pick-id="${escHtml(String(p.id||i))}">🔖 Guardar Pick</button>
         </div>
       </div>
     `;
@@ -762,11 +772,42 @@ function renderCards(picks){
     container.appendChild(card);
   });
 
+  // ── DELEGATED: share + save ────────────────────────────
+  const SAVED_PICKS_KEY = 'momentum_saved_picks_v1';
+  function toggleSavePick(pickId) {
+    const saved = JSON.parse(localStorage.getItem(SAVED_PICKS_KEY) || '[]');
+    const idx = saved.indexOf(String(pickId));
+    if (idx >= 0) saved.splice(idx, 1);
+    else saved.push(String(pickId));
+    localStorage.setItem(SAVED_PICKS_KEY, JSON.stringify(saved));
+    return idx < 0; // true = ahora guardado
+  }
+
+  container.addEventListener('click', e => {
+    // Share
+    const shareBtn = e.target.closest('[data-share]');
+    if (shareBtn) {
+      const title = `Pick: ${shareBtn.dataset.home} vs ${shareBtn.dataset.away}`;
+      const text = `${shareBtn.dataset.pick} — ${shareBtn.dataset.conf}% confianza`;
+      if (navigator.share) navigator.share({ title, text }).catch(() => {});
+      else { navigator.clipboard?.writeText(`${title}\n${text}`).catch(() => {}); }
+      return;
+    }
+    // Save
+    const saveBtn = e.target.closest('.btn-save');
+    if (saveBtn) {
+      const pickId = saveBtn.dataset.pickId;
+      const nowSaved = toggleSavePick(pickId);
+      saveBtn.textContent = nowSaved ? '✅ Guardado' : '🔖 Guardar Pick';
+      saveBtn.classList.toggle('saved', nowSaved);
+    }
+  });
+
   // IntersectionObserver reveal
-  const obs = new IntersectionObserver((entries)=>{
-    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('vis'); obs.unobserve(e.target); }});
+  cardObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('vis'); cardObserver.unobserve(e.target); }});
   },{threshold:0.08});
-  container.querySelectorAll('.pick-card').forEach(c=>obs.observe(c));
+  container.querySelectorAll('.pick-card').forEach(c=>cardObserver.observe(c));
 }
 
 // ── LOAD PICKS ────────────────────────────────────────────

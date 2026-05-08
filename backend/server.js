@@ -55,6 +55,7 @@ const {
   saveRetoDraft,
   publishReto,
   getActiveReto,
+  getRetoById,
   listRetos,
   updateRetoLegResult,
   listApiSyncLogs,
@@ -91,7 +92,16 @@ const ADMIN_PASSWORDS = new Map(
     .filter(Boolean)
 );
 
-app.use(cors());
+app.use(cors({
+  origin: (origin, cb) => {
+    const rawAllowed = process.env.CORS_ALLOWED_ORIGINS || '';
+    if (!rawAllowed || !origin) return cb(null, true); // dev: allow all; no origin = same-origin
+    const allowed = new Set(rawAllowed.split(',').map(s => s.trim()).filter(Boolean));
+    if (allowed.has(origin)) return cb(null, true);
+    return cb(new Error('cors_not_allowed'));
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: "2mb" }));
 app.use(express.static(path.join(__dirname, "../www"), {
   setHeaders(res, filePath) {
@@ -603,7 +613,12 @@ app.post("/auth/login", async (req, res) => {
         return res.status(403).json({ ok: false, error: "admin_password_not_configured" });
       }
       const provided = String(payload.password || "").trim();
-      if (!provided || provided !== configuredPassword) {
+      const safeCompare = (a, b) => {
+        try {
+          return a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+        } catch { return false; }
+      };
+      if (!provided || !safeCompare(provided, configuredPassword)) {
         return res.status(401).json({ ok: false, error: "invalid_password" });
       }
     } else if (strictLogin) {
@@ -705,7 +720,12 @@ app.post("/god/login", async (req, res) => {
     const username = String(req.body?.username || "").trim();
     const password = String(req.body?.password || "").trim();
     const validUser = username.toLowerCase() === GOD_MODE_USER.toLowerCase();
-    if (!validUser || password !== GOD_MODE_PASS) {
+    const godSafeCompare = (a, b) => {
+      try {
+        return a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+      } catch { return false; }
+    };
+    if (!validUser || !godSafeCompare(password, GOD_MODE_PASS)) {
       return res.status(401).json({ ok: false, error: "invalid_credentials" });
     }
     resetRateLimit(ip); // reset al loguearse bien
@@ -1208,6 +1228,18 @@ app.get("/subscriptions/:userId", requireSelfOrAdminByParam("userId"), async (re
   }
 });
 
+app.patch("/subscriptions/:userId", requireAdmin, async (req, res) => {
+  try {
+    const userId = decodeURIComponent(req.params.userId).trim().toLowerCase();
+    const { planId, planLabel, status, durationDays } = req.body;
+    if (!userId) return res.status(400).json({ error: 'missing_user' });
+    const result = await grantSubscription({ userId, planId: planId || 'free', planLabel: planLabel || 'Free', status: status || 'active', durationDays: Number(durationDays) || 30 });
+    res.json({ ok: true, subscription: result });
+  } catch (e) {
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
 app.get("/bank-control/:userId", requireSelfOrAdminByParam("userId"), async (req, res) => {
   try {
     const userId = String(req.params.userId || "").trim().toLowerCase();
@@ -1288,6 +1320,10 @@ app.get("/api/sports/events/today", async (req, res) => {
 });
 
 app.post("/api/sports/sync", requireAdmin, async (req, res) => {
+  const ip = getClientIp(req);
+  if (checkRateLimit(ip)) {
+    return res.status(429).json({ ok: false, error: "rate_limited", retryAfterMs: RATE_LIMIT_WINDOW_MS });
+  }
   try {
     const events = await syncSportsEvents();
     res.json({
@@ -1514,6 +1550,10 @@ app.post("/api/sports/events/:eventId/result", requireAdmin, async (req, res) =>
 });
 
 app.post("/api/picks/generate/:eventId", requireAdmin, async (req, res) => {
+  const ip = getClientIp(req);
+  if (checkRateLimit(ip)) {
+    return res.status(429).json({ ok: false, error: "rate_limited", retryAfterMs: RATE_LIMIT_WINDOW_MS });
+  }
   try {
     const eventId = Number(req.params.eventId || 0);
     const force = Boolean(req.body?.force) || String(req.query.force || "").trim().toLowerCase() === "true";
@@ -1802,6 +1842,10 @@ app.post("/api/picks/publish-direct", requireAdmin, async (req, res) => {
 
 // Generate reto with Claude from scouted events
 app.post("/api/reto/generate", requireAdmin, async (req, res) => {
+  const ip = getClientIp(req);
+  if (checkRateLimit(ip)) {
+    return res.status(429).json({ ok: false, error: "rate_limited", retryAfterMs: RATE_LIMIT_WINDOW_MS });
+  }
   try {
     const { events: eventList, inversion, meta, gptMarketsMap } = req.body || {};
     if (!Array.isArray(eventList) || !eventList.length) {
@@ -1859,6 +1903,17 @@ app.get("/api/reto/history", async (req, res) => {
     res.json({ ok: true, retos });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || "reto_history_failed") });
+  }
+});
+
+// Get reto by id (user-facing)
+app.get("/api/reto/:id", async (req, res) => {
+  try {
+    const reto = await getRetoById(Number(req.params.id));
+    if (!reto) return res.status(404).json({ error: 'not_found' });
+    res.json({ reto });
+  } catch (e) {
+    res.status(500).json({ error: 'server_error' });
   }
 });
 

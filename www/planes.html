@@ -326,7 +326,7 @@ main{position:relative;z-index:2}
       <div class="sec-sub">Selecciona tu plan y solicita activación por transferencia.</div>
     </div>
     <div class="plans-grid">
-      <div class="plan-card">
+      <div class="plan-card" data-plan="free">
         <div class="plan-name">Free</div>
         <div class="plan-price">$0<span> / mes</span></div>
         <div class="plan-desc">Acceso básico para explorar la plataforma.</div>
@@ -338,7 +338,7 @@ main{position:relative;z-index:2}
         <button class="btn-plan ghost" data-plan-select="free">Elegir Free</button>
       </div>
 
-      <div class="plan-card highlight">
+      <div class="plan-card highlight" data-plan="ai_coach">
         <div class="plan-badge pop">Popular</div>
         <div class="plan-name">AI Picks</div>
         <div class="plan-price">$129<span> MXN / mes</span></div>
@@ -353,7 +353,7 @@ main{position:relative;z-index:2}
         <button class="btn-plan primary" data-plan-select="ai_coach">Elegir AI Picks</button>
       </div>
 
-      <div class="plan-card apex">
+      <div class="plan-card apex" data-plan="coach_humano">
         <div class="plan-badge gold">Apex</div>
         <div class="plan-name" style="color:var(--gold)">Apex</div>
         <div class="plan-price" style="color:var(--gold)">$399<span> MXN / mes</span></div>
@@ -441,7 +441,7 @@ main{position:relative;z-index:2}
         </div>
         <div class="pay-field">
           <span class="pay-label">WhatsApp comprobante</span>
-          <span class="pay-val" id="planes-pay-whatsapp">Cargando…</span>
+          <a class="pay-val planes-wa-link" id="planes-pay-whatsapp" href="#" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">Cargando…</a>
         </div>
       </div>
       <div class="pay-hint">Usa tu correo de registro como referencia en la transferencia.</div>
@@ -498,24 +498,100 @@ main{position:relative;z-index:2}
 
 <script src="app.js"></script>
 <script>
+// ── AUTH GUARD ────────────────────────────────────────────
+if (typeof getCurrentUser === 'function' && !getCurrentUser()) {
+  window.location.replace('registro.html');
+}
+
+// ── BILLING DATA ──────────────────────────────────────────
+let selectedPlan = null;
+let selectedPlanLabel = null;
+const PLAN_LABELS = { free:'Free ($0/mes)', ai_coach:'AI Picks ($129 MXN/mes)', coach_humano:'Apex ($399 MXN/mes)' };
+
+async function loadBillingData() {
+  try {
+    const res = await fetch('/billing-target');
+    const data = res.ok ? await res.json() : null;
+    if (!data) return;
+    const bt = data.billingTarget || data;
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
+    set('planes-pay-bank', bt.bankName || bt.bank);
+    set('planes-pay-clabe', bt.clabe);
+    set('planes-pay-holder', bt.titular || bt.name || bt.holder);
+    // WhatsApp link
+    const waNum = String(bt.whatsapp || bt.phone || '').replace(/\D/g,'');
+    const waEl = document.getElementById('planes-pay-whatsapp');
+    if (waEl) {
+      const waDisplay = bt.whatsapp || bt.phone || '';
+      if (waDisplay) waEl.textContent = waDisplay;
+      if (waNum) waEl.href = `https://wa.me/${waNum}?text=${encodeURIComponent('Hola, acabo de realizar mi transferencia para el plan '+(selectedPlanLabel||''))}`;
+    }
+    // Also update any other wa links on the page
+    document.querySelectorAll('.planes-wa-link, [data-wa-link]').forEach(el => {
+      if (waNum) el.href = `https://wa.me/${waNum}?text=${encodeURIComponent('Hola, acabo de realizar mi transferencia para el plan '+(selectedPlanLabel||''))}`;
+    });
+  } catch(e) { console.error('billing load error', e); }
+}
+loadBillingData();
+
+// ── HIGHLIGHT CURRENT PLAN ────────────────────────────────
+async function highlightCurrentPlan() {
+  let planId = '';
+  try {
+    const sub = typeof syncCurrentSubscriptionFromApi === 'function'
+      ? await syncCurrentSubscriptionFromApi()
+      : null;
+    const sel = typeof getSubscriptionPlanSelection === 'function'
+      ? getSubscriptionPlanSelection(sub)
+      : null;
+    planId = sel?.id || '';
+    if (!planId) {
+      const u = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+      planId = u?.planId || '';
+    }
+  } catch(e) {}
+  if (!planId || planId === 'free') return;
+  const cards = document.querySelectorAll('[data-plan]');
+  cards.forEach(card => {
+    const cardPlan = String(card.dataset.plan || '').toLowerCase();
+    if (cardPlan === planId || (planId === 'coach_humano' && cardPlan.includes('apex'))) {
+      card.classList.add('plan-selected');
+      if (!card.querySelector('.current-plan-badge')) {
+        const badge = document.createElement('div');
+        badge.className = 'current-plan-badge';
+        badge.style.cssText = 'background:var(--orange,#FF4500);color:#fff;text-align:center;padding:.3rem;font-size:.75rem;font-weight:700;border-radius:4px;margin-bottom:.5rem';
+        badge.textContent = '✓ Tu plan actual';
+        card.prepend(badge);
+      }
+    }
+  });
+}
+highlightCurrentPlan();
+
+// ── PLAN SELECTION ────────────────────────────────────────
 (function(){
-  // Plan selection
-  const PLAN_LABELS = { free:'Free ($0/mes)', ai_coach:'AI Picks ($129 MXN/mes)', coach_humano:'Apex ($399 MXN/mes)' };
-  let selectedPlan = null;
   document.querySelectorAll('[data-plan-select]').forEach(btn => {
     btn.addEventListener('click', function(){
       selectedPlan = this.dataset.planSelect;
+      selectedPlanLabel = PLAN_LABELS[selectedPlan] || selectedPlan;
       document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('plan-selected'));
       this.closest('.plan-card').classList.add('plan-selected');
       const confirmBtn = document.getElementById('plan-confirm-button');
-      confirmBtn.textContent = 'Confirmar ' + (PLAN_LABELS[selectedPlan] || selectedPlan);
+      confirmBtn.textContent = 'Confirmar ' + selectedPlanLabel;
       document.getElementById('plan-payment-feedback').textContent = '';
       const payCard = document.querySelector('.payment-card');
       if(payCard) payCard.scrollIntoView({behavior:'smooth', block:'start'});
+      // Refresh WA link with selected plan name
+      const waEl = document.getElementById('planes-pay-whatsapp');
+      if (waEl && waEl.href && waEl.href !== '#') {
+        const waNum = new URL(waEl.href).pathname.replace('/','');
+        if (waNum) waEl.href = `https://wa.me/${waNum}?text=${encodeURIComponent('Hola, acabo de realizar mi transferencia para el plan '+selectedPlanLabel)}`;
+      }
     });
   });
+
   const confirmBtn = document.getElementById('plan-confirm-button');
-  if(confirmBtn) confirmBtn.addEventListener('click', function(){
+  if(confirmBtn) confirmBtn.addEventListener('click', async function(){
     const fb = document.getElementById('plan-payment-feedback');
     if(!selectedPlan || selectedPlan === 'free'){
       fb.style.color = 'var(--muted)';
@@ -524,6 +600,27 @@ main{position:relative;z-index:2}
     }
     fb.style.color = 'var(--green)';
     fb.textContent = 'Realiza la transferencia y envía el comprobante por WhatsApp para activar ' + (PLAN_LABELS[selectedPlan] || selectedPlan) + '.';
+
+    // Guardar plan seleccionado en localStorage
+    if (typeof persistPlanSelection === 'function') {
+      persistPlanSelection({ id: selectedPlan, label: selectedPlanLabel || selectedPlan });
+    } else {
+      try {
+        localStorage.setItem('discipline_plan_selection_v1', JSON.stringify({ id: selectedPlan, label: selectedPlanLabel || selectedPlan }));
+      } catch(e) {}
+    }
+
+    // Crear registro de pago pendiente en la API
+    try {
+      const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+      if (user) {
+        await fetch('/payments/request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-user-email': user.email || user.id || '' },
+          body: JSON.stringify({ userId: user.id || user.email, planId: selectedPlan, planLabel: selectedPlanLabel || selectedPlan, amount: 0 })
+        });
+      }
+    } catch(e) { console.error('payment request error', e); }
   });
 })();
 </script>

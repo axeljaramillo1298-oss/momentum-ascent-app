@@ -537,6 +537,20 @@ main{position:relative;z-index:2}
         <input class="users-search-input" type="text" id="users-search-input" placeholder="Buscar por email…" />
         <button class="btn-ghost" id="btn-search-users">Buscar</button>
         <button class="btn-ghost" id="btn-reload-users">↺ Recargar</button>
+        <select id="filter-plan-select" style="background:var(--dark3,#0e0e12);border:1px solid var(--border,rgba(255,255,255,.07));color:var(--text,#f0ede8);border-radius:6px;padding:.35rem .7rem;font-size:.8rem">
+          <option value="">Todos los planes</option>
+          <option value="free">Free</option>
+          <option value="ai_coach">AI Picks</option>
+          <option value="coach_humano">Apex</option>
+          <option value="retos">Reto</option>
+        </select>
+        <select id="filter-status-select" style="background:var(--dark3,#0e0e12);border:1px solid var(--border,rgba(255,255,255,.07));color:var(--text,#f0ede8);border-radius:6px;padding:.35rem .7rem;font-size:.8rem">
+          <option value="">Todos los estados</option>
+          <option value="active">Activos</option>
+          <option value="pending">Pendientes</option>
+          <option value="inactive">Inactivos</option>
+          <option value="expired">Expirados</option>
+        </select>
       </div>
       <div style="overflow-x:auto;background:rgba(255,255,255,.015);border:1px solid var(--border);border-radius:6px">
         <table class="users-table">
@@ -603,6 +617,17 @@ main{position:relative;z-index:2}
             <tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">Cargando historial…</td></tr>
           </tbody>
         </table>
+      </div>
+    </section>
+
+    <!-- SECCIÓN RETOS PUBLICADOS -->
+    <section id="admin-retos-section" style="margin:2rem 0;opacity:0;animation:fadeUp .5s .95s forwards">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h2 style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:22px;text-transform:uppercase;letter-spacing:.03em;color:var(--text)">🏔️ Retos Publicados</h2>
+        <button id="refresh-retos-btn" style="background:none;border:1px solid var(--border,rgba(255,255,255,.07));color:var(--muted);border-radius:6px;padding:.3rem .8rem;font-size:.8rem;cursor:pointer">↻ Actualizar</button>
+      </div>
+      <div id="admin-retos-list">
+        <p style="color:var(--muted);font-size:.9rem">Cargando retos...</p>
       </div>
     </section>
 
@@ -682,6 +707,13 @@ main{position:relative;z-index:2}
 </div>
 
 <script src="app.js"></script>
+<script>
+// ── AUTH GUARD ────────────────────────────────────────────
+(function() {
+  const token = localStorage.getItem('discipline_god_token_v1');
+  if (!token) { window.location.replace('registro.html'); return; }
+})();
+</script>
 <script>
 (function(){
   // ── AUTH ──────────────────────────────────────────────────
@@ -1704,7 +1736,11 @@ main{position:relative;z-index:2}
     const tbody = document.getElementById('users-tbody');
     try {
       const data = await apiFetch(`/users?search=${encodeURIComponent(search)}`, {headers:apiH()});
-      const users = Array.isArray(data?.users) ? data.users : [];
+      let users = Array.isArray(data?.users) ? data.users : [];
+      const planFilter = document.getElementById('filter-plan-select')?.value || '';
+      const statusFilter = document.getElementById('filter-status-select')?.value || '';
+      if (planFilter) users = users.filter(u => String(u.planId || u.plan || '').toLowerCase().includes(planFilter));
+      if (statusFilter) users = users.filter(u => String(u.subscriptionStatus || u.status || '').toLowerCase() === statusFilter);
       document.getElementById('users-count-label').textContent = `${users.length} usuario${users.length!==1?'s':''}`;
       if(!users.length){ tbody.innerHTML='<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--muted)">No se encontraron usuarios.</td></tr>'; return; }
       tbody.innerHTML = users.map(u => {
@@ -1722,7 +1758,7 @@ main{position:relative;z-index:2}
           <td><span class="${statusClass}">${status}</span></td>
           <td style="color:var(--muted);font-size:11px">${endAt}</td>
           <td><select class="plan-select" data-user-email="${u.email}">${opts}</select></td>
-          <td><button class="btn-grant" data-grant-email="${u.email}">Activar</button></td>
+          <td><button class="btn-grant" data-grant-email="${u.email}">Activar</button><button class="btn-revoke-plan" data-user-id="${u.email}" style="background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:.3rem .7rem;font-size:.78rem;cursor:pointer;margin-left:.5rem">Revocar</button></td>
         </tr>`;
       }).join('');
       tbody.querySelectorAll('[data-grant-email]').forEach(btn => {
@@ -1747,6 +1783,25 @@ main{position:relative;z-index:2}
       log2(`Error cargando usuarios: ${e.message}`, 'err');
     }
   }
+
+  // ── REVOCAR PLAN ─────────────────────────────────────────
+  document.addEventListener('click', async e => {
+    const btn = e.target.closest('.btn-revoke-plan');
+    if (!btn) return;
+    if (!confirm('¿Revocar plan de este usuario? Se establecerá como Free.')) return;
+    const userId = btn.dataset.userId;
+    const token = localStorage.getItem('discipline_god_token_v1');
+    try {
+      await fetch('/god/users/grant-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-god-token': token },
+        body: JSON.stringify({ userId, planId: 'free', planLabel: 'Free', durationDays: 0, status: 'inactive' })
+      });
+      log2(`Plan revocado para ${userId} — ahora es Free`, 'ok');
+      if (typeof loadUsers === 'function') loadUsers(document.getElementById('users-search-input')?.value || '');
+      else location.reload();
+    } catch(e) { alert('Error al revocar plan'); }
+  });
 
   // ── TOTAL HISTÓRICO STATS ────────────────────────────────
   async function loadTotalStats(){
@@ -1913,6 +1968,8 @@ main{position:relative;z-index:2}
   document.getElementById('btn-search-users').addEventListener('click', () => loadUsers(document.getElementById('users-search-input').value));
   document.getElementById('users-search-input').addEventListener('keydown', e => { if(e.key==='Enter') loadUsers(e.target.value); });
   document.getElementById('btn-reload-users').addEventListener('click', () => loadUsers(''));
+  document.getElementById('filter-plan-select')?.addEventListener('change', () => { if (typeof loadUsers === 'function') loadUsers(document.getElementById('users-search-input')?.value || ''); });
+  document.getElementById('filter-status-select')?.addEventListener('change', () => { if (typeof loadUsers === 'function') loadUsers(document.getElementById('users-search-input')?.value || ''); });
   document.getElementById('btn-reload-pickstats').addEventListener('click', loadPickStats);
 
   loadUsers('');
@@ -1921,16 +1978,124 @@ main{position:relative;z-index:2}
 })();
 </script>
 
+<script>
+(function(){
+  // ── RETOS PUBLICADOS ──────────────────────────────────────
+  async function loadAdminRetos() {
+    const container = document.getElementById('admin-retos-list');
+    if (!container) return;
+    const token = localStorage.getItem('discipline_god_token_v1');
+    try {
+      const [activeRes, historyRes] = await Promise.all([
+        fetch('/api/reto/active', { headers: { 'x-god-token': token } }),
+        fetch('/api/reto/history', { headers: { 'x-god-token': token } })
+      ]);
+      const activeData = activeRes.ok ? await activeRes.json() : {};
+      const historyData = historyRes.ok ? await historyRes.json() : {};
+      const activeReto = activeData.reto || null;
+      const historyRetos = (historyData.retos || []).slice(0, 10);
+      const allRetos = activeReto
+        ? [activeReto, ...historyRetos.filter(r => r.id !== activeReto.id)]
+        : historyRetos;
+
+      if (!allRetos.length) {
+        container.innerHTML = '<p style="color:var(--muted);font-size:.9rem">No hay retos publicados.</p>';
+        return;
+      }
+
+      container.innerHTML = allRetos.map(reto => {
+        const legs = JSON.parse(reto.legs_json || reto.legsJson || '[]');
+        const statusLabel = reto.status === 'active' ? '🟢 Activo' : reto.result === 'won' ? '✅ Ganado' : reto.result === 'lost' ? '❌ Perdido' : '⏸️ Cerrado';
+        const legsHtml = legs.map((leg, i) => {
+          const resultColor = leg.result === 'won' ? '#4ade80' : leg.result === 'lost' ? '#f87171' : '#888';
+          return `
+            <div style="display:flex;align-items:center;gap:.75rem;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.05)">
+              <span style="min-width:1.5rem;color:var(--muted);font-size:.8rem">P${i+1}</span>
+              <span style="flex:1;font-size:.85rem">${leg.market||'—'} · ${leg.pick||'—'} <span style="color:var(--muted)">(${leg.odds||'—'})</span></span>
+              <span style="color:${resultColor};font-size:.8rem;min-width:4rem;text-align:center">${leg.result ? leg.result.toUpperCase() : 'PENDING'}</span>
+              ${reto.status === 'active' ? `
+                <div style="display:flex;gap:.25rem">
+                  <button class="leg-result-btn" data-reto-id="${reto.id}" data-leg="${i}" data-result="won" style="background:rgba(74,222,128,.15);color:#4ade80;border:1px solid rgba(74,222,128,.3);border-radius:4px;padding:.2rem .5rem;font-size:.75rem;cursor:pointer">W</button>
+                  <button class="leg-result-btn" data-reto-id="${reto.id}" data-leg="${i}" data-result="lost" style="background:rgba(248,113,113,.15);color:#f87171;border:1px solid rgba(248,113,113,.3);border-radius:4px;padding:.2rem .5rem;font-size:.75rem;cursor:pointer">L</button>
+                  <button class="leg-result-btn" data-reto-id="${reto.id}" data-leg="${i}" data-result="void" style="background:rgba(156,163,175,.15);color:#9ca3af;border:1px solid rgba(156,163,175,.3);border-radius:4px;padding:.2rem .5rem;font-size:.75rem;cursor:pointer">V</button>
+                </div>
+              ` : ''}
+            </div>`;
+        }).join('');
+
+        return `
+          <div style="background:rgba(255,255,255,.022);border:1px solid var(--border,rgba(255,255,255,.07));border-radius:10px;padding:1rem;margin-bottom:.75rem">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem">
+              <div>
+                <div style="font-weight:700;color:var(--text);font-size:.95rem">Reto #${reto.id} — ${statusLabel}</div>
+                <div style="color:var(--muted);font-size:.78rem;margin-top:.25rem">
+                  Meta: $${Number(reto.meta||0).toLocaleString('es-MX')} ·
+                  Inversión: $${Number(reto.inversion||0).toLocaleString('es-MX')} ·
+                  Cuota combinada: ${Number(reto.combined_odds||1).toFixed(2)}x ·
+                  Ganancia proyectada: $${Number(reto.projected_win||0).toLocaleString('es-MX')}
+                </div>
+                <div style="color:var(--muted);font-size:.75rem;margin-top:.15rem">
+                  Publicado: ${reto.published_at ? new Date(reto.published_at).toLocaleDateString('es-MX') : '—'}
+                </div>
+              </div>
+            </div>
+            <div>${legsHtml}</div>
+          </div>`;
+      }).join('');
+    } catch(e) {
+      container.innerHTML = '<p style="color:#f87171;font-size:.9rem">Error al cargar retos.</p>';
+      console.error(e);
+    }
+  }
+
+  // Event listener para botones de resultado de legs
+  document.addEventListener('click', async e => {
+    const btn = e.target.closest('.leg-result-btn');
+    if (!btn) return;
+    const retoId = btn.dataset.retoId;
+    const legIndex = Number(btn.dataset.leg);
+    const result = btn.dataset.result;
+    if (!retoId || isNaN(legIndex) || !result) return;
+
+    btn.disabled = true;
+    btn.textContent = '...';
+
+    const token = localStorage.getItem('discipline_god_token_v1');
+    try {
+      const res = await fetch(`/api/reto/${retoId}/leg/${legIndex}/result`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-god-token': token },
+        body: JSON.stringify({ result })
+      });
+      if (!res.ok) throw new Error('Error al marcar resultado');
+      await loadAdminRetos();
+    } catch(err) {
+      alert('Error al marcar resultado: ' + err.message);
+      btn.disabled = false;
+      btn.textContent = result === 'won' ? 'W' : result === 'lost' ? 'L' : 'V';
+    }
+  });
+
+  document.getElementById('refresh-retos-btn')?.addEventListener('click', loadAdminRetos);
+  loadAdminRetos();
+})();
+</script>
+
 <!-- PUBLISH TIER MODAL -->
 <div id="pub-modal" class="pub-modal-overlay" style="display:none" onclick="if(event.target===this)closePubModal()">
   <div class="pub-modal-box">
     <div class="pub-modal-title">¿A quién publicas?</div>
     <p class="pub-modal-desc">Elige la visibilidad del pick. Los picks Free también son visibles para usuarios Premium.</p>
-    <div class="pub-modal-options">
+    <div class="pub-modal-options" style="grid-template-columns:1fr 1fr 1fr">
       <button class="pub-tier-btn free-btn" onclick="confirmPublish('free')">
         <span class="pub-tier-icon">🌍</span>
         <strong>Free</strong>
         <span>Todos los usuarios</span>
+      </button>
+      <button class="pub-tier-btn" onclick="confirmPublish('ai_coach')" style="border-color:rgba(255,69,0,.35);color:var(--orange)">
+        <span class="pub-tier-icon">🤖</span>
+        <strong>AI Picks</strong>
+        <span>Plan AI Coach</span>
       </button>
       <button class="pub-tier-btn premium-btn" onclick="confirmPublish('premium')">
         <span class="pub-tier-icon">⭐</span>

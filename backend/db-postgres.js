@@ -273,6 +273,12 @@ CREATE TABLE IF NOT EXISTS reto_parlays (
   published_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_ai_picks_event_id ON ai_picks(event_id);
+CREATE INDEX IF NOT EXISTS idx_ai_picks_status ON ai_picks(status);
+CREATE INDEX IF NOT EXISTS idx_sports_events_event_date ON sports_events(event_date);
+CREATE INDEX IF NOT EXISTS idx_reto_parlays_status ON reto_parlays(status);
+CREATE INDEX IF NOT EXISTS idx_payment_requests_status ON payment_requests(status);
 `;
 
 async function initDb() {
@@ -1971,7 +1977,8 @@ async function updateRetoLegResult({ retoId, legIndex, result: legResult }) {
 
   const anyLost = legs.some(l => l.result === 'lost');
   const allWon = legs.every(l => l.result === 'won');
-  const newCurrentLeg = anyLost ? legIndex : allWon ? legs.length - 1 : legIndex;
+  const nextPending = legs.findIndex(l => !l.result || l.result === '');
+  const newCurrentLeg = anyLost ? legIndex : (nextPending >= 0 ? nextPending : legs.length - 1);
   const newStatus = anyLost ? 'failed' : allWon ? 'completed' : 'active';
   const newResult = anyLost ? 'lost' : allWon ? 'won' : 'in_progress';
 

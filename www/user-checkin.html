@@ -175,6 +175,7 @@ main{position:relative;z-index:2}
         <div class="avatar-box" id="avatar-initials">?</div>
         <div class="user-email-chip" id="user-email-display">Cargando…</div>
         <div class="plan-chip" id="user-plan-chip">Plan Free</div>
+        <div id="plan-expiry-txt" style="font-size:.75rem;color:var(--muted,#888);margin-top:.25rem;display:none"></div>
       </div>
     </div>
   </div>
@@ -197,7 +198,7 @@ main{position:relative;z-index:2}
             <span class="data-lbl">Estado</span>
             <span class="data-val green" id="dr-estado">Activo</span>
           </div>
-          <div class="data-row">
+          <div class="data-row" id="admin-access-row">
             <span class="data-lbl">Acceso admin</span>
             <span class="data-val" id="dr-admin" style="color:var(--muted);font-family:'Barlow',sans-serif;font-size:13px">—</span>
           </div>
@@ -282,8 +283,13 @@ main{position:relative;z-index:2}
 <script src="app.js"></script>
 <script>
 (function(){
+  // ── AUTH GUARD ────────────────────────────────────────
+  if (typeof getCurrentUser === 'function' && !getCurrentUser()) {
+    window.location.replace('registro.html');
+    return;
+  }
+
   // ── USER DATA ──────────────────────────────────────────
-  const ADMIN_EMAILS = ['admin@momentumascent.com','fermarquez@ascent.com'];
   let userEmail = '';
   let planLabel = 'Free';
 
@@ -296,8 +302,13 @@ main{position:relative;z-index:2}
     }
   } catch(_){}
 
-  const godToken = localStorage.getItem('discipline_god_token_v1');
-  const isAdmin = godToken || ADMIN_EMAILS.includes(userEmail);
+  // Admin check: use godToken only — no client-side email list
+  const hasGodToken = !!localStorage.getItem('discipline_god_token_v1');
+  const isAdmin = hasGodToken;
+
+  // Hide admin row for non-admins
+  const adminRow = document.getElementById('admin-access-row');
+  if (adminRow && !hasGodToken) adminRow.style.display = 'none';
 
   // Avatar initials
   const initials = userEmail ? userEmail.slice(0,2).toUpperCase() : '?';
@@ -318,7 +329,31 @@ main{position:relative;z-index:2}
     syncCurrentSubscriptionFromApi().then(sub => {
       const fresh = sub?.planLabel || sub?.plan || '';
       if(fresh) applyPlanLabel(fresh);
+
+      // Show plan expiry date if available
+      const endAt = sub?.endAt;
+      if (endAt) {
+        const endDate = new Date(endAt);
+        const formatted = endDate.toLocaleDateString('es-MX', { year:'numeric', month:'long', day:'numeric' });
+        const expiryEl = document.getElementById('plan-expiry-txt');
+        if (expiryEl) {
+          expiryEl.textContent = `Vence el ${formatted}`;
+          expiryEl.style.display = '';
+        }
+      }
     }).catch(()=>{});
+  } else {
+    // Fallback: read from cached subscription
+    const sub = typeof getCurrentSubscription === 'function' ? getCurrentSubscription() : null;
+    if (sub?.endAt) {
+      const endDate = new Date(sub.endAt);
+      const formatted = endDate.toLocaleDateString('es-MX', { year:'numeric', month:'long', day:'numeric' });
+      const expiryEl = document.getElementById('plan-expiry-txt');
+      if (expiryEl) {
+        expiryEl.textContent = `Vence el ${formatted}`;
+        expiryEl.style.display = '';
+      }
+    }
   }
 
   // Admin flag
@@ -334,13 +369,21 @@ main{position:relative;z-index:2}
     adminEl.textContent = 'No';
   }
 
-  // Logout
+  // Logout — clears all app state
   document.getElementById('btn-logout').addEventListener('click', ()=>{
     if(!confirm('¿Cerrar sesión?')) return;
-    localStorage.removeItem('discipline_current_user_v1');
-    localStorage.removeItem('discipline_god_token_v1');
-    localStorage.removeItem('discipline_session_v1');
-    window.location.href = 'index.html';
+    const KEYS_TO_CLEAR = [
+      'discipline_current_user_v1',
+      'discipline_god_token_v1',
+      'discipline_god_expires_v1',
+      'discipline_session_v1',
+      'discipline_subscription_cache_v1',
+      'discipline_plan_selection_v1',
+      'momentum_bank_control_v1',
+      'momentum_bank_tracking_v1',
+    ];
+    KEYS_TO_CLEAR.forEach(k => localStorage.removeItem(k));
+    window.location.replace('registro.html');
   });
 
   // ── THREE.JS BG ────────────────────────────────────────
