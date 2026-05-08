@@ -2011,6 +2011,70 @@ app.get("/api/picks/history", async (req, res) => {
   }
 });
 
+// Stats agregados por mercado y tier para el panel de admin
+app.get("/api/picks/stats", requireAdmin, async (req, res) => {
+  try {
+    const days = Math.min(30, Math.max(1, Number(req.query.days || 14)));
+    const allPicks = await listPickHistory(500);
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const recent = allPicks.filter(p => {
+      const d = new Date(p.eventDate || p.event_date || p.createdAt || p.created_at || 0);
+      return d >= cutoff && (p.result === 'won' || p.result === 'lost');
+    });
+
+    // Aggregate by market
+    const byMarket = {};
+    const byTier = { free: { won: 0, lost: 0 }, premium: { won: 0, lost: 0 }, ai_coach: { won: 0, lost: 0 } };
+    const byConfBucket = {};
+
+    recent.forEach(p => {
+      const market = String(p.market || 'unknown').toLowerCase().replace(/[^a-z0-9_]/g, '_');
+      const tier = String(p.planTier || 'free').toLowerCase();
+      const conf = Number(p.confidence || 0);
+      const won = p.result === 'won';
+
+      // by market
+      if (!byMarket[market]) byMarket[market] = { won: 0, lost: 0, totalConf: 0 };
+      won ? byMarket[market].won++ : byMarket[market].lost++;
+      byMarket[market].totalConf += conf;
+
+      // by tier
+      const tierKey = tier === 'premium' || tier === 'coach_humano' ? 'premium' : tier === 'ai_coach' ? 'ai_coach' : 'free';
+      if (byTier[tierKey]) { won ? byTier[tierKey].won++ : byTier[tierKey].lost++; }
+
+      // by confidence bucket
+      const bucket = conf >= 75 ? '75-80' : conf >= 70 ? '70-74' : conf >= 65 ? '65-69' : conf >= 60 ? '60-64' : '50-59';
+      if (!byConfBucket[bucket]) byConfBucket[bucket] = { won: 0, lost: 0 };
+      won ? byConfBucket[bucket].won++ : byConfBucket[bucket].lost++;
+    });
+
+    const calcWR = (d) => {
+      const t = d.won + d.lost;
+      return t > 0 ? Math.round(d.won / t * 100) : null;
+    };
+
+    const markets = Object.entries(byMarket).map(([market, d]) => ({
+      market,
+      won: d.won,
+      lost: d.lost,
+      total: d.won + d.lost,
+      winRate: calcWR(d),
+      avgConf: d.won + d.lost > 0 ? Math.round(d.totalConf / (d.won + d.lost)) : null,
+    })).sort((a, b) => (b.winRate || 0) - (a.winRate || 0));
+
+    res.json({
+      ok: true,
+      days,
+      totalResolved: recent.length,
+      byMarket: markets,
+      byTier: Object.entries(byTier).map(([tier, d]) => ({ tier, ...d, total: d.won + d.lost, winRate: calcWR(d) })),
+      byConfBucket: Object.entries(byConfBucket).map(([bucket, d]) => ({ bucket, ...d, total: d.won + d.lost, winRate: calcWR(d) })),
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: 'stats_failed' });
+  }
+});
+
 app.get("/admin/dashboard", requireAdmin, async (req, res) => {
   try {
     const dateKey = String(req.query.dateKey || "").trim();

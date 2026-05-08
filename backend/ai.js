@@ -623,7 +623,7 @@ const getSportMarketConfig = (sport, home, away) => {
       label: "basquetbol/NBA",
       markets: "ml (ganador ML), total puntos (Over/Under), spread (handicap puntos), primera mitad (ganador), cuartos (total cuartos/ritmo)",
       jsonSchema: '{"ml":{"pick":"Local|Visitante","conf":65,"nota":""},"goles":{"pick":"Over 221.5|Under 221.5 pts","conf":60,"nota":""},"btts":{"pick":"Local 1ra mitad|Visitante 1ra mitad","conf":55,"nota":""},"handicap":{"pick":"Local -5.5|Visitante +5.5","line":"-5.5","conf":58,"nota":""},"corners":{"pick":"Over 48.5|Under 48.5 pts 1er cuarto","conf":52,"nota":""},"resumen":"1 oracion"}',
-      criteria: ["Forma ultimos 5 partidos y racha de victorias.", "Promedio de puntos anotados y recibidos por equipo.", "Rendimiento de anotacion en casa vs visita.", "Jugadores clave: lesiones o descanso de titulares.", "Ritmo de juego (pace) si hay datos.", "H2H si disponible."],
+      criteria: ["Forma ultimos 5 partidos y racha de victorias.", "Pace (ritmo de juego): posesiones por 48 min de cada equipo. Es determinante para Over/Under. Sin este dato, conf en total_points no debe superar 60.", "Promedio de puntos anotados y recibidos por equipo.", "Rendimiento de anotacion en casa vs visita.", "Jugadores clave: lesiones o descanso de titulares.", "H2H si disponible."],
       fallback: { ml: { pick: "Local", conf: 55, nota: "Ventaja de cancha local." }, goles: { pick: "Over 221.5 pts", conf: 52, nota: "Promedio de puntos del torneo." }, btts: { pick: "Local 1ra mitad", conf: 50, nota: "Local suele controlar el inicio." }, handicap: { pick: "Local -5.5", line: "-5.5", conf: 48, nota: "Leve favorito local." }, corners: { pick: "Over 48.5 pts 1er cuarto", conf: 45, nota: "Ritmo alto esperado." }, resumen: `${home} vs ${away} — basquetbol, datos limitados.` },
     };
   }
@@ -632,7 +632,7 @@ const getSportMarketConfig = (sport, home, away) => {
       label: "béisbol/MLB",
       markets: "ml (ganador), total carreras (Over/Under), btts (1ra entrada anota o no), run line (-1.5/+1.5), ponches del pitcher abridor",
       jsonSchema: '{"ml":{"pick":"Local|Visitante","conf":65,"nota":""},"goles":{"pick":"Over 8.5|Under 8.5 carreras","conf":60,"nota":""},"btts":{"pick":"Si anota 1ra entrada|No anota 1ra entrada","conf":55,"nota":""},"handicap":{"pick":"Local -1.5|Visitante +1.5","line":"-1.5","conf":58,"nota":""},"corners":{"pick":"Pitcher Over 5.5|Pitcher Under 5.5 Ks","conf":52,"nota":""},"resumen":"1 oracion"}',
-      criteria: ["Pitcher abridor: ERA, WHIP, ponches en ultimas 3 aperturas.", "Lineup ofensivo: promedio al bate y OBP vs tipo de pitcher.", "Bullpen: efectividad si el partido se extiende.", "Rendimiento en casa vs visita de cada equipo.", "H2H reciente si disponible.", "Clima o condiciones si hay datos."],
+      criteria: ["OBLIGATORIO: Pitcher abridor de cada equipo (nombre, ERA, WHIP, ponches en ultimas 3 aperturas). Sin este dato, la confianza en totales no puede superar 55.", "Lineup ofensivo: promedio al bate y OBP vs tipo de pitcher.", "Bullpen: efectividad si el partido se extiende.", "Rendimiento en casa vs visita de cada equipo.", "H2H reciente si disponible.", "Clima o condiciones si hay datos."],
       fallback: { ml: { pick: "Local", conf: 55, nota: "Pitcher y ventaja de campo local." }, goles: { pick: "Over 8.5 carreras", conf: 52, nota: "Promedio de carreras del torneo." }, btts: { pick: "No anota 1ra entrada", conf: 50, nota: "Abridores suelen dominar el inicio." }, handicap: { pick: "Local -1.5", line: "-1.5", conf: 48, nota: "Local favorito por run line." }, corners: { pick: "Pitcher Over 5.5 Ks", conf: 45, nota: "Buen abridor esperado." }, resumen: `${home} vs ${away} — béisbol, datos limitados.` },
     };
   }
@@ -683,7 +683,7 @@ const getSportMarketConfig = (sport, home, away) => {
     label: "fútbol",
     markets: "1X2 ML (Local/Empate/Visitante), Goles Over/Under, BTTS (ambos anotan), Hándicap Asiático, Corners Over/Under",
     jsonSchema: '{"ml":{"pick":"Local|Empate|Visitante","conf":65,"nota":""},"goles":{"pick":"Over 2.5|Under 2.5","conf":60,"nota":""},"btts":{"pick":"Si|No","conf":55,"nota":""},"handicap":{"pick":"descripcion exacta del handicap","line":"0.5|1|etc","conf":58,"nota":""},"corners":{"pick":"Over 9.5|Under 9.5","conf":52,"nota":""},"resumen":"1 oracion de contexto"}',
-    criteria: ["Forma ultimos 5 partidos de cada equipo.", "Lesiones o bajas relevantes confirmadas.", "Rendimiento local/visita de la temporada.", "Historial H2H reciente.", "Odds disponibles y movimientos de linea.", "Produccion ofensiva/defensiva y tendencia de totales y corners."],
+    criteria: ["Forma ultimos 5 partidos de cada equipo (obligatorio para BTTS: cuantos partidos ambos anotaron).", "Para BTTS: cuenta explicita de partidos donde ambos equipos anotaron en las ultimas 8 jornadas.", "Lesiones o bajas relevantes confirmadas.", "Rendimiento local/visita de la temporada.", "Historial H2H reciente.", "Odds disponibles y movimientos de linea.", "Produccion ofensiva/defensiva y tendencia de totales y corners."],
     fallback: { ml: { pick: home, conf: 55, nota: "Favorito local por localia." }, goles: { pick: "Over 2.5", conf: 52, nota: "Promedio de goles del torneo." }, btts: { pick: "Si", conf: 50, nota: "Ambos equipos tienen capacidad ofensiva." }, handicap: { pick: `${home} -0.5`, line: "-0.5", conf: 48, nota: "Leve ventaja local." }, corners: { pick: "Over 9.5", conf: 45, nota: "Ritmo de juego abierto esperado." }, resumen: `${home} vs ${away} — fútbol, datos limitados.` },
   };
 };
@@ -715,6 +715,11 @@ async function analyzeMarketsGPT({ event = {}, stats = {} } = {}) {
     "6. Si hay forma reciente, lesiones, H2H, rendimiento local/visita u odds, consideralos obligatoriamente.",
     "7. Si odds y estadistica se contradicen, refleja eso con menor confianza.",
     "8. El resumen menciona que factores pesaron mas.",
+    "9. BTTS (ambos anotan): Solo asigna conf >= 65 si tienes evidencia de que AMBOS equipos anotaron en al menos 6 de sus ultimos 8 partidos. Sin ese dato, pon conf <= 55.",
+    "10. Handicap asiatico: Solo asigna conf >= 65 si hay una ventaja clara de forma (al menos 4-1 en ultimos 5 partidos) o diferencia significativa de nivel. Sin ese dato, pon conf <= 58.",
+    "11. Totales en beisbol: La conf del mercado goles debe reflejar ERA del pitcher abridor. Si no tienes ERA en Stats, pon conf <= 55 en goles y explica que falta el pitcher.",
+    "12. Totales en basketball: Incluye pace (ritmo de juego) de ambos equipos si esta en Stats. Sin pace, conf del total no debe superar 60.",
+    "13. Antes de asignar cualquier conf >= 70: lista mentalmente 2 factores en contra del pick. Si existen 2 o mas factores en contra, reduce conf entre 8 y 12 puntos.",
     `Criterios prioritarios para ${sportCfg.label}:`,
     ...sportCfg.criteria,
   ].join(" ");
@@ -848,9 +853,18 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
     "- BTTS Si: safe = Over 0.5 goles (al menos 1 gol)",
     "- Handicap asiatico -X: safe = handicap -X+0.5 o empate no cuenta (0)",
     "- Corners Over X.5: safe = Over (X-1).5",
+    "REGLAS DE SELECCION DE MERCADO (ordenadas por prioridad):",
+    "1. Prioriza ML o Doble Oportunidad cuando la diferencia de nivel es clara. Son los mercados mas confiables.",
+    "2. Solo elige BTTS si la nota de GPT menciona datos de que ambos equipos han anotado en 6+ de los ultimos 8 partidos. Si no, DESCARTA BTTS aunque tenga conf alta.",
+    "3. Solo elige Handicap si hay ventaja de forma clara (4-1 o mejor en ultimos 5) O diferencia significativa de nivel entre equipos. Si no, prefiere ML.",
+    "4. Para Totales en beisbol: solo elige Over/Under si la nota de GPT menciona al pitcher abridor. Sin pitcher, elige ML en su lugar.",
+    "5. Para Totales en basketball: verifica que la nota incluya pace o ritmo de juego. Sin eso, prefiere ML o Spread.",
+    "6. Doble Oportunidad es SIEMPRE preferible a BTTS o Handicap cuando hay incertidumbre similar.",
+    "7. Si BTTS y ML tienen confianza similar (diferencia <= 5 puntos), elige ML.",
+    "8. La version SAFE debe ser siempre ML, Doble Oportunidad, o Over/Under con linea conservadora — NUNCA safe_pick en BTTS o Handicap exotico.",
     "Responde SOLO JSON valido con esta estructura exacta:",
     '{"mercado":"1X2|Goles|BTTS|Handicap|Corners","pick":"pick normal exacto","confianza":72,"riesgo":"BAJO|MEDIO|ALTO","razonamiento":"2-3 oraciones explicando la decision","tipo":"segura|moderada|arriesgada","safe_pick":"pick seguro exacto","safe_mercado":"mismo mercado en safe","safe_confianza":82,"safe_riesgo":"BAJO","safe_razonamiento":"1-2 oraciones explicando por que la version segura es mas conservadora"}',
-    "Debes validar si GPT exagero confianza o ignoro riesgos.",
+    "Debes validar si GPT exagero confianza o ignoro riesgos. Si GPT puso conf >= 70 en BTTS o Handicap sin datos estadisticos en la nota, baja esa confianza 10 puntos antes de decidir.",
     "tipo refleja el equilibrio del portafolio.",
     "NO prometas ganancias.",
   ].join(" ");

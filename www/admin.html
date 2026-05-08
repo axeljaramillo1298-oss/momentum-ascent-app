@@ -598,7 +598,40 @@ main{position:relative;z-index:2}
         <div class="pstat-card"><div class="pstat-val yellow" id="psd-streak">0</div><div class="pstat-lbl">Racha día</div></div>
         <div class="pstat-card"><div class="pstat-val" id="psd-pending">0</div><div class="pstat-lbl">Sin resultado</div></div>
       </div>
-      <div style="overflow-x:auto;background:rgba(255,255,255,.015);border:1px solid var(--border);border-radius:6px">
+      <!-- Panel de rendimiento por mercado -->
+      <div id="market-perf-panel" style="margin-top:1.5rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+          <h3 style="font-size:.9rem;font-weight:700;color:var(--text-primary,#fff)">Rendimiento por mercado <span id="market-perf-days" style="color:var(--text-muted,#888);font-weight:400;font-size:.8rem">(últimos 14 días)</span></h3>
+          <select id="market-perf-range" style="background:var(--card-bg,#1a1a2e);border:1px solid var(--border,rgba(255,255,255,.1));color:var(--text-muted,#888);border-radius:6px;padding:.25rem .6rem;font-size:.75rem">
+            <option value="7">7 días</option>
+            <option value="14" selected>14 días</option>
+            <option value="30">30 días</option>
+          </select>
+        </div>
+        <div id="market-perf-list" style="display:grid;gap:.4rem">
+          <p style="color:var(--text-muted,#888);font-size:.8rem">Cargando...</p>
+        </div>
+        <div style="display:flex;gap:1.5rem;margin-top:1rem;padding-top:.75rem;border-top:1px solid var(--border,rgba(255,255,255,.06))">
+          <div>
+            <div style="font-size:.7rem;color:var(--text-muted,#888);margin-bottom:.2rem">PREM</div>
+            <div id="tier-prem-wr" style="font-size:1.1rem;font-weight:700;color:var(--text-primary,#fff)">—</div>
+          </div>
+          <div>
+            <div style="font-size:.7rem;color:var(--text-muted,#888);margin-bottom:.2rem">FREE</div>
+            <div id="tier-free-wr" style="font-size:1.1rem;font-weight:700;color:var(--text-primary,#fff)">—</div>
+          </div>
+          <div>
+            <div style="font-size:.7rem;color:var(--text-muted,#888);margin-bottom:.2rem">Total picks</div>
+            <div id="tier-total-picks" style="font-size:1.1rem;font-weight:700;color:var(--text-primary,#fff)">—</div>
+          </div>
+        </div>
+        <div id="conf-calibration-panel" style="margin-top:1rem;padding-top:.75rem;border-top:1px solid var(--border,rgba(255,255,255,.06))">
+          <div style="font-size:.7rem;color:var(--text-muted,#888);margin-bottom:.5rem;font-weight:600">CALIBRACIÓN DE CONFIANZA (conf. declarada vs. WR real)</div>
+          <div id="conf-calibration-list" style="display:grid;gap:.3rem"></div>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto;background:rgba(255,255,255,.015);border:1px solid var(--border);border-radius:6px;margin-top:1.5rem">
         <table class="picks-hist-table">
           <thead>
             <tr>
@@ -1004,7 +1037,7 @@ main{position:relative;z-index:2}
             <span class="risk-badge ${riskCls}">${riskCls}</span>
             <span class="tipo-badge ${tipoCls}">${d.tipo||'moderada'}</span>
           </div>
-          <div class="claude-market">Mercado: ${d.mercado||'—'} &nbsp;·&nbsp; Confianza: ${d.confianza||'—'}%</div>
+          <div class="claude-market">Mercado: ${d.mercado||'—'} &nbsp;·&nbsp; Confianza: ${d.confianza||'—'}%${renderMarketBadge(d.mercado)}</div>
           <div class="claude-reasoning">${d.razonamiento||'—'}</div>
           <button class="btn-publish-claude" id="pub-btn-${eventId}"
             data-eid="${eventId}"
@@ -1025,7 +1058,7 @@ main{position:relative;z-index:2}
             ${d.safe_pick}
             <span class="risk-badge ${safeRiskCls}">${safeRiskCls}</span>
           </div>
-          <div class="claude-market">Mercado: ${d.safe_mercado||d.mercado||'—'} &nbsp;·&nbsp; Confianza: ${d.safe_confianza||'—'}%</div>
+          <div class="claude-market">Mercado: ${d.safe_mercado||d.mercado||'—'} &nbsp;·&nbsp; Confianza: ${d.safe_confianza||'—'}%${renderMarketBadge(d.safe_mercado||d.mercado)}</div>
           <div class="claude-reasoning">${d.safe_razonamiento||'Versión más conservadora del mismo mercado.'}</div>
           <button class="btn-publish-claude" id="pub-safe-btn-${eventId}"
             data-eid="${eventId}"
@@ -1080,6 +1113,113 @@ main{position:relative;z-index:2}
     }
   }
 
+  // ── MARKET STATS CACHE & BADGE ───────────────────────────
+  let marketStatsCache = {};
+
+  function renderMarketBadge(market) {
+    const key = String(market || '').toLowerCase().replace(/[^a-z0-9_]/g, '_');
+    const s = marketStatsCache[key];
+    if (!s || s.total < 5) return '';
+    const color = s.winRate >= 70 ? '#4ade80' : s.winRate >= 55 ? '#f59e0b' : '#f87171';
+    const icon = s.winRate >= 70 ? '✓' : s.winRate >= 55 ? '⚠' : '✗';
+    return `<span style="font-size:.72rem;color:${color};margin-left:.5rem">${icon} ${s.winRate}% WR hist.</span>`;
+  }
+
+  async function loadMarketPerf(days) {
+    days = days || 14;
+    const container = document.getElementById('market-perf-list');
+    if (!container) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/picks/stats?days=${days}`, {
+        headers: apiHeaders()
+      });
+      if (!res.ok) throw new Error('stats_failed');
+      const data = await res.json();
+
+      // Guardar cache para usar en warnings
+      marketStatsCache = {};
+      (data.byMarket || []).forEach(m => { marketStatsCache[m.market] = m; });
+
+      // Render por mercado
+      const marketLabels = {
+        'ml': '1X2 / ML',
+        '1x2': '1X2 / ML',
+        'moneyline': '1X2 / ML',
+        'double_chance': 'Doble Oportunidad',
+        'dc': 'Doble Oportunidad',
+        'over_under': 'Over/Under Totales',
+        'totals': 'Over/Under Totales',
+        'total_points': 'Over/Under Totales',
+        'goles': 'Over/Under Goles',
+        'btts': 'BTTS (ambos anotan)',
+        'both_teams_score': 'BTTS (ambos anotan)',
+        'handicap': 'Hándicap',
+        'asian_handicap': 'Hándicap Asiático',
+        'corners': 'Corners',
+      };
+
+      const rows = (data.byMarket || []).map(m => {
+        const wr = m.winRate;
+        const color = wr === null ? '#888' : wr >= 70 ? '#4ade80' : wr >= 55 ? '#f59e0b' : '#f87171';
+        const icon = wr === null ? '—' : wr >= 70 ? '✓' : wr >= 55 ? '⚠' : '✗';
+        const label = marketLabels[m.market] || m.market;
+        const bar = wr !== null ? `<div style="flex:1;background:rgba(255,255,255,.06);border-radius:4px;height:6px;overflow:hidden"><div style="width:${wr}%;background:${color};height:100%;border-radius:4px;transition:width .4s"></div></div>` : '';
+        return `
+          <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:.5rem;padding:.4rem .5rem;background:rgba(255,255,255,.03);border-radius:6px;border-left:3px solid ${color}">
+            <span style="font-size:.8rem;color:var(--text-primary,#e0e0e0)">${label}</span>
+            <span style="font-size:.7rem;color:var(--text-muted,#888)">${m.won}W ${m.lost}L</span>
+            <span style="font-size:.85rem;font-weight:700;color:${color};min-width:3.5rem;text-align:right">${icon} ${wr !== null ? wr+'%' : 'Sin datos'}</span>
+          </div>`;
+      }).join('');
+
+      container.innerHTML = rows || '<p style="color:var(--text-muted,#888);font-size:.8rem">Sin datos suficientes aún.</p>';
+      const daysEl = document.getElementById('market-perf-days');
+      if (daysEl) daysEl.textContent = `(últimos ${days} días)`;
+
+      // Tier stats
+      const premData = (data.byTier || []).find(t => t.tier === 'premium');
+      const freeData = (data.byTier || []).find(t => t.tier === 'free');
+      const premWR = document.getElementById('tier-prem-wr');
+      const freeWR = document.getElementById('tier-free-wr');
+      const totalEl = document.getElementById('tier-total-picks');
+      if (premWR) premWR.textContent = premData?.winRate != null ? premData.winRate + '%' : '—';
+      if (freeWR) freeWR.textContent = freeData?.winRate != null ? freeData.winRate + '%' : '—';
+      if (totalEl) totalEl.textContent = data.totalResolved || 0;
+
+      // Color tier WRs
+      const colorWR = (el, wr) => { if (!el || wr == null) return; el.style.color = wr >= 70 ? '#4ade80' : wr >= 55 ? '#f59e0b' : '#f87171'; };
+      colorWR(premWR, premData?.winRate);
+      colorWR(freeWR, freeData?.winRate);
+
+      // Calibración
+      const calibEl = document.getElementById('conf-calibration-list');
+      if (calibEl && data.byConfBucket) {
+        calibEl.innerHTML = (data.byConfBucket || [])
+          .sort((a,b) => a.bucket.localeCompare(b.bucket))
+          .map(b => {
+            if (!b.total) return '';
+            const gap = b.winRate - parseInt(b.bucket);
+            const gapColor = Math.abs(gap) <= 8 ? '#4ade80' : Math.abs(gap) <= 15 ? '#f59e0b' : '#f87171';
+            const gapTxt = (gap > 0 ? '+' : '') + gap + 'pp';
+            return `<div style="display:flex;align-items:center;gap:.5rem;font-size:.75rem">
+              <span style="color:var(--text-muted,#888);min-width:4rem">${b.bucket}</span>
+              <span style="color:var(--text-primary,#e0e0e0)">${b.winRate}% real</span>
+              <span style="color:var(--text-muted,#888)">${b.won}W ${b.lost}L</span>
+              <span style="color:${gapColor};font-weight:600">${gapTxt}</span>
+            </div>`;
+          }).filter(Boolean).join('') || '<p style="color:#888;font-size:.75rem">Sin datos.</p>';
+      }
+    } catch(e) {
+      if (container) container.innerHTML = '<p style="color:#f87171;font-size:.8rem">Error al cargar estadísticas.</p>';
+    }
+  }
+
+  // Listener del selector de rango
+  document.getElementById('market-perf-range')?.addEventListener('change', e => loadMarketPerf(Number(e.target.value)));
+
+  // Cargar al inicio
+  loadMarketPerf(14);
+
   // ── PUBLISH MODAL ──────────────────────────────────────────
   function openPubModal(btn){
     pendingPub = { btn };
@@ -1098,6 +1238,23 @@ main{position:relative;z-index:2}
 
   // ── PUBLISH DIRECT ────────────────────────────────────────
   async function publishDirect(btn, planTier = 'free'){
+    const market = btn.dataset.market || '';
+
+    // Warning si el mercado tiene bajo rendimiento histórico
+    const marketKey = String(market || '').toLowerCase().replace(/[^a-z0-9_]/g, '_');
+    const mStats = marketStatsCache[marketKey];
+    const warningNeeded = mStats && mStats.total >= 5 && mStats.winRate < 55;
+
+    if (warningNeeded) {
+      const confirmed = window.confirm(
+        `⚠️ ADVERTENCIA DE RENDIMIENTO\n\n` +
+        `El mercado "${market}" tiene ${mStats.winRate}% de win rate en los últimos 14 días (${mStats.won}W ${mStats.lost}L).\n\n` +
+        `Para maximizar el win rate, considera usar ML o Doble Oportunidad en su lugar.\n\n` +
+        `¿Publicar de todas formas?`
+      );
+      if (!confirmed) return; // admin cancela
+    }
+
     btn.textContent = 'Publicando…';
     btn.disabled = true;
     const eid = btn.dataset.eid;
