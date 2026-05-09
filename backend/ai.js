@@ -850,21 +850,54 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
         }
       }
     } else if (mercado === "BTTS" && /si/i.test(pick)) {
-      safe_pick = "Over 0.5 goles";
-      safe_mercado = "Goles";
+      // Over 0.5 goles has terrible odds (~1.10). Use Over 1.5 (~1.50) or GPT goles pick
+      const g = gptMarkets.goles;
+      if (g?.pick?.match(/^Over/i)) {
+        safe_pick = g.pick; safe_mercado = "Goles";
+      } else {
+        safe_pick = `Over 1.5 goles`; safe_mercado = "Goles";
+      }
     } else if (mercado === "Doble Oportunidad" || mercado === "DC") {
-      // DC normal → safe = ML del mismo equipo (mejor cuota que DC)
-      const isHome = pick.toLowerCase().includes("local") || pick.toLowerCase().includes(home.toLowerCase());
-      safe_pick = isHome ? `${home} ML` : `${away} ML`;
-      safe_mercado = "1X2";
+      // DC covers win+draw — safe must be EASIER, not ML (which is harder).
+      // Use Over 1.5 goles (both teams attacking = goals likely, ~1.50 odds)
+      // or GPT goles Over pick if available
+      const g = gptMarkets.goles;
+      if (g?.pick?.match(/^Over/i)) {
+        safe_pick = g.pick; safe_mercado = "Goles";
+      } else {
+        safe_pick = `Over 1.5 goles`; safe_mercado = "Goles";
+      }
+    } else if (mercado === "Handicap") {
+      // Handicap safe: reduce the line by 0.5 to make it less demanding
+      const lineMatch = pick.match(/([-+]?\d+\.?\d*)/);
+      if (lineMatch) {
+        const line = parseFloat(lineMatch[1]);
+        const isMinus = line < 0;
+        const saferLine = isMinus ? (line + 0.5).toFixed(1) : (line - 0.5).toFixed(1);
+        safe_pick = pick.replace(lineMatch[0], saferLine);
+      } else {
+        safe_pick = gptMarkets.ml?.pick || pick;
+        safe_mercado = gptMarkets.ml?.pick ? "1X2" : mercado;
+      }
     } else if (cornersMatch) {
       const val = parseFloat(cornersMatch[1]);
       safe_pick = `Over ${val - 1}.5 corners`;
     } else if (golesMatch) {
       const dir = golesMatch[1].toLowerCase();
       const val = parseFloat(golesMatch[2]);
-      // Shift only 0.5 — keeps odds reasonable (1.5 shift destroys value on tight lines)
-      safe_pick = dir === "over" ? `Over ${val - 0.5} goles` : `Under ${val + 0.5} goles`;
+      // For basketball totals: prefer spread (better odds than shifting line)
+      if (sport.includes("basketball") || sport.includes("baloncesto")) {
+        const h = gptMarkets.handicap;
+        if (h?.pick && h?.conf >= 50) {
+          safe_pick = h.pick; safe_mercado = "Handicap";
+        } else {
+          // Shift only 0.5 for basketball (221.5 → 222 is minimal but acceptable)
+          safe_pick = dir === "over" ? `Over ${val - 0.5} pts` : `Under ${val + 0.5} pts`;
+        }
+      } else {
+        // Soccer/baseball: shift 0.5 keeps odds reasonable
+        safe_pick = dir === "over" ? `Over ${val - 0.5} goles` : `Under ${val + 0.5} goles`;
+      }
     }
     return {
       mercado, pick, confianza: best.d?.conf || 50, riesgo: "MEDIO",
@@ -910,15 +943,15 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
           "- Normal=ML hockey/NFL/tenis: safe = spread/handicap de GPT si disponible. Si no: ML mismo equipo, subir conf 5pp.",
           "- Normal=Goles Over X.5: safe = Over (X-0.5) mismas unidades, conf +5pp. Verifica que cuota estimada >= 1.40.",
           "- Normal=Goles Under X.5: safe = Under (X+0.5) mismas unidades, conf +5pp. Si Under (X+0.5) tendria cuota < 1.35 (linea muy baja), usa spread/handicap o primera mitad en su lugar.",
-          "- Normal=Handicap: safe = handicap mas conservador (reducir linea 0.5), conf +5pp.",
+          "- Normal=Handicap: safe = misma direccion con linea 0.5 mas conservadora (ej: -5.5 → -5.0, o +3.5 → +4.0), conf +5pp. Si la linea ajustada tendria momios < 1.35, usa ML del mismo equipo.",
         ].join(" ")
       : [
           "Reglas safe por mercado (futbol/soccer):",
           "- Normal=ML (1X2 ganador): safe = Doble Oportunidad del mismo equipo ('Local o Empate' / 'Visitante o Empate'), conf +8pp.",
-          "- Normal=DC (Doble Oportunidad): safe DEBE SER DIFERENTE — usa Over 0.5 goles (al menos 1 gol en el partido) o el Over/Under mas conservador de GPT, conf +5pp.",
+          "- Normal=DC (Doble Oportunidad): safe DEBE SER DIFERENTE y MAS FACIL. DC ya cubre win+draw, algo mas facil seria Over 1.5 goles (~1.50 odds) o el Over de GPT si hay confianza. NUNCA uses ML como safe de DC (ML es mas dificil que DC).",
           "- Normal=Goles Over X.5: safe = Over (X-1).5, conf +8pp.",
           "- Normal=Goles Under X.5: safe = Under (X+1).5, conf +8pp.",
-          "- Normal=BTTS Si: safe = Over 0.5 goles, conf +10pp.",
+          "- Normal=BTTS Si: safe = Over 1.5 goles (~1.50 odds) o el Over de GPT si disponible. NUNCA Over 0.5 goles (momios ~1.10, sin valor).",
           "- Normal=Handicap -X: safe = handicap -X+0.5, conf +5pp.",
           "- Normal=Corners Over X.5: safe = Over (X-1).5, conf +5pp.",
         ].join(" "),
