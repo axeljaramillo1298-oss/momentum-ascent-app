@@ -2159,11 +2159,18 @@ main{position:relative;z-index:2}
 <script>
 (function(){
   // ── RETOS PUBLICADOS ──────────────────────────────────────
+  function retoHeaders() {
+    const token = localStorage.getItem('discipline_god_token_v1');
+    const h = { 'Content-Type': 'application/json' };
+    if (token) h['x-god-token'] = token;
+    return h;
+  }
+
   async function loadAdminRetos() {
     const container = document.getElementById('admin-retos-list');
     if (!container) return;
     try {
-      const res = await fetch('/admin/retos', { headers: apiHeaders() });
+      const res = await fetch('/admin/retos', { headers: retoHeaders() });
       if (!res.ok) throw new Error('retos_failed');
       const data = await res.json();
       const allRetos = data.retos || [];
@@ -2264,7 +2271,7 @@ main{position:relative;z-index:2}
     btn.disabled = true;
     btn.textContent = 'Publicando…';
     try {
-      const res = await fetch(`/api/reto/${retoId}/publish`, { method: 'POST', headers: apiHeaders() });
+      const res = await fetch(`/api/reto/${retoId}/publish`, { method: 'POST', headers: retoHeaders() });
       if (!res.ok) throw new Error('publish_failed');
       await loadAdminRetos();
     } catch(err) {
