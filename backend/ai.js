@@ -894,9 +894,12 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
           // Shift only 0.5 for basketball (221.5 → 222 is minimal but acceptable)
           safe_pick = dir === "over" ? `Over ${val - 0.5} pts` : `Under ${val + 0.5} pts`;
         }
+      } else if (sport.includes("baseball") || sport.includes("beisbol")) {
+        // Baseball lines move in 0.5 increments (8.5 → 8.0/9.0 are valid)
+        safe_pick = dir === "over" ? `Over ${val - 0.5} carreras` : `Under ${val + 0.5} carreras`;
       } else {
-        // Soccer/baseball: shift 0.5 keeps odds reasonable
-        safe_pick = dir === "over" ? `Over ${val - 0.5} goles` : `Under ${val + 0.5} goles`;
+        // Soccer lines are always X.5 — shift by 1 to stay on valid lines (2.5 → 1.5/3.5)
+        safe_pick = dir === "over" ? `Over ${val - 1} goles` : `Under ${val + 1} goles`;
       }
     }
     return {
@@ -938,7 +941,7 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
     noDrawSport
       ? [
           "Reglas safe por deporte (sin empate):",
-          "- Normal=ML beisbol: safe = el pick 'goles' de GPT (Over/Under carreras) si la nota menciona ERA de cualquier pitcher. Si ERA no se menciona: safe = ML mismo equipo, subir conf 5pp.",
+          "- Normal=ML beisbol: safe = el pick 'goles' de GPT (Over/Under carreras) si la nota menciona ERA. Si no hay ERA: safe = el spread/run line de GPT si disponible, sino el pick de goles AS-IS aunque no haya ERA (es diferente al ML).",
           "- Normal=ML basketball: safe = spread/handicap de GPT (cuota ~1.87, buen valor). Si no hay spread disponible: safe = Over/Under puntos de GPT AS-IS sin mover la linea. NUNCA mover la linea Under +2.5 pts (momios terribles).",
           "- Normal=ML hockey/NFL/tenis: safe = spread/handicap de GPT si disponible. Si no: ML mismo equipo, subir conf 5pp.",
           "- Normal=Goles Over X.5: safe = Over (X-0.5) mismas unidades, conf +5pp. Verifica que cuota estimada >= 1.40.",
@@ -992,9 +995,12 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
   ].join("\n");
 
   try {
-    const { content, model } = await callClaudeOnce({ apiKey, systemPrompt, userPrompt, maxTokens: 600 });
+    const { content, model } = await callClaudeOnce({ apiKey, systemPrompt, userPrompt, maxTokens: 1000 });
     const parsed = extractJsonObject(content);
-    if (!parsed) throw new Error("claude_invalid_json");
+    if (!parsed) {
+      console.error("[claudeDecideMarket] JSON parse failed. Raw response length:", content?.length, "| preview:", content?.slice(0, 200));
+      throw new Error("claude_invalid_json");
+    }
     return {
       mercado: safeStr(parsed.mercado) || "1X2",
       pick: safeStr(parsed.pick),
@@ -1009,7 +1015,8 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
       safe_razonamiento: safeStr(parsed.safe_razonamiento) || "",
       model,
     };
-  } catch {
+  } catch (err) {
+    console.error("[claudeDecideMarket] Claude failed:", err?.message || String(err));
     return mkFallbackDecide();
   }
 }
