@@ -1966,6 +1966,14 @@ async function listRetos(limit = 20) {
   return result.rows.map(parseRetoRow);
 }
 
+async function listAllRetos(limit = 50) {
+  const result = await pool.query(
+    `SELECT * FROM reto_parlays ORDER BY created_at DESC LIMIT $1`,
+    [Math.max(1, Math.min(100, Number(limit || 50)))]
+  );
+  return result.rows.map(parseRetoRow);
+}
+
 async function updateRetoLegResult({ retoId, legIndex, result: legResult }) {
   const reto = await getRetoById(retoId);
   if (!reto) throw new Error('Reto not found');
@@ -2046,5 +2054,6 @@ module.exports = {
   getActiveReto,
   getRetoById,
   listRetos,
+  listAllRetos,
   updateRetoLegResult,
 };

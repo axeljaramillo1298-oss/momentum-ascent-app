@@ -57,6 +57,7 @@ const {
   getActiveReto,
   getRetoById,
   listRetos,
+  listAllRetos,
   updateRetoLegResult,
   listApiSyncLogs,
   savePickCandidates,
@@ -1839,6 +1840,16 @@ app.post("/api/picks/publish-direct", requireAdmin, async (req, res) => {
 });
 
 // ── RETO ESCALERA ENDPOINTS ───────────────────────────────────────────────
+
+// Admin: list ALL retos including drafts
+app.get("/admin/retos", requireAdmin, async (req, res) => {
+  try {
+    const retos = await listAllRetos(50);
+    res.json({ ok: true, retos });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: String(e.message || "retos_failed") });
+  }
+});
 
 // Generate reto with Claude from scouted events
 app.post("/api/reto/generate", requireAdmin, async (req, res) => {

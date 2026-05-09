@@ -2141,22 +2141,14 @@ main{position:relative;z-index:2}
   async function loadAdminRetos() {
     const container = document.getElementById('admin-retos-list');
     if (!container) return;
-    const token = localStorage.getItem('discipline_god_token_v1');
     try {
-      const [activeRes, historyRes] = await Promise.all([
-        fetch('/api/reto/active', { headers: { 'x-god-token': token } }),
-        fetch('/api/reto/history', { headers: { 'x-god-token': token } })
-      ]);
-      const activeData = activeRes.ok ? await activeRes.json() : {};
-      const historyData = historyRes.ok ? await historyRes.json() : {};
-      const activeReto = activeData.reto || null;
-      const historyRetos = (historyData.retos || []).slice(0, 10);
-      const allRetos = activeReto
-        ? [activeReto, ...historyRetos.filter(r => r.id !== activeReto.id)]
-        : historyRetos;
+      const res = await fetch('/admin/retos', { headers: apiHeaders() });
+      if (!res.ok) throw new Error('retos_failed');
+      const data = await res.json();
+      const allRetos = data.retos || [];
 
       if (!allRetos.length) {
-        container.innerHTML = '<p style="color:var(--muted);font-size:.9rem">No hay retos publicados.</p>';
+        container.innerHTML = '<p style="color:var(--muted);font-size:.9rem">No hay retos en la base de datos.</p>';
         return;
       }
 
@@ -2167,7 +2159,10 @@ main{position:relative;z-index:2}
         const combinedOdds = reto.combinedOdds ?? reto.combined_odds ?? 1;
         const projectedWin = reto.projectedWin ?? reto.projected_win ?? 0;
         const publishedAt  = reto.publishedAt  ?? reto.published_at  ?? '';
-        const statusLabel = reto.status === 'active' ? '🟢 Activo' : reto.result === 'won' ? '✅ Ganado' : reto.result === 'lost' ? '❌ Perdido' : '⏸️ Cerrado';
+        const isDraft = reto.status === 'draft';
+        const statusLabel = isDraft ? '📝 Borrador' : reto.status === 'active' ? '🟢 Activo' : reto.result === 'won' ? '✅ Ganado' : reto.result === 'lost' ? '❌ Perdido' : '⏸️ Cerrado';
+        const borderColor = isDraft ? 'rgba(245,158,11,.4)' : 'var(--border,rgba(255,255,255,.07))';
+
         const legsHtml = legs.map((leg, i) => {
           const resultColor = leg.result === 'won' ? '#4ade80' : leg.result === 'lost' ? '#f87171' : '#888';
           return `
@@ -2186,7 +2181,7 @@ main{position:relative;z-index:2}
         }).join('');
 
         return `
-          <div style="background:rgba(255,255,255,.022);border:1px solid var(--border,rgba(255,255,255,.07));border-radius:10px;padding:1rem;margin-bottom:.75rem">
+          <div style="background:rgba(255,255,255,.022);border:1px solid ${borderColor};border-radius:10px;padding:1rem;margin-bottom:.75rem">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem">
               <div>
                 <div style="font-weight:700;color:var(--text);font-size:.95rem">Reto #${reto.id} — ${statusLabel}</div>
@@ -2197,11 +2192,12 @@ main{position:relative;z-index:2}
                   Ganancia proyectada: $${Number(projectedWin).toLocaleString('es-MX')}
                 </div>
                 <div style="color:var(--muted);font-size:.75rem;margin-top:.15rem">
-                  Publicado: ${publishedAt ? new Date(publishedAt).toLocaleDateString('es-MX') : '—'}
+                  ${isDraft ? '<span style="color:#f59e0b">⚠ Borrador — no visible para usuarios</span>' : `Publicado: ${publishedAt ? new Date(publishedAt).toLocaleDateString('es-MX') : '—'}`}
                 </div>
               </div>
+              ${isDraft ? `<button class="reto-publish-draft-btn" data-reto-id="${reto.id}" style="background:linear-gradient(135deg,#0f3d91,#1d4ed8);border:none;border-radius:6px;color:#fff;font:700 11px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:.5rem 1rem;cursor:pointer;white-space:nowrap">Publicar ahora</button>` : ''}
             </div>
-            <div>${legsHtml}</div>
+            <div>${legs.length ? legsHtml : '<p style="color:var(--muted);font-size:.8rem;margin:0">Sin patas registradas.</p>'}</div>
           </div>`;
       }).join('');
     } catch(e) {
@@ -2235,6 +2231,25 @@ main{position:relative;z-index:2}
       alert('Error al marcar resultado: ' + err.message);
       btn.disabled = false;
       btn.textContent = result === 'won' ? 'W' : result === 'lost' ? 'L' : 'V';
+    }
+  });
+
+  // Publicar borrador desde la lista
+  document.addEventListener('click', async e => {
+    const btn = e.target.closest('.reto-publish-draft-btn');
+    if (!btn) return;
+    const retoId = btn.dataset.retoId;
+    if (!retoId) return;
+    btn.disabled = true;
+    btn.textContent = 'Publicando…';
+    try {
+      const res = await fetch(`/api/reto/${retoId}/publish`, { method: 'POST', headers: apiHeaders() });
+      if (!res.ok) throw new Error('publish_failed');
+      await loadAdminRetos();
+    } catch(err) {
+      alert('Error al publicar reto: ' + err.message);
+      btn.disabled = false;
+      btn.textContent = 'Publicar ahora';
     }
   });
 
