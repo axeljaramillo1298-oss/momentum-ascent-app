@@ -995,7 +995,7 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
   ].join("\n");
 
   try {
-    const { content, model } = await callClaudeOnce({ apiKey, systemPrompt, userPrompt, maxTokens: 1000 });
+    const { content, model } = await callClaudeOnce({ apiKey, systemPrompt, userPrompt, maxTokens: 1200 });
     const parsed = extractJsonObject(content);
     if (!parsed) {
       console.error("[claudeDecideMarket] JSON parse failed. Raw response length:", content?.length, "| preview:", content?.slice(0, 200));
