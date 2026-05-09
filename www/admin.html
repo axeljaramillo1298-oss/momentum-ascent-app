@@ -2161,7 +2161,12 @@ main{position:relative;z-index:2}
       }
 
       container.innerHTML = allRetos.map(reto => {
-        const legs = JSON.parse(reto.legs_json || reto.legsJson || '[]');
+        // parseRetoRow returns camelCase; raw DB rows use snake_case — support both
+        const legs = Array.isArray(reto.legs) ? reto.legs
+          : (() => { try { return JSON.parse(reto.legs_json || reto.legsJson || '[]'); } catch { return []; } })();
+        const combinedOdds = reto.combinedOdds ?? reto.combined_odds ?? 1;
+        const projectedWin = reto.projectedWin ?? reto.projected_win ?? 0;
+        const publishedAt  = reto.publishedAt  ?? reto.published_at  ?? '';
         const statusLabel = reto.status === 'active' ? '🟢 Activo' : reto.result === 'won' ? '✅ Ganado' : reto.result === 'lost' ? '❌ Perdido' : '⏸️ Cerrado';
         const legsHtml = legs.map((leg, i) => {
           const resultColor = leg.result === 'won' ? '#4ade80' : leg.result === 'lost' ? '#f87171' : '#888';
@@ -2188,11 +2193,11 @@ main{position:relative;z-index:2}
                 <div style="color:var(--muted);font-size:.78rem;margin-top:.25rem">
                   Meta: $${Number(reto.meta||0).toLocaleString('es-MX')} ·
                   Inversión: $${Number(reto.inversion||0).toLocaleString('es-MX')} ·
-                  Cuota combinada: ${Number(reto.combined_odds||1).toFixed(2)}x ·
-                  Ganancia proyectada: $${Number(reto.projected_win||0).toLocaleString('es-MX')}
+                  Cuota combinada: ${Number(combinedOdds).toFixed(2)}x ·
+                  Ganancia proyectada: $${Number(projectedWin).toLocaleString('es-MX')}
                 </div>
                 <div style="color:var(--muted);font-size:.75rem;margin-top:.15rem">
-                  Publicado: ${reto.published_at ? new Date(reto.published_at).toLocaleDateString('es-MX') : '—'}
+                  Publicado: ${publishedAt ? new Date(publishedAt).toLocaleDateString('es-MX') : '—'}
                 </div>
               </div>
             </div>
