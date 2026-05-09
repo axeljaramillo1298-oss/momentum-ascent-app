@@ -825,18 +825,17 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
           safe_pick = pick;
         }
       } else if (sport.includes("basketball") || sport.includes("baloncesto")) {
-        // Basketball — no draw. Use conservative points total or spread if available
+        // Basketball — safe: prefer spread (good odds) over shifting total line (bad odds)
         const h = gptMarkets.handicap;
         const g = gptMarkets.goles;
-        const gm = g?.pick?.match(/^(Over|Under)\s+([\d.]+)/i);
-        if (gm) {
-          const dir = gm[1].toLowerCase() === "over" ? "Over" : "Under";
-          const val = parseFloat(gm[2]);
-          safe_pick = dir === "Over" ? `Over ${val - 2.5} puntos` : `Under ${val + 2.5} puntos`;
-          safe_mercado = "Goles";
-        } else if (h?.pick) {
+        if (h?.pick && h?.conf >= 50) {
+          // Spread gives ~1.87 odds — much better than a shifted Under
           safe_pick = h.pick;
           safe_mercado = "Handicap";
+        } else if (g?.pick) {
+          // Use GPT total pick AS-IS — no line shift (shifting 2.5 pts kills odds)
+          safe_pick = g.pick.includes("pts") ? g.pick : g.pick + " pts";
+          safe_mercado = "Goles";
         } else {
           safe_pick = pick;
         }
@@ -853,13 +852,19 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
     } else if (mercado === "BTTS" && /si/i.test(pick)) {
       safe_pick = "Over 0.5 goles";
       safe_mercado = "Goles";
+    } else if (mercado === "Doble Oportunidad" || mercado === "DC") {
+      // DC normal → safe = ML del mismo equipo (mejor cuota que DC)
+      const isHome = pick.toLowerCase().includes("local") || pick.toLowerCase().includes(home.toLowerCase());
+      safe_pick = isHome ? `${home} ML` : `${away} ML`;
+      safe_mercado = "1X2";
     } else if (cornersMatch) {
       const val = parseFloat(cornersMatch[1]);
       safe_pick = `Over ${val - 1}.5 corners`;
     } else if (golesMatch) {
-      const dir = golesMatch[1];
+      const dir = golesMatch[1].toLowerCase();
       const val = parseFloat(golesMatch[2]);
-      safe_pick = dir.toLowerCase() === "over" ? `Over ${val - 1}.5 goles` : `Under ${val + 1}.5 goles`;
+      // Shift only 0.5 — keeps odds reasonable (1.5 shift destroys value on tight lines)
+      safe_pick = dir === "over" ? `Over ${val - 0.5} goles` : `Under ${val + 0.5} goles`;
     }
     return {
       mercado, pick, confianza: best.d?.conf || 50, riesgo: "MEDIO",
@@ -896,14 +901,15 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
     "=== REGLAS DE VERSION SEGURA (CRITICAS) ===",
     "REGLA ABSOLUTA 1: El safe_pick NUNCA puede ser identico al pick normal (mismo mercado + mismo pick). Siempre debe ser un mercado o linea DIFERENTE.",
     "REGLA ABSOLUTA 2: safe_confianza SIEMPRE debe ser MAYOR que confianza del pick normal. El pick seguro es mas facil de acertar — si no puedes asignarle mayor confianza, elige otro safe.",
+    "REGLA ABSOLUTA 3: El safe_pick debe tener momios con valor real (cuota estimada >= 1.35). NO muevas lineas de totals tan lejos que los momios sean -300 o peores. Si el safe conservador de ese mercado tiene cuota < 1.35, cambia a un mercado diferente con mejores momios. Ejemplos de safe con buenos momios: spread/handicap (~1.87), primera mitad ML, Over 1.5 goles (~1.55). Ejemplos de safe con MALOS momios (prohibidos): Under 224 pts en basketball (cuota ~1.15), DC de equipo dominante (cuota ~1.08).",
     noDrawSport
       ? [
           "Reglas safe por deporte (sin empate):",
           "- Normal=ML beisbol: safe = el pick 'goles' de GPT (Over/Under carreras) si la nota menciona ERA de cualquier pitcher. Si ERA no se menciona: safe = ML mismo equipo, subir conf 5pp.",
-          "- Normal=ML basketball: safe = el pick 'goles' de GPT (Over/Under puntos) si hay pace en la nota. Si no: safe = spread/handicap de GPT.",
+          "- Normal=ML basketball: safe = spread/handicap de GPT (cuota ~1.87, buen valor). Si no hay spread disponible: safe = Over/Under puntos de GPT AS-IS sin mover la linea. NUNCA mover la linea Under +2.5 pts (momios terribles).",
           "- Normal=ML hockey/NFL/tenis: safe = spread/handicap de GPT si disponible. Si no: ML mismo equipo, subir conf 5pp.",
-          "- Normal=Goles Over X.5: safe = Over (X-0.5) mismas carreras/puntos, conf +5pp.",
-          "- Normal=Goles Under X.5: safe = Under (X+0.5) mismas carreras/puntos, conf +5pp.",
+          "- Normal=Goles Over X.5: safe = Over (X-0.5) mismas unidades, conf +5pp. Verifica que cuota estimada >= 1.40.",
+          "- Normal=Goles Under X.5: safe = Under (X+0.5) mismas unidades, conf +5pp. Si Under (X+0.5) tendria cuota < 1.35 (linea muy baja), usa spread/handicap o primera mitad en su lugar.",
           "- Normal=Handicap: safe = handicap mas conservador (reducir linea 0.5), conf +5pp.",
         ].join(" ")
       : [
