@@ -59,6 +59,7 @@ const {
   listRetos,
   listAllRetos,
   updateRetoLegResult,
+  deletePickAndCandidates,
   listApiSyncLogs,
   savePickCandidates,
   getPickCandidateById,
@@ -1939,6 +1940,18 @@ app.put("/api/reto/:id/leg/:legIndex/result", requireAdmin, async (req, res) => 
     res.json({ ok: true, reto: updated });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || "leg_result_failed") });
+  }
+});
+
+app.delete("/admin/picks/:id", requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ ok: false, error: "pick id required" });
+    const result = await deletePickAndCandidates(id);
+    if (!result.deleted) return res.status(404).json({ ok: false, error: result.reason });
+    res.json({ ok: true, eventId: result.eventId });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "delete_failed") });
   }
 });
 

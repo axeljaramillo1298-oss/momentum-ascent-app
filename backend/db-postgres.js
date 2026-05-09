@@ -1999,6 +1999,16 @@ async function updateRetoLegResult({ retoId, legIndex, result: legResult }) {
   return getRetoById(retoId);
 }
 
+async function deletePickAndCandidates(pickId) {
+  // Get the event_id first so we can also clear its candidates
+  const pickRes = await pool.query(`SELECT event_id FROM ai_picks WHERE id=$1`, [Number(pickId)]);
+  if (!pickRes.rows.length) return { deleted: false, reason: "not_found" };
+  const eventId = pickRes.rows[0].event_id;
+  await pool.query(`DELETE FROM ai_pick_candidates WHERE event_id=$1`, [eventId]);
+  await pool.query(`DELETE FROM ai_picks WHERE id=$1`, [Number(pickId)]);
+  return { deleted: true, eventId };
+}
+
 module.exports = {
   DB_META,
   initDb,
@@ -2056,4 +2066,5 @@ module.exports = {
   listRetos,
   listAllRetos,
   updateRetoLegResult,
+  deletePickAndCandidates,
 };

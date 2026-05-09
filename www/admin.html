@@ -1423,10 +1423,30 @@ main{position:relative;z-index:2}
               <button class="btn-result won ${pick.result === 'won' ? 'active' : ''}" onclick="markResult(${Number(pick.id || 0)}, 'won', this)">✓ Ganó</button>
               <button class="btn-result lost ${pick.result === 'lost' ? 'active' : ''}" onclick="markResult(${Number(pick.id || 0)}, 'lost', this)">✕ Perdió</button>
               <button class="btn-result void ${pick.result === 'void' ? 'active' : ''}" onclick="markResult(${Number(pick.id || 0)}, 'void', this)">— Void</button>
+              <button class="btn-result void" style="margin-left:auto;color:#f87171;border-color:rgba(248,113,113,.35)" onclick="deletePick(${Number(pick.id || 0)}, this)">🗑 Eliminar</button>
             </div>
           </div>`;
         container.appendChild(item);
       });
+  }
+
+  // ── DELETE PICK ───────────────────────────────────────────
+  async function deletePick(pickId, btn) {
+    if (!confirm(`¿Eliminar pick #${pickId}? El evento volverá a estar disponible para analizar.`)) return;
+    btn.disabled = true;
+    btn.textContent = '…';
+    try {
+      await fetchJson(`/admin/picks/${pickId}`, { method: 'DELETE', headers: apiHeaders() });
+      const card = btn.closest('.event-card');
+      if (card) card.remove();
+      addLog(`Pick #${pickId} eliminado. Evento disponible para re-analizar.`, 'ok');
+      // refresh the events list so the event reappears in the workspace
+      await loadEvents();
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = '🗑 Eliminar';
+      addLog(`Error eliminando pick: ${e.message}`, 'err');
+    }
   }
 
   // ── RETO ESCALERA MODAL ───────────────────────────────────
