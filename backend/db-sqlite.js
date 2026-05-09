@@ -1950,6 +1950,21 @@ function listRetos(limit = 20) {
   return listRetosStmt.all(Math.min(50, Number(limit || 20))).map(parseRetoRow);
 }
 
+const listAllRetosStmt = db.prepare(
+  `SELECT * FROM reto_parlays ORDER BY created_at DESC LIMIT ?`
+);
+function listAllRetos(limit = 50) {
+  return listAllRetosStmt.all(Math.min(100, Number(limit || 50))).map(parseRetoRow);
+}
+
+function deletePickAndCandidates(pickId) {
+  const pick = db.prepare(`SELECT event_id FROM ai_picks WHERE id=?`).get(Number(pickId));
+  if (!pick) return { deleted: false, reason: "not_found" };
+  db.prepare(`DELETE FROM ai_pick_candidates WHERE event_id=?`).run(pick.event_id);
+  db.prepare(`DELETE FROM ai_picks WHERE id=?`).run(Number(pickId));
+  return { deleted: true, eventId: pick.event_id };
+}
+
 function updateRetoLegResult({ retoId, legIndex, result }) {
   const reto = getRetoById(Number(retoId));
   if (!reto) throw new Error("reto_not_found");
@@ -2032,5 +2047,7 @@ module.exports = {
   getActiveReto: async () => getActiveReto(),
   getRetoById: async (id) => getRetoById(id),
   listRetos: async (limit) => listRetos(limit),
+  listAllRetos: async (limit) => listAllRetos(limit),
   updateRetoLegResult: async (payload) => updateRetoLegResult(payload),
+  deletePickAndCandidates: async (pickId) => deletePickAndCandidates(pickId),
 };

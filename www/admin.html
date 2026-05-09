@@ -2171,7 +2171,10 @@ main{position:relative;z-index:2}
     if (!container) return;
     try {
       const res = await fetch('/admin/retos', { headers: retoHeaders() });
-      if (!res.ok) throw new Error('retos_failed');
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`HTTP ${res.status}: ${errText.slice(0, 120)}`);
+      }
       const data = await res.json();
       const allRetos = data.retos || [];
 
@@ -2229,8 +2232,8 @@ main{position:relative;z-index:2}
           </div>`;
       }).join('');
     } catch(e) {
-      container.innerHTML = '<p style="color:#f87171;font-size:.9rem">Error al cargar retos.</p>';
-      console.error(e);
+      container.innerHTML = `<p style="color:#f87171;font-size:.9rem">Error al cargar retos: ${e.message}</p>`;
+      console.error('[loadAdminRetos]', e);
     }
   }
 
