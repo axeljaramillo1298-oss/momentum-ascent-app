@@ -825,15 +825,11 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
           safe_pick = pick;
         }
       } else if (sport.includes("basketball") || sport.includes("baloncesto")) {
-        // Basketball — safe: prefer spread (good odds) over shifting total line (bad odds)
-        const h = gptMarkets.handicap;
+        // Basketball — safe: use Over/Under total (independent of winner).
+        // NEVER use handicap/spread as safe for ML: spread requires winning by X+ which is
+        // HARDER than just winning (ML). Total is truly independent and easier to defend.
         const g = gptMarkets.goles;
-        if (h?.pick && h?.conf >= 50) {
-          // Spread gives ~1.87 odds — much better than a shifted Under
-          safe_pick = h.pick;
-          safe_mercado = "Handicap";
-        } else if (g?.pick) {
-          // Use GPT total pick AS-IS — no line shift (shifting 2.5 pts kills odds)
+        if (g?.pick) {
           safe_pick = g.pick.includes("pts") ? g.pick : g.pick + " pts";
           safe_mercado = "Goles";
         } else {
@@ -942,7 +938,7 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
       ? [
           "Reglas safe por deporte (sin empate):",
           "- Normal=ML beisbol: safe = el pick 'goles' de GPT (Over/Under carreras) si la nota menciona ERA. Si no hay ERA: safe = el spread/run line de GPT si disponible, sino el pick de goles AS-IS aunque no haya ERA (es diferente al ML).",
-          "- Normal=ML basketball: safe = spread/handicap de GPT (cuota ~1.87, buen valor). Si no hay spread disponible: safe = Over/Under puntos de GPT AS-IS sin mover la linea. NUNCA mover la linea Under +2.5 pts (momios terribles).",
+          "- Normal=ML basketball: safe = Over/Under puntos de GPT AS-IS (mercado independiente del ganador, cuota ~1.87). NUNCA uses Handicap/spread como safe de ML — el spread exige ganar por X+ puntos que es MAS dificil que solo ganar (ML). El Over/Under total es verdaderamente independiente y mas facil de defender.",
           "- Normal=ML hockey/NFL/tenis: safe = spread/handicap de GPT si disponible. Si no: ML mismo equipo, subir conf 5pp.",
           "- Normal=Goles Over X.5: safe = Over (X-0.5) mismas unidades, conf +5pp. Verifica que cuota estimada >= 1.40.",
           "- Normal=Goles Under X.5: safe = Under (X+0.5) mismas unidades, conf +5pp. Si Under (X+0.5) tendria cuota < 1.35 (linea muy baja), usa spread/handicap o primera mitad en su lugar.",
