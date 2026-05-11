@@ -192,6 +192,46 @@ main{position:relative;z-index:2}
 .pub-modal-cancel{width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:10px;border-radius:3px;cursor:pointer;transition:all .2s}
 .pub-modal-cancel:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
 
+/* BATCH MODAL */
+.batch-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);backdrop-filter:blur(8px);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px}
+.batch-modal-box{background:#0e0e12;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:32px;max-width:560px;width:100%;max-height:82vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.6)}
+.batch-progress-bar-wrap{background:rgba(255,255,255,.06);border-radius:4px;height:6px;margin:14px 0 18px}
+.batch-progress-bar{height:100%;border-radius:4px;background:var(--orange);transition:width .5s}
+.batch-event-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+.batch-event-icon{width:22px;text-align:center;flex-shrink:0;font-size:14px}
+.batch-event-name{flex:1;color:var(--text)}
+.batch-event-state{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;flex-shrink:0}
+
+/* REVIEW QUEUE */
+.review-queue-section{margin-bottom:48px}
+.review-card{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:12px;transition:border-color .2s,opacity .3s}
+.review-card.skipped{opacity:.35;pointer-events:none}
+.review-card.published-done{opacity:.5}
+.review-card-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.review-match{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px;letter-spacing:.04em;text-transform:uppercase}
+.review-league{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+.review-picks-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.review-pick-opt{border:1.5px solid var(--border);border-radius:6px;padding:12px;cursor:pointer;transition:all .2s;background:transparent}
+.review-pick-opt:hover{border-color:rgba(255,255,255,.2)}
+.review-pick-opt.sel-normal{border-color:var(--orange);background:rgba(255,69,0,.07)}
+.review-pick-opt.sel-safe{border-color:var(--green);background:rgba(74,222,128,.07)}
+.review-pick-opt.no-safe{opacity:.3;cursor:default;pointer-events:none}
+.rpo-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.rpo-val{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.rpo-meta{font-size:10px;color:var(--muted);line-height:1.5}
+.rpo-reasoning{font-size:10.5px;color:rgba(240,237,232,.4);line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.05)}
+.review-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.review-tier-toggle{display:flex;gap:3px;background:rgba(255,255,255,.04);border-radius:4px;padding:3px}
+.rtier-btn{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:5px 13px;border:none;border-radius:3px;cursor:pointer;background:transparent;color:var(--muted);transition:all .2s}
+.rtier-btn.t-free{background:rgba(255,255,255,.1);color:var(--text)}
+.rtier-btn.t-prem{background:rgba(255,69,0,.2);color:var(--orange)}
+.review-pub-btn{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:7px 20px;background:var(--orange);color:#fff;border:none;border-radius:3px;cursor:pointer;transition:background .2s}
+.review-pub-btn:hover{background:var(--orange2)}
+.review-pub-btn:disabled{opacity:.4;cursor:not-allowed}
+.review-pub-btn.r-published{background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.3);cursor:default}
+.review-skip-btn{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:7px 14px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:3px;cursor:pointer;transition:all .2s}
+.review-skip-btn:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+
 /* DAILY STATS TABLE */
 .daily-stats-wrap{margin-bottom:20px;background:rgba(255,255,255,.015);border:1px solid var(--border);border-radius:6px;overflow:hidden}
 .daily-stats-table{width:100%;border-collapse:collapse;font-size:12px}
@@ -438,6 +478,7 @@ main{position:relative;z-index:2}
       <button class="btn-ghost" id="btn-tomorrow">Mañana</button>
       <button class="btn-primary" id="btn-sync">Sincronizar eventos</button>
       <button class="btn-ghost" id="btn-scout" title="GPT analiza qué eventos son los mejores del día">🔍 Analizar jornada</button>
+      <button class="btn-ghost" id="btn-batch" title="Analiza todos los eventos sin pick con GPT + Claude secuencialmente">⚡ Lote</button>
       <button class="btn-ghost" id="btn-refresh">Actualizar panel</button>
       <div class="ops-sep"></div>
       <span class="chip muted" id="chip-provider">Proveedor: mock</span>
@@ -1596,6 +1637,14 @@ main{position:relative;z-index:2}
   window.confirmPublish = confirmPublish;
   window.markResult = markResult;
   window.deletePick = deletePick;
+  window.closeBatchModal = closeBatchModal;
+  window.batchAnalyzeAll = batchAnalyzeAll;
+  window.showReviewQueue = showReviewQueue;
+  window.selectReviewPick = selectReviewPick;
+  window.selectReviewTier = selectReviewTier;
+  window.publishReviewItem = publishReviewItem;
+  window.skipReviewItem = skipReviewItem;
+  window.publishAllReview = publishAllReview;
 
   // ── RENDER EVENTS ─────────────────────────────────────────
   function renderEvents(list){
@@ -1877,7 +1926,273 @@ main{position:relative;z-index:2}
     })();
   })();
 
+  // ── BATCH ANALYSIS ────────────────────────────────────────
+  let batchCancelled = false;
+
+  function closeBatchModal() {
+    batchCancelled = true;
+    document.getElementById('batch-modal').style.display = 'none';
+  }
+
+  async function batchAnalyzeAll() {
+    const pending = (events || []).filter(e => !e.hasPick);
+    if (!pending.length) { alert('No hay eventos sin pick para analizar.'); return; }
+
+    batchCancelled = false;
+    const modal       = document.getElementById('batch-modal');
+    const progressBar = document.getElementById('batch-progress-bar');
+    const statusText  = document.getElementById('batch-status-text');
+    const eventsList  = document.getElementById('batch-events-list');
+    const cancelBtn   = document.getElementById('batch-cancel-btn');
+
+    eventsList.innerHTML = pending.map(ev => {
+      const name = `${ev.home_team || ev.homeTeam || '?'} vs ${ev.away_team || ev.awayTeam || '?'}`;
+      return `<div class="batch-event-row" id="batch-row-${ev.id}">
+        <div class="batch-event-icon" id="batch-icon-${ev.id}">⬜</div>
+        <div class="batch-event-name">${name}</div>
+        <div class="batch-event-state" id="batch-state-${ev.id}">pendiente</div>
+      </div>`;
+    }).join('');
+
+    progressBar.style.width = '0%';
+    cancelBtn.disabled = false;
+    cancelBtn.textContent = 'Cancelar';
+    modal.style.display = 'flex';
+
+    const results = [];
+
+    for (let i = 0; i < pending.length; i++) {
+      if (batchCancelled) break;
+      const ev    = pending[i];
+      const evId  = ev.id;
+      const name  = `${ev.home_team || ev.homeTeam || '?'} vs ${ev.away_team || ev.awayTeam || '?'}`;
+      const icon  = document.getElementById(`batch-icon-${evId}`);
+      const state = document.getElementById(`batch-state-${evId}`);
+
+      statusText.textContent = `Analizando ${i + 1}/${pending.length} — ${name}`;
+      icon.textContent  = '⚙️';
+      state.textContent = 'GPT…';
+      progressBar.style.width = `${Math.round((i / pending.length) * 100)}%`;
+
+      try {
+        // Paso 1: GPT
+        const gptData = await fetchJson(`/api/picks/gpt-markets/${evId}`, { method: 'POST', headers: apiHeaders() });
+        if (!gptData?.ok) throw new Error(gptData?.error || 'gpt_failed');
+        const gptMarkets = gptData.markets;
+        const evSport    = gptData.event?.sport || ev.sport || '';
+
+        if (batchCancelled) break;
+        state.textContent = 'Claude…';
+
+        // Pequeña pausa antes de Claude para no saturar APIs
+        await new Promise(r => setTimeout(r, 900));
+
+        // Paso 2: Claude
+        const claudeData = await fetchJson('/api/picks/claude-decide', {
+          method: 'POST', headers: apiHeaders(),
+          body: JSON.stringify({ eventId: evId, gptMarkets })
+        });
+        if (!claudeData?.ok) throw new Error(claudeData?.error || 'claude_failed');
+
+        const d = claudeData.decision;
+
+        // Guardar en analysisStateByEvent para que publishDirect encuentre fullData
+        setEventState(evId, {
+          gptMarkets,
+          decision: {
+            gptMarkets,
+            claudeNormal: { pick: d.pick, mercado: d.mercado, confianza: d.confianza, riesgo: d.riesgo, tipo: d.tipo, razonamiento: d.razonamiento },
+            claudeSafe: d.safe_pick ? { pick: d.safe_pick, mercado: d.safe_mercado || d.mercado, confianza: d.safe_confianza || 75, riesgo: d.safe_riesgo || 'BAJO', razonamiento: d.safe_razonamiento || '' } : null,
+          }
+        });
+
+        results.push({ ev, evSport, decision: d, status: 'ok' });
+        icon.textContent  = '✅';
+        state.textContent = 'listo';
+        addLog(`Batch OK: ${name} → ${d.pick} (${d.mercado})`, 'ok');
+
+      } catch (err) {
+        results.push({ ev, evSport: ev.sport || '', decision: null, status: 'error', error: err.message });
+        icon.textContent  = '❌';
+        state.textContent = `error`;
+        addLog(`Batch error ${name}: ${err.message}`, 'err');
+      }
+
+      // Pausa entre eventos para respetar rate limits
+      if (i < pending.length - 1 && !batchCancelled) {
+        await new Promise(r => setTimeout(r, 1200));
+      }
+    }
+
+    progressBar.style.width = '100%';
+    const ok = results.filter(r => r.status === 'ok').length;
+    statusText.textContent = batchCancelled
+      ? 'Cancelado.'
+      : `Completado — ${ok} de ${pending.length} exitosos`;
+    cancelBtn.textContent = 'Cerrar';
+
+    if (!batchCancelled) {
+      setTimeout(() => {
+        modal.style.display = 'none';
+        showReviewQueue(results.filter(r => r.status === 'ok'));
+      }, 1000);
+    }
+  }
+
+  function showReviewQueue(results) {
+    if (!results.length) return;
+    document.getElementById('batch-review-section')?.remove();
+
+    const riskCls = r => r === 'BAJO' ? 'green' : r === 'ALTO' ? 'red' : 'yellow';
+
+    const section = document.createElement('div');
+    section.id = 'batch-review-section';
+    section.className = 'review-queue-section';
+    section.style.cssText = 'padding:0 52px;margin-bottom:48px;position:relative;z-index:2';
+
+    section.innerHTML = `
+      <div class="section-hdr" style="margin-bottom:16px">
+        <div>
+          <div class="section-title">Cola de revisión</div>
+          <div class="section-sub">${results.length} eventos listos — elige pick y tier para cada uno</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button onclick="publishAllReview()" class="btn-primary" id="batch-pub-all-btn">Publicar seleccionados</button>
+          <button onclick="document.getElementById('batch-review-section').remove()" class="btn-ghost">Cerrar cola</button>
+        </div>
+      </div>
+      ${results.map(r => {
+        const d       = r.decision;
+        const hasSafe = !!d.safe_pick;
+        const name    = `${r.ev.home_team || r.ev.homeTeam || '?'} vs ${r.ev.away_team || r.ev.awayTeam || '?'}`;
+        return `
+        <div class="review-card" id="review-card-${r.ev.id}" data-eid="${r.ev.id}" data-selected-type="normal" data-selected-tier="free">
+          <div class="review-card-head">
+            <div class="event-sport-icon" style="flex-shrink:0">${sportIcon(r.evSport)}</div>
+            <div>
+              <div class="review-match">${name}</div>
+              <div class="review-league">${r.ev.league || r.ev.competition || '—'}</div>
+            </div>
+          </div>
+          <div class="review-picks-row">
+            <div class="review-pick-opt sel-normal" data-type="normal" onclick="selectReviewPick(${r.ev.id},'normal',this)">
+              <div class="rpo-label">Pick normal</div>
+              <div class="rpo-val">${d.pick || '—'}</div>
+              <div class="rpo-meta">${d.mercado || '—'} · ${d.confianza || '—'}% · <span class="chip ${riskCls(d.riesgo)}" style="font-size:8px;padding:2px 7px">${d.riesgo || 'MEDIO'}</span></div>
+              ${d.razonamiento ? `<div class="rpo-reasoning">${d.razonamiento.slice(0, 130)}…</div>` : ''}
+            </div>
+            ${hasSafe ? `
+            <div class="review-pick-opt" data-type="safe" onclick="selectReviewPick(${r.ev.id},'safe',this)">
+              <div class="rpo-label">Versión segura</div>
+              <div class="rpo-val">${d.safe_pick}</div>
+              <div class="rpo-meta">${d.safe_mercado || d.mercado || '—'} · ${d.safe_confianza || '—'}% · <span class="chip green" style="font-size:8px;padding:2px 7px">BAJO</span></div>
+              ${d.safe_razonamiento ? `<div class="rpo-reasoning">${d.safe_razonamiento.slice(0, 130)}…</div>` : ''}
+            </div>` : `<div class="review-pick-opt no-safe"><div class="rpo-label">Sin versión segura</div><div class="rpo-val" style="color:var(--muted)">—</div></div>`}
+          </div>
+          <div class="review-actions">
+            <div class="review-tier-toggle">
+              <button class="rtier-btn t-free" data-tier="free" onclick="selectReviewTier(${r.ev.id},'free',this)">🌍 Free</button>
+              <button class="rtier-btn" data-tier="premium" onclick="selectReviewTier(${r.ev.id},'premium',this)">⭐ Premium</button>
+            </div>
+            <button class="review-pub-btn" id="review-pub-btn-${r.ev.id}" onclick="publishReviewItem(${r.ev.id})">Publicar</button>
+            <button class="review-skip-btn" onclick="skipReviewItem(${r.ev.id})">Saltar</button>
+          </div>
+        </div>`;
+      }).join('')}`;
+
+    const pageContent = document.querySelector('.page-content');
+    pageContent.insertBefore(section, pageContent.firstChild);
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function selectReviewPick(eid, type, el) {
+    const card = document.getElementById(`review-card-${eid}`);
+    card.querySelectorAll('.review-pick-opt').forEach(o => o.classList.remove('sel-normal', 'sel-safe'));
+    el.classList.add(type === 'safe' ? 'sel-safe' : 'sel-normal');
+    card.dataset.selectedType = type;
+  }
+
+  function selectReviewTier(eid, tier, el) {
+    const card = document.getElementById(`review-card-${eid}`);
+    card.querySelectorAll('.rtier-btn').forEach(b => b.classList.remove('t-free', 't-prem'));
+    el.classList.add(tier === 'premium' ? 't-prem' : 't-free');
+    card.dataset.selectedTier = tier;
+  }
+
+  async function publishReviewItem(eid) {
+    const card = document.getElementById(`review-card-${eid}`);
+    if (!card || card.classList.contains('skipped')) return;
+    const type   = card.dataset.selectedType || 'normal';
+    const tier   = card.dataset.selectedTier || 'free';
+    const pubBtn = document.getElementById(`review-pub-btn-${eid}`);
+    if (pubBtn?.classList.contains('r-published')) return;
+
+    const eventState = getEventState(eid);
+    if (!eventState?.decision) { addLog(`Sin datos para evento #${eid}`, 'err'); return; }
+
+    const norm   = eventState.decision.claudeNormal;
+    const safe   = eventState.decision.claudeSafe;
+    const chosen = (type === 'safe' && safe) ? safe : norm;
+
+    pubBtn.disabled   = true;
+    pubBtn.textContent = 'Publicando…';
+
+    try {
+      const fullData = JSON.stringify(eventState.decision);
+      const data = await fetchJson('/api/picks/publish-direct', {
+        method: 'POST', headers: apiHeaders(),
+        body: JSON.stringify({
+          eventId:    Number(eid),
+          pick:       chosen.pick,
+          market:     chosen.mercado,
+          confidence: Number(chosen.confianza || 60),
+          analysis:   chosen.razonamiento,
+          riskLevel:  chosen.riesgo || 'MEDIO',
+          modelUsed:  'claude-decide',
+          planTier:   tier,
+          fullData,
+        })
+      });
+      if (!data?.ok) throw new Error(data?.error || 'publish_failed');
+
+      pubBtn.textContent = `✓ Publicado (${tier === 'premium' ? '⭐' : '🌍'})`;
+      pubBtn.className   = 'review-pub-btn r-published';
+      card.classList.add('published-done');
+      addLog(`Batch pub: ${chosen.pick} (${chosen.mercado}) [${tier}] — evento #${eid}`, 'ok');
+
+      const ev = events.find(e => String(e.id) === String(eid));
+      if (ev) { ev.hasPick = true; ev.latestPick = data?.pick || {}; }
+      renderEvents(events);
+      renderPublishedPicks(events);
+      updateStats();
+    } catch (err) {
+      pubBtn.disabled    = false;
+      pubBtn.textContent = 'Reintentar';
+      addLog(`Error pub batch #${eid}: ${err.message}`, 'err');
+    }
+  }
+
+  function skipReviewItem(eid) {
+    const card = document.getElementById(`review-card-${eid}`);
+    if (card) card.classList.add('skipped');
+  }
+
+  async function publishAllReview() {
+    const section = document.getElementById('batch-review-section');
+    if (!section) return;
+    const allBtn = document.getElementById('batch-pub-all-btn');
+    allBtn.disabled    = true;
+    allBtn.textContent = 'Publicando…';
+    const cards = section.querySelectorAll('.review-card:not(.skipped):not(.published-done)');
+    for (const card of cards) {
+      await publishReviewItem(card.dataset.eid);
+      await new Promise(r => setTimeout(r, 700));
+    }
+    allBtn.textContent = 'Todos publicados ✓';
+  }
+
   // ── INIT ──────────────────────────────────────────────────
+  document.getElementById('btn-batch').addEventListener('click', batchAnalyzeAll);
   loadEvents();
 })();
 </script>
@@ -2291,6 +2606,23 @@ main{position:relative;z-index:2}
   loadAdminRetos();
 })();
 </script>
+
+<!-- BATCH ANALYSIS MODAL -->
+<div id="batch-modal" class="batch-modal-overlay" style="display:none">
+  <div class="batch-modal-box">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:4px">
+      <div>
+        <div class="pub-modal-title">Analizando en lote</div>
+        <div class="pub-modal-desc" id="batch-status-text" style="margin-bottom:0">Preparando eventos…</div>
+      </div>
+      <button id="batch-cancel-btn" onclick="closeBatchModal()" class="pub-modal-cancel" style="width:auto;padding:6px 16px;margin-top:4px;flex-shrink:0">Cancelar</button>
+    </div>
+    <div class="batch-progress-bar-wrap">
+      <div class="batch-progress-bar" id="batch-progress-bar" style="width:0%"></div>
+    </div>
+    <div id="batch-events-list"></div>
+  </div>
+</div>
 
 <!-- PUBLISH TIER MODAL -->
 <div id="pub-modal" class="pub-modal-overlay" style="display:none" onclick="if(event.target===this)closePubModal()">

@@ -807,11 +807,20 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
     const cornersMatch = mercado === "Corners" && pick.match(/^Over\s+([\d.]+)/i);
     if (mercado === "1X2" || mercado === "ML") {
       if (!noDrawSport) {
-        // Soccer/futbol — draw is possible, use Double Chance
-        safe_pick = pick.toLowerCase().includes("local") || pick.toLowerCase().includes(home.toLowerCase())
-          ? `${home} o Empate`
-          : `${away} o Empate`;
-        safe_mercado = "Doble Oportunidad";
+        // Soccer: DC 1X (local+empate) only. If pick is the away team, use goles or keep ML — X2 DC has 25% WR.
+        const pickIsHome = pick.toLowerCase().includes("local") || pick.toLowerCase().includes(home.toLowerCase());
+        if (pickIsHome) {
+          safe_pick = `${home} o Empate`;
+          safe_mercado = "Doble Oportunidad";
+        } else {
+          // Away team picked — use goles Over if available, else keep ML
+          const g = gptMarkets.goles;
+          if (g?.pick?.match(/^Over/i) && (g.conf || 0) >= 62) {
+            safe_pick = g.pick; safe_mercado = "Goles";
+          } else {
+            safe_pick = pick; // same ML, no X2 DC
+          }
+        }
       } else if (sport.includes("baseball") || sport.includes("beisbol")) {
         // Baseball — no draw. Use conservative run total if available, else keep ML
         const g = gptMarkets.goles;
@@ -946,7 +955,7 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
         ].join(" ")
       : [
           "Reglas safe por mercado (futbol/soccer):",
-          "- Normal=ML (1X2 ganador): safe = Doble Oportunidad del mismo equipo ('Local o Empate' / 'Visitante o Empate'), conf +8pp.",
+          "- Normal=ML (1X2 ganador) LOCAL: safe = 'Local o Empate' (DC 1X), conf +8pp. Normal=ML (1X2 ganador) VISITANTE: safe = Over/Under goles de GPT si conf >= 62%, sino mismo ML visitante con conf +5pp — NUNCA X2 DC (visitante+empate) como safe: win rate historico 25%.",
           "- Normal=DC (Doble Oportunidad): safe DEBE SER DIFERENTE y MAS FACIL. DC ya cubre win+draw, algo mas facil seria Over 1.5 goles (~1.50 odds) o el Over de GPT si hay confianza. NUNCA uses ML como safe de DC (ML es mas dificil que DC).",
           "- Normal=Goles Over X.5: safe = Over (X-1).5, conf +8pp.",
           "- Normal=Goles Under X.5: safe = Under (X+1).5, conf +8pp.",
@@ -958,20 +967,21 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
     noDrawSport
       ? "1. ML cuando la ventaja es moderada y los momios dan valor (cuota estimada >= 1.45). Si el favorito es tan claro que su ML tiene cuota < 1.40, prefiere Over/Under o Spread — mejor valor."
       : "1. ML o DC solo si la ventaja es MODERADA y los momios son razonables (cuota ML >= 1.40, DC >= 1.20). Si el favorito es tan aplastante que ML o DC tendrian cuotas castigadas, prefiere Goles Over/Under o Handicap asiatico.",
-    "2. BTTS: solo si GPT menciona que ambos equipos anotaron en 6+ de sus ultimos 8 partidos. Sin ese dato, descarta BTTS.",
-    "3. Handicap: valido si (a) forma 4-1 en ultimos 5, o (b) favorito claro con ML castigado — handicap da mejor valor.",
-    "4. Totales beisbol: elige Over/Under si la nota de GPT menciona ERA o pitch de cualquier lanzador (no necesita ser datos completos). Sin ninguna mencion de ERA, elige ML.",
-    "5. Totales basketball: elige Over/Under si la nota menciona pace o ritmo. Sin pace, prefiere ML o Spread.",
+    "2. BTTS: PROHIBIDO salvo que GPT mencione EXPLICITAMENTE que ambos equipos anotaron en 7+ de sus ultimos 8 partidos. Sin ese dato exacto, descarta BTTS — win rate historico 0% cuando se publica sin datos solidos.",
+    "3. Handicap/Spread: solo si se cumplen TODOS estos criterios: H2H >= 8/10 a favor del equipo, forma actual 4-1 o mejor en ultimos 5, y confianza del mercado >= 70%. Sin todos estos datos verificados, descarta Handicap — win rate historico 33% en este sistema.",
+    "4. Totales beisbol: elige Over/Under si la nota de GPT menciona ERA o pitch de cualquier lanzador. Sin ninguna mencion de ERA, elige ML.",
+    "5. Totales basketball: elige Over/Under si la nota menciona pace o ritmo. Sin pace, prefiere ML.",
     noDrawSport
-      ? "6. Si el favorito tiene momios muy bajos, Over/Under es el mercado con mejor valor — considera elegirlo como normal aunque ML tenga conf ligeramente mayor."
-      : "6. DC: usa solo con genuina incertidumbre sobre el ganador. Si el equipo es tan dominante que su ML ya es de baja cuota, DC es aun peor valor — prefiere Over/Under.",
-    "7. Si ML/DC y Goles tienen confianza similar (diferencia <= 5pp) Y hay un favorito claro, elige Goles por mejor valor de momios.",
+      ? "6. MMA CRITICO: en peleas de MMA el mercado Corners = metodo de victoria (KO/TKO/SUB) — win rate historico 0%. PROHIBIDO elegir Corners en MMA. Usa SOLO ML (ganador de la pelea) o Goles (Over/Under de rondas). Si GPT da alta conf a Corners en MMA, elige ML del mismo peleador. Para Over/Under beisbol o totales con favorito muy claro: Over/Under es el mercado con mejor valor."
+      : "6. DC REGLA CRITICA: DC solo cuando el equipo favorecido es LOCAL (resultado = '1X', local+empate). Si el equipo favorecido es VISITANTE, usa ML directo — NUNCA X2 DC (visitante+empate): win rate historico X2 DC = 25% vs 100% de DC 1X. DC tampoco aplica si el favorito es tan dominante que ML < 1.40 — prefiere Over/Under.",
+    "7. Si ML y Goles tienen confianza similar (diferencia <= 5pp) Y hay un favorito claro, elige Goles por mejor valor de momios.",
+    "7b. En futbol europeo (soccer), Over/Under Goles solo si conf GPT en ese mercado especifico >= 65%. Con conf < 65% en goles, prefiere ML o DC 1X.",
     `8. DIVERSIDAD: Picks ya publicados hoy: [${publishedText}]. Si ya hay 2+ picks de ML o DC hoy, prefiere Goles u otro mercado si confianza es similar (diferencia <= 6pp).`,
     "9. VALOR: No publiques si tu conf (ej 65%) esta por debajo de la probabilidad implicita en los momios (ej 75% = cuota 1.33) — pick sin valor. Busca mercados donde tu conf supere los momios.",
     "Responde SOLO JSON valido:",
     '{"mercado":"1X2|Goles|BTTS|Handicap|Corners","pick":"pick normal exacto","confianza":65,"riesgo":"BAJO|MEDIO|ALTO","razonamiento":"2-3 oraciones","tipo":"segura|moderada|arriesgada","safe_pick":"pick DIFERENTE al normal","safe_mercado":"mercado del safe","safe_confianza":73,"safe_riesgo":"BAJO","safe_razonamiento":"por que es mas facil de acertar"}',
-    "VALIDACION FINAL antes de responder: (1) safe_pick != pick? (2) safe_confianza > confianza? (3) safe no es BTTS ni Handicap exotico? Si alguna falla, corrige antes de responder.",
-    "Si GPT puso conf >= 70 en BTTS o Handicap sin datos estadisticos, baja esa confianza 10pp.",
+    "VALIDACION FINAL antes de responder: (1) safe_pick != pick? (2) safe_confianza > confianza? (3) safe no es BTTS ni Handicap exotico? (4) Si deporte=MMA y mercado=Corners → cambia a ML. (5) Si futbol y safe es X2 DC (visitante+empate) → cambia a ML directo del visitante o goles. Si alguna falla, corrige antes de responder.",
+    "Si GPT puso conf >= 70 en BTTS o Handicap sin datos estadisticos, baja esa confianza 15pp.",
     "tipo refleja el equilibrio del portafolio. NO prometas ganancias.",
   ].join(" ");
 
