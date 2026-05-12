@@ -101,8 +101,20 @@ textarea.field-input{min-height:80px;resize:vertical}
 .pbk-reco-box{background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.05);border-radius:4px;padding:10px 12px}
 .pbk-reco-box span{display:block;font-size:8.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
 .pbk-reco-box strong{display:block;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;line-height:1.1}
-.pbk-track{display:grid;grid-template-columns:1.2fr .8fr .8fr auto;gap:8px;align-items:end}
-.pbk-track-note{font-size:11px;color:var(--muted);margin-top:8px}
+.pbk-track{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}
+.pbk-status-group{grid-column:1/-1}
+.pbk-status-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.pbk-status-btn{padding:7px 16px;border-radius:20px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.06em;cursor:pointer;transition:all .18s}
+.pbk-status-btn:hover{border-color:rgba(255,255,255,.25);color:var(--text)}
+.pbk-status-btn.active{border-color:rgba(255,255,255,.3);color:var(--text);background:rgba(255,255,255,.08)}
+.pbk-status-btn.won.active{border-color:rgba(34,197,94,.45);color:#4ade80;background:rgba(34,197,94,.1)}
+.pbk-status-btn.lost.active{border-color:rgba(239,68,68,.45);color:#f87171;background:rgba(239,68,68,.1)}
+.pbk-save-btn{align-self:end;transition:background .2s,opacity .2s}
+.pbk-save-btn:disabled{opacity:.55;cursor:not-allowed}
+.pbk-admin-banner{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:6px 12px;border-radius:4px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.pbk-admin-banner.won{color:#4ade80;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2)}
+.pbk-admin-banner.lost{color:#f87171;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2)}
+.pbk-track-note{font-size:11px;color:var(--muted);margin-top:8px;transition:color .3s}
 
 /* ── UPSELL (non-Apex) ── */
 .upsell-section{opacity:0;animation:fadeUp .5s .4s forwards}
@@ -386,10 +398,11 @@ textarea.field-input{min-height:80px;resize:vertical}
     if(r==='ALTO') m*=.6; if(r==='MEDIO') m*=.9; if(r==='BAJO') m*=1.1;
     return Number(Math.min(Math.max(base*m,.5),Math.max(base*2,4.5)).toFixed(2));
   };
+  const isResolved = s => { const v=String(s||'').toLowerCase(); return v==='won'||v==='lost'||v==='closed'; };
   const computeMetrics = picks => {
     const rows=Object.values(tracking||{});
     const pnl=rows.reduce((s,r)=>s+Number(r?.net||0),0);
-    const exp=(picks||[]).reduce((s,p)=>{const r=tracking[String(p.id)]||{}; return String(r?.status||'open')==='closed'?s:s+Number(r?.stake||0);},0);
+    const exp=(picks||[]).reduce((s,p)=>{const r=tracking[String(p.id)]||{}; return isResolved(r?.status)?s:s+Number(r?.stake||0);},0);
     return { pnl, exp, currentBank:Number(bankState.totalBank||0)+pnl, stopLoss:Number(bankState.totalBank||0)*(Number(bankState.stopLossPercent||0)/100), target:Number(bankState.totalBank||0)*(Number(bankState.targetPercent||0)/100) };
   };
   const paintMetrics = picks => {
@@ -440,21 +453,58 @@ textarea.field-input{min-height:80px;resize:vertical}
     try {
       const remote = typeof apiGet==='function' ? await apiGet('/api/picks/today') : {picks:[]};
       const picks = Array.isArray(remote?.picks) ? remote.picks : [];
-      // Limpiar tracking de picks que no son del día actual
-      const todayPickIds = new Set(picks.map(p => String(p.id)));
-      Object.keys(tracking).forEach(k => {
-        if (!todayPickIds.has(k)) delete tracking[k];
-      });
-      paintMetrics(picks);
-      if(!picks.length){ listEl.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted)">No hay picks cargados para hoy.</div>'; return; }
-      listEl.innerHTML='';
+
+      // Sync admin-marked results into local tracking
+      let adminSyncDirty = false;
       picks.forEach(pick => {
-        const stakePct=recommendedPct(pick);
-        const suggested=Number(bankState.totalBank||0)*(stakePct/100);
-        const row=tracking[String(pick.id)]||{stake:suggested.toFixed(2),net:'',status:'open'};
-        const card=document.createElement('article');
-        card.className='pick-bank-card';
-        card.innerHTML=`
+        const pid = String(pick.id);
+        const adminRes = String(pick.result || '').toLowerCase();
+        if (adminRes !== 'won' && adminRes !== 'lost') return;
+        const row = tracking[pid];
+        if (!row || (!isResolved(row.status) && row.status !== adminRes)) {
+          const stake = row?.stake || Number(Number(bankState.totalBank||0)*(recommendedPct(pick)/100)).toFixed(2);
+          tracking[pid] = {
+            stake,
+            net: row?.net !== undefined && row?.net !== '' ? row.net : (adminRes === 'lost' ? (-Math.abs(Number(stake))).toFixed(2) : ''),
+            status: adminRes,
+            adminSynced: true,
+          };
+          adminSyncDirty = true;
+        }
+      });
+      if (adminSyncDirty) saveRemote();
+
+      // Drop tracking for picks no longer in today's list
+      const todayPickIds = new Set(picks.map(p => String(p.id)));
+      Object.keys(tracking).forEach(k => { if (!todayPickIds.has(k)) delete tracking[k]; });
+
+      paintMetrics(picks);
+      if (!picks.length) { listEl.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted)">No hay picks cargados para hoy.</div>'; return; }
+      listEl.innerHTML='';
+
+      picks.forEach(pick => {
+        const stakePct = recommendedPct(pick);
+        const suggested = Number(bankState.totalBank||0) * (stakePct/100);
+        const pid = String(pick.id);
+        const row = tracking[pid] || { stake: suggested.toFixed(2), net: '', status: 'pending' };
+        const status = String(row.status || 'pending').toLowerCase();
+        const adminRes = String(pick.result || '').toLowerCase();
+
+        const card = document.createElement('article');
+        card.className = 'pick-bank-card';
+
+        const adminBanner = (adminRes === 'won' || adminRes === 'lost') ? `
+          <div class="pbk-admin-banner ${adminRes}">
+            ${adminRes === 'won' ? '✓ Admin marcó: GANADA' : '✗ Admin marcó: PERDIDA'}
+          </div>` : '';
+
+        const stBtns = ['pending','won','lost'].map(v => {
+          const label = v==='pending' ? 'Pendiente' : v==='won' ? '✓ Ganada' : '✗ Perdida';
+          return `<button class="pbk-status-btn ${v} ${status===v?'active':''}" data-status-btn="${pid}" data-status-val="${v}" type="button">${label}</button>`;
+        }).join('');
+
+        card.innerHTML = `
+          ${adminBanner}
           <div class="pbk-top">
             <div>
               <div class="pbk-match">${pick.homeTeam||pick.home_team||'—'} vs ${pick.awayTeam||pick.away_team||'—'}</div>
@@ -473,26 +523,57 @@ textarea.field-input{min-height:80px;resize:vertical}
             <div class="pbk-reco-box"><span>Límite emocional</span><strong>${toPct(Math.min(stakePct,bankState.maxExposurePercent))}</strong></div>
           </div>
           <div class="pbk-track">
-            <div class="field-group"><label class="field-lbl">Stake real apostado</label><input class="field-input" data-bank-stake="${pick.id}" type="number" min="0" step="0.01" value="${row.stake||''}" /></div>
-            <div class="field-group"><label class="field-lbl">Resultado neto</label><input class="field-input" data-bank-net="${pick.id}" type="number" step="0.01" value="${row.net||''}" placeholder="+350 / -200" /></div>
-            <div class="field-group"><label class="field-lbl">Estado</label><input class="field-input" data-bank-status="${pick.id}" value="${row.status||'open'}" placeholder="open / closed" /></div>
-            <button class="btn-primary" type="button" data-bank-save="${pick.id}">Guardar</button>
+            <div class="field-group"><label class="field-lbl">Stake real apostado</label><input class="field-input" data-bank-stake="${pid}" type="number" min="0" step="0.01" value="${row.stake||''}" /></div>
+            <div class="field-group"><label class="field-lbl">Resultado neto ($)</label><input class="field-input" data-bank-net="${pid}" type="number" step="0.01" value="${row.net||''}" placeholder="+350 / −200" /></div>
+            <div class="field-group pbk-status-group"><label class="field-lbl">Estado</label><div class="pbk-status-btns">${stBtns}</div></div>
+            <button class="btn-primary pbk-save-btn" type="button" data-bank-save="${pid}">Guardar</button>
           </div>
-          <div class="pbk-track-note" id="pbk-note-${pick.id}">Sugerencia: no sobrepasar ${formatMoney(Number(bankState.totalBank||0)*(Number(bankState.maxExposurePercent||0)/100))} de exposición total en el día.</div>`;
+          <div class="pbk-track-note" id="pbk-note-${pid}" style="color:${status==='won'?'#4ade80':status==='lost'?'#f87171':''}">
+            ${isResolved(status) ? `Stake: ${formatMoney(Number(row.stake||0))} · neto: ${formatMoney(Number(row.net||0))} · ${status==='won'?'Ganada':'Perdida'}` : `Sugerencia: no sobrepasar ${formatMoney(Number(bankState.totalBank||0)*(Number(bankState.maxExposurePercent||0)/100))} de exposición total en el día.`}
+          </div>`;
+
         listEl.appendChild(card);
+
+        // Status button toggle
+        card.querySelectorAll(`[data-status-btn="${pid}"]`).forEach(sb => {
+          sb.addEventListener('click', () => {
+            const val = sb.getAttribute('data-status-val');
+            card.querySelectorAll(`[data-status-btn="${pid}"]`).forEach(b => b.classList.remove('active'));
+            sb.classList.add('active');
+            if (val === 'lost') {
+              const netInput = card.querySelector(`[data-bank-net="${pid}"]`);
+              const stakeInput = card.querySelector(`[data-bank-stake="${pid}"]`);
+              if (netInput && !netInput.value && stakeInput?.value) {
+                netInput.value = (-Math.abs(Number(stakeInput.value))).toFixed(2);
+              }
+            }
+          });
+        });
       });
-      listEl.querySelectorAll('[data-bank-save]').forEach(btn=>{
-        btn.addEventListener('click',()=>{
-          const id=String(btn.getAttribute('data-bank-save'));
-          tracking[id]={
-            stake:Number(listEl.querySelector(`[data-bank-stake="${id}"]`)?.value||0),
-            net:Number(listEl.querySelector(`[data-bank-net="${id}"]`)?.value||0),
-            status:String(listEl.querySelector(`[data-bank-status="${id}"]`)?.value||'open').trim().toLowerCase()||'open',
+
+      // Save buttons
+      listEl.querySelectorAll('[data-bank-save]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = String(btn.getAttribute('data-bank-save'));
+          const activeBtn = listEl.querySelector(`[data-status-btn="${id}"].active`);
+          const status = activeBtn ? activeBtn.getAttribute('data-status-val') : 'pending';
+          tracking[id] = {
+            stake: Number(listEl.querySelector(`[data-bank-stake="${id}"]`)?.value || 0),
+            net: Number(listEl.querySelector(`[data-bank-net="${id}"]`)?.value || 0),
+            status,
           };
-          saveRemote(); paintMetrics(picks);
-          const n=document.getElementById(`pbk-note-${id}`);
-          if(n) n.textContent=`Stake registrado: ${formatMoney(tracking[id].stake)} · neto: ${formatMoney(tracking[id].net)} · estado: ${tracking[id].status}.`;
-          if(typeof showToast==='function') showToast('Movimiento guardado.','success');
+          btn.textContent = '✓ Guardado';
+          btn.disabled = true;
+          await saveRemote();
+          paintMetrics(picks);
+          const n = document.getElementById(`pbk-note-${id}`);
+          if (n) {
+            const label = status==='won'?'Ganada':status==='lost'?'Perdida':'Pendiente';
+            n.textContent = `Stake: ${formatMoney(tracking[id].stake)} · neto: ${formatMoney(tracking[id].net)} · ${label}`;
+            n.style.color = status==='won'?'#4ade80':status==='lost'?'#f87171':'';
+          }
+          showToast('Movimiento guardado.', 'success');
+          setTimeout(() => { btn.textContent = 'Guardar'; btn.disabled = false; }, 2000);
         });
       });
     } catch {
@@ -516,7 +597,12 @@ textarea.field-input{min-height:80px;resize:vertical}
   bindConfig();
   await renderPicks();
 
-  document.getElementById('bank-save-btn').addEventListener('click', async()=>{ await saveConfig(); await renderPicks(); });
+  document.getElementById('bank-save-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('bank-save-btn');
+    btn.textContent = '✓ Guardado'; btn.disabled = true;
+    await saveConfig(); await renderPicks();
+    setTimeout(() => { btn.textContent = 'Guardar control'; btn.disabled = false; }, 2000);
+  });
   document.getElementById('bank-reset-btn').addEventListener('click', async()=>{ tracking={}; await saveRemote(); await renderPicks(); if(typeof showToast==='function') showToast('Sesión reiniciada.','info'); });
 })();
 </script>
