@@ -1062,37 +1062,92 @@ async function generateRetoEscalera({ events = [], inversion = 500, meta = 5000,
 
   if (!apiKey || !events.length) return mkFallback();
 
-  // Build per-event GPT context
+  // Build per-event context with real stats and odds
   const eventsContext = events.map((ev) => {
-    const sportCfg = getSportMarketConfig(safeStr(ev.sport), safeStr(ev.homeTeam || ev.home_team), safeStr(ev.awayTeam || ev.away_team));
+    const home = safeStr(ev.homeTeam || ev.home_team);
+    const away = safeStr(ev.awayTeam || ev.away_team);
+    const sportCfg = getSportMarketConfig(safeStr(ev.sport), home, away);
     const gptM = gptMarketsMap[ev.id] || null;
+
+    // ISO date passed directly — no toLocaleString to avoid ICU bugs
+    const dateStr = ev.eventDate ? ev.eventDate.slice(0, 16).replace("T", " ") + " UTC" : "—";
+
     const gptSummary = gptM
       ? [
           `ML: ${gptM.ml?.pick || "—"} (${gptM.ml?.conf || "—"}%)`,
-          `Goles/Totales: ${gptM.goles?.pick || "—"} (${gptM.goles?.conf || "—"}%)`,
+          `Totales: ${gptM.goles?.pick || "—"} (${gptM.goles?.conf || "—"}%)`,
           `BTTS/Equiv: ${gptM.btts?.pick || "—"} (${gptM.btts?.conf || "—"}%)`,
           `Handicap: ${gptM.handicap?.pick || "—"} (${gptM.handicap?.conf || "—"}%)`,
           `Corners/Equiv: ${gptM.corners?.pick || "—"} (${gptM.corners?.conf || "—"}%)`,
           `Resumen: ${gptM.resumen || "sin resumen"}`,
         ].join(" | ")
-      : "sin análisis GPT previo";
-    return `[${ev.id}] ${sportCfg.label} | ${ev.league} | ${ev.homeTeam || ev.home_team} vs ${ev.awayTeam || ev.away_team} | ${ev.eventDate ? new Date(ev.eventDate).toLocaleString("es-MX", { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Mexico_City" }) : "—"}\nMercados por deporte (${sportCfg.label}): ${sportCfg.markets}\nAnálisis GPT previo: ${gptSummary}`;
+      : "SIN análisis GPT — selecciona el mercado más seguro según deporte";
+
+    // Real stats from DB (form, H2H, injuries, etc.)
+    const stats = ev.statsJson && typeof ev.statsJson === "object" ? ev.statsJson : null;
+    const statsLines = [];
+    if (stats) {
+      if (stats.homeForm) statsLines.push(`Forma ${home}: ${Array.isArray(stats.homeForm) ? stats.homeForm.join("-") : stats.homeForm}`);
+      if (stats.awayForm) statsLines.push(`Forma ${away}: ${Array.isArray(stats.awayForm) ? stats.awayForm.join("-") : stats.awayForm}`);
+      if (stats.h2h) statsLines.push(`H2H: ${typeof stats.h2h === "object" ? JSON.stringify(stats.h2h) : stats.h2h}`);
+      if (stats.homeGoalsAvg) statsLines.push(`Goles/pts promedio ${home}: ${stats.homeGoalsAvg}`);
+      if (stats.awayGoalsAvg) statsLines.push(`Goles/pts promedio ${away}: ${stats.awayGoalsAvg}`);
+      if (stats.homePointsAvg) statsLines.push(`Puntos promedio ${home}: ${stats.homePointsAvg}`);
+      if (stats.awayPointsAvg) statsLines.push(`Puntos promedio ${away}: ${stats.awayPointsAvg}`);
+      if (stats.injuries) statsLines.push(`Bajas: ${JSON.stringify(stats.injuries)}`);
+      if (stats.seriesNote || stats.seriesRecord) statsLines.push(`Serie: ${stats.seriesNote || stats.seriesRecord}`);
+      // Include any other top-level keys
+      Object.entries(stats).forEach(([k, v]) => {
+        if (!["homeForm","awayForm","h2h","homeGoalsAvg","awayGoalsAvg","homePointsAvg","awayPointsAvg","injuries","seriesNote","seriesRecord","venue","leagueRound"].includes(k)) {
+          statsLines.push(`${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`);
+        }
+      });
+    }
+    const statsStr = statsLines.length ? statsLines.join(" | ") : "Sin estadísticas en DB — usa conocimiento de la liga";
+
+    // Real odds from bookmakers / oddsSnapshot
+    const rawJson = ev.rawJson && typeof ev.rawJson === "object" ? ev.rawJson : null;
+    const oddsLines = [];
+    if (rawJson?.bookmakers && Array.isArray(rawJson.bookmakers)) {
+      rawJson.bookmakers.slice(0, 2).forEach((bm) => {
+        const bmName = bm.title || bm.key || "Casa";
+        (bm.markets || []).slice(0, 3).forEach((mkt) => {
+          const outcomes = (mkt.outcomes || []).map((o) => `${o.name} @${o.price}`).join(", ");
+          oddsLines.push(`${bmName}/${mkt.key}: ${outcomes}`);
+        });
+      });
+    }
+    if (rawJson?.oddsSnapshot && typeof rawJson.oddsSnapshot === "object") {
+      Object.entries(rawJson.oddsSnapshot).forEach(([k, v]) => oddsLines.push(`${k}: ${JSON.stringify(v)}`));
+    }
+    const oddsStr = oddsLines.length ? oddsLines.join(" | ") : "Sin momios de casas en DB — estima basado en confianza GPT y tipo de mercado";
+
+    return [
+      `[${ev.id}] ${sportCfg.label} | ${ev.league} | ${home} vs ${away} | ${dateStr}`,
+      `Mercados disponibles (${sportCfg.label}): ${sportCfg.markets}`,
+      `Stats DB: ${statsStr}`,
+      `Momios casas: ${oddsStr}`,
+      `Análisis GPT: ${gptSummary}`,
+    ].join("\n");
   }).join("\n\n");
 
   const systemPrompt = [
     "Eres un analista senior de apuestas deportivas especializado en parlays/escaleras para una plataforma premium.",
-    "Tu objetivo es generar el RETO ESCALERA óptimo con los eventos disponibles.",
-    "Para cada leg elige el mercado MÁS PREDECIBLE y SEGURO del deporte correspondiente (no el de mayor confianza individual, sino el más resistente al parlay).",
-    "Para fútbol prefiere handicap asiático o totales sobre 1X2. Para basketball prefiere spread o totales. Para UFC prefiere método o rounds. Para baseball prefiere run line o totales.",
+    "Tu objetivo: generar el RETO ESCALERA óptimo con los eventos disponibles.",
+    "REGLAS DE SELECCIÓN:",
+    "1. Usa SIEMPRE los stats y momios reales proporcionados. Si hay momios de casas, úsalos como referencia de odds en el JSON. Si no hay, estima basado en el tipo de mercado y confianza GPT.",
+    "2. Para cada leg elige el mercado MÁS PREDECIBLE del deporte (no el de mayor confianza individual, sino el más resistente al parlay): fútbol→handicap asiático o totales; basketball→spread o totales; baseball→run line o totales; hockey→puck line o totales.",
+    "3. El campo 'analysis' de cada leg DEBE citar datos concretos: forma reciente, H2H, momios de casas, o confianza GPT. Prohibido análisis genérico.",
+    "4. El campo 'odds' debe ser el momio DECIMAL real de la casa si está disponible; si no, estimado realista para ese mercado (ej. handicap asiático ≈1.85-1.95, run line ≈1.80-1.90).",
+    "5. El campo 'eventDate' en el JSON debe ser el ISO UTC exacto del evento tal como se proporcionó en el contexto.",
     `Inversión: $${inversion} MXN · Meta: $${meta} MXN · Ratio objetivo: ${ratio.toFixed(2)}x.`,
     `Sugiere entre 3 y 4 legs. Con ${suggestedLegs} legs necesitarías odds de ~${targetOddsPerLeg.toFixed(2)} por leg.`,
-    "Si los eventos disponibles no alcanzan para la meta indicada, o no hay suficiente confianza, pon feasible:false y explica en alert.",
-    "Si feasible:false, sugiere en alert qué tipo de evento de días posteriores podría completar el reto.",
+    "Si los eventos no alcanzan para la meta, pon feasible:false y explica en alert.",
     "Responde SOLO JSON sin texto adicional:",
-    '{"legs":[{"legIndex":0,"eventId":N,"match":"X vs Y","league":"Liga","sport":"sport","eventDate":"ISO","market":"nombre del mercado","pick":"pick exacto","odds":1.85,"confidence":70,"analysis":"1 oración"}],"combinedOdds":X.XX,"projectedWin":XXXX,"analysis":"2 oraciones de razonamiento global","legsNeeded":N,"feasible":true,"alert":""}',
+    '{"legs":[{"legIndex":0,"eventId":N,"match":"X vs Y","league":"Liga","sport":"sport","eventDate":"ISO-UTC-exacto","market":"nombre mercado","pick":"pick exacto","odds":1.85,"confidence":70,"analysis":"cita datos concretos: forma/H2H/momios/GPT"}],"combinedOdds":X.XX,"projectedWin":XXXX,"analysis":"2 oraciones citando datos reales que respaldan el parlay","legsNeeded":N,"feasible":true,"alert":""}',
   ].join(" ");
 
-  const userPrompt = `Genera el Reto Escalera óptimo con estos eventos:\n\n${eventsContext}\n\nInversión: $${inversion} · Meta: $${meta} · Elige los mejores ${suggestedLegs} legs (o 3 si con 3 ya alcanza la meta con odds reales disponibles).`;
+  const userPrompt = `Genera el Reto Escalera óptimo. Usa stats y momios de casas cuando estén disponibles. Si no hay datos, indícalo en el analysis de cada leg.\n\n${eventsContext}\n\nInversión: $${inversion} · Meta: $${meta} · Elige los mejores ${suggestedLegs} legs.`;
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {

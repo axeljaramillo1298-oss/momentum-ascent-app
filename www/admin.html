@@ -1594,7 +1594,23 @@ main{position:relative;z-index:2}
         <div class="reto-sum-card"><div class="reto-sum-val">$${Number(meta).toLocaleString('es-MX')}</div><div class="reto-sum-lbl">Meta</div></div>
       </div>`;
     const legs = (data.legs || []).map((leg, i) => {
-      const dateStr = leg.eventDate ? new Date(leg.eventDate).toLocaleString('es-MX',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'America/Mexico_City'}) : '—';
+      const dateStr = (() => {
+        if (!leg.eventDate) return '—';
+        const d = new Date(leg.eventDate);
+        const days = ['dom','lun','mar','mié','jue','vie','sáb'];
+        // Compute date parts in Mexico City time reliably
+        const parts = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'America/Mexico_City',
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', hour12: false
+        }).formatToParts(d).reduce((acc, p) => { acc[p.type] = p.value; return acc; }, {});
+        const localDate = new Date(Number(parts.year), Number(parts.month) - 1, Number(parts.day));
+        const dayName = days[localDate.getDay()];
+        const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+        const monthName = months[localDate.getMonth()];
+        const hh = parts.hour === '24' ? '00' : parts.hour;
+        return `${dayName} ${parts.day} ${monthName}, ${hh}:${parts.minute}`;
+      })();
       return `<div class="reto-leg">
         <div class="reto-leg-n">${i+1}</div>
         <div class="reto-leg-body">

@@ -1868,7 +1868,16 @@ app.post("/api/reto/generate", requireAdmin, async (req, res) => {
     const tgt = Number(meta || 5000);
     if (inv <= 0 || tgt <= inv) return res.status(400).json({ ok: false, error: "meta must be greater than inversion" });
 
-    const result = await generateRetoEscalera({ events: eventList, inversion: inv, meta: tgt, gptMarketsMap: gptMarketsMap || {} });
+    // Enrich events with real stats and odds from DB
+    const enrichedEvents = await Promise.all(eventList.map(async (ev) => {
+      const [dbEvent, latestStats] = await Promise.all([
+        getSportsEventById(Number(ev.id)).catch(() => null),
+        getLatestEventStats(Number(ev.id)).catch(() => null),
+      ]);
+      return { ...ev, rawJson: dbEvent?.rawJson || null, statsJson: latestStats?.statsJson || null };
+    }));
+
+    const result = await generateRetoEscalera({ events: enrichedEvents, inversion: inv, meta: tgt, gptMarketsMap: gptMarketsMap || {} });
 
     // Save as draft
     const saved = await saveRetoDraft({
