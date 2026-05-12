@@ -231,9 +231,9 @@ const fetchJson = async (url, headers = {}) => {
   return text ? JSON.parse(text) : {};
 };
 
-const fetchApiFootballToday = async () => {
+const fetchApiFootballToday = async (date) => {
   if (!apiKey || !baseUrl) return buildMockEvents();
-  const day = todayKey();
+  const day = date || todayKey();
   const data = await fetchJson(`${baseUrl.replace(/\/+$/, "")}/fixtures?date=${day}`, {
     "x-apisports-key": apiKey,
   });
@@ -267,9 +267,9 @@ const fetchApiFootballToday = async () => {
   );
 };
 
-const fetchTheOddsToday = async () => {
+const fetchTheOddsToday = async (date) => {
   if (!apiKey || !baseUrl) return buildMockEvents();
-  const day = todayKey();
+  const day = date || todayKey();
   const data = await fetchJson(
     `${baseUrl.replace(/\/+$/, "")}/sports/upcoming/odds/?apiKey=${encodeURIComponent(apiKey)}&regions=us&markets=h2h,spreads,totals&dateFormat=iso`
   );
@@ -294,12 +294,12 @@ const fetchTheOddsToday = async () => {
     );
 };
 
-async function getTodayEvents() {
+async function getTodayEvents(date) {
   if (provider === "api-football") {
-    return fetchApiFootballToday();
+    return fetchApiFootballToday(date);
   }
   if (provider === "the-odds-api" || provider === "theoddsapi") {
-    return fetchTheOddsToday();
+    return fetchTheOddsToday(date);
   }
   return buildMockEvents();
 }

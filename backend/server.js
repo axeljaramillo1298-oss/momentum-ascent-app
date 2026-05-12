@@ -548,9 +548,9 @@ const eventMatchesTrackedLeagues = (event, trackedLeagues = []) => {
   });
 };
 
-const syncSportsEvents = async () => {
+const syncSportsEvents = async (date) => {
   const trackedLeagues = await getTrackedLeagues();
-  const events = await sportsApiService.getTodayEvents();
+  const events = await sportsApiService.getTodayEvents(date || null);
   const filteredEvents = Array.isArray(events) ? events.filter((event) => eventMatchesTrackedLeagues(event, trackedLeagues)) : [];
   const selectedEvents = filteredEvents.length ? filteredEvents : safeArray(events);
   const saved = [];
@@ -567,7 +567,7 @@ const syncSportsEvents = async () => {
   }
   await logApiSync({
     sourceApi: String(process.env.SPORTS_API_PROVIDER || "mock").trim().toLowerCase() || "mock",
-    endpoint: "/today",
+    endpoint: date ? `/fixtures?date=${date}` : "/today",
     status: "ok",
     message: `Eventos sincronizados: ${saved.length} de ${safeArray(events).length} (filtrados por ligas objetivo: ${filteredEvents.length})`,
   });
@@ -1327,7 +1327,8 @@ app.post("/api/sports/sync", requireAdmin, async (req, res) => {
     return res.status(429).json({ ok: false, error: "rate_limited", retryAfterMs: RATE_LIMIT_WINDOW_MS });
   }
   try {
-    const events = await syncSportsEvents();
+    const date = String(req.body?.date || "").trim() || null;
+    const events = await syncSportsEvents(date);
     res.json({
       ok: true,
       count: events.length,

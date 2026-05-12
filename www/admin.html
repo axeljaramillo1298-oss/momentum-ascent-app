@@ -1859,8 +1859,9 @@ main{position:relative;z-index:2}
     addLog('Iniciando sincronización de eventos…');
     setStatus('Sincronizando…');
     try {
-      const data = await fetchJson('/api/sports/sync', { method:'POST', headers: apiHeaders() });
-      addLog(`Sync completado: ${data.count || data.synced || 0} evento(s) importado(s)`, 'ok');
+      const selectedDate = getSelectedDate();
+      const data = await fetchJson('/api/sports/sync', { method:'POST', headers: apiHeaders(), body: JSON.stringify({ date: selectedDate }) });
+      addLog(`Sync completado: ${data.count || data.synced || 0} evento(s) importado(s) para ${selectedDate}`, 'ok');
       await loadEvents();
     } catch(err){
       const msg = err.status === 403
