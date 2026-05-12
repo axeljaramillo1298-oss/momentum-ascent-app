@@ -1103,7 +1103,7 @@ async function generateRetoEscalera({ events = [], inversion = 500, meta = 5000,
         }
       });
     }
-    const statsStr = statsLines.length ? statsLines.join(" | ") : "Sin estadísticas en DB — usa conocimiento de la liga";
+    const statsStr = statsLines.length ? statsLines.join(" | ") : "—";
 
     // Real odds from bookmakers / oddsSnapshot
     const rawJson = ev.rawJson && typeof ev.rawJson === "object" ? ev.rawJson : null;
@@ -1120,7 +1120,7 @@ async function generateRetoEscalera({ events = [], inversion = 500, meta = 5000,
     if (rawJson?.oddsSnapshot && typeof rawJson.oddsSnapshot === "object") {
       Object.entries(rawJson.oddsSnapshot).forEach(([k, v]) => oddsLines.push(`${k}: ${JSON.stringify(v)}`));
     }
-    const oddsStr = oddsLines.length ? oddsLines.join(" | ") : "Sin momios de casas en DB — estima basado en confianza GPT y tipo de mercado";
+    const oddsStr = oddsLines.length ? oddsLines.join(" | ") : "—";
 
     return [
       `[${ev.id}] ${sportCfg.label} | ${ev.league} | ${home} vs ${away} | ${dateStr}`,
@@ -1135,19 +1135,19 @@ async function generateRetoEscalera({ events = [], inversion = 500, meta = 5000,
     "Eres un analista senior de apuestas deportivas especializado en parlays/escaleras para una plataforma premium.",
     "Tu objetivo: generar el RETO ESCALERA óptimo con los eventos disponibles.",
     "REGLAS DE SELECCIÓN:",
-    "1. Usa SIEMPRE los stats y momios reales proporcionados. Si hay momios de casas, úsalos como referencia de odds en el JSON. Si no hay, estima basado en el tipo de mercado y confianza GPT.",
-    "2. Para cada leg elige el mercado MÁS PREDECIBLE del deporte (no el de mayor confianza individual, sino el más resistente al parlay): fútbol→handicap asiático o totales; basketball→spread o totales; baseball→run line o totales; hockey→puck line o totales.",
-    "3. El campo 'analysis' de cada leg DEBE citar datos concretos: forma reciente, H2H, momios de casas, o confianza GPT. Prohibido análisis genérico.",
-    "4. El campo 'odds' debe ser el momio DECIMAL real de la casa si está disponible; si no, estimado realista para ese mercado (ej. handicap asiático ≈1.85-1.95, run line ≈1.80-1.90).",
+    "1. Usa los stats y momios reales si están disponibles (marcados con '—' cuando no los hay). Si hay momios de casas, úsalos en 'odds'; si no, estima un valor realista para ese mercado.",
+    "2. Para cada leg elige el mercado MÁS PREDECIBLE del deporte: fútbol→handicap asiático o totales; basketball→spread o totales; baseball→run line o totales; hockey→puck line o totales.",
+    "3. El campo 'analysis' debe ser CORTO: máximo 2 oraciones directas con el argumento principal (tendencia histórica, posición en tabla, racha, contexto del juego). NO menciones qué datos faltan ni de dónde vienen las estimaciones.",
+    "4. El campo 'odds' debe ser el momio decimal real si está disponible; si no, estimado realista (handicap asiático ≈1.85-1.95, run line ≈1.80-1.90, totales ≈1.88).",
     "5. El campo 'eventDate' en el JSON debe ser el ISO UTC exacto del evento tal como se proporcionó en el contexto.",
     `Inversión: $${inversion} MXN · Meta: $${meta} MXN · Ratio objetivo: ${ratio.toFixed(2)}x.`,
     `Sugiere entre 3 y 4 legs. Con ${suggestedLegs} legs necesitarías odds de ~${targetOddsPerLeg.toFixed(2)} por leg.`,
     "Si los eventos no alcanzan para la meta, pon feasible:false y explica en alert.",
     "Responde SOLO JSON sin texto adicional:",
-    '{"legs":[{"legIndex":0,"eventId":N,"match":"X vs Y","league":"Liga","sport":"sport","eventDate":"ISO-UTC-exacto","market":"nombre mercado","pick":"pick exacto","odds":1.85,"confidence":70,"analysis":"cita datos concretos: forma/H2H/momios/GPT"}],"combinedOdds":X.XX,"projectedWin":XXXX,"analysis":"2 oraciones citando datos reales que respaldan el parlay","legsNeeded":N,"feasible":true,"alert":""}',
+    '{"legs":[{"legIndex":0,"eventId":N,"match":"X vs Y","league":"Liga","sport":"sport","eventDate":"ISO-UTC-exacto","market":"nombre mercado","pick":"pick exacto","odds":1.85,"confidence":70,"analysis":"1-2 oraciones directas: argumento principal del pick"}],"combinedOdds":X.XX,"projectedWin":XXXX,"analysis":"1 oración: por qué este parlay es sólido","legsNeeded":N,"feasible":true,"alert":""}',
   ].join(" ");
 
-  const userPrompt = `Genera el Reto Escalera óptimo. Usa stats y momios de casas cuando estén disponibles. Si no hay datos, indícalo en el analysis de cada leg.\n\n${eventsContext}\n\nInversión: $${inversion} · Meta: $${meta} · Elige los mejores ${suggestedLegs} legs.`;
+  const userPrompt = `Genera el Reto Escalera óptimo. Para cada leg: elige el mercado más predecible del deporte, da un análisis corto y directo (máximo 2 oraciones con el argumento central), y estima un momio decimal realista.\n\n${eventsContext}\n\nInversión: $${inversion} · Meta: $${meta} · Elige los mejores ${suggestedLegs} legs.`;
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
