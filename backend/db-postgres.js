@@ -1974,6 +1974,22 @@ async function listAllRetos(limit = 50) {
   return result.rows.map(parseRetoRow);
 }
 
+async function updateRetoLegFields({ retoId, legIndex, pick, market, match, odds, analysis }) {
+  const reto = await getRetoById(retoId);
+  if (!reto) throw new Error('reto_not_found');
+  const legs = reto.legs;
+  if (legIndex < 0 || legIndex >= legs.length) throw new Error('invalid_leg_index');
+  const leg = { ...legs[legIndex] };
+  if (pick !== undefined && pick !== null) leg.pick = String(pick).trim();
+  if (market !== undefined && market !== null) leg.market = String(market).trim();
+  if (match !== undefined && match !== null) leg.match = String(match).trim();
+  if (odds !== undefined && odds !== null) leg.odds = Number(odds);
+  if (analysis !== undefined && analysis !== null) leg.analysis = String(analysis).trim();
+  legs[legIndex] = leg;
+  await pool.query(`UPDATE reto_parlays SET legs_json=$1 WHERE id=$2`, [JSON.stringify(legs), Number(retoId)]);
+  return getRetoById(retoId);
+}
+
 async function updateRetoLegResult({ retoId, legIndex, result: legResult }) {
   const reto = await getRetoById(retoId);
   if (!reto) throw new Error('Reto not found');
@@ -2066,5 +2082,6 @@ module.exports = {
   listRetos,
   listAllRetos,
   updateRetoLegResult,
+  updateRetoLegFields,
   deletePickAndCandidates,
 };

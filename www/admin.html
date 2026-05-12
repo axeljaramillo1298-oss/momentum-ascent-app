@@ -2531,18 +2531,37 @@ main{position:relative;z-index:2}
 
         const legsHtml = legs.map((leg, i) => {
           const resultColor = leg.result === 'won' ? '#4ade80' : leg.result === 'lost' ? '#f87171' : '#888';
+          const editId = `leg-edit-${reto.id}-${i}`;
           return `
-            <div style="display:flex;align-items:center;gap:.75rem;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.05)">
-              <span style="min-width:1.5rem;color:var(--muted);font-size:.8rem">P${i+1}</span>
-              <span style="flex:1;font-size:.85rem">${leg.market||'—'} · ${leg.pick||'—'} <span style="color:var(--muted)">(${leg.odds||'—'})</span></span>
-              <span style="color:${resultColor};font-size:.8rem;min-width:4rem;text-align:center">${leg.result ? leg.result.toUpperCase() : 'PENDING'}</span>
-              ${reto.status === 'active' ? `
-                <div style="display:flex;gap:.25rem">
-                  <button class="leg-result-btn" data-reto-id="${reto.id}" data-leg="${i}" data-result="won" style="background:rgba(74,222,128,.15);color:#4ade80;border:1px solid rgba(74,222,128,.3);border-radius:4px;padding:.2rem .5rem;font-size:.75rem;cursor:pointer">W</button>
-                  <button class="leg-result-btn" data-reto-id="${reto.id}" data-leg="${i}" data-result="lost" style="background:rgba(248,113,113,.15);color:#f87171;border:1px solid rgba(248,113,113,.3);border-radius:4px;padding:.2rem .5rem;font-size:.75rem;cursor:pointer">L</button>
-                  <button class="leg-result-btn" data-reto-id="${reto.id}" data-leg="${i}" data-result="void" style="background:rgba(156,163,175,.15);color:#9ca3af;border:1px solid rgba(156,163,175,.3);border-radius:4px;padding:.2rem .5rem;font-size:.75rem;cursor:pointer">V</button>
+            <div style="border-bottom:1px solid rgba(255,255,255,.05)">
+              <div style="display:flex;align-items:center;gap:.75rem;padding:.5rem 0">
+                <span style="min-width:1.5rem;color:var(--muted);font-size:.8rem">P${i+1}</span>
+                <span style="flex:1;font-size:.85rem">${leg.market||'—'} · ${leg.pick||'—'} <span style="color:var(--muted)">(${leg.odds||'—'})</span></span>
+                <span style="color:${resultColor};font-size:.8rem;min-width:4rem;text-align:center">${leg.result ? leg.result.toUpperCase() : 'PENDING'}</span>
+                <button onclick="document.getElementById('${editId}').style.display=document.getElementById('${editId}').style.display==='none'?'':'none'"
+                  style="background:rgba(255,255,255,.06);color:var(--muted);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:.2rem .5rem;font-size:.75rem;cursor:pointer">✏️</button>
+                ${reto.status === 'active' ? `
+                  <div style="display:flex;gap:.25rem">
+                    <button class="leg-result-btn" data-reto-id="${reto.id}" data-leg="${i}" data-result="won" style="background:rgba(74,222,128,.15);color:#4ade80;border:1px solid rgba(74,222,128,.3);border-radius:4px;padding:.2rem .5rem;font-size:.75rem;cursor:pointer">W</button>
+                    <button class="leg-result-btn" data-reto-id="${reto.id}" data-leg="${i}" data-result="lost" style="background:rgba(248,113,113,.15);color:#f87171;border:1px solid rgba(248,113,113,.3);border-radius:4px;padding:.2rem .5rem;font-size:.75rem;cursor:pointer">L</button>
+                    <button class="leg-result-btn" data-reto-id="${reto.id}" data-leg="${i}" data-result="void" style="background:rgba(156,163,175,.15);color:#9ca3af;border:1px solid rgba(156,163,175,.3);border-radius:4px;padding:.2rem .5rem;font-size:.75rem;cursor:pointer">V</button>
+                  </div>
+                ` : ''}
+              </div>
+              <div id="${editId}" style="display:none;padding:.6rem .8rem .8rem;background:rgba(255,255,255,.03);border-radius:6px;margin-bottom:.5rem">
+                <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:.5rem;align-items:end">
+                  <div>
+                    <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Mercado</div>
+                    <input id="${editId}-market" value="${(leg.market||'').replace(/"/g,'&quot;')}" style="width:100%;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.12);border-radius:4px;color:var(--text);font-size:12px;padding:5px 8px" />
+                  </div>
+                  <div>
+                    <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Pick</div>
+                    <input id="${editId}-pick" value="${(leg.pick||'').replace(/"/g,'&quot;')}" style="width:100%;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.12);border-radius:4px;color:var(--text);font-size:12px;padding:5px 8px" />
+                  </div>
+                  <button class="leg-fields-save-btn" data-reto-id="${reto.id}" data-leg="${i}" data-edit-id="${editId}"
+                    style="background:rgba(59,130,246,.2);color:#93c5fd;border:1px solid rgba(59,130,246,.3);border-radius:4px;padding:5px 14px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Guardar</button>
                 </div>
-              ` : ''}
+              </div>
             </div>`;
         }).join('');
 
@@ -2571,6 +2590,36 @@ main{position:relative;z-index:2}
       console.error('[loadAdminRetos]', e);
     }
   }
+
+  // Event listener para editar campos de un leg
+  document.addEventListener('click', async e => {
+    const saveFieldsBtn = e.target.closest('.leg-fields-save-btn');
+    if (saveFieldsBtn) {
+      const retoId = saveFieldsBtn.dataset.retoId;
+      const legIndex = saveFieldsBtn.dataset.leg;
+      const editId = saveFieldsBtn.dataset.editId;
+      const market = document.getElementById(`${editId}-market`)?.value?.trim();
+      const pick   = document.getElementById(`${editId}-pick`)?.value?.trim();
+      if (!pick && !market) return;
+      saveFieldsBtn.disabled = true;
+      saveFieldsBtn.textContent = '…';
+      try {
+        const res = await fetch(`${RETO_API}/api/reto/${retoId}/leg/${legIndex}/fields`, {
+          method: 'PATCH',
+          headers: retoHeaders(),
+          body: JSON.stringify({ pick, market }),
+        });
+        if (!res.ok) throw new Error('Error al guardar');
+        document.getElementById(editId).style.display = 'none';
+        await loadAdminRetos();
+      } catch(err) {
+        alert('Error: ' + err.message);
+        saveFieldsBtn.disabled = false;
+        saveFieldsBtn.textContent = 'Guardar';
+      }
+      return;
+    }
+  });
 
   // Event listener para botones de resultado de legs
   document.addEventListener('click', async e => {

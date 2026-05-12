@@ -59,6 +59,7 @@ const {
   listRetos,
   listAllRetos,
   updateRetoLegResult,
+  updateRetoLegFields,
   deletePickAndCandidates,
   listApiSyncLogs,
   savePickCandidates,
@@ -1949,6 +1950,19 @@ app.get("/api/reto/:id", async (req, res) => {
     res.json({ reto });
   } catch (e) {
     res.status(500).json({ error: 'server_error' });
+  }
+});
+
+// Edit leg fields (pick, market, match, odds, analysis) — admin only
+app.patch("/api/reto/:id/leg/:legIndex/fields", requireAdmin, async (req, res) => {
+  try {
+    const retoId = Number(req.params.id);
+    const legIndex = Number(req.params.legIndex);
+    const { pick, market, match, odds, analysis } = req.body || {};
+    const updated = await updateRetoLegFields({ retoId, legIndex, pick, market, match, odds, analysis });
+    res.json({ ok: true, reto: updated });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "leg_fields_failed") });
   }
 });
 
