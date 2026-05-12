@@ -353,6 +353,11 @@ main{position:relative;z-index:2}
 .reto-leg-meta{font-size:10px;color:var(--muted);margin-top:2px}
 .reto-leg-note{font-size:11px;color:rgba(240,237,232,.45);font-style:italic;margin-top:3px;line-height:1.5}
 .reto-leg-odds{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;color:#60a5fa;flex-shrink:0}
+.reto-edit-row{display:grid;grid-template-columns:1fr 1fr 72px;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(59,130,246,.12)}
+.reto-edit-lbl{font-size:8.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(147,197,253,.6);margin-bottom:4px}
+.reto-edit-input{width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(59,130,246,.25);border-radius:4px;color:var(--text);font-size:12px;font-weight:600;padding:6px 8px;outline:none;transition:border-color .2s}
+.reto-edit-input:focus{border-color:rgba(59,130,246,.6)}
+.reto-ai-rec{font-size:10px;color:rgba(147,197,253,.45);margin-top:3px;font-style:italic}
 .reto-summary-row{display:flex;gap:2px;margin-bottom:14px;flex-wrap:wrap}
 .reto-sum-card{flex:1;min-width:120px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.18);padding:14px 18px;border-radius:4px}
 .reto-sum-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:#60a5fa;line-height:1}
@@ -1598,7 +1603,6 @@ main{position:relative;z-index:2}
         if (!leg.eventDate) return '—';
         const d = new Date(leg.eventDate);
         const days = ['dom','lun','mar','mié','jue','vie','sáb'];
-        // Compute date parts in Mexico City time reliably
         const parts = new Intl.DateTimeFormat('en-US', {
           timeZone: 'America/Mexico_City',
           year: 'numeric', month: '2-digit', day: '2-digit',
@@ -1611,26 +1615,56 @@ main{position:relative;z-index:2}
         const hh = parts.hour === '24' ? '00' : parts.hour;
         return `${dayName} ${parts.day} ${monthName}, ${hh}:${parts.minute}`;
       })();
+      const esc = s => String(s||'').replace(/"/g,'&quot;');
       return `<div class="reto-leg">
         <div class="reto-leg-n">${i+1}</div>
         <div class="reto-leg-body">
           <div class="reto-leg-match">${leg.match || '?'}</div>
-          <div class="reto-leg-pick">${leg.market} · ${leg.pick}</div>
           <div class="reto-leg-meta">${leg.league} · ${dateStr} · Confianza ${leg.confidence}%</div>
           ${leg.analysis ? `<div class="reto-leg-note">${leg.analysis}</div>` : ''}
+          <div class="reto-edit-row">
+            <div>
+              <div class="reto-edit-lbl">Mercado</div>
+              <input class="reto-edit-input" data-draft-leg="${i}" data-draft-field="market" value="${esc(leg.market)}" />
+              <div class="reto-ai-rec">🤖 IA: ${leg.market}</div>
+            </div>
+            <div>
+              <div class="reto-edit-lbl">Pick (tu decisión)</div>
+              <input class="reto-edit-input" data-draft-leg="${i}" data-draft-field="pick" value="${esc(leg.pick)}" />
+              <div class="reto-ai-rec">🤖 IA: ${leg.pick}</div>
+            </div>
+            <div>
+              <div class="reto-edit-lbl">Odds</div>
+              <input class="reto-edit-input" data-draft-leg="${i}" data-draft-field="odds" type="number" step="0.01" min="1" value="${leg.odds}" />
+            </div>
+          </div>
         </div>
-        <div class="reto-leg-odds">${leg.odds}</div>
       </div>`;
     }).join('');
-    const analysis = data.analysis ? `<div style="font-size:12px;color:rgba(240,237,232,.55);font-style:italic;margin-bottom:14px;line-height:1.6">📊 ${data.analysis}</div>` : '';
+    const analysis = data.analysis ? `<div style="font-size:12px;color:rgba(240,237,232,.55);font-style:italic;margin:14px 0;line-height:1.6">📊 ${data.analysis}</div>` : '';
     body.innerHTML = `<div class="reto-result-title">Reto Al Cielo — ${data.legs?.length || 0} Legs</div>${alert}${sumCards}${legs}${analysis}`;
   }
 
   document.getElementById('reto-pub-btn').addEventListener('click', async function(){
     if(!currentRetoId || this.classList.contains('published')) return;
     this.disabled = true;
-    this.textContent = 'Publicando…';
+    this.textContent = 'Guardando cambios…';
     try {
+      // Save any admin edits to each leg before publishing
+      const legs = currentRetoDraft?.legs || [];
+      for (let i = 0; i < legs.length; i++) {
+        const market = document.querySelector(`[data-draft-leg="${i}"][data-draft-field="market"]`)?.value?.trim();
+        const pick   = document.querySelector(`[data-draft-leg="${i}"][data-draft-field="pick"]`)?.value?.trim();
+        const odds   = document.querySelector(`[data-draft-leg="${i}"][data-draft-field="odds"]`)?.value?.trim();
+        const orig = legs[i];
+        if (market !== String(orig.market||'') || pick !== String(orig.pick||'') || Number(odds) !== Number(orig.odds||0)) {
+          await fetchJson(`/api/reto/${currentRetoId}/leg/${i}/fields`, {
+            method: 'PATCH', headers: apiHeaders(),
+            body: JSON.stringify({ market, pick, odds: Number(odds) || orig.odds }),
+          });
+        }
+      }
+      this.textContent = 'Publicando…';
       const data = await fetchJson(`/api/reto/${currentRetoId}/publish`, { method:'POST', headers: apiHeaders() });
       if(!data?.ok) throw new Error(data?.error || 'publish_failed');
       this.textContent = '✓ Reto Publicado';
