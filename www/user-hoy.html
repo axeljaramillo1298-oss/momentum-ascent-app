@@ -481,11 +481,11 @@ function buildDateNav(){
   const nav = document.getElementById('date-nav');
   const today = new Date();
   const chips = [];
-  for(let i=0;i<7;i++){
+  for(let i=1;i>=-6;i--){
     const d = new Date(today);
     d.setDate(today.getDate()-i);
     const key = toLocalKey(d);
-    const label = i===0 ? 'Hoy' : `${DAY_SHORT[d.getDay()]} ${d.getDate()}`;
+    const label = i===1 ? 'Mañana' : i===0 ? 'Hoy' : `${DAY_SHORT[d.getDay()]} ${d.getDate()}`;
     chips.push({key,label});
   }
   nav.innerHTML = chips.map(c=>`<button class="date-chip${selectedDateKey===c.key?' active':''}" data-key="${c.key}">${c.label}</button>`).join('')
