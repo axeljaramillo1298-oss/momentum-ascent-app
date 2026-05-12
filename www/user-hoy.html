@@ -86,6 +86,11 @@ main{position:relative;z-index:2}
 .pick-card.risk-low{border-left-color:var(--green)}
 .pick-card.risk-med{border-left-color:var(--yellow)}
 .pick-card.risk-high{border-left-color:var(--red)}
+.pick-card.result-won{border-left-color:var(--green);background:rgba(74,222,128,.04)}
+.pick-card.result-lost{border-left-color:var(--red);background:rgba(248,113,113,.04)}
+.pick-result-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-left:10px;vertical-align:middle}
+.pick-result-badge.won{color:#4ade80;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3)}
+.pick-result-badge.lost{color:#f87171;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3)}
 
 /* CARD HEAD */
 .pick-card-head{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 18px 0;gap:12px}
@@ -581,6 +586,7 @@ function renderCards(picks){
     const away = p.awayTeam || p.away_team || '—';
     const league = p.league || '—';
     const sport = p.sport || '';
+    const result = String(p.result || '').toLowerCase();
     const timeStr = p.eventDate ? new Date(p.eventDate).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : '—';
     const analysis = p.analysis || '';
     const MAX = 220;
@@ -650,8 +656,13 @@ function renderCards(picks){
       </div>` : '';
 
     const card = document.createElement('div');
-    card.className = `pick-card risk-${rc}`;
+    card.className = `pick-card risk-${rc}${result === 'won' ? ' result-won' : result === 'lost' ? ' result-lost' : ''}`;
     card.style.transitionDelay = `${i*60}ms`;
+    const resultBadge = result === 'won'
+      ? '<span class="pick-result-badge won">✓ Ganada</span>'
+      : result === 'lost'
+      ? '<span class="pick-result-badge lost">✗ Perdida</span>'
+      : '';
 
     // locked premium pick: show match but hide pick/analysis
     if(p.pickLocked){
@@ -659,7 +670,7 @@ function renderCards(picks){
         <div class="pick-card-head">
           <div class="pick-info">
             <div class="pick-match">${home} vs ${away}
-              <span class="tier-badge">⭐ PREMIUM</span>
+              <span class="tier-badge">⭐ PREMIUM</span>${resultBadge}
             </div>
             <div class="pick-meta">
               <span class="pick-league">${league}</span>
@@ -684,7 +695,7 @@ function renderCards(picks){
       <div class="pick-card-head">
         <div class="pick-info">
           <div class="pick-match">${home} vs ${away}
-            ${isPremiumPick ? '<span class="tier-badge">⭐ PREMIUM</span>' : ''}
+            ${isPremiumPick ? '<span class="tier-badge">⭐ PREMIUM</span>' : ''}${resultBadge}
           </div>
           <div class="pick-meta">
             <span class="pick-league">${league}</span>
