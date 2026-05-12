@@ -1877,7 +1877,20 @@ app.post("/api/reto/generate", requireAdmin, async (req, res) => {
       return { ...ev, rawJson: dbEvent?.rawJson || null, statsJson: latestStats?.statsJson || null };
     }));
 
-    const result = await generateRetoEscalera({ events: enrichedEvents, inversion: inv, meta: tgt, gptMarketsMap: gptMarketsMap || {} });
+    // Auto-run GPT market analysis for events missing pre-run data
+    const autoGptMap = { ...(gptMarketsMap || {}) };
+    await Promise.all(enrichedEvents.map(async (ev) => {
+      if (autoGptMap[ev.id]) return;
+      try {
+        const markets = await analyzeMarketsGPT({
+          event: { sport: ev.sport, league: ev.league, home_team: ev.homeTeam, away_team: ev.awayTeam, event_date: ev.eventDate },
+          stats: ev.statsJson || {},
+        });
+        autoGptMap[ev.id] = markets;
+      } catch { /* Claude works without it */ }
+    }));
+
+    const result = await generateRetoEscalera({ events: enrichedEvents, inversion: inv, meta: tgt, gptMarketsMap: autoGptMap });
 
     // Save as draft
     const saved = await saveRetoDraft({
