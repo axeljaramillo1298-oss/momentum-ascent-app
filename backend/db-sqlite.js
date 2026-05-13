@@ -245,9 +245,27 @@ CREATE TABLE IF NOT EXISTS rate_limit_events (
   created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS referrals (
+  code TEXT PRIMARY KEY,
+  owner_email TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS referral_uses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL,
+  referred_email TEXT NOT NULL,
+  referrer_email TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  reward_applied INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE INDEX IF NOT EXISTS idx_user_pick_bets_user ON user_pick_bets(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_pick_bets_pick ON user_pick_bets(pick_id);
 CREATE INDEX IF NOT EXISTS idx_rate_limit_lookup ON rate_limit_events(user_key, bucket, created_at);
+CREATE INDEX IF NOT EXISTS idx_referrals_owner ON referrals(owner_email);
+CREATE INDEX IF NOT EXISTS idx_referral_uses_referrer ON referral_uses(referrer_email);
+CREATE INDEX IF NOT EXISTS idx_referral_uses_referred ON referral_uses(referred_email);
 `);
 
 try { db.exec(`CREATE TABLE IF NOT EXISTS user_bankroll (
@@ -286,6 +304,45 @@ try { db.exec(`CREATE TABLE IF NOT EXISTS rate_limit_events (
   created_at TEXT NOT NULL
 )`); } catch (e) { /* already exists */ }
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_rate_limit_lookup ON rate_limit_events(user_key, bucket, created_at)`); } catch (e) { /* */ }
+try { db.exec(`CREATE TABLE IF NOT EXISTS referrals (
+  code TEXT PRIMARY KEY,
+  owner_email TEXT NOT NULL,
+  created_at TEXT NOT NULL
+)`); } catch (e) { /* already exists */ }
+try { db.exec(`CREATE TABLE IF NOT EXISTS referral_uses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL,
+  referred_email TEXT NOT NULL,
+  referrer_email TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  reward_applied INTEGER NOT NULL DEFAULT 0
+)`); } catch (e) { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_referrals_owner ON referrals(owner_email)`); } catch (e) { /* */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_referral_uses_referrer ON referral_uses(referrer_email)`); } catch (e) { /* */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_referral_uses_referred ON referral_uses(referred_email)`); } catch (e) { /* */ }
+
+// ── Batch 4: notifications_log + pick_odds_snapshots ────────────────────────
+try { db.exec(`CREATE TABLE IF NOT EXISTS notifications_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  recipient TEXT,
+  type TEXT,
+  subject TEXT,
+  payload TEXT,
+  status TEXT NOT NULL DEFAULT 'sent',
+  error TEXT,
+  sent_at TEXT NOT NULL
+)`); } catch (e) { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_notifications_log_lookup ON notifications_log(channel, sent_at)`); } catch (e) { /* */ }
+try { db.exec(`CREATE TABLE IF NOT EXISTS pick_odds_snapshots (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  pick_id INTEGER NOT NULL,
+  odds REAL NOT NULL,
+  market TEXT,
+  source TEXT NOT NULL DEFAULT 'manual',
+  snapshot_at TEXT NOT NULL
+)`); } catch (e) { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_odds_snapshots_pick ON pick_odds_snapshots(pick_id, snapshot_at)`); } catch (e) { /* */ }
 
 const assignmentColumns = db.prepare("PRAGMA table_info(assignments)").all().map((row) => String(row.name || "").toLowerCase());
 const routineColumns = db.prepare("PRAGMA table_info(routines)").all().map((row) => String(row.name || "").toLowerCase());
@@ -2399,6 +2456,277 @@ function pruneOldRateLimitEvents(opts = {}) {
   return { deleted: Number(res?.changes || 0) };
 }
 
+// ── REFERRALS ───────────────────────────────────────────────────────────────
+
+const REFERRAL_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+function generateReferralCode(length = 7) {
+  const len = Math.max(6, Math.min(8, Number(length) || 7));
+  let out = "";
+  for (let i = 0; i < len; i += 1) {
+    out += REFERRAL_CODE_ALPHABET.charAt(Math.floor(Math.random() * REFERRAL_CODE_ALPHABET.length));
+  }
+  return out;
+}
+
+const selectReferralByOwnerStmt = db.prepare(
+  `SELECT code, owner_email AS ownerEmail, created_at AS createdAt
+   FROM referrals WHERE owner_email = ? LIMIT 1`
+);
+const selectReferralByCodeStmt = db.prepare(
+  `SELECT code, owner_email AS ownerEmail, created_at AS createdAt
+   FROM referrals WHERE code = ? LIMIT 1`
+);
+const insertReferralStmt = db.prepare(
+  `INSERT OR IGNORE INTO referrals (code, owner_email, created_at) VALUES (?, ?, ?)`
+);
+const selectReferralUseByReferredStmt = db.prepare(
+  `SELECT id FROM referral_uses WHERE referred_email = ? LIMIT 1`
+);
+const insertReferralUseStmt = db.prepare(
+  `INSERT INTO referral_uses (code, referred_email, referrer_email, created_at, reward_applied)
+   VALUES (?, ?, ?, ?, 0)`
+);
+const listReferralUsesByOwnerStmt = db.prepare(
+  `SELECT id, code, referred_email AS referredEmail, created_at AS createdAt,
+          reward_applied AS rewardApplied
+   FROM referral_uses
+   WHERE referrer_email = ?
+   ORDER BY created_at DESC, id DESC
+   LIMIT ?`
+);
+const referralStatsAggStmt = db.prepare(
+  `SELECT COUNT(*) AS totalReferred,
+          COALESCE(SUM(CASE WHEN reward_applied = 1 THEN 1 ELSE 0 END), 0) AS totalRewarded
+   FROM referral_uses WHERE referrer_email = ?`
+);
+const referralStatsRecentStmt = db.prepare(
+  `SELECT referred_email AS referredEmail, created_at AS createdAt
+   FROM referral_uses
+   WHERE referrer_email = ?
+   ORDER BY created_at DESC, id DESC
+   LIMIT 5`
+);
+
+function getOrCreateReferralCode(ownerEmail) {
+  const owner = normalizeEmail(ownerEmail);
+  if (!owner) throw new Error("owner_email_required");
+  const existing = selectReferralByOwnerStmt.get(owner);
+  if (existing) {
+    return {
+      code: String(existing.code),
+      ownerEmail: String(existing.ownerEmail),
+      createdAt: existing.createdAt || "",
+      isNew: false,
+    };
+  }
+  let code = "";
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const candidate = generateReferralCode(7);
+    const clash = selectReferralByCodeStmt.get(candidate);
+    if (!clash) {
+      code = candidate;
+      break;
+    }
+  }
+  if (!code) code = generateReferralCode(8);
+  const now = nowIso();
+  insertReferralStmt.run(code, owner, now);
+  return { code, ownerEmail: owner, createdAt: now, isNew: true };
+}
+
+function getReferralByCode(code) {
+  const normalized = safeStr(code).toUpperCase();
+  if (!normalized) return null;
+  const row = selectReferralByCodeStmt.get(normalized);
+  if (!row) return null;
+  return {
+    code: String(row.code),
+    ownerEmail: String(row.ownerEmail),
+    createdAt: row.createdAt || "",
+  };
+}
+
+function logReferralUse(payload = {}) {
+  const code = safeStr(payload.code).toUpperCase();
+  const referredEmail = normalizeEmail(payload.referredEmail);
+  const referrerEmail = normalizeEmail(payload.referrerEmail);
+  if (!code) throw new Error("code_required");
+  if (!referredEmail) throw new Error("referred_email_required");
+  if (!referrerEmail) throw new Error("referrer_email_required");
+  if (referredEmail === referrerEmail) throw new Error("self_referral_not_allowed");
+  const dup = selectReferralUseByReferredStmt.get(referredEmail);
+  if (dup) throw new Error("already_used");
+  const info = insertReferralUseStmt.run(code, referredEmail, referrerEmail, nowIso());
+  return { ok: true, useId: Number(info.lastInsertRowid || 0) };
+}
+
+function listReferralUses(ownerEmail, { limit = 100 } = {}) {
+  const owner = normalizeEmail(ownerEmail);
+  if (!owner) return [];
+  const lim = Math.max(1, Math.min(500, Number(limit) || 100));
+  const rows = listReferralUsesByOwnerStmt.all(owner, lim) || [];
+  return rows.map((row) => ({
+    id: Number(row.id),
+    code: String(row.code || ""),
+    referredEmail: String(row.referredEmail || ""),
+    createdAt: row.createdAt || "",
+    rewardApplied: Boolean(Number(row.rewardApplied || 0)),
+  }));
+}
+
+function getReferralStats(ownerEmail) {
+  const owner = normalizeEmail(ownerEmail);
+  if (!owner) {
+    return { code: "", totalReferred: 0, totalRewarded: 0, recent: [] };
+  }
+  const codeRow = selectReferralByOwnerStmt.get(owner);
+  const code = codeRow?.code ? String(codeRow.code) : "";
+  const agg = referralStatsAggStmt.get(owner) || {};
+  const recent = referralStatsRecentStmt.all(owner) || [];
+  return {
+    code,
+    totalReferred: Number(agg.totalReferred || 0),
+    totalRewarded: Number(agg.totalRewarded || 0),
+    recent: recent.map((row) => ({
+      referredEmail: String(row.referredEmail || ""),
+      createdAt: row.createdAt || "",
+    })),
+  };
+}
+
+// ── NOTIFICATIONS LOG (Batch 4) ─────────────────────────────────────────────
+const insertNotificationStmt = db.prepare(
+  `INSERT INTO notifications_log (channel, recipient, type, subject, payload, status, error, sent_at)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+);
+const listNotificationsAllStmt = db.prepare(
+  `SELECT id, channel, recipient, type, subject, payload, status, error, sent_at AS sentAt
+   FROM notifications_log
+   ORDER BY sent_at DESC, id DESC
+   LIMIT ?`
+);
+const listNotificationsByChannelStmt = db.prepare(
+  `SELECT id, channel, recipient, type, subject, payload, status, error, sent_at AS sentAt
+   FROM notifications_log
+   WHERE channel = ?
+   ORDER BY sent_at DESC, id DESC
+   LIMIT ?`
+);
+
+function logNotification(payload = {}) {
+  const channel = safeStr(payload.channel);
+  if (!channel) throw new Error("channel_required");
+  const recipient = safeStr(payload.recipient);
+  const type = safeStr(payload.type);
+  const subject = payload.subject == null ? null : safeStr(payload.subject);
+  const status = safeStr(payload.status) || "sent";
+  const error = payload.error == null ? null : safeStr(payload.error);
+  let payloadJson = null;
+  if (payload.payload != null) {
+    if (typeof payload.payload === "string") payloadJson = payload.payload;
+    else {
+      try { payloadJson = JSON.stringify(payload.payload); } catch (_) { payloadJson = null; }
+    }
+  }
+  const info = insertNotificationStmt.run(
+    channel,
+    recipient || null,
+    type || null,
+    subject,
+    payloadJson,
+    status,
+    error,
+    nowIso()
+  );
+  return { ok: true, id: Number(info.lastInsertRowid || 0) };
+}
+
+function listNotifications({ channel, limit = 50 } = {}) {
+  const lim = Math.max(1, Math.min(500, Number(limit) || 50));
+  const rows = channel
+    ? listNotificationsByChannelStmt.all(safeStr(channel), lim)
+    : listNotificationsAllStmt.all(lim);
+  return (rows || []).map((row) => ({
+    id: Number(row.id),
+    channel: String(row.channel || ""),
+    recipient: row.recipient || "",
+    type: row.type || "",
+    subject: row.subject || "",
+    payload: row.payload || null,
+    status: row.status || "",
+    error: row.error || null,
+    sentAt: row.sentAt || "",
+  }));
+}
+
+// ── PICK ODDS SNAPSHOTS (Batch 4 — line movement) ───────────────────────────
+const insertOddsSnapshotStmt = db.prepare(
+  `INSERT INTO pick_odds_snapshots (pick_id, odds, market, source, snapshot_at)
+   VALUES (?, ?, ?, ?, ?)`
+);
+const listOddsSnapshotsStmt = db.prepare(
+  `SELECT id, pick_id AS pickId, odds, market, source, snapshot_at AS snapshotAt
+   FROM pick_odds_snapshots
+   WHERE pick_id = ?
+   ORDER BY snapshot_at ASC, id ASC`
+);
+const latestOddsSnapshotStmt = db.prepare(
+  `SELECT id, pick_id AS pickId, odds, market, source, snapshot_at AS snapshotAt
+   FROM pick_odds_snapshots
+   WHERE pick_id = ?
+   ORDER BY snapshot_at DESC, id DESC
+   LIMIT 1`
+);
+
+function saveOddsSnapshot(payload = {}) {
+  const pickId = Number(payload.pickId || 0);
+  const odds = Number(payload.odds);
+  if (!pickId) throw new Error("pick_id_required");
+  if (!Number.isFinite(odds) || odds <= 0) throw new Error("odds_required");
+  const market = payload.market == null ? null : safeStr(payload.market);
+  const source = safeStr(payload.source) || "manual";
+  const now = nowIso();
+  const info = insertOddsSnapshotStmt.run(pickId, odds, market, source, now);
+  return {
+    ok: true,
+    id: Number(info.lastInsertRowid || 0),
+    pickId,
+    odds,
+    market: market || null,
+    source,
+    snapshotAt: now,
+  };
+}
+
+function listOddsSnapshots(pickId) {
+  const pid = Number(pickId || 0);
+  if (!pid) return [];
+  const rows = listOddsSnapshotsStmt.all(pid) || [];
+  return rows.map((row) => ({
+    id: Number(row.id),
+    pickId: Number(row.pickId),
+    odds: Number(row.odds),
+    market: row.market || null,
+    source: row.source || "manual",
+    snapshotAt: row.snapshotAt || "",
+  }));
+}
+
+function getLatestOddsSnapshot(pickId) {
+  const pid = Number(pickId || 0);
+  if (!pid) return null;
+  const row = latestOddsSnapshotStmt.get(pid);
+  if (!row) return null;
+  return {
+    id: Number(row.id),
+    pickId: Number(row.pickId),
+    odds: Number(row.odds),
+    market: row.market || null,
+    source: row.source || "manual",
+    snapshotAt: row.snapshotAt || "",
+  };
+}
+
 const DB_META = {
   client: "sqlite",
   path: DB_PATH,
@@ -2477,4 +2805,14 @@ module.exports = {
   logRateLimitEvent: async (userKey, bucket) => logRateLimitEvent(userKey, bucket),
   countRateLimitEvents: async (userKey, bucket, windowMs) => countRateLimitEvents(userKey, bucket, windowMs),
   pruneOldRateLimitEvents: async (opts) => pruneOldRateLimitEvents(opts),
+  getOrCreateReferralCode: async (ownerEmail) => getOrCreateReferralCode(ownerEmail),
+  getReferralByCode: async (code) => getReferralByCode(code),
+  logReferralUse: async (payload) => logReferralUse(payload),
+  listReferralUses: async (ownerEmail, opts) => listReferralUses(ownerEmail, opts),
+  getReferralStats: async (ownerEmail) => getReferralStats(ownerEmail),
+  logNotification: async (payload) => logNotification(payload),
+  listNotifications: async (opts) => listNotifications(opts),
+  saveOddsSnapshot: async (payload) => saveOddsSnapshot(payload),
+  listOddsSnapshots: async (pickId) => listOddsSnapshots(pickId),
+  getLatestOddsSnapshot: async (pickId) => getLatestOddsSnapshot(pickId),
 };

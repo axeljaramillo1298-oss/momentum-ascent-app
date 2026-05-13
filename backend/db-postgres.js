@@ -311,6 +311,21 @@ CREATE TABLE IF NOT EXISTS rate_limit_events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS referrals (
+  code TEXT PRIMARY KEY,
+  owner_email TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS referral_uses (
+  id BIGSERIAL PRIMARY KEY,
+  code TEXT NOT NULL,
+  referred_email TEXT NOT NULL,
+  referrer_email TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  reward_applied BOOLEAN NOT NULL DEFAULT FALSE
+);
+
 CREATE INDEX IF NOT EXISTS idx_ai_picks_event_id ON ai_picks(event_id);
 CREATE INDEX IF NOT EXISTS idx_ai_picks_status ON ai_picks(status);
 CREATE INDEX IF NOT EXISTS idx_sports_events_event_date ON sports_events(event_date);
@@ -319,6 +334,32 @@ CREATE INDEX IF NOT EXISTS idx_payment_requests_status ON payment_requests(statu
 CREATE INDEX IF NOT EXISTS idx_user_pick_bets_user ON user_pick_bets(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_pick_bets_pick ON user_pick_bets(pick_id);
 CREATE INDEX IF NOT EXISTS idx_rate_limit_lookup ON rate_limit_events(user_key, bucket, created_at);
+CREATE INDEX IF NOT EXISTS idx_referrals_owner ON referrals(owner_email);
+CREATE INDEX IF NOT EXISTS idx_referral_uses_referrer ON referral_uses(referrer_email);
+CREATE INDEX IF NOT EXISTS idx_referral_uses_referred ON referral_uses(referred_email);
+
+CREATE TABLE IF NOT EXISTS notifications_log (
+  id BIGSERIAL PRIMARY KEY,
+  channel TEXT NOT NULL,
+  recipient TEXT,
+  type TEXT,
+  subject TEXT,
+  payload TEXT,
+  status TEXT NOT NULL DEFAULT 'sent',
+  error TEXT,
+  sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_notifications_log_lookup ON notifications_log(channel, sent_at);
+
+CREATE TABLE IF NOT EXISTS pick_odds_snapshots (
+  id BIGSERIAL PRIMARY KEY,
+  pick_id BIGINT NOT NULL,
+  odds NUMERIC NOT NULL,
+  market TEXT,
+  source TEXT NOT NULL DEFAULT 'manual',
+  snapshot_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_odds_snapshots_pick ON pick_odds_snapshots(pick_id, snapshot_at);
 `;
 
 async function initDb() {
@@ -2304,6 +2345,153 @@ async function getUserBankrollStats(userId) {
   };
 }
 
+// ── REFERRALS ───────────────────────────────────────────────────────────────
+
+const REFERRAL_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+function generateReferralCode(length = 7) {
+  const len = Math.max(6, Math.min(8, Number(length) || 7));
+  let out = "";
+  for (let i = 0; i < len; i += 1) {
+    out += REFERRAL_CODE_ALPHABET.charAt(Math.floor(Math.random() * REFERRAL_CODE_ALPHABET.length));
+  }
+  return out;
+}
+
+async function getOrCreateReferralCode(ownerEmail) {
+  const owner = normalizeEmail(ownerEmail);
+  if (!owner) throw new Error("owner_email_required");
+  const existingRes = await pool.query(
+    `SELECT code, owner_email AS "ownerEmail", created_at AS "createdAt"
+     FROM referrals WHERE owner_email = $1 LIMIT 1`,
+    [owner]
+  );
+  const existing = existingRes.rows[0];
+  if (existing) {
+    return {
+      code: String(existing.code),
+      ownerEmail: String(existing.ownerEmail),
+      createdAt: existing.createdAt,
+      isNew: false,
+    };
+  }
+  // Generate unique code (retry on collision)
+  let code = "";
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const candidate = generateReferralCode(7);
+    const clash = await pool.query("SELECT 1 FROM referrals WHERE code = $1 LIMIT 1", [candidate]);
+    if (!clash.rows.length) {
+      code = candidate;
+      break;
+    }
+  }
+  if (!code) code = generateReferralCode(8);
+  const now = nowIso();
+  await pool.query(
+    `INSERT INTO referrals (code, owner_email, created_at) VALUES ($1, $2, $3)
+     ON CONFLICT (code) DO NOTHING`,
+    [code, owner, now]
+  );
+  return { code, ownerEmail: owner, createdAt: now, isNew: true };
+}
+
+async function getReferralByCode(code) {
+  const normalized = safeStr(code).toUpperCase();
+  if (!normalized) return null;
+  const res = await pool.query(
+    `SELECT code, owner_email AS "ownerEmail", created_at AS "createdAt"
+     FROM referrals WHERE code = $1 LIMIT 1`,
+    [normalized]
+  );
+  const row = res.rows[0];
+  if (!row) return null;
+  return {
+    code: String(row.code),
+    ownerEmail: String(row.ownerEmail),
+    createdAt: row.createdAt,
+  };
+}
+
+async function logReferralUse(payload = {}) {
+  const code = safeStr(payload.code).toUpperCase();
+  const referredEmail = normalizeEmail(payload.referredEmail);
+  const referrerEmail = normalizeEmail(payload.referrerEmail);
+  if (!code) throw new Error("code_required");
+  if (!referredEmail) throw new Error("referred_email_required");
+  if (!referrerEmail) throw new Error("referrer_email_required");
+  if (referredEmail === referrerEmail) throw new Error("self_referral_not_allowed");
+  const existing = await pool.query(
+    `SELECT id FROM referral_uses WHERE referred_email = $1 LIMIT 1`,
+    [referredEmail]
+  );
+  if (existing.rows.length) throw new Error("already_used");
+  const res = await pool.query(
+    `INSERT INTO referral_uses (code, referred_email, referrer_email, created_at, reward_applied)
+     VALUES ($1, $2, $3, NOW(), FALSE)
+     RETURNING id`,
+    [code, referredEmail, referrerEmail]
+  );
+  return { ok: true, useId: Number(res.rows[0]?.id || 0) };
+}
+
+async function listReferralUses(ownerEmail, { limit = 100 } = {}) {
+  const owner = normalizeEmail(ownerEmail);
+  if (!owner) return [];
+  const lim = Math.max(1, Math.min(500, Number(limit) || 100));
+  const res = await pool.query(
+    `SELECT id, code, referred_email AS "referredEmail", created_at AS "createdAt",
+            reward_applied AS "rewardApplied"
+     FROM referral_uses
+     WHERE referrer_email = $1
+     ORDER BY created_at DESC, id DESC
+     LIMIT $2`,
+    [owner, lim]
+  );
+  return (res.rows || []).map((row) => ({
+    id: Number(row.id),
+    code: String(row.code || ""),
+    referredEmail: String(row.referredEmail || ""),
+    createdAt: row.createdAt,
+    rewardApplied: Boolean(row.rewardApplied),
+  }));
+}
+
+async function getReferralStats(ownerEmail) {
+  const owner = normalizeEmail(ownerEmail);
+  if (!owner) {
+    return { code: "", totalReferred: 0, totalRewarded: 0, recent: [] };
+  }
+  const codeRes = await pool.query(
+    `SELECT code FROM referrals WHERE owner_email = $1 LIMIT 1`,
+    [owner]
+  );
+  const code = codeRes.rows[0]?.code ? String(codeRes.rows[0].code) : "";
+  const aggRes = await pool.query(
+    `SELECT
+       COUNT(*) AS "totalReferred",
+       COALESCE(SUM(CASE WHEN reward_applied THEN 1 ELSE 0 END), 0) AS "totalRewarded"
+     FROM referral_uses WHERE referrer_email = $1`,
+    [owner]
+  );
+  const aggRow = aggRes.rows[0] || {};
+  const recentRes = await pool.query(
+    `SELECT referred_email AS "referredEmail", created_at AS "createdAt"
+     FROM referral_uses
+     WHERE referrer_email = $1
+     ORDER BY created_at DESC, id DESC
+     LIMIT 5`,
+    [owner]
+  );
+  return {
+    code,
+    totalReferred: Number(aggRow.totalReferred || 0),
+    totalRewarded: Number(aggRow.totalRewarded || 0),
+    recent: (recentRes.rows || []).map((row) => ({
+      referredEmail: String(row.referredEmail || ""),
+      createdAt: row.createdAt,
+    })),
+  };
+}
+
 // ── EMBEDDINGS ──────────────────────────────────────────────────────────────
 
 async function savePickEmbedding(pickId, payload = {}) {
@@ -2421,6 +2609,131 @@ async function pruneOldRateLimitEvents(opts = {}) {
   return { deleted: Number(res.rowCount || 0) };
 }
 
+// ── NOTIFICATIONS LOG (Batch 4) ─────────────────────────────────────────────
+
+async function logNotification(payload = {}) {
+  const channel = safeStr(payload.channel);
+  if (!channel) throw new Error("channel_required");
+  const recipient = safeStr(payload.recipient);
+  const type = safeStr(payload.type);
+  const subject = payload.subject == null ? null : safeStr(payload.subject);
+  const status = safeStr(payload.status) || "sent";
+  const error = payload.error == null ? null : safeStr(payload.error);
+  let payloadJson = null;
+  if (payload.payload != null) {
+    if (typeof payload.payload === "string") payloadJson = payload.payload;
+    else {
+      try { payloadJson = JSON.stringify(payload.payload); } catch (_) { payloadJson = null; }
+    }
+  }
+  const res = await pool.query(
+    `INSERT INTO notifications_log (channel, recipient, type, subject, payload, status, error, sent_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
+     RETURNING id`,
+    [channel, recipient || null, type || null, subject, payloadJson, status, error]
+  );
+  return { ok: true, id: Number(res.rows[0]?.id || 0) };
+}
+
+async function listNotifications({ channel, limit = 50 } = {}) {
+  const lim = Math.max(1, Math.min(500, Number(limit) || 50));
+  const params = [];
+  let where = "";
+  if (channel) {
+    params.push(safeStr(channel));
+    where = `WHERE channel = $${params.length}`;
+  }
+  params.push(lim);
+  const res = await pool.query(
+    `SELECT id, channel, recipient, type, subject, payload, status, error, sent_at AS "sentAt"
+     FROM notifications_log
+     ${where}
+     ORDER BY sent_at DESC, id DESC
+     LIMIT $${params.length}`,
+    params
+  );
+  return (res.rows || []).map((row) => ({
+    id: Number(row.id),
+    channel: String(row.channel || ""),
+    recipient: row.recipient || "",
+    type: row.type || "",
+    subject: row.subject || "",
+    payload: row.payload || null,
+    status: row.status || "",
+    error: row.error || null,
+    sentAt: row.sentAt,
+  }));
+}
+
+// ── PICK ODDS SNAPSHOTS (Batch 4 — line movement) ───────────────────────────
+
+async function saveOddsSnapshot(payload = {}) {
+  const pickId = Number(payload.pickId || 0);
+  const odds = Number(payload.odds);
+  if (!pickId) throw new Error("pick_id_required");
+  if (!Number.isFinite(odds) || odds <= 0) throw new Error("odds_required");
+  const market = payload.market == null ? null : safeStr(payload.market);
+  const source = safeStr(payload.source) || "manual";
+  const res = await pool.query(
+    `INSERT INTO pick_odds_snapshots (pick_id, odds, market, source, snapshot_at)
+     VALUES ($1,$2,$3,$4,NOW())
+     RETURNING id, snapshot_at AS "snapshotAt"`,
+    [pickId, odds, market, source]
+  );
+  return {
+    ok: true,
+    id: Number(res.rows[0]?.id || 0),
+    pickId,
+    odds,
+    market: market || null,
+    source,
+    snapshotAt: res.rows[0]?.snapshotAt,
+  };
+}
+
+async function listOddsSnapshots(pickId) {
+  const pid = Number(pickId || 0);
+  if (!pid) return [];
+  const res = await pool.query(
+    `SELECT id, pick_id AS "pickId", odds, market, source, snapshot_at AS "snapshotAt"
+     FROM pick_odds_snapshots
+     WHERE pick_id = $1
+     ORDER BY snapshot_at ASC, id ASC`,
+    [pid]
+  );
+  return (res.rows || []).map((row) => ({
+    id: Number(row.id),
+    pickId: Number(row.pickId),
+    odds: Number(row.odds),
+    market: row.market || null,
+    source: row.source || "manual",
+    snapshotAt: row.snapshotAt,
+  }));
+}
+
+async function getLatestOddsSnapshot(pickId) {
+  const pid = Number(pickId || 0);
+  if (!pid) return null;
+  const res = await pool.query(
+    `SELECT id, pick_id AS "pickId", odds, market, source, snapshot_at AS "snapshotAt"
+     FROM pick_odds_snapshots
+     WHERE pick_id = $1
+     ORDER BY snapshot_at DESC, id DESC
+     LIMIT 1`,
+    [pid]
+  );
+  const row = res.rows[0];
+  if (!row) return null;
+  return {
+    id: Number(row.id),
+    pickId: Number(row.pickId),
+    odds: Number(row.odds),
+    market: row.market || null,
+    source: row.source || "manual",
+    snapshotAt: row.snapshotAt,
+  };
+}
+
 module.exports = {
   DB_META,
   initDb,
@@ -2493,4 +2806,14 @@ module.exports = {
   logRateLimitEvent,
   countRateLimitEvents,
   pruneOldRateLimitEvents,
+  getOrCreateReferralCode,
+  getReferralByCode,
+  logReferralUse,
+  listReferralUses,
+  getReferralStats,
+  logNotification,
+  listNotifications,
+  saveOddsSnapshot,
+  listOddsSnapshots,
+  getLatestOddsSnapshot,
 };

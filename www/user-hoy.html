@@ -486,6 +486,20 @@ main{position:relative;z-index:2}
             </div>
           </div>
         </div>
+
+        <!-- TU CÓDIGO DE REFERIDO -->
+        <div class="side-card" id="referral-card">
+          <div class="side-card-hdr"><span class="side-card-title">Tu código</span></div>
+          <div class="side-card-body">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:32px;letter-spacing:.08em;text-align:center;color:var(--orange);margin-bottom:8px" id="ref-code">—</div>
+            <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:14px">Comparte y suma referidos</div>
+            <div style="display:flex;gap:6px">
+              <button class="perf-empty-cta" id="ref-copy-btn" style="flex:1">Copiar link</button>
+              <button class="perf-empty-cta" id="ref-share-btn" style="flex:1">Compartir</button>
+            </div>
+            <div style="font-size:10.5px;color:var(--muted);text-align:center;margin-top:12px"><strong id="ref-count">0</strong> referido(s)</div>
+          </div>
+        </div>
       </aside>
     </div>
   </div>
@@ -1199,6 +1213,36 @@ function renderPerf(s){
   }
 }
 
+async function loadReferral(){
+  try {
+    const r = await fetch(`${API_BASE}/api/me/referral`, { headers: userHeaders() });
+    if (!r.ok) return;
+    const data = await r.json();
+    if (!data?.ok) return;
+    const codeEl = document.getElementById('ref-code');
+    const countEl = document.getElementById('ref-count');
+    if (codeEl) codeEl.textContent = data.code || '—';
+    if (countEl) countEl.textContent = data.stats?.totalReferred || 0;
+    const copyBtn = document.getElementById('ref-copy-btn');
+    const shareBtn = document.getElementById('ref-share-btn');
+    if (copyBtn) {
+      copyBtn.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(data.shareUrl);
+          uhToast('Link copiado', 'success', 2000);
+        } catch { uhToast('No se pudo copiar', 'error'); }
+      };
+    }
+    if (shareBtn) {
+      shareBtn.onclick = () => {
+        const text = `Únete a Momentum Ascent con mi código ${data.code}: ${data.shareUrl}`;
+        if (navigator.share) navigator.share({ text }).catch(() => {});
+        else { try { navigator.clipboard.writeText(text); uhToast('Texto copiado', 'success', 2000); } catch { uhToast('No se pudo copiar', 'error'); } }
+      };
+    }
+  } catch(_) {}
+}
+
 // CTAs vacíos del sidebar abren modal de configurar
 document.getElementById('perf-empty-cta')?.addEventListener('click', () => openBankModal('config'));
 document.getElementById('bank-config-cta')?.addEventListener('click', () => openBankModal('config'));
@@ -1225,9 +1269,9 @@ document.addEventListener('click', e => {
 // ── INIT ──────────────────────────────────────────────────
 buildDateNav();
 if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded', () => { loadPicks(); loadBankroll(); loadPerf(); });
+  document.addEventListener('DOMContentLoaded', () => { loadPicks(); loadBankroll(); loadPerf(); loadReferral(); });
 } else {
-  setTimeout(() => { loadPicks(); loadBankroll(); loadPerf(); }, 50);
+  setTimeout(() => { loadPicks(); loadBankroll(); loadPerf(); loadReferral(); }, 50);
 }
 
 })();

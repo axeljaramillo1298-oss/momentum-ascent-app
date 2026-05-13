@@ -9,6 +9,10 @@ const { rateLimitMiddleware } = require("./rate-limit");
 const sportsApiService = require("./sportsApiService");
 const { sendWhatsAppText, getWhatsAppConfigStatus } = require("./whatsapp");
 const { startCoachOnboardingForUser, handleIncomingCoachMessage } = require("./coach-whatsapp");
+const notifications = require("./notifications");
+const newsScraper = require("./news-scraper");
+const lineMovement = require("./line-movement");
+const { startCronJobs } = require("./cron-jobs");
 const {
   DB_META,
   initDb,
@@ -80,6 +84,16 @@ const {
   savePickCandidates,
   getPickCandidateById,
   markCandidatePublished,
+  getOrCreateReferralCode,
+  getReferralByCode,
+  logReferralUse,
+  listReferralUses,
+  getReferralStats,
+  logNotification,
+  listNotifications,
+  saveOddsSnapshot,
+  listOddsSnapshots,
+  getLatestOddsSnapshot,
 } = require("./db");
 
 const path = require("node:path");
@@ -1856,6 +1870,25 @@ app.post("/api/picks/publish-candidate/:candidateId", requireAdmin, async (req, 
     await markCandidatePublished(candidateId, savedPick.id);
 
     const event = await getSportsEventById(candidate.eventId);
+
+    // Batch 4: snapshot inicial de odds (si vienen) + notificar admin via Telegram
+    try {
+      const initialOdds = Number(req.body?.odds);
+      if (Number.isFinite(initialOdds) && initialOdds > 0 && typeof saveOddsSnapshot === "function") {
+        await saveOddsSnapshot({ pickId: savedPick.id, odds: initialOdds, market: candidate.market, source: "publish" });
+      }
+    } catch (snapErr) {
+      console.error("[publish-candidate] odds snapshot failed:", snapErr.message || snapErr);
+    }
+    try {
+      await notifications.notifyPickPublished(
+        { ...savedPick, sport: event?.sport, league: event?.league, homeTeam: event?.homeTeam, awayTeam: event?.awayTeam },
+        { db: require("./db") }
+      );
+    } catch (notifErr) {
+      console.error("[publish-candidate] notify failed:", notifErr.message || notifErr);
+    }
+
     res.json({
       ok: true,
       pick: { ...savedPick, sport: event?.sport, league: event?.league, homeTeam: event?.homeTeam, awayTeam: event?.awayTeam, eventDate: event?.eventDate, disclaimer: SPORTS_PICK_DISCLAIMER },
@@ -1888,6 +1921,24 @@ app.post("/api/picks/publish-direct", requireAdmin, async (req, res) => {
       result: "",
       createdAt: new Date().toISOString(),
     });
+
+    // Batch 4: snapshot inicial de odds (si vienen) + notificar admin via Telegram
+    try {
+      const initialOdds = Number(req.body?.odds);
+      if (Number.isFinite(initialOdds) && initialOdds > 0 && typeof saveOddsSnapshot === "function") {
+        await saveOddsSnapshot({ pickId: savedPick.id, odds: initialOdds, market: String(market), source: "publish" });
+      }
+    } catch (snapErr) {
+      console.error("[publish-direct] odds snapshot failed:", snapErr.message || snapErr);
+    }
+    try {
+      await notifications.notifyPickPublished(
+        { ...savedPick, sport: event.sport, league: event.league, homeTeam: event.homeTeam, awayTeam: event.awayTeam },
+        { db: require("./db") }
+      );
+    } catch (notifErr) {
+      console.error("[publish-direct] notify failed:", notifErr.message || notifErr);
+    }
 
     res.json({
       ok: true,
@@ -2154,6 +2205,65 @@ app.get("/api/me/bets", async (req, res) => {
   }
 });
 
+// ─── REFERIDOS (sistema MVP) ────────────────────────────────
+// GET /api/me/referral → devuelve { code, shareUrl, stats }
+app.get("/api/me/referral", async (req, res) => {
+  try {
+    const email = getRequestEmail(req);
+    if (!email) return res.status(401).json({ ok: false, error: "auth_required" });
+    if (typeof getOrCreateReferralCode !== "function") return res.status(501).json({ ok: false, error: "referral_not_supported" });
+    if (typeof getReferralStats !== "function") return res.status(501).json({ ok: false, error: "referral_not_supported" });
+    const ref = await getOrCreateReferralCode(email);
+    const stats = await getReferralStats(email);
+    const baseUrl = String(process.env.PUBLIC_APP_URL || "https://app.momentumascent.com").replace(/\/+$/, "");
+    const shareUrl = `${baseUrl}/registro.html?ref=${encodeURIComponent(ref.code)}`;
+    res.json({ ok: true, code: ref.code, shareUrl, stats });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "referral_get_failed") });
+  }
+});
+
+// POST /api/me/referral/redeem → usuario logueado canjea código
+// body: { code }
+app.post("/api/me/referral/redeem", async (req, res) => {
+  try {
+    const email = getRequestEmail(req);
+    if (!email) return res.status(401).json({ ok: false, error: "auth_required" });
+    if (typeof getReferralByCode !== "function") return res.status(501).json({ ok: false, error: "referral_not_supported" });
+    if (typeof logReferralUse !== "function") return res.status(501).json({ ok: false, error: "referral_not_supported" });
+    const code = String(req.body?.code || "").trim().toUpperCase();
+    if (!code) return res.status(400).json({ ok: false, error: "code_required" });
+    const ref = await getReferralByCode(code);
+    if (!ref) return res.status(404).json({ ok: false, error: "code_not_found" });
+    if (ref.ownerEmail === email) return res.status(400).json({ ok: false, error: "self_referral" });
+    try {
+      const result = await logReferralUse({ code: ref.code, referredEmail: email, referrerEmail: ref.ownerEmail });
+      res.json({ ok: true, useId: result.useId, referrerEmail: ref.ownerEmail, code: ref.code });
+    } catch (err) {
+      const msg = String(err?.message || "");
+      if (msg === "self_referral_not_allowed") return res.status(400).json({ ok: false, error: "self_referral" });
+      if (msg === "already_used") return res.status(400).json({ ok: false, error: "already_used" });
+      throw err;
+    }
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "referral_redeem_failed") });
+  }
+});
+
+// GET /api/me/referral/uses → lista de gente que usó mi código
+app.get("/api/me/referral/uses", async (req, res) => {
+  try {
+    const email = getRequestEmail(req);
+    if (!email) return res.status(401).json({ ok: false, error: "auth_required" });
+    if (typeof listReferralUses !== "function") return res.status(501).json({ ok: false, error: "referral_not_supported" });
+    const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 100));
+    const uses = await listReferralUses(email, { limit });
+    res.json({ ok: true, uses });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "referral_uses_failed") });
+  }
+});
+
 // GET /api/me/bets/stats → stats agregadas (ROI, WR, racha, etc.)
 app.get("/api/me/bets/stats", async (req, res) => {
   try {
@@ -2341,6 +2451,126 @@ app.get("/api/picks/similar/:id", requireAdmin, async (req, res) => {
     res.json({ ok: true, queryPickId: id, count: detailed.length, similar: detailed });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error?.message || "similar_failed") });
+  }
+});
+
+// ── BATCH 4: NOTIFICATIONS + LINE MOVEMENT + NEWS ─────────────────────────
+
+// POST /api/admin/notify/test — manda un test al canal indicado
+app.post("/api/admin/notify/test", requireAdmin, async (req, res) => {
+  try {
+    const channel = String(req.body?.channel || "telegram").toLowerCase();
+    const recipient = req.body?.recipient || undefined;
+    const message = String(req.body?.message || "🧪 Test notification — Momentum Ascent backend OK");
+    const subject = String(req.body?.subject || "Test Momentum Ascent");
+    const dbMod = require("./db");
+
+    let result;
+    if (channel === "telegram") {
+      result = await notifications.dispatch({
+        channel: "telegram",
+        recipient,
+        type: "test",
+        subject,
+        message,
+        payload: { source: "admin_test" },
+        db: dbMod,
+      });
+    } else if (channel === "email") {
+      result = await notifications.dispatch({
+        channel: "email",
+        recipient,
+        type: "test",
+        subject,
+        text: message,
+        html: `<p>${String(message).replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]))}</p>`,
+        payload: { source: "admin_test" },
+        db: dbMod,
+      });
+    } else {
+      return res.status(400).json({ ok: false, error: "unsupported_channel" });
+    }
+    res.json({ ok: true, result });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error?.message || "notify_test_failed") });
+  }
+});
+
+// GET /api/admin/notifications/log — listado paginado
+app.get("/api/admin/notifications/log", requireAdmin, async (req, res) => {
+  try {
+    if (typeof listNotifications !== "function") {
+      return res.status(501).json({ ok: false, error: "notifications_log_not_supported" });
+    }
+    const channel = req.query.channel ? String(req.query.channel) : undefined;
+    const limit = Number(req.query.limit || 50);
+    const rows = await listNotifications({ channel, limit });
+    res.json({ ok: true, count: rows.length, notifications: rows });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error?.message || "notifications_log_failed") });
+  }
+});
+
+// GET /api/admin/picks/:id/odds-snapshots — historial de snapshots para line movement
+app.get("/api/admin/picks/:id/odds-snapshots", requireAdmin, async (req, res) => {
+  try {
+    if (typeof listOddsSnapshots !== "function") {
+      return res.status(501).json({ ok: false, error: "odds_snapshots_not_supported" });
+    }
+    const pickId = Number(req.params.id || 0);
+    if (!pickId) return res.status(400).json({ ok: false, error: "pick_id_required" });
+    const snapshots = await listOddsSnapshots(pickId);
+    let movement = null;
+    if (snapshots.length >= 2) {
+      const first = snapshots[0];
+      const last = snapshots[snapshots.length - 1];
+      movement = lineMovement.detectSignificantMove({ oldOdds: first.odds, newOdds: last.odds });
+    }
+    res.json({ ok: true, pickId, count: snapshots.length, snapshots, movement });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error?.message || "odds_snapshots_failed") });
+  }
+});
+
+// POST /api/admin/picks/:id/odds-snapshot — agregar snapshot manual + detectar movimiento
+app.post("/api/admin/picks/:id/odds-snapshot", requireAdmin, async (req, res) => {
+  try {
+    if (typeof saveOddsSnapshot !== "function") {
+      return res.status(501).json({ ok: false, error: "odds_snapshots_not_supported" });
+    }
+    const pickId = Number(req.params.id || 0);
+    if (!pickId) return res.status(400).json({ ok: false, error: "pick_id_required" });
+    const odds = Number(req.body?.odds);
+    if (!Number.isFinite(odds) || odds <= 0) {
+      return res.status(400).json({ ok: false, error: "valid_odds_required" });
+    }
+    const market = req.body?.market ? String(req.body.market) : null;
+    const source = String(req.body?.source || "manual");
+
+    // Compare against previous snapshot BEFORE saving the new one
+    const dbMod = require("./db");
+    const comparison = await lineMovement.compareOddsForPick(pickId, odds, { db: dbMod });
+
+    const saved = await saveOddsSnapshot({ pickId, odds, market, source });
+    res.json({ ok: true, snapshot: saved, movement: comparison.change || null, previous: comparison.snapshot || null });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error?.message || "odds_snapshot_failed") });
+  }
+});
+
+// POST /api/admin/news/event-relevant — busca news relevantes para un evento
+app.post("/api/admin/news/event-relevant", requireAdmin, async (req, res) => {
+  try {
+    const { homeTeam, awayTeam, league } = req.body || {};
+    if (!homeTeam && !awayTeam) {
+      return res.status(400).json({ ok: false, error: "homeTeam_or_awayTeam_required" });
+    }
+    const topK = Math.max(1, Math.min(10, Number(req.body?.topK) || 3));
+    const hoursOld = Math.max(1, Math.min(168, Number(req.body?.hoursOld) || 24));
+    const results = await newsScraper.getRelevantNewsForEvent({ homeTeam, awayTeam, league }, { topK, hoursOld });
+    res.json({ ok: true, count: results.length, results });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error?.message || "news_event_relevant_failed") });
   }
 });
 
@@ -2541,6 +2771,18 @@ initDb()
       console.log(`[backend] listening on http://localhost:${PORT}`);
       console.log(`[backend] db client: ${DB_META.client}`);
     });
+    // Batch 4: iniciar cron jobs (daily summary + streak alerts)
+    try {
+      startCronJobs({
+        notifications,
+        db: require("./db"),
+        listPickHistory,
+        toDateKey,
+        matchesDateKey,
+      });
+    } catch (err) {
+      console.error("[startup cron] failed:", err.message || err);
+    }
   })
   .catch((error) => {
     console.error("[backend] failed to initialize db:", error.message || error);

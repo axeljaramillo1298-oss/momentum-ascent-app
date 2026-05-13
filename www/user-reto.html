@@ -144,6 +144,12 @@ main{position:relative;z-index:2}
 .hist-legs-col{flex:1;min-width:0}
 .hist-date{font-size:10px;color:var(--muted);margin-bottom:4px}
 .hist-legs-preview{font-size:12px;color:rgba(240,237,232,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-pnl{margin-top:6px;font-size:11.5px;font-family:'Barlow Condensed',sans-serif;font-weight:800;letter-spacing:.02em;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.hist-pnl-inv{color:rgba(240,237,232,.65)}
+.hist-pnl-arrow{color:var(--muted);font-weight:400}
+.hist-pnl-gain{color:#4ADE80}
+.hist-pnl-loss{color:#F87171}
+.hist-pnl-pending{color:#F59E0B}
 .hist-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
 .hist-odds{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;color:var(--blue2)}
 .hist-result-chip{font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:20px;border:1px solid}
@@ -477,10 +483,27 @@ function renderHistory(retos){
     const preview = legs.map(l => l.pick || '?').join(' → ');
     const resultMap = { won:'won', lost:'lost', in_progress:'in_progress', '':'in_progress' };
     const chipLabel = r.result === 'won' ? '✓ Completado' : r.result === 'lost' ? '✗ Fallido' : '⚡ En progreso';
+    // P&L: inversión + ganancia / pérdida real (Batch 2.5)
+    const inv = Number(r.inversion || 0);
+    const projWin = Number(r.projectedWin || 0);
+    let pnlLine = '';
+    if (inv > 0) {
+      if (r.result === 'won') {
+        // Ganancia neta = projectedWin - inversion (pagado al usuario menos lo apostado)
+        const gain = Math.max(0, projWin - inv);
+        pnlLine = `<div class="hist-pnl"><span class="hist-pnl-inv">${fmtMxn(inv)}</span> <span class="hist-pnl-arrow">→</span> <span class="hist-pnl-gain">+${fmtMxn(gain)}</span></div>`;
+      } else if (r.result === 'lost') {
+        pnlLine = `<div class="hist-pnl"><span class="hist-pnl-inv">${fmtMxn(inv)}</span> <span class="hist-pnl-arrow">→</span> <span class="hist-pnl-loss">-${fmtMxn(inv)}</span></div>`;
+      } else {
+        // En progreso: muestra meta potencial
+        pnlLine = `<div class="hist-pnl"><span class="hist-pnl-inv">${fmtMxn(inv)}</span> <span class="hist-pnl-arrow">→</span> <span class="hist-pnl-pending">meta ${fmtMxn(projWin)}</span></div>`;
+      }
+    }
     return `<div class="hist-card">
       <div class="hist-legs-col">
         <div class="hist-date">${fmtDateShort(r.publishedAt || r.createdAt)} · ${legs.length} legs</div>
         <div class="hist-legs-preview">${preview}</div>
+        ${pnlLine}
       </div>
       <div class="hist-right">
         <div class="hist-odds">${r.combinedOdds}x</div>
