@@ -112,8 +112,57 @@ body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;ov
 .btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
 .disc{margin-top:20px;font-size:10px;color:rgba(240,237,232,.25);line-height:1.6}
 
+/* TODAY SCORECARD */
+.today-section{margin:32px auto 0;max-width:1100px;padding:0 24px;opacity:0;animation:up .5s .42s forwards}
+.today-card{background:linear-gradient(135deg,rgba(255,69,0,.08),rgba(255,69,0,.02));border:1px solid rgba(255,69,0,.18);border-radius:8px;padding:24px;position:relative}
+.today-hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.today-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:24px;text-transform:uppercase;letter-spacing:.02em}
+.today-title em{color:var(--orange);font-style:normal}
+.today-live{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--green)}
+.today-live::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.6s ease-in-out infinite}
+.today-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;margin-bottom:16px}
+.today-stat{background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:4px;padding:12px;text-align:center}
+.today-stat-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;line-height:1}
+.today-stat-lbl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.today-picks{display:flex;flex-direction:column;gap:8px}
+.today-pick-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:rgba(0,0,0,.18);border-radius:4px;font-size:12px}
+.today-pick-info{flex:1;min-width:0}
+.today-pick-match{font-weight:700;font-size:12px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.today-pick-meta{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* BREAKDOWNS (liga / mercado) */
+.breakdown-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:56px;opacity:0;animation:up .5s .58s forwards}
+.breakdown-card{background:rgba(255,255,255,.015);border:1px solid var(--border);border-radius:8px;padding:20px}
+.breakdown-hdr{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:18px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:14px;color:var(--text)}
+.breakdown-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+.breakdown-row:last-child{border-bottom:none}
+.breakdown-name{flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.breakdown-bar{flex:1.4;max-width:140px;display:flex;align-items:center;gap:8px}
+.breakdown-track{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.breakdown-fill{height:100%;border-radius:2px;transition:width .4s}
+.breakdown-wr{font-weight:700;min-width:40px;text-align:right;font-size:12px}
+.breakdown-count{color:var(--muted);font-size:10px;min-width:50px;text-align:right}
+.breakdown-empty{color:var(--muted);font-size:12px;text-align:center;padding:20px 0}
+
+/* CONFIDENCE INSIGHT */
+.conf-insight{background:linear-gradient(135deg,rgba(245,158,11,.06),transparent);border:1px solid rgba(245,158,11,.14);border-radius:8px;padding:18px 22px;margin-bottom:32px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;opacity:0;animation:up .5s .6s forwards}
+.conf-insight-icon{font-size:22px}
+.conf-insight-text{flex:1;font-size:13px;line-height:1.5;color:var(--text)}
+.conf-insight-text strong{color:var(--yellow)}
+
+/* REFRESH INDICATOR */
+.refresh-pill{position:fixed;bottom:18px;right:18px;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(6,6,8,.85);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);z-index:300;transition:opacity .3s}
+.refresh-pill::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s ease-in-out infinite}
+.refresh-pill.refreshing::before{background:var(--orange)}
+
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.25)}}
 @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @media(max-width:700px){
+  .today-section{padding:0 16px}
+  .today-card{padding:18px}
+  .today-stat{padding:10px}
+  .today-stat-val{font-size:24px}
+  .refresh-pill{bottom:12px;right:12px;font-size:9px;padding:6px 10px}
   .stat-strip{gap:1px}
   .stat-tile{min-width:100px;padding:16px 12px}
   .stat-val{font-size:clamp(32px,8vw,52px)}
@@ -173,6 +222,24 @@ body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;ov
   </div>
 </div>
 
+<!-- HOY EN VIVO scorecard -->
+<div class="today-section" id="tr-today" style="display:none">
+  <div class="today-card">
+    <div class="today-hdr">
+      <div class="today-title">Hoy <em>en vivo</em></div>
+      <span class="today-live">Resultados parciales</span>
+    </div>
+    <div class="today-stats">
+      <div class="today-stat"><div class="today-stat-val" id="td-total">—</div><div class="today-stat-lbl">Picks hoy</div></div>
+      <div class="today-stat"><div class="today-stat-val" style="color:var(--green)" id="td-won">—</div><div class="today-stat-lbl">Ganados</div></div>
+      <div class="today-stat"><div class="today-stat-val" style="color:var(--red)" id="td-lost">—</div><div class="today-stat-lbl">Perdidos</div></div>
+      <div class="today-stat"><div class="today-stat-val" style="color:var(--yellow)" id="td-pending">—</div><div class="today-stat-lbl">Pendientes</div></div>
+      <div class="today-stat"><div class="today-stat-val" style="color:var(--orange)" id="td-wr">—</div><div class="today-stat-lbl">Win rate</div></div>
+    </div>
+    <div class="today-picks" id="td-picks"></div>
+  </div>
+</div>
+
 <div class="content">
 
   <!-- VISUAL STREAK -->
@@ -182,6 +249,24 @@ body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;ov
       <span class="sec-sub" id="tr-streak-label">—</span>
     </div>
     <div class="streak-wrap" id="tr-streak-dots"></div>
+  </div>
+
+  <!-- CONFIDENCE INSIGHT -->
+  <div class="conf-insight" id="tr-conf-insight" style="display:none">
+    <span class="conf-insight-icon">📊</span>
+    <div class="conf-insight-text" id="tr-conf-text"></div>
+  </div>
+
+  <!-- BREAKDOWNS por liga / mercado -->
+  <div class="breakdown-grid">
+    <div class="breakdown-card">
+      <div class="breakdown-hdr">Por liga</div>
+      <div id="tr-by-league"><div class="breakdown-empty">Sin datos suficientes</div></div>
+    </div>
+    <div class="breakdown-card">
+      <div class="breakdown-hdr">Por mercado</div>
+      <div id="tr-by-market"><div class="breakdown-empty">Sin datos suficientes</div></div>
+    </div>
   </div>
 
   <!-- PICKS TABLE -->
@@ -227,6 +312,11 @@ body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;ov
 
 </div>
 
+<!-- Indicador de auto-refresh -->
+<div class="refresh-pill" id="tr-refresh" title="Datos actualizados automáticamente cada 90 segundos">
+  <span id="tr-refresh-text">Actualizado</span>
+</div>
+
 <script>
 (function(){
   const API_BASE = (() => {
@@ -241,10 +331,22 @@ body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;ov
 
   let allPicks = [];
   let activeFilter = 'all';
+  let lastRefresh = 0;
+  const REFRESH_INTERVAL_MS = 90000; // 90s
 
   function confColor(c){ return Number(c)>=70 ? 'var(--green)' : Number(c)>=60 ? 'var(--yellow)' : 'var(--red)'; }
   function fmtDate(d){ try{ return new Date(d).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}); }catch{ return d||'—'; } }
   function resultOf(p){ return p.result||'pending'; }
+
+  // YYYY-MM-DD en zona horaria CDMX (consistente con backend)
+  function dateKeyMx(date){
+    if(!date) return '';
+    try{
+      const fmt = new Intl.DateTimeFormat('en-CA',{timeZone:'America/Mexico_City',year:'numeric',month:'2-digit',day:'2-digit'});
+      return fmt.format(new Date(date));
+    }catch{return '';}
+  }
+  function todayKeyMx(){ return dateKeyMx(new Date()); }
 
   function calcStats(picks){
     const resolved = picks.filter(p=>p.result==='won'||p.result==='lost');
@@ -333,17 +435,148 @@ body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;ov
     }).join('');
   }
 
-  async function load(){
+  // HOY scorecard
+  function renderToday(picks){
+    const today = todayKeyMx();
+    const todayPicks = picks.filter(p => dateKeyMx(p.eventDate || p.event_date || p.createdAt || p.created_at) === today);
+    const el = document.getElementById('tr-today');
+    if(!todayPicks.length){ el.style.display='none'; return; }
+    el.style.display='block';
+    const s = calcStats(todayPicks);
+    document.getElementById('td-total').textContent = s.total;
+    document.getElementById('td-won').textContent = s.won;
+    document.getElementById('td-lost').textContent = s.lost;
+    document.getElementById('td-pending').textContent = s.pending;
+    document.getElementById('td-wr').textContent = s.winRate!==null ? `${s.winRate}%` : '—';
+
+    const picksHtml = todayPicks.slice(0, 8).map(p => {
+      const r = resultOf(p);
+      const resChip = r==='won' ? '<span class="res-chip won">✓</span>'
+        : r==='lost' ? '<span class="res-chip lost">✗</span>'
+        : r==='void' ? '<span class="res-chip void">—</span>'
+        : '<span class="res-chip pending">·</span>';
+      const isPremium = (p.planTier||'free')==='premium';
+      const pickTxt = p.pickLocked ? '⭐ Premium' : (p.pick || '');
+      return `<div class="today-pick-row">
+        <div class="today-pick-info">
+          <div class="today-pick-match"><span class="tier-dot ${isPremium?'premium':'free'}"></span>${p.homeTeam||p.home_team||'?'} vs ${p.awayTeam||p.away_team||'?'}</div>
+          <div class="today-pick-meta">${p.league||''} · ${pickTxt}</div>
+        </div>
+        ${resChip}
+      </div>`;
+    }).join('');
+    document.getElementById('td-picks').innerHTML = picksHtml;
+  }
+
+  // Stats por liga (mínimo 2 picks resueltos)
+  function calcByLeague(picks){
+    const map = {};
+    picks.forEach(p => {
+      if(p.result!=='won' && p.result!=='lost') return;
+      const key = String(p.league||'Otra').trim() || 'Otra';
+      if(!map[key]) map[key] = {league:key, won:0, lost:0};
+      if(p.result==='won') map[key].won++; else map[key].lost++;
+    });
+    return Object.values(map).map(d => ({
+      ...d,
+      total: d.won + d.lost,
+      winRate: d.won + d.lost > 0 ? Math.round(d.won/(d.won+d.lost)*100) : null,
+    })).filter(d => d.total >= 2).sort((a,b) => (b.winRate||0) - (a.winRate||0) || b.total - a.total).slice(0, 8);
+  }
+
+  // Stats por mercado
+  function calcByMarket(picks){
+    const map = {};
+    picks.forEach(p => {
+      if(p.result!=='won' && p.result!=='lost') return;
+      const key = String(p.market||'otro').trim() || 'otro';
+      if(!map[key]) map[key] = {market:key, won:0, lost:0};
+      if(p.result==='won') map[key].won++; else map[key].lost++;
+    });
+    return Object.values(map).map(d => ({
+      ...d,
+      total: d.won + d.lost,
+      winRate: d.won + d.lost > 0 ? Math.round(d.won/(d.won+d.lost)*100) : null,
+    })).filter(d => d.total >= 2).sort((a,b) => (b.winRate||0) - (a.winRate||0) || b.total - a.total).slice(0, 8);
+  }
+
+  function renderBreakdown(elementId, data, labelKey){
+    const el = document.getElementById(elementId);
+    if(!data.length){ el.innerHTML = '<div class="breakdown-empty">Sin datos suficientes</div>'; return; }
+    el.innerHTML = data.map(d => {
+      const wr = d.winRate;
+      const color = wr>=60 ? 'var(--green)' : wr>=50 ? 'var(--yellow)' : 'var(--red)';
+      return `<div class="breakdown-row">
+        <div class="breakdown-name" title="${d[labelKey]}">${d[labelKey]}</div>
+        <div class="breakdown-bar">
+          <div class="breakdown-track"><div class="breakdown-fill" style="width:${wr||0}%;background:${color}"></div></div>
+          <span class="breakdown-wr" style="color:${color}">${wr!==null?wr+'%':'—'}</span>
+        </div>
+        <div class="breakdown-count">${d.won}/${d.total}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Insight: picks con confianza alta vs resto
+  function renderConfInsight(picks){
+    const buckets = {high:{won:0,lost:0}, mid:{won:0,lost:0}, low:{won:0,lost:0}};
+    picks.forEach(p => {
+      if(p.result!=='won' && p.result!=='lost') return;
+      const c = Number(p.confidence||0);
+      const key = c>=70 ? 'high' : c>=60 ? 'mid' : 'low';
+      if(p.result==='won') buckets[key].won++; else buckets[key].lost++;
+    });
+    const calcWR = b => b.won+b.lost > 0 ? Math.round(b.won/(b.won+b.lost)*100) : null;
+    const highWR = calcWR(buckets.high);
+    const highTotal = buckets.high.won + buckets.high.lost;
+    const el = document.getElementById('tr-conf-insight');
+    if(highTotal >= 5 && highWR !== null){
+      document.getElementById('tr-conf-text').innerHTML = `Los picks con confianza <strong>70% o más</strong> tienen win rate de <strong>${highWR}%</strong> (${buckets.high.won} ganados de ${highTotal} resueltos). Los de mayor confianza son los más fiables.`;
+      el.style.display = 'flex';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  // Indicador "Actualizado hace Xs"
+  let refreshTickerInterval = null;
+  function renderRefreshPill(){
+    const txt = document.getElementById('tr-refresh-text');
+    const update = () => {
+      if(!lastRefresh){ txt.textContent = 'Actualizando…'; return; }
+      const secs = Math.floor((Date.now() - lastRefresh) / 1000);
+      if(secs < 5) txt.textContent = 'Actualizado ahora';
+      else if(secs < 60) txt.textContent = `Hace ${secs}s`;
+      else txt.textContent = `Hace ${Math.floor(secs/60)}min`;
+    };
+    update();
+    if(!refreshTickerInterval) refreshTickerInterval = setInterval(update, 5000);
+  }
+
+  async function load(opts){
+    const isRefresh = !!(opts && opts.isRefresh);
+    const refreshEl = document.getElementById('tr-refresh');
+    if(isRefresh) refreshEl.classList.add('refreshing');
     try{
-      const r = await fetch(`${API_BASE}/api/picks/history?limit=200`);
+      const r = await fetch(`${API_BASE}/api/picks/history?limit=200`, {cache:'no-store'});
       const data = await r.json();
       allPicks = Array.isArray(data?.picks) ? data.picks : [];
       const s = calcStats(allPicks);
       renderStats(s);
+      renderToday(allPicks);
       renderDots(allPicks);
+      renderConfInsight(allPicks);
+      renderBreakdown('tr-by-league', calcByLeague(allPicks), 'league');
+      renderBreakdown('tr-by-market', calcByMarket(allPicks), 'market');
       renderTable(allPicks);
+      lastRefresh = Date.now();
+      renderRefreshPill();
     } catch(e) {
-      document.getElementById('tr-tbody').innerHTML = `<tr><td colspan="6" class="empty-row">No se pudo cargar el historial.</td></tr>`;
+      if(!isRefresh){
+        document.getElementById('tr-tbody').innerHTML = `<tr><td colspan="6" class="empty-row">No se pudo cargar el historial.</td></tr>`;
+      }
+    } finally {
+      if(isRefresh) setTimeout(() => refreshEl.classList.remove('refreshing'), 400);
     }
   }
 
@@ -355,7 +588,21 @@ body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;ov
     renderTable(allPicks);
   });
 
+  // Carga inicial
   load();
+
+  // Auto-refresh cada 90s, solo si la pestaña está visible
+  setInterval(() => {
+    if(document.hidden) return;
+    load({isRefresh:true});
+  }, REFRESH_INTERVAL_MS);
+
+  // Refresh inmediato cuando la pestaña vuelve a estar visible (si pasó mucho tiempo)
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden && lastRefresh && (Date.now() - lastRefresh) > REFRESH_INTERVAL_MS){
+      load({isRefresh:true});
+    }
+  });
 })();
 </script>
 </body>
