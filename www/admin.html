@@ -984,10 +984,15 @@ main{position:relative;z-index:2}
   }
 
   async function fetchJson(path, options = {}){
-    // Timeout defensivo: si el server tarda más de 18s (deploy, lentitud), abortar
-    // para que el UI no se quede colgado en "Cargando…" forever.
+    // Timeout adaptativo:
+    // - Endpoints de IA (generate*, gpt-*, claude-*, reto/generate): 120s
+    // - Resto (health, picks, sports, etc): 60s
+    // Esto evita matar a Claude/GPT que pueden tardar 30-60s legítimamente
+    // pero también evita que un endpoint colgado deje el UI esperando forever.
+    const isAiEndpoint = /\/api\/(picks\/(generate|gpt-|claude-)|reto\/generate)/.test(path);
+    const defaultTimeout = isAiEndpoint ? 120000 : 60000;
     const controller = new AbortController();
-    const timeoutMs = Number(options.timeoutMs) || 18000;
+    const timeoutMs = Number(options.timeoutMs) || defaultTimeout;
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     let res;
     try {
@@ -2815,6 +2820,17 @@ main{position:relative;z-index:2}
   async function autoRefreshTick(){
     ensureRefreshEls();
     if(document.hidden){ refreshPill?.classList.add('paused'); return; }
+    // CRITICAL: si hay un workspace abierto (admin analizando un evento),
+    // NO recargar eventos — perdería el contexto del análisis en curso.
+    // Solo refrescamos "Hoy en vivo" que no toca cards de eventos.
+    const hasOpenWorkspace = document.querySelector('.work-panel.open');
+    if (hasOpenWorkspace) {
+      refreshPill?.classList.remove('paused');
+      // Refresh light: solo HOY EN VIVO (no toca event cards)
+      try { await loadLiveToday(); lastRefresh = Date.now(); paintRefreshPill(); }
+      catch(_) {}
+      return;
+    }
     refreshPill?.classList.remove('paused');
     refreshPill?.classList.add('refreshing');
     try {
