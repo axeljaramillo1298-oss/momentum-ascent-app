@@ -2790,11 +2790,20 @@ main{position:relative;z-index:2}
   // Refresca eventos del día cada 60s; pill muestra "Hace Xs"
   const REFRESH_INTERVAL_MS = 60000;
   let lastRefresh = 0;
-  const refreshPill = document.getElementById('admin-refresh-pill');
-  const refreshTxt = document.getElementById('admin-refresh-text');
+  // Lazy: el div #admin-refresh-pill vive en el HTML DESPUÉS de este script,
+  // así que document.getElementById retorna null al evaluarse aquí. Lo
+  // dejamos como let null y lo asignamos en el primer uso (después de
+  // Promise.all / DOM ready).
+  let refreshPill = null;
+  let refreshTxt = null;
+  function ensureRefreshEls(){
+    if (!refreshPill) refreshPill = document.getElementById('admin-refresh-pill');
+    if (!refreshTxt) refreshTxt = document.getElementById('admin-refresh-text');
+  }
   let refreshTicker = null;
 
   function paintRefreshPill(){
+    ensureRefreshEls();
     if(!refreshPill || !refreshTxt) return;
     if(!lastRefresh){ refreshTxt.textContent = 'Cargando…'; return; }
     const secs = Math.floor((Date.now() - lastRefresh) / 1000);
@@ -2804,6 +2813,7 @@ main{position:relative;z-index:2}
   }
 
   async function autoRefreshTick(){
+    ensureRefreshEls();
     if(document.hidden){ refreshPill?.classList.add('paused'); return; }
     refreshPill?.classList.remove('paused');
     refreshPill?.classList.add('refreshing');
@@ -2817,9 +2827,10 @@ main{position:relative;z-index:2}
   }
 
   function startAutoRefresh(){
+    ensureRefreshEls();
     if(refreshTicker) return;
     refreshTicker = setInterval(autoRefreshTick, REFRESH_INTERVAL_MS);
-    if(!refreshPill.__paintTicker){
+    if(refreshPill && !refreshPill.__paintTicker){
       refreshPill.__paintTicker = setInterval(paintRefreshPill, 5000);
     }
     // Refresca inmediato al volver a la pestaña tras inactividad
