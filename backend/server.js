@@ -4,6 +4,8 @@ const express = require("express");
 const cors = require("cors");
 const crypto = require("node:crypto");
 const { generateAiPlan, buildFallbackPlan, generateSportsPick, runDualAnalysis, analyzeMarketsGPT, claudeDecideMarket, scoutDayEventsGPT, generateRetoEscalera, selectTopPicksOfDay, calculateExpectedValue } = require("./ai");
+const { generateEmbedding, findKNearest, hashText } = require("./embeddings");
+const { rateLimitMiddleware } = require("./rate-limit");
 const sportsApiService = require("./sportsApiService");
 const { sendWhatsAppText, getWhatsAppConfigStatus } = require("./whatsapp");
 const { startCoachOnboardingForUser, handleIncomingCoachMessage } = require("./coach-whatsapp");
@@ -58,6 +60,12 @@ const {
   resolveUserPickBet,
   listUserBets,
   getUserBankrollStats,
+  savePickEmbedding,
+  getPickEmbedding,
+  listAllPickEmbeddings,
+  logRateLimitEvent,
+  countRateLimitEvents,
+  pruneOldRateLimitEvents,
   logApiSync,
   saveRetoDraft,
   publishReto,
@@ -126,6 +134,31 @@ app.use(express.static(path.join(__dirname, "../www"), {
 const getRequestEmail = (req) => String(req.headers["x-user-email"] || "").trim().toLowerCase();
 const getGodToken = (req) => String(req.headers["x-god-token"] || "").trim();
 const GOD_SESSIONS = new Map();
+
+// ── Rate limiting persistente (Batch 3) ───────────────────────────
+// Para endpoints costosos de IA (generación de picks/retos/análisis)
+const RL_DB = {
+  logRateLimitEvent: (...args) => typeof logRateLimitEvent === "function" ? logRateLimitEvent(...args) : Promise.resolve({ ok: true }),
+  countRateLimitEvents: (...args) => typeof countRateLimitEvents === "function" ? countRateLimitEvents(...args) : Promise.resolve(0),
+};
+const getUserKeyFromReq = (req) => getRequestEmail(req) || String(req.ip || req.connection?.remoteAddress || "anon");
+const POLICY_AI_GEN = { bucket: "ai_generation", maxEvents: Math.max(5, Number(process.env.RATE_LIMIT_AI_PER_HOUR || 30)), windowMs: 60 * 60 * 1000 };
+const aiGenLimiter = (typeof rateLimitMiddleware === "function")
+  ? rateLimitMiddleware(POLICY_AI_GEN, getUserKeyFromReq, RL_DB)
+  : (req, res, next) => next();
+
+// Helper: texto contextual para embedding de un pick (los embeddings de "casos similares" se calculan sobre este texto)
+function buildPickEmbedText(pick) {
+  if (!pick) return "";
+  const parts = [
+    pick.league || pick.competition || "",
+    `${pick.homeTeam || pick.home_team || ""} vs ${pick.awayTeam || pick.away_team || ""}`,
+    pick.market || "",
+    pick.pick || "",
+    pick.analysis || pick.summary || "",
+  ].filter(Boolean);
+  return parts.join(" | ").slice(0, 2000);
+}
 
 // Rate limiting en memoria: max 10 intentos por IP en 15 min
 const RATE_LIMIT_MAP = new Map();
@@ -1560,7 +1593,7 @@ app.post("/api/sports/events/:eventId/result", requireAdmin, async (req, res) =>
   }
 });
 
-app.post("/api/picks/generate/:eventId", requireAdmin, async (req, res) => {
+app.post("/api/picks/generate/:eventId", requireAdmin, aiGenLimiter, async (req, res) => {
   const ip = getClientIp(req);
   if (checkRateLimit(ip)) {
     return res.status(429).json({ ok: false, error: "rate_limited", retryAfterMs: RATE_LIMIT_WINDOW_MS });
@@ -1654,7 +1687,7 @@ app.post("/api/picks/generate/:eventId", requireAdmin, async (req, res) => {
 });
 
 // Dual analysis: GPT-4o generates 3 candidates → Claude judges and picks the best
-app.post("/api/picks/generate-dual/:eventId", requireAdmin, async (req, res) => {
+app.post("/api/picks/generate-dual/:eventId", requireAdmin, aiGenLimiter, async (req, res) => {
   try {
     const eventId = Number(req.params.eventId || 0);
     const event = await getSportsEventById(eventId);
@@ -1715,7 +1748,7 @@ app.post("/api/picks/generate-dual/:eventId", requireAdmin, async (req, res) => 
 });
 
 // GPT analyzes 5 markets for a single event — admin reviews before passing to Claude
-app.post("/api/picks/gpt-markets/:eventId", requireAdmin, async (req, res) => {
+app.post("/api/picks/gpt-markets/:eventId", requireAdmin, aiGenLimiter, async (req, res) => {
   try {
     const eventId = Number(req.params.eventId || 0);
     const event = await getSportsEventById(eventId);
@@ -1743,7 +1776,7 @@ app.post("/api/picks/gpt-markets/:eventId", requireAdmin, async (req, res) => {
 });
 
 // ── Scout/rank today's events to find best betting opportunities ──────────
-app.post("/api/picks/gpt-scout", requireAdmin, async (req, res) => {
+app.post("/api/picks/gpt-scout", requireAdmin, aiGenLimiter, async (req, res) => {
   try {
     const { events: eventList } = req.body || {};
     if (!Array.isArray(eventList) || !eventList.length) {
@@ -1757,7 +1790,7 @@ app.post("/api/picks/gpt-scout", requireAdmin, async (req, res) => {
 });
 
 // Claude selects the best market from GPT analysis + today's portfolio context
-app.post("/api/picks/claude-decide", requireAdmin, async (req, res) => {
+app.post("/api/picks/claude-decide", requireAdmin, aiGenLimiter, async (req, res) => {
   try {
     const { eventId, gptMarkets } = req.body || {};
     if (!eventId || !gptMarkets) return res.status(400).json({ ok: false, error: "eventId and gptMarkets required" });
@@ -1878,7 +1911,7 @@ app.get("/admin/retos", requireAdmin, async (req, res) => {
 });
 
 // Generate reto with Claude from scouted events
-app.post("/api/reto/generate", requireAdmin, async (req, res) => {
+app.post("/api/reto/generate", requireAdmin, aiGenLimiter, async (req, res) => {
   const ip = getClientIp(req);
   if (checkRateLimit(ip)) {
     return res.status(429).json({ ok: false, error: "rate_limited", retryAfterMs: RATE_LIMIT_WINDOW_MS });
@@ -2226,6 +2259,138 @@ app.get("/api/picks/top-today", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || "top_picks_failed") });
+  }
+});
+
+// ── EMBEDDINGS para "casos similares" (Batch 3 #4) ────────────────
+// POST /api/picks/:id/embed (admin) — genera y guarda el embedding del pick
+// Si ya existe con mismo contextHash, devuelve cached. Útil para backfill.
+app.post("/api/picks/:id/embed", requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ ok: false, error: "pick id required" });
+    if (typeof savePickEmbedding !== "function" || typeof generateEmbedding !== "function") {
+      return res.status(501).json({ ok: false, error: "embeddings_not_supported" });
+    }
+    // Obtener pick desde historial (el getter directo getLatestAiPickForEvent no aplica acá)
+    const allPicks = await listPickHistory(1000);
+    const pick = allPicks.find((p) => Number(p.id) === id);
+    if (!pick) return res.status(404).json({ ok: false, error: "pick_not_found" });
+    const text = buildPickEmbedText(pick);
+    if (!text) return res.status(400).json({ ok: false, error: "no_embeddable_text" });
+    const newHash = hashText(text);
+    const existing = await getPickEmbedding(id);
+    if (existing && existing.contextHash === newHash) {
+      return res.json({ ok: true, cached: true, pickId: id, model: existing.model, contextHash: newHash, dims: existing.embedding?.length || 0 });
+    }
+    const model = String(process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small");
+    const embedding = await generateEmbedding(text, { model });
+    await savePickEmbedding(id, { embedding, model, contextHash: newHash });
+    res.json({ ok: true, cached: false, pickId: id, model, contextHash: newHash, dims: embedding.length });
+  } catch (error) {
+    const msg = String(error?.message || "embed_failed");
+    res.status(500).json({ ok: false, error: msg });
+  }
+});
+
+// GET /api/picks/similar/:id — devuelve los K picks más similares (k=5 default)
+// Si el pick query no tiene embedding, lo genera al vuelo (cuesta 1 llamada OpenAI)
+app.get("/api/picks/similar/:id", requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const k = Math.max(1, Math.min(20, Number(req.query.k) || 5));
+    if (!id) return res.status(400).json({ ok: false, error: "pick id required" });
+    if (typeof listAllPickEmbeddings !== "function" || typeof findKNearest !== "function") {
+      return res.status(501).json({ ok: false, error: "embeddings_not_supported" });
+    }
+    const allPicks = await listPickHistory(1000);
+    const queryPick = allPicks.find((p) => Number(p.id) === id);
+    if (!queryPick) return res.status(404).json({ ok: false, error: "pick_not_found" });
+
+    // Obtener/generar embedding del query
+    let queryEmb = await getPickEmbedding(id);
+    if (!queryEmb) {
+      const text = buildPickEmbedText(queryPick);
+      if (!text) return res.status(400).json({ ok: false, error: "no_embeddable_text" });
+      const model = String(process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small");
+      const embedding = await generateEmbedding(text, { model });
+      await savePickEmbedding(id, { embedding, model, contextHash: hashText(text) });
+      queryEmb = { embedding };
+    }
+    // Buscar similares
+    const all = await listAllPickEmbeddings({ limit: 1000 });
+    const others = all.filter((e) => Number(e.pickId) !== id);
+    const nearest = findKNearest(queryEmb.embedding, others, k);
+    // Enriquecer con detalles del pick
+    const detailed = nearest.map((n) => {
+      const detail = allPicks.find((p) => Number(p.id) === Number(n.pickId));
+      return detail ? {
+        pickId: n.pickId,
+        similarity: Number(n.similarity.toFixed(4)),
+        league: detail.league,
+        homeTeam: detail.homeTeam || detail.home_team,
+        awayTeam: detail.awayTeam || detail.away_team,
+        market: detail.market,
+        pick: detail.pick,
+        result: detail.result,
+        confidence: detail.confidence,
+        eventDate: detail.eventDate || detail.event_date,
+        failReason: detail.failReason || detail.fail_reason,
+      } : { pickId: n.pickId, similarity: Number(n.similarity.toFixed(4)) };
+    });
+    res.json({ ok: true, queryPickId: id, count: detailed.length, similar: detailed });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error?.message || "similar_failed") });
+  }
+});
+
+// Scorecard del día — consumible por home, marketing, widgets externos
+// Devuelve: { date, stats: { totalPicks, won, lost, pending, winRate }, topPicks: [...] }
+app.get("/api/scorecard/latest", async (req, res) => {
+  try {
+    const viewerPlanId = await getViewerPlanId(req);
+    const isPremiumViewer = viewerPlanId !== "free";
+    const dateKey = String(req.query.date || toDateKey()).trim();
+    const allHistory = filterPublishedPicks(await listPickHistory(500));
+    let dayPicks = allHistory.filter((pick) => matchesDateKey(pick?.eventDate, dateKey));
+    // Fallback: si hoy aún no hay picks, mostrar el día más reciente con picks
+    if (!dayPicks.length) {
+      const sortedByDate = allHistory
+        .map((p) => ({ p, key: typeof toDateKey === "function" ? toDateKey(new Date(p.eventDate || p.event_date || p.createdAt || 0)) : "" }))
+        .filter((x) => x.key)
+        .sort((a, b) => (a.key < b.key ? 1 : -1));
+      const latestKey = sortedByDate[0]?.key;
+      if (latestKey) {
+        dayPicks = allHistory.filter((pick) => matchesDateKey(pick?.eventDate, latestKey));
+      }
+    }
+    const effectiveDate = dayPicks.length ? (toDateKey(new Date(dayPicks[0]?.eventDate || dayPicks[0]?.event_date || 0)) || dateKey) : dateKey;
+    const won = dayPicks.filter((p) => p.result === "won").length;
+    const lost = dayPicks.filter((p) => p.result === "lost").length;
+    const voidC = dayPicks.filter((p) => p.result === "void").length;
+    const pending = dayPicks.filter((p) => !p.result).length;
+    const resolved = won + lost;
+    const winRate = resolved ? Math.round((won / resolved) * 100) : null;
+
+    // Top 3 picks del día con tier-lock para no-premium
+    let topPicks = dayPicks.map((p) => ((p?.planTier || "free") === "premium" && !isPremiumViewer) ? { ...p, pickLocked: true } : p);
+    const ranked = (typeof selectTopPicksOfDay === "function")
+      ? selectTopPicksOfDay(topPicks, { topN: 3, minConfidence: 60 })
+      : topPicks.slice(0, 3);
+
+    res.json({
+      ok: true,
+      date: effectiveDate,
+      stats: {
+        totalPicks: dayPicks.length,
+        won, lost, void: voidC, pending,
+        winRate,
+        resolved,
+      },
+      topPicks: ranked.map((pick) => redactPickForViewer({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER }, viewerPlanId)),
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "scorecard_latest_failed") });
   }
 });
 

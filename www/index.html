@@ -294,6 +294,35 @@ footer p{font-size:11px;color:rgba(240,237,232,.2);letter-spacing:.04em}
 .reveal.vis{animation:none;opacity:1;transform:none}
 .rd1{animation-delay:.12s}.rd2{animation-delay:.24s}.rd3{animation-delay:.36s}.rd4{animation-delay:.48s}
 
+/* LIVE SCORECARD (widget del día — Batch 3) */
+.live-scorecard{max-width:1100px;margin:60px auto 20px;padding:0 24px;opacity:0;animation:fadeUp .7s .1s forwards}
+.live-scorecard-card{background:linear-gradient(135deg,rgba(255,69,0,.08),rgba(255,69,0,.02));border:1px solid rgba(255,69,0,.18);border-radius:10px;padding:28px}
+.live-scorecard-hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.live-scorecard-eyebrow{font-size:10px;font-weight:800;letter-spacing:.24em;text-transform:uppercase;color:var(--orange);display:inline-flex;align-items:center;gap:8px}
+.live-scorecard-eyebrow::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--green);animation:livePulse 1.6s ease-in-out infinite}
+.live-scorecard-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:32px;text-transform:uppercase;letter-spacing:-.005em;line-height:1}
+.live-scorecard-title em{color:var(--orange);font-style:normal}
+.live-scorecard-date{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.live-scorecard-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:24px}
+.lsc-stat{background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.05);border-radius:6px;padding:14px 12px;text-align:center}
+.lsc-stat-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:30px;line-height:1;letter-spacing:-.01em}
+.lsc-stat-lbl{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:5px}
+.lsc-toppicks{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.lsc-pick{background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.05);border-radius:6px;padding:14px;font-size:12px;transition:border-color .2s}
+.lsc-pick:hover{border-color:rgba(255,69,0,.25)}
+.lsc-pick-rank{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:3px;background:linear-gradient(135deg,#FF4500,#FF6B2B);color:#fff;font:800 9px 'Barlow Condensed',sans-serif;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+.lsc-pick-rank::before{content:'★';font-size:10px}
+.lsc-pick-match{font-weight:700;font-size:13px;margin-bottom:4px;line-height:1.3}
+.lsc-pick-meta{font-size:10px;color:var(--muted)}
+.lsc-pick-pick{margin-top:8px;font-weight:700;color:var(--orange);font-size:13px}
+.lsc-pick-pick.locked{color:#F5C04A}
+.lsc-cta-row{display:flex;justify-content:center;margin-top:20px}
+.lsc-cta{display:inline-flex;align-items:center;gap:7px;padding:11px 22px;background:transparent;border:1px solid rgba(255,69,0,.4);border-radius:4px;color:var(--orange);font:700 11px 'Barlow',sans-serif;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;transition:all .2s}
+.lsc-cta:hover{background:rgba(255,69,0,.08)}
+.lsc-empty{padding:24px 16px;text-align:center;color:var(--muted);font-size:13px}
+@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.3)}}
+@media(max-width:560px){.live-scorecard-title{font-size:24px}.lsc-stat-val{font-size:24px}}
+
 /* V11 KEYFRAMES */
 @keyframes glowP11{0%,100%{opacity:.55}50%{opacity:1}}
 @keyframes shimV11{0%{background-position:-200% center}100%{background-position:200% center}}
@@ -439,6 +468,28 @@ footer p{font-size:11px;color:rgba(240,237,232,.2);letter-spacing:.04em}
     </div>
   </div>
 </section>
+
+<!-- LIVE SCORECARD (widget de prueba social — auto-actualizado desde /api/scorecard/latest) -->
+<div class="live-scorecard" id="live-scorecard" style="display:none">
+  <div class="live-scorecard-card">
+    <div class="live-scorecard-hdr">
+      <div>
+        <div class="live-scorecard-eyebrow">Picks en vivo</div>
+        <div class="live-scorecard-title">Scorecard <em>de hoy</em></div>
+      </div>
+      <div class="live-scorecard-date" id="lsc-date">—</div>
+    </div>
+    <div class="live-scorecard-stats">
+      <div class="lsc-stat"><div class="lsc-stat-val" style="color:#FF4500" id="lsc-total">—</div><div class="lsc-stat-lbl">Picks</div></div>
+      <div class="lsc-stat"><div class="lsc-stat-val" style="color:#4ADE80" id="lsc-won">—</div><div class="lsc-stat-lbl">Ganados</div></div>
+      <div class="lsc-stat"><div class="lsc-stat-val" style="color:#F87171" id="lsc-lost">—</div><div class="lsc-stat-lbl">Perdidos</div></div>
+      <div class="lsc-stat"><div class="lsc-stat-val" style="color:#F59E0B" id="lsc-pending">—</div><div class="lsc-stat-lbl">Pendientes</div></div>
+      <div class="lsc-stat"><div class="lsc-stat-val" style="color:#FF4500" id="lsc-wr">—</div><div class="lsc-stat-lbl">Win rate</div></div>
+    </div>
+    <div class="lsc-toppicks" id="lsc-toppicks"></div>
+    <div class="lsc-cta-row"><a class="lsc-cta" href="trackrecord.html">Ver historial completo →</a></div>
+  </div>
+</div>
 
 <!-- STATS -->
 <div class="stats">
@@ -799,6 +850,66 @@ godClose?.addEventListener('click',closeGod);
 godModal?.addEventListener('click',(event)=>{if(event.target===godModal)closeGod()});
 godEnter?.addEventListener('click',submitGod);
 [godUser,godPass].forEach((input)=>input?.addEventListener('keydown',(event)=>{if(event.key==='Enter'){event.preventDefault();submitGod()}}));
+
+// ── LIVE SCORECARD WIDGET ──────────────────────────────────
+async function loadLiveScorecard(){
+  try {
+    const r = await fetch(`${getApiBase()}/api/scorecard/latest`, { cache: 'no-store' });
+    if (!r.ok) return;
+    const data = await r.json();
+    if (!data?.ok || !data.stats) return;
+    const s = data.stats;
+    // Solo mostrar si hay al menos 1 pick (no inundar con widget vacío)
+    if (!s.totalPicks) return;
+
+    const widget = document.getElementById('live-scorecard');
+    if (!widget) return;
+    widget.style.display = '';
+
+    // Formato de fecha bonito
+    try {
+      const dt = new Date((data.date || '') + 'T12:00:00');
+      const txt = dt.toLocaleDateString('es-MX', { weekday: 'long', day: '2-digit', month: 'long' });
+      document.getElementById('lsc-date').textContent = txt.charAt(0).toUpperCase() + txt.slice(1);
+    } catch(_) {
+      document.getElementById('lsc-date').textContent = data.date || '';
+    }
+
+    document.getElementById('lsc-total').textContent = s.totalPicks;
+    document.getElementById('lsc-won').textContent = s.won;
+    document.getElementById('lsc-lost').textContent = s.lost;
+    document.getElementById('lsc-pending').textContent = s.pending;
+    document.getElementById('lsc-wr').textContent = s.winRate !== null && s.winRate !== undefined ? `${s.winRate}%` : '—';
+
+    const topEl = document.getElementById('lsc-toppicks');
+    const picks = Array.isArray(data.topPicks) ? data.topPicks : [];
+    if (!picks.length) {
+      topEl.innerHTML = '<div class="lsc-empty">Sin picks destacados todavía.</div>';
+      return;
+    }
+    const escape = (s) => String(s||'').replace(/[<>&"']/g,(c)=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+    topEl.innerHTML = picks.map((p, i) => {
+      const rank = p.topRank || (i+1);
+      const home = escape(p.homeTeam || p.home_team || '?');
+      const away = escape(p.awayTeam || p.away_team || '?');
+      const league = escape(p.league || '');
+      const market = escape(p.market || '');
+      const conf = Number(p.confidence || 0);
+      const pickTxt = p.pickLocked
+        ? '<span class="lsc-pick-pick locked">⭐ Pick Premium — desbloquea</span>'
+        : `<div class="lsc-pick-pick">${escape(p.pick || '—')}${market ? ` <span style="color:rgba(240,237,232,.5);font-weight:400">· ${market}</span>` : ''}</div>`;
+      return `<div class="lsc-pick">
+        <div class="lsc-pick-rank">Top ${rank}</div>
+        <div class="lsc-pick-match">${home} vs ${away}</div>
+        <div class="lsc-pick-meta">${league}${conf ? ` · ${conf}% confianza` : ''}</div>
+        ${pickTxt}
+      </div>`;
+    }).join('');
+  } catch(_) {
+    // silent: si falla, widget queda oculto
+  }
+}
+loadLiveScorecard();
 
 })();
 </script>

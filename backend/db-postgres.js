@@ -296,6 +296,21 @@ CREATE TABLE IF NOT EXISTS user_pick_bets (
   resolved_at TIMESTAMPTZ
 );
 
+CREATE TABLE IF NOT EXISTS pick_embeddings (
+  pick_id BIGINT PRIMARY KEY,
+  embedding TEXT NOT NULL,
+  model TEXT NOT NULL,
+  context_hash TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS rate_limit_events (
+  id BIGSERIAL PRIMARY KEY,
+  user_key TEXT NOT NULL,
+  bucket TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_ai_picks_event_id ON ai_picks(event_id);
 CREATE INDEX IF NOT EXISTS idx_ai_picks_status ON ai_picks(status);
 CREATE INDEX IF NOT EXISTS idx_sports_events_event_date ON sports_events(event_date);
@@ -303,6 +318,7 @@ CREATE INDEX IF NOT EXISTS idx_reto_parlays_status ON reto_parlays(status);
 CREATE INDEX IF NOT EXISTS idx_payment_requests_status ON payment_requests(status);
 CREATE INDEX IF NOT EXISTS idx_user_pick_bets_user ON user_pick_bets(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_pick_bets_pick ON user_pick_bets(pick_id);
+CREATE INDEX IF NOT EXISTS idx_rate_limit_lookup ON rate_limit_events(user_key, bucket, created_at);
 `;
 
 async function initDb() {
@@ -2288,6 +2304,123 @@ async function getUserBankrollStats(userId) {
   };
 }
 
+// ── EMBEDDINGS ──────────────────────────────────────────────────────────────
+
+async function savePickEmbedding(pickId, payload = {}) {
+  const pid = Number(pickId || 0);
+  if (!pid) throw new Error("pick_id_required");
+  const embedding = Array.isArray(payload.embedding) ? payload.embedding : null;
+  if (!embedding) throw new Error("embedding_required");
+  const model = safeStr(payload.model);
+  if (!model) throw new Error("model_required");
+  const contextHash = safeStr(payload.contextHash);
+  const embJson = JSON.stringify(embedding);
+  await pool.query(
+    `INSERT INTO pick_embeddings (pick_id, embedding, model, context_hash, created_at)
+     VALUES ($1, $2, $3, $4, NOW())
+     ON CONFLICT (pick_id) DO UPDATE SET
+       embedding = EXCLUDED.embedding,
+       model = EXCLUDED.model,
+       context_hash = EXCLUDED.context_hash,
+       created_at = NOW()`,
+    [pid, embJson, model, contextHash]
+  );
+  return { ok: true, pickId: pid };
+}
+
+async function getPickEmbedding(pickId) {
+  const pid = Number(pickId || 0);
+  if (!pid) return null;
+  const res = await pool.query(
+    `SELECT pick_id AS "pickId", embedding, model, context_hash AS "contextHash", created_at AS "createdAt"
+     FROM pick_embeddings WHERE pick_id = $1 LIMIT 1`,
+    [pid]
+  );
+  const row = res.rows[0];
+  if (!row) return null;
+  let embedding = [];
+  try {
+    embedding = JSON.parse(row.embedding);
+    if (!Array.isArray(embedding)) embedding = [];
+  } catch {
+    embedding = [];
+  }
+  return {
+    pickId: Number(row.pickId),
+    embedding,
+    model: String(row.model || ""),
+    contextHash: String(row.contextHash || ""),
+    createdAt: row.createdAt,
+  };
+}
+
+async function listAllPickEmbeddings(opts = {}) {
+  const limit = Math.max(1, Math.min(5000, Number(opts.limit) || 500));
+  const res = await pool.query(
+    `SELECT pick_id AS "pickId", embedding, model, created_at AS "createdAt"
+     FROM pick_embeddings
+     ORDER BY created_at DESC
+     LIMIT $1`,
+    [limit]
+  );
+  return (res.rows || []).map((row) => {
+    let embedding = [];
+    try {
+      embedding = JSON.parse(row.embedding);
+      if (!Array.isArray(embedding)) embedding = [];
+    } catch {
+      embedding = [];
+    }
+    return {
+      pickId: Number(row.pickId),
+      embedding,
+      model: String(row.model || ""),
+      createdAt: row.createdAt,
+    };
+  });
+}
+
+// ── RATE LIMIT EVENTS ───────────────────────────────────────────────────────
+
+async function logRateLimitEvent(userKey, bucket) {
+  const key = safeStr(userKey);
+  const buc = safeStr(bucket);
+  if (!key) throw new Error("user_key_required");
+  if (!buc) throw new Error("bucket_required");
+  await pool.query(
+    `INSERT INTO rate_limit_events (user_key, bucket, created_at) VALUES ($1, $2, NOW())`,
+    [key, buc]
+  );
+  return { ok: true };
+}
+
+async function countRateLimitEvents(userKey, bucket, windowMs) {
+  const key = safeStr(userKey);
+  const buc = safeStr(bucket);
+  const win = Math.max(0, Number(windowMs) || 0);
+  if (!key || !buc) return 0;
+  const seconds = win / 1000;
+  const res = await pool.query(
+    `SELECT COUNT(*) AS count
+     FROM rate_limit_events
+     WHERE user_key = $1
+       AND bucket = $2
+       AND created_at > NOW() - ($3 || ' seconds')::interval`,
+    [key, buc, String(seconds)]
+  );
+  return Number(res.rows[0]?.count || 0);
+}
+
+async function pruneOldRateLimitEvents(opts = {}) {
+  const olderThanMs = Math.max(0, Number(opts.olderThanMs) || 86400000);
+  const seconds = olderThanMs / 1000;
+  const res = await pool.query(
+    `DELETE FROM rate_limit_events WHERE created_at < NOW() - ($1 || ' seconds')::interval`,
+    [String(seconds)]
+  );
+  return { deleted: Number(res.rowCount || 0) };
+}
+
 module.exports = {
   DB_META,
   initDb,
@@ -2354,4 +2487,10 @@ module.exports = {
   resolveUserPickBet,
   listUserBets,
   getUserBankrollStats,
+  savePickEmbedding,
+  getPickEmbedding,
+  listAllPickEmbeddings,
+  logRateLimitEvent,
+  countRateLimitEvents,
+  pruneOldRateLimitEvents,
 };

@@ -230,8 +230,24 @@ CREATE TABLE IF NOT EXISTS user_pick_bets (
   resolved_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS pick_embeddings (
+  pick_id INTEGER PRIMARY KEY,
+  embedding TEXT NOT NULL,
+  model TEXT NOT NULL,
+  context_hash TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS rate_limit_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_key TEXT NOT NULL,
+  bucket TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_user_pick_bets_user ON user_pick_bets(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_pick_bets_pick ON user_pick_bets(pick_id);
+CREATE INDEX IF NOT EXISTS idx_rate_limit_lookup ON rate_limit_events(user_key, bucket, created_at);
 `);
 
 try { db.exec(`CREATE TABLE IF NOT EXISTS user_bankroll (
@@ -256,6 +272,20 @@ try { db.exec(`CREATE TABLE IF NOT EXISTS user_pick_bets (
 )`); } catch (e) { /* already exists */ }
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_user_pick_bets_user ON user_pick_bets(user_id)`); } catch (e) { /* */ }
 try { db.exec(`CREATE INDEX IF NOT EXISTS idx_user_pick_bets_pick ON user_pick_bets(pick_id)`); } catch (e) { /* */ }
+try { db.exec(`CREATE TABLE IF NOT EXISTS pick_embeddings (
+  pick_id INTEGER PRIMARY KEY,
+  embedding TEXT NOT NULL,
+  model TEXT NOT NULL,
+  context_hash TEXT NOT NULL,
+  created_at TEXT NOT NULL
+)`); } catch (e) { /* already exists */ }
+try { db.exec(`CREATE TABLE IF NOT EXISTS rate_limit_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_key TEXT NOT NULL,
+  bucket TEXT NOT NULL,
+  created_at TEXT NOT NULL
+)`); } catch (e) { /* already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_rate_limit_lookup ON rate_limit_events(user_key, bucket, created_at)`); } catch (e) { /* */ }
 
 const assignmentColumns = db.prepare("PRAGMA table_info(assignments)").all().map((row) => String(row.name || "").toLowerCase());
 const routineColumns = db.prepare("PRAGMA table_info(routines)").all().map((row) => String(row.name || "").toLowerCase());
@@ -2260,6 +2290,115 @@ function getUserBankrollStats(userId) {
   };
 }
 
+// ── EMBEDDINGS ──────────────────────────────────────────────────────────────
+
+const upsertPickEmbeddingStmt = db.prepare(
+  `INSERT INTO pick_embeddings (pick_id, embedding, model, context_hash, created_at)
+   VALUES (?, ?, ?, ?, ?)
+   ON CONFLICT(pick_id) DO UPDATE SET
+     embedding = excluded.embedding,
+     model = excluded.model,
+     context_hash = excluded.context_hash,
+     created_at = excluded.created_at`
+);
+const getPickEmbeddingStmt = db.prepare(
+  `SELECT pick_id AS pickId, embedding, model, context_hash AS contextHash, created_at AS createdAt
+   FROM pick_embeddings WHERE pick_id = ? LIMIT 1`
+);
+const listPickEmbeddingsStmt = db.prepare(
+  `SELECT pick_id AS pickId, embedding, model, created_at AS createdAt
+   FROM pick_embeddings
+   ORDER BY created_at DESC, pick_id DESC
+   LIMIT ?`
+);
+
+function parseEmbeddingJson(raw) {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePickEmbedding(pickId, payload = {}) {
+  const pid = Number(pickId || 0);
+  if (!pid) throw new Error("pick_id_required");
+  const embedding = Array.isArray(payload.embedding) ? payload.embedding : null;
+  if (!embedding) throw new Error("embedding_required");
+  const model = safeStr(payload.model);
+  if (!model) throw new Error("model_required");
+  const contextHash = safeStr(payload.contextHash);
+  const embJson = JSON.stringify(embedding);
+  upsertPickEmbeddingStmt.run(pid, embJson, model, contextHash, nowIso());
+  return { ok: true, pickId: pid };
+}
+
+function getPickEmbedding(pickId) {
+  const pid = Number(pickId || 0);
+  if (!pid) return null;
+  const row = getPickEmbeddingStmt.get(pid);
+  if (!row) return null;
+  return {
+    pickId: Number(row.pickId),
+    embedding: parseEmbeddingJson(row.embedding),
+    model: String(row.model || ""),
+    contextHash: String(row.contextHash || ""),
+    createdAt: row.createdAt || "",
+  };
+}
+
+function listAllPickEmbeddings(opts = {}) {
+  const limit = Math.max(1, Math.min(5000, Number(opts.limit) || 500));
+  const rows = listPickEmbeddingsStmt.all(limit) || [];
+  return rows.map((row) => ({
+    pickId: Number(row.pickId),
+    embedding: parseEmbeddingJson(row.embedding),
+    model: String(row.model || ""),
+    createdAt: row.createdAt || "",
+  }));
+}
+
+// ── RATE LIMIT EVENTS ───────────────────────────────────────────────────────
+
+const insertRateLimitEventStmt = db.prepare(
+  `INSERT INTO rate_limit_events (user_key, bucket, created_at) VALUES (?, ?, ?)`
+);
+const countRateLimitEventsStmt = db.prepare(
+  `SELECT COUNT(*) AS count FROM rate_limit_events
+   WHERE user_key = ? AND bucket = ? AND created_at > ?`
+);
+const deleteRateLimitEventsStmt = db.prepare(
+  `DELETE FROM rate_limit_events WHERE created_at < ?`
+);
+
+function logRateLimitEvent(userKey, bucket) {
+  const key = safeStr(userKey);
+  const buc = safeStr(bucket);
+  if (!key) throw new Error("user_key_required");
+  if (!buc) throw new Error("bucket_required");
+  insertRateLimitEventStmt.run(key, buc, nowIso());
+  return { ok: true };
+}
+
+function countRateLimitEvents(userKey, bucket, windowMs) {
+  const key = safeStr(userKey);
+  const buc = safeStr(bucket);
+  const win = Math.max(0, Number(windowMs) || 0);
+  if (!key || !buc) return 0;
+  const cutoff = new Date(Date.now() - win).toISOString();
+  const row = countRateLimitEventsStmt.get(key, buc, cutoff);
+  return Number(row?.count || 0);
+}
+
+function pruneOldRateLimitEvents(opts = {}) {
+  const olderThanMs = Math.max(0, Number(opts.olderThanMs) || 86400000);
+  const cutoff = new Date(Date.now() - olderThanMs).toISOString();
+  const res = deleteRateLimitEventsStmt.run(cutoff);
+  return { deleted: Number(res?.changes || 0) };
+}
+
 const DB_META = {
   client: "sqlite",
   path: DB_PATH,
@@ -2332,4 +2471,10 @@ module.exports = {
   resolveUserPickBet: async (betId, payload) => resolveUserPickBet(betId, payload),
   listUserBets: async (userId, opts) => listUserBets(userId, opts),
   getUserBankrollStats: async (userId) => getUserBankrollStats(userId),
+  savePickEmbedding: async (pickId, payload) => savePickEmbedding(pickId, payload),
+  getPickEmbedding: async (pickId) => getPickEmbedding(pickId),
+  listAllPickEmbeddings: async (opts) => listAllPickEmbeddings(opts),
+  logRateLimitEvent: async (userKey, bucket) => logRateLimitEvent(userKey, bucket),
+  countRateLimitEvents: async (userKey, bucket, windowMs) => countRateLimitEvents(userKey, bucket, windowMs),
+  pruneOldRateLimitEvents: async (opts) => pruneOldRateLimitEvents(opts),
 };

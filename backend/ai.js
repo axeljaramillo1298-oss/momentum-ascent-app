@@ -123,6 +123,22 @@ function buildPerformanceContext(picks, options = {}) {
   const byLeague = buildBuckets(byLeagueMap, 2).slice(0, 5);
   const byMarket = buildBuckets(byMarketMap, 2).slice(0, 5);
 
+  // Auto-detected inefficient / efficient combos liga+mercado (Batch 3 #5)
+  // Combos con >= 4 picks resueltos: si WR < 40% son ineficientes (evitar),
+  // si WR >= 70% son fuertes (explotar). La IA ve esto explícito en el prompt.
+  const byComboMap = groupBy(resolved, (p) => {
+    const lg = safeStr(p.league);
+    const mk = norm(p.market);
+    return lg && mk ? `${lg}|${mk}` : null;
+  });
+  const allCombos = buildBuckets(byComboMap, 4);
+  const inefficientCombos = allCombos.filter((c) => c.winRate < 40).slice(0, 3);
+  const efficientCombos = allCombos.filter((c) => c.winRate >= 70).slice(0, 3);
+  const formatCombo = (c) => {
+    const [lg, mk] = c.key.split("|");
+    return `${lg}+${mk.toUpperCase()} (${c.won}-${c.lost}, ${c.winRate}%)`;
+  };
+
   // Calibration on high-confidence picks (>= 70)
   const highConf = resolved.filter((p) => Number(p.confidence || 0) >= 70);
   let calibration = null;
@@ -226,8 +242,14 @@ function buildPerformanceContext(picks, options = {}) {
       `- En este mercado (${marketSpecific.market}): WR ${marketSpecific.winRate}% (${marketSpecific.won}-${marketSpecific.lost})`
     );
   }
+  if (inefficientCombos.length) {
+    lines.push(`- EVITAR (combos con WR < 40% historico): ${inefficientCombos.map(formatCombo).join(", ")}`);
+  }
+  if (efficientCombos.length) {
+    lines.push(`- EXPLOTAR (combos con WR >= 70%): ${efficientCombos.map(formatCombo).join(", ")}`);
+  }
   lines.push(
-    "INSTRUCCION: considera tu historial. Si la liga/mercado tiene WR bajo, se conservador; si alto, mas asertivo. Calibra confidence con base en tu tasa real."
+    "INSTRUCCION: considera tu historial. Si la liga/mercado tiene WR bajo, se conservador; si alto, mas asertivo. Si el evento coincide con un combo de EVITAR, descarta o usa confianza baja. Calibra confidence con base en tu tasa real."
   );
 
   let promptText = lines.join("\n");
@@ -239,6 +261,8 @@ function buildPerformanceContext(picks, options = {}) {
     byMarket,
     calibration,
     streak,
+    inefficientCombos,
+    efficientCombos,
     ...(leagueSpecific ? { leagueSpecific } : {}),
     ...(marketSpecific ? { marketSpecific } : {}),
     promptText,
