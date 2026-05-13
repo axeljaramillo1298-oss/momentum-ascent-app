@@ -274,11 +274,35 @@ CREATE TABLE IF NOT EXISTS reto_parlays (
   created_at TIMESTAMPTZ NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS user_bankroll (
+  user_id TEXT PRIMARY KEY,
+  initial_amount NUMERIC NOT NULL DEFAULT 0,
+  current_amount NUMERIC NOT NULL DEFAULT 0,
+  default_unit NUMERIC NOT NULL DEFAULT 100,
+  currency TEXT NOT NULL DEFAULT 'MXN',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS user_pick_bets (
+  id BIGSERIAL PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  pick_id BIGINT NOT NULL,
+  stake NUMERIC NOT NULL,
+  odds NUMERIC,
+  status TEXT NOT NULL DEFAULT 'open',
+  payout NUMERIC NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  resolved_at TIMESTAMPTZ
+);
+
 CREATE INDEX IF NOT EXISTS idx_ai_picks_event_id ON ai_picks(event_id);
 CREATE INDEX IF NOT EXISTS idx_ai_picks_status ON ai_picks(status);
 CREATE INDEX IF NOT EXISTS idx_sports_events_event_date ON sports_events(event_date);
 CREATE INDEX IF NOT EXISTS idx_reto_parlays_status ON reto_parlays(status);
 CREATE INDEX IF NOT EXISTS idx_payment_requests_status ON payment_requests(status);
+CREATE INDEX IF NOT EXISTS idx_user_pick_bets_user ON user_pick_bets(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_pick_bets_pick ON user_pick_bets(pick_id);
 `;
 
 async function initDb() {
@@ -292,6 +316,16 @@ async function initDb() {
   await pool.query("ALTER TABLE ai_picks ADD COLUMN IF NOT EXISTS fail_reason TEXT NULL");
   await pool.query("ALTER TABLE ai_picks ADD COLUMN IF NOT EXISTS fail_reason_tags TEXT NULL");
   await pool.query("ALTER TABLE ai_picks ADD COLUMN IF NOT EXISTS fail_notes TEXT NULL");
+  await pool.query("ALTER TABLE user_bankroll ADD COLUMN IF NOT EXISTS initial_amount NUMERIC NOT NULL DEFAULT 0");
+  await pool.query("ALTER TABLE user_bankroll ADD COLUMN IF NOT EXISTS current_amount NUMERIC NOT NULL DEFAULT 0");
+  await pool.query("ALTER TABLE user_bankroll ADD COLUMN IF NOT EXISTS default_unit NUMERIC NOT NULL DEFAULT 100");
+  await pool.query("ALTER TABLE user_bankroll ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'MXN'");
+  await pool.query("ALTER TABLE user_bankroll ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()");
+  await pool.query("ALTER TABLE user_bankroll ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()");
+  await pool.query("ALTER TABLE user_pick_bets ADD COLUMN IF NOT EXISTS odds NUMERIC");
+  await pool.query("ALTER TABLE user_pick_bets ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'open'");
+  await pool.query("ALTER TABLE user_pick_bets ADD COLUMN IF NOT EXISTS payout NUMERIC NOT NULL DEFAULT 0");
+  await pool.query("ALTER TABLE user_pick_bets ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ");
   return DB_META;
 }
 
@@ -2075,6 +2109,185 @@ async function deletePickAndCandidates(pickId) {
   return { deleted: true, eventId };
 }
 
+// ── BANKROLL TRACKER ────────────────────────────────────────────────────────
+function mapBankrollRow(row) {
+  if (!row) return null;
+  return {
+    userId: String(row.userId || row.user_id || ""),
+    initialAmount: Number(row.initialAmount ?? row.initial_amount ?? 0),
+    currentAmount: Number(row.currentAmount ?? row.current_amount ?? 0),
+    defaultUnit: Number(row.defaultUnit ?? row.default_unit ?? 0),
+    currency: String(row.currency || "MXN"),
+    createdAt: row.createdAt || row.created_at || "",
+    updatedAt: row.updatedAt || row.updated_at || "",
+  };
+}
+
+function mapBetRow(row) {
+  if (!row) return null;
+  return {
+    id: Number(row.id),
+    userId: String(row.userId || row.user_id || ""),
+    pickId: Number(row.pickId ?? row.pick_id ?? 0),
+    stake: Number(row.stake || 0),
+    odds: row.odds == null ? null : Number(row.odds),
+    status: String(row.status || "open"),
+    payout: Number(row.payout || 0),
+    createdAt: row.createdAt || row.created_at || "",
+    resolvedAt: row.resolvedAt || row.resolved_at || null,
+  };
+}
+
+async function getUserBankroll(userId) {
+  const id = safeStr(userId);
+  if (!id) return null;
+  const res = await pool.query(
+    `SELECT user_id AS "userId", initial_amount AS "initialAmount", current_amount AS "currentAmount",
+            default_unit AS "defaultUnit", currency, created_at AS "createdAt", updated_at AS "updatedAt"
+     FROM user_bankroll WHERE user_id = $1`,
+    [id]
+  );
+  return mapBankrollRow(res.rows[0]);
+}
+
+async function upsertUserBankroll(userId, payload = {}) {
+  const id = safeStr(userId);
+  if (!id) throw new Error("user_id_required");
+  const now = nowIso();
+  const existing = await getUserBankroll(id);
+  const initialAmount = payload.initialAmount != null
+    ? Number(payload.initialAmount)
+    : existing ? existing.initialAmount : 0;
+  const currentAmount = payload.currentAmount != null
+    ? Number(payload.currentAmount)
+    : existing ? existing.currentAmount : initialAmount;
+  const defaultUnit = payload.defaultUnit != null
+    ? Number(payload.defaultUnit)
+    : existing ? existing.defaultUnit : 100;
+  const currency = safeStr(payload.currency) || (existing ? existing.currency : "MXN");
+  const createdAt = existing ? existing.createdAt : now;
+  await pool.query(
+    `INSERT INTO user_bankroll (user_id, initial_amount, current_amount, default_unit, currency, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     ON CONFLICT (user_id) DO UPDATE SET
+       initial_amount = EXCLUDED.initial_amount,
+       current_amount = EXCLUDED.current_amount,
+       default_unit = EXCLUDED.default_unit,
+       currency = EXCLUDED.currency,
+       updated_at = EXCLUDED.updated_at`,
+    [id, initialAmount, currentAmount, defaultUnit, currency, createdAt, now]
+  );
+  return {
+    userId: id,
+    initialAmount: Number(initialAmount),
+    currentAmount: Number(currentAmount),
+    defaultUnit: Number(defaultUnit),
+    currency,
+    createdAt,
+    updatedAt: now,
+  };
+}
+
+async function logUserPickBet(userId, pickId, payload = {}) {
+  const uid = safeStr(userId);
+  const pid = Number(pickId || 0);
+  if (!uid) throw new Error("user_id_required");
+  if (!pid) throw new Error("pick_id_required");
+  const stake = Number(payload.stake);
+  if (!Number.isFinite(stake) || stake <= 0) throw new Error("stake_required");
+  const odds = payload.odds == null || payload.odds === ""
+    ? null
+    : Number(payload.odds);
+  const now = nowIso();
+  const res = await pool.query(
+    `INSERT INTO user_pick_bets (user_id, pick_id, stake, odds, status, payout, created_at)
+     VALUES ($1, $2, $3, $4, 'open', 0, $5)
+     RETURNING id`,
+    [uid, pid, stake, odds, now]
+  );
+  return {
+    id: Number(res.rows[0]?.id || 0),
+    userId: uid,
+    pickId: pid,
+    stake,
+    odds,
+    status: "open",
+    createdAt: now,
+  };
+}
+
+async function resolveUserPickBet(betId, payload = {}) {
+  const id = Number(betId || 0);
+  if (!id) throw new Error("bet_id_required");
+  const allowed = ["won", "lost", "void", "cancelled"];
+  const status = safeStr(payload.status).toLowerCase();
+  if (!allowed.includes(status)) throw new Error("invalid_status");
+  const payout = payload.payout == null || payload.payout === "" ? 0 : Number(payload.payout);
+  if (!Number.isFinite(payout)) throw new Error("invalid_payout");
+  const now = nowIso();
+  const res = await pool.query(
+    `UPDATE user_pick_bets SET status = $1, payout = $2, resolved_at = $3 WHERE id = $4`,
+    [status, payout, now, id]
+  );
+  if (!res.rowCount) throw new Error("bet_not_found");
+  return { ok: true, id, status, payout, resolvedAt: now };
+}
+
+async function listUserBets(userId, { limit = 100 } = {}) {
+  const uid = safeStr(userId);
+  if (!uid) return [];
+  const lim = Math.max(1, Math.min(500, Number(limit || 100)));
+  const res = await pool.query(
+    `SELECT id, user_id AS "userId", pick_id AS "pickId", stake, odds, status, payout,
+            created_at AS "createdAt", resolved_at AS "resolvedAt"
+     FROM user_pick_bets
+     WHERE user_id = $1
+     ORDER BY created_at DESC, id DESC
+     LIMIT $2`,
+    [uid, lim]
+  );
+  return res.rows.map(mapBetRow);
+}
+
+async function getUserBankrollStats(userId) {
+  const uid = safeStr(userId);
+  if (!uid) {
+    return { totalStaked: 0, totalReturned: 0, netProfit: 0, roi: 0, winRate: 0, totalBets: 0, won: 0, lost: 0, void: 0 };
+  }
+  const res = await pool.query(
+    `SELECT
+       COALESCE(SUM(CASE WHEN status IN ('won','lost') THEN stake ELSE 0 END), 0) AS "totalStaked",
+       COALESCE(SUM(CASE WHEN status IN ('won','lost') THEN payout ELSE 0 END), 0) AS "netProfit",
+       COALESCE(SUM(CASE WHEN status = 'won' THEN 1 ELSE 0 END), 0) AS "won",
+       COALESCE(SUM(CASE WHEN status = 'lost' THEN 1 ELSE 0 END), 0) AS "lost",
+       COALESCE(SUM(CASE WHEN status = 'void' THEN 1 ELSE 0 END), 0) AS "voidCount",
+       COUNT(*) AS "totalBets"
+     FROM user_pick_bets WHERE user_id = $1`,
+    [uid]
+  );
+  const row = res.rows[0] || {};
+  const totalStaked = Number(row.totalStaked || 0);
+  const netProfit = Number(row.netProfit || 0);
+  const won = Number(row.won || 0);
+  const lost = Number(row.lost || 0);
+  const voidCount = Number(row.voidCount || 0);
+  const totalBets = Number(row.totalBets || 0);
+  const resolved = won + lost;
+  const roi = totalStaked > 0 ? (netProfit / totalStaked) * 100 : 0;
+  const winRate = resolved > 0 ? (won / resolved) * 100 : 0;
+  return {
+    totalStaked,
+    totalReturned: totalStaked + netProfit,
+    netProfit,
+    roi,
+    winRate,
+    totalBets,
+    won,
+    lost,
+    void: voidCount,
+  };
+}
+
 module.exports = {
   DB_META,
   initDb,
@@ -2135,4 +2348,10 @@ module.exports = {
   updateRetoLegResult,
   updateRetoLegFields,
   deletePickAndCandidates,
+  getUserBankroll,
+  upsertUserBankroll,
+  logUserPickBet,
+  resolveUserPickBet,
+  listUserBets,
+  getUserBankrollStats,
 };

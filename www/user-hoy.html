@@ -175,6 +175,66 @@ main{position:relative;z-index:2}
 .side-list li::before{content:'·';color:var(--orange);font-size:14px;flex-shrink:0;line-height:1.3}
 .side-list strong{color:var(--text);font-weight:600}
 
+/* PERFORMANCE CARD (stats personales del usuario) */
+.perf-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.perf-cell{background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.04);border-radius:4px;padding:10px 12px;text-align:center}
+.perf-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;line-height:1}
+.perf-val.green{color:var(--green)}
+.perf-val.red{color:var(--red)}
+.perf-val.yellow{color:var(--yellow)}
+.perf-val.orange{color:var(--orange)}
+.perf-lbl{font-size:8.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.perf-empty{padding:14px 0;text-align:center;color:var(--muted);font-size:12px;line-height:1.5}
+.perf-empty-cta{display:inline-block;margin-top:10px;font:700 10px 'Barlow',sans-serif;letter-spacing:.12em;text-transform:uppercase;padding:7px 14px;border:1px solid rgba(255,69,0,.4);color:var(--orange);border-radius:3px;text-decoration:none;cursor:pointer;background:transparent;transition:all .2s}
+.perf-empty-cta:hover{background:rgba(255,69,0,.08)}
+
+/* BANKROLL CARD */
+.bank-current{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:36px;line-height:1;letter-spacing:-.02em;margin-bottom:4px}
+.bank-meta{font-size:10.5px;color:var(--muted);margin-bottom:14px}
+.bank-meta strong{color:var(--text);font-weight:600}
+.bank-progress{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-bottom:8px}
+.bank-progress-fill{height:100%;border-radius:3px;transition:width .6s ease-out}
+.bank-progress-meta{display:flex;justify-content:space-between;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.bank-action-row{display:flex;gap:8px;flex-wrap:wrap}
+.bank-action-btn{flex:1;font:700 10px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:9px 12px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;text-align:center;text-decoration:none}
+.bank-action-btn:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+.bank-action-btn.primary{border-color:rgba(255,69,0,.4);color:var(--orange)}
+.bank-action-btn.primary:hover{background:rgba(255,69,0,.08)}
+
+/* FOLLOW PICK BUTTON (en cada pick card) */
+.btn-follow-pick{font:700 10px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:7px 14px;border-radius:3px;border:1px solid rgba(74,222,128,.3);color:var(--green);background:transparent;cursor:pointer;transition:all .2s;margin-right:6px}
+.btn-follow-pick:hover{background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.5)}
+.btn-follow-pick.followed{background:rgba(74,222,128,.12);color:var(--green);cursor:default}
+.btn-follow-pick.followed::before{content:'✓ ';font-weight:900}
+
+/* BANK MODAL (configurar / seguir pick) */
+.bank-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:9000;display:none;align-items:center;justify-content:center;padding:20px}
+.bank-overlay.open{display:flex}
+.bank-modal{background:var(--dark2,#0a0a0d);border:1px solid var(--border);border-radius:8px;padding:24px;max-width:420px;width:100%;max-height:90vh;overflow-y:auto}
+.bank-modal h3{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:22px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:6px}
+.bank-modal-sub{font-size:11.5px;color:var(--muted);margin-bottom:18px;line-height:1.55}
+.bank-modal-field{margin-bottom:14px}
+.bank-modal-label{display:block;font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.bank-modal-input{width:100%;background:rgba(255,255,255,.03);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:10px 12px;font:600 14px 'Barlow',sans-serif}
+.bank-modal-input:focus{outline:none;border-color:rgba(255,69,0,.35)}
+.bank-modal-pickinfo{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:4px;padding:10px 12px;margin-bottom:14px;font-size:12px;line-height:1.5}
+.bank-modal-pickinfo strong{font-weight:700}
+.bank-modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.bank-modal-cancel{background:none;border:1px solid var(--border);color:var(--muted);padding:9px 16px;border-radius:4px;font:700 11px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.bank-modal-cancel:hover{color:var(--text)}
+.bank-modal-save{background:var(--orange);color:#fff;border:none;padding:9px 20px;border-radius:4px;font:700 11px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .15s}
+.bank-modal-save:hover{background:#FF6B2B}
+.bank-modal-save:disabled{opacity:.5;cursor:wait}
+
+/* TOAST mini para user-hoy */
+.uh-toast-stack{position:fixed;top:80px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:340px;pointer-events:none}
+.uh-toast{pointer-events:auto;padding:11px 15px;border-radius:6px;font:600 12px 'Barlow',sans-serif;background:rgba(14,14,18,.96);backdrop-filter:blur(12px);border:1px solid var(--border);color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,.4);animation:uhFadeIn .25s ease-out}
+.uh-toast.error{border-color:rgba(248,113,113,.4);background:rgba(40,12,12,.96)}
+.uh-toast.success{border-color:rgba(74,222,128,.4);background:rgba(12,28,18,.96)}
+.uh-toast.out{animation:uhFadeOut .25s ease-in forwards}
+@keyframes uhFadeIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+@keyframes uhFadeOut{to{opacity:0;transform:translateX(20px)}}
+
 /* PREMIUM TIER BADGE */
 .tier-badge{display:inline-flex;align-items:center;gap:4px;font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:2px 8px;background:linear-gradient(135deg,rgba(255,69,0,.18),rgba(255,107,43,.08));border:1px solid rgba(255,69,0,.4);color:var(--orange);border-radius:20px;margin-left:6px}
 
@@ -381,28 +441,49 @@ main{position:relative;z-index:2}
           </div>
         </div>
 
-        <div class="side-card">
-          <div class="side-card-hdr"><span class="side-card-title">Marco de Lectura</span></div>
-          <div class="side-card-body">
-            <ul class="side-list">
-              <li><strong>Confianza alta:</strong> más soporte estadístico, no certeza.</li>
-              <li><strong>Riesgo alto:</strong> mayor volatilidad o menos datos disponibles.</li>
-              <li><strong>Mercado:</strong> la forma concreta de la recomendación.</li>
-              <li><strong>Análisis:</strong> explica por qué la IA sugiere ese ángulo.</li>
-              <li><strong>Contexto:</strong> factores externos como lesiones o motivación.</li>
-            </ul>
+        <!-- TU PERFORMANCE (stats personales — picks seguidos del usuario) -->
+        <div class="side-card" id="perf-card">
+          <div class="side-card-hdr"><span class="side-card-title">Tu performance</span><span class="side-date-chip" id="perf-period">total</span></div>
+          <div class="side-card-body" id="perf-body">
+            <div class="perf-empty" id="perf-empty">
+              <div>Aún no sigues picks. Cuando empieces, aquí verás tu ROI real, racha y win rate personal.</div>
+              <button class="perf-empty-cta" id="perf-empty-cta">Configurar mi bankroll</button>
+            </div>
+            <div id="perf-stats" style="display:none">
+              <div class="perf-grid">
+                <div class="perf-cell"><div class="perf-val orange" id="perf-roi">—</div><div class="perf-lbl">ROI</div></div>
+                <div class="perf-cell"><div class="perf-val green" id="perf-wr">—</div><div class="perf-lbl">Win rate</div></div>
+                <div class="perf-cell"><div class="perf-val" id="perf-bets">0</div><div class="perf-lbl">Bets</div></div>
+                <div class="perf-cell"><div class="perf-val yellow" id="perf-streak">—</div><div class="perf-lbl">Racha</div></div>
+              </div>
+              <div class="res-stat"><span class="res-stat-lbl">Ganados</span><span class="res-stat-val green" id="perf-won">0</span></div>
+              <div class="res-stat"><span class="res-stat-lbl">Perdidos</span><span class="res-stat-val red" id="perf-lost">0</span></div>
+              <div class="res-stat"><span class="res-stat-lbl">Ganancia neta</span><span class="res-stat-val" id="perf-net" style="color:var(--text)">$0</span></div>
+            </div>
           </div>
         </div>
 
-        <div class="side-card">
-          <div class="side-card-hdr"><span class="side-card-title">Objetivo de Esta Vista</span></div>
-          <div class="side-card-body">
-            <ul class="side-list">
-              <li>Entender cada pick antes de usarlo.</li>
-              <li>Separar el análisis del historial acumulado.</li>
-              <li>Construir criterio propio con base estadística.</li>
-              <li>Identificar patrones de riesgo por deporte y mercado.</li>
-            </ul>
+        <!-- TU BANKROLL (saldo + acciones rápidas) -->
+        <div class="side-card" id="bank-card">
+          <div class="side-card-hdr"><span class="side-card-title">Tu bankroll</span><span class="side-date-chip" id="bank-currency">MXN</span></div>
+          <div class="side-card-body" id="bank-body">
+            <div class="perf-empty" id="bank-empty">
+              <div>Configura tu bankroll inicial para hacer tracking de tus apuestas y ver tu ROI real.</div>
+              <button class="perf-empty-cta" id="bank-config-cta">Configurar bankroll</button>
+            </div>
+            <div id="bank-stats" style="display:none">
+              <div class="bank-current"><span id="bank-current-val">$0</span></div>
+              <div class="bank-meta">de <strong id="bank-initial-val">$0</strong> inicial · unidad <strong id="bank-unit-val">$0</strong></div>
+              <div class="bank-progress"><div class="bank-progress-fill" id="bank-progress-fill" style="background:var(--green)"></div></div>
+              <div class="bank-progress-meta">
+                <span id="bank-change-lbl">—</span>
+                <span id="bank-change-val">—</span>
+              </div>
+              <div class="bank-action-row">
+                <button class="bank-action-btn primary" id="bank-edit-btn">Editar</button>
+                <a class="bank-action-btn" href="user-bank.html">Detalle →</a>
+              </div>
+            </div>
           </div>
         </div>
       </aside>
@@ -427,6 +508,41 @@ main{position:relative;z-index:2}
     <span class="bottom-nav-icon">👤</span><span>Cuenta</span>
   </a>
 </nav>
+
+<!-- BANK MODAL (configurar bankroll y seguir picks) -->
+<div class="bank-overlay" id="bank-overlay" role="dialog" aria-modal="true">
+  <div class="bank-modal">
+    <h3 id="bank-modal-title">Configura tu bankroll</h3>
+    <p class="bank-modal-sub" id="bank-modal-sub">El bankroll es el dinero que designas para apuestas. Te permite trackear tu ROI real y aplicar stake sizing.</p>
+
+    <div id="bank-modal-pick-info" class="bank-modal-pickinfo" style="display:none"></div>
+
+    <div class="bank-modal-field" id="bank-field-initial">
+      <label class="bank-modal-label" for="bank-input-initial">Bankroll inicial (MXN)</label>
+      <input class="bank-modal-input" id="bank-input-initial" type="number" min="0" step="50" placeholder="1000" />
+    </div>
+    <div class="bank-modal-field" id="bank-field-unit">
+      <label class="bank-modal-label" for="bank-input-unit">Unidad por defecto (cuánto apuestas por pick)</label>
+      <input class="bank-modal-input" id="bank-input-unit" type="number" min="0" step="10" placeholder="100" />
+    </div>
+    <div class="bank-modal-field" id="bank-field-stake" style="display:none">
+      <label class="bank-modal-label" for="bank-input-stake">Cuánto vas a apostar a este pick</label>
+      <input class="bank-modal-input" id="bank-input-stake" type="number" min="0" step="10" placeholder="100" />
+    </div>
+    <div class="bank-modal-field" id="bank-field-odds" style="display:none">
+      <label class="bank-modal-label" for="bank-input-odds">Odds capturadas (decimal)</label>
+      <input class="bank-modal-input" id="bank-input-odds" type="number" min="1.01" step="0.01" placeholder="1.85" />
+    </div>
+
+    <div class="bank-modal-actions">
+      <button class="bank-modal-cancel" id="bank-modal-cancel" type="button">Cancelar</button>
+      <button class="bank-modal-save" id="bank-modal-save" type="button">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST STACK -->
+<div class="uh-toast-stack" id="uh-toast-stack"></div>
 
 <script src="app.js"></script>
 <script>
@@ -750,6 +866,7 @@ function renderCards(picks){
           </div>
         </div>
         <div class="pick-actions">
+          ${p.pickLocked ? '' : `<button class="btn-follow-pick" data-pick-id="${escHtml(String(p.id||i))}" data-market="${escHtml(p.market||'')}" data-pick="${escHtml(p.pick||'')}" title="Registra cuánto apuestas a este pick">Seguir pick</button>`}
           <button class="btn-share" data-share="1" data-home="${escHtml(home)}" data-away="${escHtml(away)}" data-pick="${escHtml(p.pick||'')}" data-conf="${conf}">Compartir</button>
           <button class="btn-save" data-pick-id="${escHtml(String(p.id||i))}">🔖 Guardar Pick</button>
         </div>
@@ -899,12 +1016,218 @@ document.getElementById('btn-refresh').addEventListener('click', loadPicks);
   })();
 })();
 
+// ── BANKROLL & PERFORMANCE ─────────────────────────────────
+const API_BASE = (() => {
+  const forced = (localStorage.getItem('discipline_api_base_v1')||'').trim();
+  if(forced) return forced.replace(/\/+$/,'');
+  const {protocol,hostname,port,origin} = window.location;
+  const host = String(hostname||'').trim().toLowerCase();
+  if(host==='app.momentumascent.com'||host==='momentumascent.com'||host==='www.momentumascent.com') return 'https://api.momentumascent.com';
+  if((host==='localhost'||host==='127.0.0.1')&&port&&port!=='8787') return `${protocol}//${hostname}:8787`;
+  return origin;
+})();
+
+const uhToastStack = document.getElementById('uh-toast-stack');
+function uhToast(msg, type='success', ms=3000){
+  if(!uhToastStack) return;
+  const t = document.createElement('div');
+  t.className = `uh-toast ${type}`;
+  t.textContent = String(msg||'');
+  uhToastStack.appendChild(t);
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 250); }, ms);
+}
+
+const userEmail = (function(){
+  try { return JSON.parse(localStorage.getItem('discipline_current_user_v1')||'{}').email || ''; } catch(_) { return ''; }
+})();
+function userHeaders(){ const h={'Content-Type':'application/json'}; if(userEmail) h['x-user-email']=userEmail; return h; }
+
+const bankOverlay = document.getElementById('bank-overlay');
+const bankModalTitle = document.getElementById('bank-modal-title');
+const bankModalSub = document.getElementById('bank-modal-sub');
+const bankFieldInitial = document.getElementById('bank-field-initial');
+const bankFieldUnit = document.getElementById('bank-field-unit');
+const bankFieldStake = document.getElementById('bank-field-stake');
+const bankFieldOdds = document.getElementById('bank-field-odds');
+const bankPickInfo = document.getElementById('bank-modal-pick-info');
+const bankInputInitial = document.getElementById('bank-input-initial');
+const bankInputUnit = document.getElementById('bank-input-unit');
+const bankInputStake = document.getElementById('bank-input-stake');
+const bankInputOdds = document.getElementById('bank-input-odds');
+const bankSaveBtn = document.getElementById('bank-modal-save');
+
+let bankModalMode = 'config'; // 'config' | 'follow'
+let bankModalPickContext = null;
+let currentBankroll = null;
+
+function openBankModal(mode, ctx){
+  bankModalMode = mode;
+  bankModalPickContext = ctx || null;
+  if(mode === 'follow'){
+    bankModalTitle.textContent = 'Seguir este pick';
+    bankModalSub.textContent = 'Registra cuánto apuestas. Cuando se resuelva el pick, sumará a tu ROI personal.';
+    bankFieldInitial.style.display = 'none';
+    bankFieldUnit.style.display = 'none';
+    bankFieldStake.style.display = '';
+    bankFieldOdds.style.display = '';
+    bankPickInfo.style.display = '';
+    bankPickInfo.innerHTML = `<strong>${ctx.match || '—'}</strong><br><span style="color:var(--muted);font-size:11px">${ctx.league || ''} · ${ctx.market || ''} · ${ctx.pick || ''}</span>`;
+    const defaultUnit = currentBankroll?.defaultUnit || 100;
+    bankInputStake.value = defaultUnit;
+    bankInputOdds.value = ctx.odds || '';
+  } else {
+    bankModalTitle.textContent = currentBankroll ? 'Editar bankroll' : 'Configura tu bankroll';
+    bankModalSub.textContent = 'El bankroll es el dinero que designas para apuestas. Te permite trackear tu ROI real y aplicar stake sizing.';
+    bankFieldInitial.style.display = '';
+    bankFieldUnit.style.display = '';
+    bankFieldStake.style.display = 'none';
+    bankFieldOdds.style.display = 'none';
+    bankPickInfo.style.display = 'none';
+    bankInputInitial.value = currentBankroll?.initialAmount || 1000;
+    bankInputUnit.value = currentBankroll?.defaultUnit || 100;
+  }
+  bankOverlay.classList.add('open');
+}
+function closeBankModal(){ bankOverlay.classList.remove('open'); bankModalPickContext = null; }
+
+bankOverlay.addEventListener('click', e => { if(e.target === bankOverlay) closeBankModal(); });
+document.getElementById('bank-modal-cancel').addEventListener('click', closeBankModal);
+
+bankSaveBtn.addEventListener('click', async () => {
+  bankSaveBtn.disabled = true;
+  try {
+    if(bankModalMode === 'config'){
+      const initial = Number(bankInputInitial.value);
+      const unit = Number(bankInputUnit.value);
+      if(!initial || initial <= 0){ uhToast('Bankroll inicial inválido', 'error'); return; }
+      const r = await fetch(`${API_BASE}/api/me/bankroll`, { method:'POST', headers: userHeaders(), body: JSON.stringify({ initialAmount: initial, defaultUnit: unit||100 }) });
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      currentBankroll = data?.bankroll || data;
+      renderBankroll(currentBankroll);
+      uhToast('Bankroll guardado', 'success');
+      closeBankModal();
+    } else if(bankModalMode === 'follow' && bankModalPickContext){
+      const stake = Number(bankInputStake.value);
+      const odds = Number(bankInputOdds.value) || null;
+      if(!stake || stake <= 0){ uhToast('Monto inválido', 'error'); return; }
+      const r = await fetch(`${API_BASE}/api/me/bets`, { method:'POST', headers: userHeaders(), body: JSON.stringify({ pickId: bankModalPickContext.pickId, stake, odds }) });
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      uhToast('Pick seguido. Verás el resultado en tu performance.', 'success');
+      // Marca el botón como seguido
+      const btn = document.querySelector(`.btn-follow-pick[data-pick-id="${bankModalPickContext.pickId}"]`);
+      if(btn){ btn.classList.add('followed'); btn.textContent = 'Seguido'; }
+      closeBankModal();
+      loadPerf();
+    }
+  } catch(err){
+    uhToast(`Error: ${err.message}`, 'error');
+  } finally {
+    bankSaveBtn.disabled = false;
+  }
+});
+
+async function loadBankroll(){
+  try {
+    const r = await fetch(`${API_BASE}/api/me/bankroll`, { headers: userHeaders() });
+    if(r.status === 404){ currentBankroll = null; renderBankroll(null); return; }
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    currentBankroll = data?.bankroll || data;
+    renderBankroll(currentBankroll);
+  } catch(err){ /* silent: fallback a empty state */ renderBankroll(null); }
+}
+
+function renderBankroll(b){
+  const emptyEl = document.getElementById('bank-empty');
+  const statsEl = document.getElementById('bank-stats');
+  if(!b){ emptyEl.style.display = ''; statsEl.style.display = 'none'; return; }
+  emptyEl.style.display = 'none';
+  statsEl.style.display = '';
+  const cur = Number(b.currentAmount || 0);
+  const init = Number(b.initialAmount || 0);
+  document.getElementById('bank-currency').textContent = b.currency || 'MXN';
+  document.getElementById('bank-current-val').textContent = '$' + cur.toLocaleString('es-MX', {maximumFractionDigits:2});
+  document.getElementById('bank-initial-val').textContent = '$' + init.toLocaleString('es-MX');
+  document.getElementById('bank-unit-val').textContent = '$' + Number(b.defaultUnit || 0).toLocaleString('es-MX');
+  const pct = init > 0 ? (cur / init) * 100 : 0;
+  const fill = document.getElementById('bank-progress-fill');
+  fill.style.width = Math.min(150, Math.max(0, pct)) + '%';
+  fill.style.background = cur >= init ? 'var(--green)' : 'var(--red)';
+  const change = cur - init;
+  const changePct = init > 0 ? ((cur - init) / init * 100) : 0;
+  document.getElementById('bank-change-lbl').textContent = change >= 0 ? 'Ganancia' : 'Pérdida';
+  const valEl = document.getElementById('bank-change-val');
+  valEl.textContent = (change >= 0 ? '+' : '') + '$' + Math.abs(change).toLocaleString('es-MX', {maximumFractionDigits:2}) + ' · ' + (changePct >= 0 ? '+' : '') + changePct.toFixed(1) + '%';
+  valEl.style.color = change >= 0 ? 'var(--green)' : 'var(--red)';
+}
+
+async function loadPerf(){
+  try {
+    const r = await fetch(`${API_BASE}/api/me/bets/stats`, { headers: userHeaders() });
+    if(r.status === 404){ renderPerf(null); return; }
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    renderPerf(data?.stats || data);
+  } catch(err){ renderPerf(null); }
+}
+
+function renderPerf(s){
+  const emptyEl = document.getElementById('perf-empty');
+  const statsEl = document.getElementById('perf-stats');
+  if(!s || !s.totalBets){ emptyEl.style.display = ''; statsEl.style.display = 'none'; return; }
+  emptyEl.style.display = 'none';
+  statsEl.style.display = '';
+  const roi = s.roi !== null && s.roi !== undefined ? s.roi : 0;
+  const wr = s.winRate !== null && s.winRate !== undefined ? s.winRate : 0;
+  const roiEl = document.getElementById('perf-roi');
+  roiEl.textContent = (roi >= 0 ? '+' : '') + Number(roi).toFixed(1) + '%';
+  roiEl.style.color = roi >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('perf-wr').textContent = Number(wr).toFixed(0) + '%';
+  document.getElementById('perf-bets').textContent = s.totalBets || 0;
+  document.getElementById('perf-won').textContent = s.won || 0;
+  document.getElementById('perf-lost').textContent = s.lost || 0;
+  const net = Number(s.netProfit || 0);
+  const netEl = document.getElementById('perf-net');
+  netEl.textContent = (net >= 0 ? '+$' : '-$') + Math.abs(net).toLocaleString('es-MX', {maximumFractionDigits:2});
+  netEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
+  // Racha (si la trae el endpoint)
+  if(s.streak !== undefined){
+    const stEl = document.getElementById('perf-streak');
+    stEl.textContent = s.streak > 0 ? `+${s.streak}` : (s.streak < 0 ? s.streak : '—');
+    stEl.style.color = s.streak > 0 ? 'var(--green)' : s.streak < 0 ? 'var(--red)' : 'var(--yellow)';
+  }
+}
+
+// CTAs vacíos del sidebar abren modal de configurar
+document.getElementById('perf-empty-cta')?.addEventListener('click', () => openBankModal('config'));
+document.getElementById('bank-config-cta')?.addEventListener('click', () => openBankModal('config'));
+document.getElementById('bank-edit-btn')?.addEventListener('click', () => openBankModal('config'));
+
+// Delegación: botones "Seguir pick" en los pick cards
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.btn-follow-pick');
+  if(!btn || btn.classList.contains('followed')) return;
+  const pickId = btn.dataset.pickId;
+  const card = btn.closest('.pick-card');
+  const match = card?.querySelector('.pick-match')?.textContent?.trim() || '';
+  const league = card?.dataset.league || '';
+  const market = btn.dataset.market || '';
+  const pick = btn.dataset.pick || '';
+  if(!currentBankroll){
+    uhToast('Configura tu bankroll primero', 'error');
+    openBankModal('config');
+    return;
+  }
+  openBankModal('follow', { pickId, match, league, market, pick });
+});
+
 // ── INIT ──────────────────────────────────────────────────
 buildDateNav();
 if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded', loadPicks);
+  document.addEventListener('DOMContentLoaded', () => { loadPicks(); loadBankroll(); loadPerf(); });
 } else {
-  setTimeout(loadPicks, 50);
+  setTimeout(() => { loadPicks(); loadBankroll(); loadPerf(); }, 50);
 }
 
 })();

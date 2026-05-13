@@ -52,6 +52,12 @@ const {
   listPickHistory,
   updatePickResult,
   setPickFailReason,
+  getUserBankroll,
+  upsertUserBankroll,
+  logUserPickBet,
+  resolveUserPickBet,
+  listUserBets,
+  getUserBankrollStats,
   logApiSync,
   saveRetoDraft,
   publishReto,
@@ -2041,6 +2047,101 @@ app.post("/api/picks/:id/fail-reason", requireAdmin, async (req, res) => {
     const msg = String(error?.message || "fail_reason_update_failed");
     const status = msg === "pick_not_found" ? 404 : msg === "pick_id_required" ? 400 : 500;
     res.status(status).json({ ok: false, error: msg });
+  }
+});
+
+// ─── BANKROLL (vista logueada del usuario) ─────────────────
+// GET /api/me/bankroll → estado actual del bankroll (404 si no configurado)
+app.get("/api/me/bankroll", async (req, res) => {
+  try {
+    const email = getRequestEmail(req);
+    if (!email) return res.status(401).json({ ok: false, error: "auth_required" });
+    if (typeof getUserBankroll !== "function") return res.status(501).json({ ok: false, error: "bankroll_not_supported" });
+    const bankroll = await getUserBankroll(email);
+    if (!bankroll) return res.status(404).json({ ok: false, error: "bankroll_not_configured" });
+    res.json({ ok: true, bankroll });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "bankroll_get_failed") });
+  }
+});
+
+// POST /api/me/bankroll → upsert (crea o actualiza)
+app.post("/api/me/bankroll", async (req, res) => {
+  try {
+    const email = getRequestEmail(req);
+    if (!email) return res.status(401).json({ ok: false, error: "auth_required" });
+    if (typeof upsertUserBankroll !== "function") return res.status(501).json({ ok: false, error: "bankroll_not_supported" });
+    const { initialAmount, currentAmount, defaultUnit, currency } = req.body || {};
+    const initial = Number(initialAmount);
+    if (!Number.isFinite(initial) || initial <= 0) return res.status(400).json({ ok: false, error: "initialAmount_invalid" });
+    const existing = await getUserBankroll(email);
+    const bankroll = await upsertUserBankroll(email, {
+      initialAmount: initial,
+      currentAmount: Number.isFinite(Number(currentAmount)) ? Number(currentAmount) : (existing?.currentAmount ?? initial),
+      defaultUnit: Number.isFinite(Number(defaultUnit)) && Number(defaultUnit) > 0 ? Number(defaultUnit) : 100,
+      currency: typeof currency === "string" && currency.trim() ? currency.trim().toUpperCase().slice(0, 6) : "MXN",
+    });
+    res.json({ ok: true, bankroll });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "bankroll_save_failed") });
+  }
+});
+
+// POST /api/me/bets → registrar un bet seguido (log)
+// Body: { pickId, stake, odds? }
+app.post("/api/me/bets", async (req, res) => {
+  try {
+    const email = getRequestEmail(req);
+    if (!email) return res.status(401).json({ ok: false, error: "auth_required" });
+    if (typeof logUserPickBet !== "function") return res.status(501).json({ ok: false, error: "bets_not_supported" });
+    const pickId = Number(req.body?.pickId);
+    const stake = Number(req.body?.stake);
+    const odds = req.body?.odds == null ? null : Number(req.body.odds);
+    if (!pickId) return res.status(400).json({ ok: false, error: "pickId_required" });
+    if (!Number.isFinite(stake) || stake <= 0) return res.status(400).json({ ok: false, error: "stake_invalid" });
+    if (odds !== null && (!Number.isFinite(odds) || odds < 1.01)) return res.status(400).json({ ok: false, error: "odds_invalid" });
+    const bet = await logUserPickBet(email, pickId, { stake, odds });
+    res.json({ ok: true, bet });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "bet_log_failed") });
+  }
+});
+
+// GET /api/me/bets → lista de bets del usuario
+app.get("/api/me/bets", async (req, res) => {
+  try {
+    const email = getRequestEmail(req);
+    if (!email) return res.status(401).json({ ok: false, error: "auth_required" });
+    if (typeof listUserBets !== "function") return res.status(501).json({ ok: false, error: "bets_not_supported" });
+    const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 100));
+    const bets = await listUserBets(email, { limit });
+    res.json({ ok: true, bets });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "bets_list_failed") });
+  }
+});
+
+// GET /api/me/bets/stats → stats agregadas (ROI, WR, racha, etc.)
+app.get("/api/me/bets/stats", async (req, res) => {
+  try {
+    const email = getRequestEmail(req);
+    if (!email) return res.status(401).json({ ok: false, error: "auth_required" });
+    if (typeof getUserBankrollStats !== "function") return res.status(501).json({ ok: false, error: "bets_not_supported" });
+    const stats = await getUserBankrollStats(email);
+    // Calcular racha de bets resueltos (sin tocar BD): listamos los últimos y contamos consecutivos
+    let streak = 0;
+    try {
+      const recent = await listUserBets(email, { limit: 50 });
+      const resolved = (recent || []).filter((b) => b.status === "won" || b.status === "lost");
+      if (resolved.length) {
+        const first = resolved[0].status;
+        for (const b of resolved) { if (b.status === first) streak++; else break; }
+        if (first === "lost") streak = -streak;
+      }
+    } catch (_) {}
+    res.json({ ok: true, stats: { ...stats, streak } });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "bets_stats_failed") });
   }
 });
 
