@@ -625,7 +625,8 @@ main{position:relative;z-index:2}
       <div class="ops-sep"></div>
       <input class="date-input" type="date" id="events-date" />
       <button class="btn-ghost" id="btn-tomorrow">Mañana</button>
-      <button class="btn-primary" id="btn-sync">Sincronizar eventos</button>
+      <button class="btn-primary" id="btn-sync" title="Refresca eventos de la base local (no consume API)">Sincronizar eventos</button>
+      <button class="btn-ghost" id="btn-sync-api" title="Trae eventos + odds reales desde The Odds API. CONSUME ~3-10 créditos de tu cuota mensual." style="border-color:rgba(74,222,128,.4);color:var(--green)">🌐 Sync API real</button>
       <button class="btn-ghost" id="btn-scout" title="GPT analiza qué eventos son los mejores del día">🔍 Analizar jornada</button>
       <button class="btn-ghost" id="btn-batch" title="Analiza todos los eventos sin pick con GPT + Claude secuencialmente">⚡ Lote</button>
       <button class="btn-ghost" id="btn-refresh">Actualizar panel</button>
@@ -2088,7 +2089,7 @@ main{position:relative;z-index:2}
     try {
       const data = await fetchJson(`/api/sports/events/${eventId}/odds`, { headers: apiHeaders() });
       if(!data?.hasOdds || (!data.bookmakers?.length && !data.oddsSnapshot)){
-        oddsArea.innerHTML = `<div style="font-size:10px;color:var(--muted);padding:4px 0;font-style:italic">Sin momios disponibles para este evento en el proveedor configurado.</div>`;
+        oddsArea.innerHTML = `<div style="font-size:11px;color:var(--muted);padding:8px 12px;background:rgba(74,222,128,.04);border:1px solid rgba(74,222,128,.18);border-radius:4px;line-height:1.5">⚠ <strong>Sin momios para este evento.</strong> Haz click en el botón <span style="color:var(--green);font-weight:700">🌐 Sync API real</span> arriba para cargar odds reales desde The Odds API (consume ~3-10 créditos por sync completo del día).</div>`;
         return;
       }
       let html = `<div class="odds-wrap"><div class="odds-header">📊 Momios de casas de apuestas</div>`;
@@ -2246,12 +2247,13 @@ main{position:relative;z-index:2}
   document.getElementById('btn-sync').addEventListener('click', async function(){
     this.disabled = true;
     this.textContent = 'Sincronizando…';
-    addLog('Iniciando sincronización de eventos…');
-    setStatus('Sincronizando…');
+    addLog('Refresh local (no consume API)…');
+    setStatus('Refresh local…');
     try {
       const selectedDate = getSelectedDate();
       const data = await fetchJson('/api/sports/sync', { method:'POST', headers: apiHeaders(), body: JSON.stringify({ date: selectedDate }) });
-      addLog(`Sync completado: ${data.count || data.synced || 0} evento(s) importado(s) para ${selectedDate}`, 'ok');
+      const modeLbl = data.mode === 'external_api' ? `API ${data.provider}` : 'local';
+      addLog(`Sync (${modeLbl}) completado: ${data.count || 0} evento(s) para ${selectedDate}`, 'ok');
       await loadEvents();
     } catch(err){
       const msg = err.status === 403
@@ -2262,6 +2264,40 @@ main{position:relative;z-index:2}
     } finally {
       this.disabled = false;
       this.textContent = 'Sincronizar eventos';
+    }
+  });
+
+  // ── SYNC CON API REAL (consume créditos) ───────────────────
+  document.getElementById('btn-sync-api')?.addEventListener('click', async function(){
+    const confirmed = confirm(
+      '⚠️ Esto consumirá ~3-10 créditos de tu cuota mensual de The Odds API.\n\n' +
+      'Resultado: traerá eventos del día CON odds reales en su rawJson.\n' +
+      'Las odds quedan guardadas y la IA las usará automáticamente al analizar.\n\n' +
+      '¿Continuar?'
+    );
+    if (!confirmed) return;
+    this.disabled = true;
+    this.textContent = '🌐 Llamando API…';
+    addLog('SYNC REAL — llamando a The Odds API…', 'warn');
+    setStatus('Consumiendo créditos de API…');
+    try {
+      const selectedDate = getSelectedDate();
+      const data = await fetchJson('/api/sports/sync', {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({ date: selectedDate, useExternalApi: true })
+      });
+      const provider = data.provider || 'the-odds-api';
+      const count = data.count || 0;
+      addLog(`✅ SYNC REAL completado · ${count} eventos con odds reales de ${provider} · ${selectedDate}`, 'ok');
+      showToast(`${count} eventos con odds reales cargados desde ${provider}`, 'success', 5000);
+      await loadEvents();
+    } catch(err) {
+      addLog(`Error sync API real: ${err.message}`, 'err');
+      showToast(`Error sync API: ${err.message}`, 'error');
+    } finally {
+      this.disabled = false;
+      this.textContent = '🌐 Sync API real';
     }
   });
 
