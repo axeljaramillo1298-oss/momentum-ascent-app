@@ -608,6 +608,55 @@ const eventMatchesTrackedLeagues = (event, trackedLeagues = []) => {
 // solo refresca eventos ya cargados en BD (manual upload o cargas previas).
 // Si useExternalApi=true (flag explícito), trae eventos vía sportsApiService
 // y consume créditos del proveedor configurado.
+// Extrae las odds disponibles del event.rawJson (bookmakers de The Odds API)
+// + statsJson.oddsSnapshot (manual editor) y las agrega al objeto stats
+// que llega a la IA para que el prompt pueda calcular EV automáticamente.
+function enrichStatsWithOdds(event, statsJson) {
+  const baseStats = statsJson && typeof statsJson === "object" ? { ...statsJson } : {};
+  // Si ya hay odds en stats (manual o snapshot), no las pisamos
+  if (baseStats.odds || baseStats.oddsSnapshot) return baseStats;
+  let rawJson = {};
+  try {
+    rawJson = typeof event?.rawJson === "string" ? JSON.parse(event.rawJson) : (event?.rawJson || {});
+  } catch (_) { rawJson = {}; }
+  const bookmakers = Array.isArray(rawJson?.bookmakers) ? rawJson.bookmakers : [];
+  if (!bookmakers.length) return baseStats;
+  // Resumen agregado por mercado (mediana de odds entre todas las casas)
+  const byMarket = {};
+  bookmakers.forEach((bm) => {
+    const markets = Array.isArray(bm.markets) ? bm.markets : [];
+    markets.forEach((mkt) => {
+      const key = String(mkt.key || "").toLowerCase();
+      if (!key) return;
+      if (!byMarket[key]) byMarket[key] = {};
+      const outcomes = Array.isArray(mkt.outcomes) ? mkt.outcomes : [];
+      outcomes.forEach((o) => {
+        const name = String(o.name || "");
+        if (!name) return;
+        const decimal = Number(o.price);
+        if (!Number.isFinite(decimal) || decimal < 1.01 || decimal > 50) return;
+        if (!byMarket[key][name]) byMarket[key][name] = [];
+        byMarket[key][name].push(decimal);
+      });
+    });
+  });
+  const median = (arr) => {
+    const s = [...arr].sort((a, b) => a - b);
+    const m = Math.floor(s.length / 2);
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  };
+  const oddsSummary = {};
+  for (const [marketKey, outcomes] of Object.entries(byMarket)) {
+    oddsSummary[marketKey] = {};
+    for (const [name, list] of Object.entries(outcomes)) {
+      oddsSummary[marketKey][name] = Number(median(list).toFixed(2));
+    }
+  }
+  baseStats.odds = oddsSummary; // {h2h:{home:1.85, away:2.10}, spreads:{...}, totals:{Over:1.92, Under:1.95}}
+  baseStats.oddsSource = `${bookmakers.length} casa(s)`;
+  return baseStats;
+}
+
 const syncSportsEvents = async (date, { useExternalApi = false } = {}) => {
   const provider = String(process.env.SPORTS_API_PROVIDER || "mock").trim().toLowerCase() || "mock";
 
@@ -1685,6 +1734,7 @@ app.post("/api/picks/generate/:eventId", requireAdmin, aiGenLimiter, async (req,
     // Fetch broader history for performance feedback loop (resolved picks)
     const historyPicks = await listPickHistory(60).catch(() => []);
 
+    const enrichedStats = enrichStatsWithOdds(event, stats?.statsJson || {});
     const aiPick = await generateSportsPick({
       event: {
         sport: event.sport,
@@ -1694,7 +1744,7 @@ app.post("/api/picks/generate/:eventId", requireAdmin, aiGenLimiter, async (req,
         event_date: event.eventDate,
         status: event.status,
       },
-      stats: stats?.statsJson || {},
+      stats: enrichedStats,
       historicalContext,
       historyPicks,
     });
@@ -1750,9 +1800,10 @@ app.post("/api/picks/generate-dual/:eventId", requireAdmin, aiGenLimiter, async 
     // Fetch broader history for performance feedback loop (resolved picks)
     const historyPicks = await listPickHistory(60).catch(() => []);
 
+    const enrichedStatsDual = enrichStatsWithOdds(event, stats?.statsJson || {});
     const { candidates, claudeResult } = await runDualAnalysis({
       event: { sport: event.sport, league: event.league, home_team: event.homeTeam, away_team: event.awayTeam, event_date: event.eventDate, status: event.status },
-      stats: stats?.statsJson || {},
+      stats: enrichedStatsDual,
       historicalContext,
       historyPicks,
     });
@@ -1806,9 +1857,10 @@ app.post("/api/picks/gpt-markets/:eventId", requireAdmin, aiGenLimiter, async (r
     // Fetch broader history for performance feedback loop (resolved picks)
     const historyPicks = await listPickHistory(60).catch(() => []);
 
+    const enrichedStatsMkt = enrichStatsWithOdds(event, stats?.statsJson || {});
     const markets = await analyzeMarketsGPT({
       event: { sport: event.sport, league: event.league, home_team: event.homeTeam, away_team: event.awayTeam, event_date: event.eventDate },
-      stats: stats?.statsJson || {},
+      stats: enrichedStatsMkt,
       historyPicks,
     });
 
@@ -2019,9 +2071,10 @@ app.post("/api/reto/generate", requireAdmin, aiGenLimiter, async (req, res) => {
     await Promise.all(enrichedEvents.map(async (ev) => {
       if (autoGptMap[ev.id]) return;
       try {
+        const enrichedStatsAuto = enrichStatsWithOdds(ev, ev.statsJson || {});
         const markets = await analyzeMarketsGPT({
           event: { sport: ev.sport, league: ev.league, home_team: ev.homeTeam, away_team: ev.awayTeam, event_date: ev.eventDate },
-          stats: ev.statsJson || {},
+          stats: enrichedStatsAuto,
         });
         autoGptMap[ev.id] = markets;
       } catch { /* Claude works without it */ }
