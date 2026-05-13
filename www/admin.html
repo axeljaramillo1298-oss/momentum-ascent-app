@@ -395,6 +395,27 @@ main{position:relative;z-index:2}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(255,69,0,.3);border-radius:2px}
 
+/* AUTO TOP EVENTS — ranking heurístico sin IA, instantáneo */
+.auto-top-section{margin-bottom:36px;background:linear-gradient(135deg,rgba(255,69,0,.06),rgba(167,139,250,.03));border:1px solid rgba(255,69,0,.22);border-radius:8px;padding:20px 22px;opacity:0;animation:fadeUp .5s .55s forwards}
+.auto-top-hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.auto-top-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:20px;text-transform:uppercase;letter-spacing:.02em;display:flex;align-items:center;gap:10px}
+.auto-top-title::before{content:'🏆';font-size:22px}
+.auto-top-title em{color:var(--orange);font-style:normal}
+.auto-top-sub{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.auto-top-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.auto-top-card{background:rgba(0,0,0,.28);border:1px solid var(--border);border-radius:5px;padding:12px 14px;position:relative;cursor:pointer;transition:border-color .2s,transform .15s}
+.auto-top-card:hover{border-color:rgba(255,69,0,.45);transform:translateY(-1px)}
+.auto-top-rank{position:absolute;top:-7px;left:-7px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#FF4500,#FF6B2B);color:#fff;font:900 11px 'Barlow Condensed',sans-serif;box-shadow:0 2px 6px rgba(255,69,0,.4)}
+.auto-top-match{font-weight:700;font-size:13px;line-height:1.25;margin-bottom:4px;padding-left:22px}
+.auto-top-meta{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-left:22px}
+.auto-top-league{font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--orange)}
+.auto-top-score{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(240,237,232,.45)}
+.auto-top-reasons{margin-top:6px;padding-left:22px;font-size:9.5px;color:rgba(240,237,232,.4);line-height:1.4}
+
+/* Badge inline en eventos rankeados de la lista normal */
+.event-auto-top{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:3px;background:linear-gradient(135deg,#FF4500,#FF6B2B);color:#fff;font:800 8.5px 'Barlow Condensed',sans-serif;letter-spacing:.12em;text-transform:uppercase;margin-right:6px;box-shadow:0 1px 4px rgba(255,69,0,.4);vertical-align:middle}
+.event-auto-top::before{content:'★';font-size:9px;margin-right:1px}
+
 /* TOP PICK BADGE — picks seleccionados como TOP del día */
 .top-pick-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:3px;background:linear-gradient(135deg,#FF4500,#FF6B2B);color:#fff;font:800 8.5px 'Barlow Condensed',sans-serif;letter-spacing:.12em;text-transform:uppercase;margin-right:6px;box-shadow:0 1px 4px rgba(255,69,0,.4);vertical-align:middle}
 .top-pick-badge::before{content:'★';font-size:9px}
@@ -620,6 +641,15 @@ main{position:relative;z-index:2}
       <span style="font-size:12px;color:var(--muted);flex:1" id="reto-scout-summary">GPT identificó eventos recomendados. Genera el reto escalera con Claude.</span>
       <button class="btn-ghost" id="btn-gen-reto" style="border-color:rgba(59,130,246,.4);color:#60a5fa;font-size:11px">⚡ Generar Reto con Claude</button>
     </div>
+
+    <!-- AUTO TOP EVENTS — ranking instantáneo sin IA -->
+    <section class="auto-top-section" id="auto-top-section" style="display:none">
+      <div class="auto-top-hdr">
+        <div class="auto-top-title">Tus <em>5 mejores</em> eventos del día</div>
+        <span class="auto-top-sub" id="auto-top-sub">por liga, hora pico y matchup</span>
+      </div>
+      <div class="auto-top-grid" id="auto-top-grid"></div>
+    </section>
 
     <!-- EVENTS SECTION -->
     <section class="events-section">
@@ -1117,11 +1147,12 @@ main{position:relative;z-index:2}
     const timeStr = timeValue ? new Date(timeValue).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : '—';
     const hasPick = !!(ev.hasPick || ev.latestPick);
 
+    const autoTopBadge = ev._autoTopRank ? `<span class="event-auto-top" title="Top ${ev._autoTopRank} del día según ranking heurístico">Top ${ev._autoTopRank}</span>` : '';
     card.innerHTML = `
       <div class="event-card-head">
         <div class="event-sport-icon">${sportIcon(sport)}</div>
         <div class="event-info">
-          <div class="event-match">${home} vs ${away}</div>
+          <div class="event-match">${autoTopBadge}${home} vs ${away}</div>
           <div class="event-meta">
             <span class="event-league">${league}</span>
             <span class="event-time">${timeStr}</span>
@@ -1883,9 +1914,132 @@ main{position:relative;z-index:2}
   window.publishAllReview = publishAllReview;
 
   // ── RENDER EVENTS ─────────────────────────────────────────
+  // ── AUTO TOP EVENTS (heurística sin IA, instantáneo) ──────
+  // Rankea eventos del día por: liga importante + matchup atractivo +
+  // hora pico (8-11pm CDMX) + stats disponibles. NO consume API.
+  const PRIORITY_LEAGUES = {
+    "mlb": 35, "nba": 35, "nfl": 40, "nhl": 28,
+    "premier league": 35, "la liga": 35, "champions league": 45, "uefa champions": 45,
+    "europa league": 28, "serie a": 30, "bundesliga": 30, "ligue 1": 26,
+    "liga mx": 32, "liga bbva mx": 32,
+    "mls": 18, "saudi pro league": 22,
+    "ufc": 38, "wta": 22, "atp": 26, "grand slam": 36,
+  };
+  const MARQUEE_PAIRS = [
+    /yankees.*red sox|red sox.*yankees/i,
+    /dodgers.*giants|giants.*dodgers/i,
+    /lakers.*celtics|celtics.*lakers/i,
+    /lakers.*warriors|warriors.*lakers/i,
+    /real madrid.*barcelona|barcelona.*real madrid/i,
+    /al.?nassr.*al.?hilal|al.?hilal.*al.?nassr/i,
+    /america.*chivas|chivas.*america/i,
+    /cruz azul.*america|america.*cruz azul/i,
+    /manchester.*liverpool|liverpool.*manchester/i,
+    /tigres.*monterrey|monterrey.*tigres/i,
+  ];
+
+  function computeAutoTopEvents(events, topN = 5){
+    if(!Array.isArray(events) || events.length === 0) return [];
+    const scored = events.map(ev => {
+      const reasons = [];
+      let score = 0;
+
+      const league = String(ev.league || ev.competition || '').toLowerCase().trim();
+      for (const [key, bonus] of Object.entries(PRIORITY_LEAGUES)) {
+        if (league.includes(key)) { score += bonus; reasons.push(`liga top: ${key.toUpperCase()}`); break; }
+      }
+
+      const home = String(ev.home_team || ev.homeTeam || '');
+      const away = String(ev.away_team || ev.awayTeam || '');
+      const matchTxt = `${home} ${away}`;
+      for (const re of MARQUEE_PAIRS) {
+        if (re.test(matchTxt)) { score += 20; reasons.push('clásico'); break; }
+      }
+
+      const evDate = ev.eventDate || ev.event_date || ev.date || ev.start_time;
+      if (evDate) {
+        try {
+          const cdmxHour = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Mexico_City', hour: 'numeric', hour12: false }).format(new Date(evDate)));
+          if (cdmxHour >= 20 && cdmxHour <= 23) { score += 8; reasons.push('hora pico'); }
+          else if (cdmxHour >= 18 && cdmxHour < 20) { score += 4; reasons.push('horario fuerte'); }
+        } catch(_){}
+      }
+
+      if (ev.has_stats || ev.stats || ev.hasStats) { score += 6; reasons.push('stats disponibles'); }
+      // Pick ya generado: bajamos prioridad (la idea es ranking de pendientes)
+      if (ev.hasPick || ev.latestPick) { score -= 50; reasons.push('ya con pick'); }
+
+      return { ev, score, reasons };
+    });
+    return scored
+      .filter(s => s.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, topN);
+  }
+
+  function renderAutoTopEvents(events){
+    const section = document.getElementById('auto-top-section');
+    const grid = document.getElementById('auto-top-grid');
+    const sub = document.getElementById('auto-top-sub');
+    if (!section || !grid) return new Set();
+    const top = computeAutoTopEvents(events, 5);
+    if (!top.length) {
+      section.style.display = 'none';
+      return new Set();
+    }
+    section.style.display = '';
+    sub.textContent = `top ${top.length} de ${events.length} eventos · sin IA · ranking automático`;
+    grid.innerHTML = top.map((s, i) => {
+      const ev = s.ev;
+      const home = ev.home_team || ev.homeTeam || '?';
+      const away = ev.away_team || ev.awayTeam || '?';
+      const league = ev.league || ev.competition || '—';
+      const evDate = ev.eventDate || ev.event_date || ev.date || ev.start_time;
+      let timeStr = '';
+      try { if (evDate) timeStr = new Date(evDate).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); } catch(_){}
+      return `<div class="auto-top-card" data-event-id="${ev.id}" title="Click para ir al evento">
+        <span class="auto-top-rank">${i+1}</span>
+        <div class="auto-top-match">${home} vs ${away}</div>
+        <div class="auto-top-meta">
+          <span class="auto-top-league">${league}</span>
+          ${timeStr ? `<span>· ${timeStr}</span>` : ''}
+          <span class="auto-top-score">score ${s.score}</span>
+        </div>
+        ${s.reasons.length ? `<div class="auto-top-reasons">${s.reasons.slice(0,3).join(' · ')}</div>` : ''}
+      </div>`;
+    }).join('');
+    // Retorna set de IDs para marcar también en la lista grande
+    return new Set(top.map(s => Number(s.ev.id)));
+  }
+
+  // Delegación: click en card del top → scroll al evento + abrir si tiene workspace
+  document.getElementById('auto-top-grid')?.addEventListener('click', e => {
+    const card = e.target.closest('.auto-top-card');
+    if (!card) return;
+    const eid = card.dataset.eventId;
+    const targetCard = document.querySelector(`.event-card[data-event-id="${eid}"]`);
+    if (targetCard) {
+      targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      targetCard.style.transition = 'box-shadow .4s';
+      targetCard.style.boxShadow = '0 0 0 2px rgba(255,69,0,.5)';
+      setTimeout(() => { targetCard.style.boxShadow = ''; }, 1500);
+    }
+  });
+
   function renderEvents(list){
     const container = document.getElementById('events-list');
     renderPublishedPicks(list);
+    // Auto top events (heurística)
+    const topIds = renderAutoTopEvents(list || []);
+    // Marcar eventos top con rank para que createEventCard pinte badge
+    const rankByEventId = new Map();
+    (list || []).forEach(ev => {
+      if (topIds.has(Number(ev.id))) {
+        const top = computeAutoTopEvents(list, 5);
+        const idx = top.findIndex(t => Number(t.ev.id) === Number(ev.id));
+        if (idx >= 0) { ev._autoTopRank = idx + 1; rankByEventId.set(Number(ev.id), idx + 1); }
+      }
+    });
     const pendingList = (list || []).filter(ev => !(ev?.hasPick || ev?.latestPick));
     const publishedCount = (list || []).length - pendingList.length;
     if(!pendingList.length){
