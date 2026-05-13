@@ -953,7 +953,22 @@ main{position:relative;z-index:2}
   }
 
   async function fetchJson(path, options = {}){
-    const res = await fetch(`${API_BASE}${path}`, options);
+    // Timeout defensivo: si el server tarda más de 18s (deploy, lentitud), abortar
+    // para que el UI no se quede colgado en "Cargando…" forever.
+    const controller = new AbortController();
+    const timeoutMs = Number(options.timeoutMs) || 18000;
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let res;
+    try {
+      res = await fetch(`${API_BASE}${path}`, { ...options, signal: controller.signal });
+    } catch (netErr) {
+      clearTimeout(timer);
+      const isAbort = netErr.name === "AbortError";
+      const err = new Error(isAbort ? `timeout (${timeoutMs}ms)` : (netErr.message || "network_error"));
+      err.status = isAbort ? 408 : 0;
+      throw err;
+    }
+    clearTimeout(timer);
     const text = await res.text();
     let data = null;
     try { data = text ? JSON.parse(text) : null; } catch(_){}

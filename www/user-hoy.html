@@ -1051,10 +1051,28 @@ function uhToast(msg, type='success', ms=3000){
   setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 250); }, ms);
 }
 
-const userEmail = (function(){
-  try { return JSON.parse(localStorage.getItem('discipline_current_user_v1')||'{}').email || ''; } catch(_) { return ''; }
-})();
-function userHeaders(){ const h={'Content-Type':'application/json'}; if(userEmail) h['x-user-email']=userEmail; return h; }
+// Lee el email del usuario actual con la misma lógica que getCurrentUser() de app.js.
+// `discipline_current_user_v1` guarda el ID (string puro, NO JSON);
+// el array de usuarios completo vive en `discipline_users_v1`.
+function readCurrentUserEmail(){
+  try {
+    if (typeof getCurrentUser === 'function') {
+      const u = getCurrentUser();
+      if (u && u.email) return String(u.email).trim().toLowerCase();
+    }
+    const id = localStorage.getItem('discipline_current_user_v1');
+    if (!id) return '';
+    const users = JSON.parse(localStorage.getItem('discipline_users_v1') || '[]');
+    const me = Array.isArray(users) ? users.find(u => u && u.id === id) : null;
+    return me && me.email ? String(me.email).trim().toLowerCase() : '';
+  } catch (_) { return ''; }
+}
+function userHeaders(){
+  const h = { 'Content-Type': 'application/json' };
+  const email = readCurrentUserEmail();
+  if (email) h['x-user-email'] = email;
+  return h;
+}
 
 const bankOverlay = document.getElementById('bank-overlay');
 const bankModalTitle = document.getElementById('bank-modal-title');
