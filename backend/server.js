@@ -603,7 +603,29 @@ const eventMatchesTrackedLeagues = (event, trackedLeagues = []) => {
   });
 };
 
-const syncSportsEvents = async (date) => {
+// Sincronización de eventos.
+// Por DEFAULT (useExternalApi=false) NO consume créditos de The Odds API:
+// solo refresca eventos ya cargados en BD (manual upload o cargas previas).
+// Si useExternalApi=true (flag explícito), trae eventos vía sportsApiService
+// y consume créditos del proveedor configurado.
+const syncSportsEvents = async (date, { useExternalApi = false } = {}) => {
+  const provider = String(process.env.SPORTS_API_PROVIDER || "mock").trim().toLowerCase() || "mock";
+
+  // Modo refresh local: NO llama a la API externa
+  if (!useExternalApi) {
+    const dateKey = date || toDateKey();
+    const allRecent = await listRecentSportsEvents(400);
+    const localEvents = allRecent.filter((event) => matchesDateKey(event?.eventDate, dateKey));
+    await logApiSync({
+      sourceApi: "local_refresh",
+      endpoint: date ? `/local?date=${date}` : "/local",
+      status: "ok",
+      message: `Refresh local (sin consumir API ${provider}): ${localEvents.length} eventos en BD para ${dateKey}`,
+    });
+    return localEvents;
+  }
+
+  // Modo sync real: SÍ consume créditos de la API externa
   const trackedLeagues = await getTrackedLeagues();
   const events = await sportsApiService.getTodayEvents(date || null);
   const filteredEvents = Array.isArray(events) ? events.filter((event) => eventMatchesTrackedLeagues(event, trackedLeagues)) : [];
@@ -615,16 +637,16 @@ const syncSportsEvents = async (date) => {
     if (event?.stats && typeof event.stats === "object") {
       await saveEventStats({
         eventId: row.id,
-        sourceApi: String(process.env.SPORTS_API_PROVIDER || "mock").trim().toLowerCase() || "mock",
+        sourceApi: provider,
         statsJson: event.stats,
       });
     }
   }
   await logApiSync({
-    sourceApi: String(process.env.SPORTS_API_PROVIDER || "mock").trim().toLowerCase() || "mock",
+    sourceApi: provider,
     endpoint: date ? `/fixtures?date=${date}` : "/today",
     status: "ok",
-    message: `Eventos sincronizados: ${saved.length} de ${safeArray(events).length} (filtrados por ligas objetivo: ${filteredEvents.length})`,
+    message: `[SYNC REAL — consumió API ${provider}] Eventos: ${saved.length} de ${safeArray(events).length} (filtrados: ${filteredEvents.length})`,
   });
   return saved;
 };
@@ -1383,11 +1405,18 @@ app.post("/api/sports/sync", requireAdmin, async (req, res) => {
   }
   try {
     const date = String(req.body?.date || "").trim() || null;
-    const events = await syncSportsEvents(date);
+    // Por DEFAULT no consume créditos de The Odds API.
+    // Solo si el caller pasa explícito useExternalApi=true (body o query) se llama al provider real.
+    const useExternalApi = req.body?.useExternalApi === true
+      || String(req.body?.useExternalApi || "").toLowerCase() === "true"
+      || String(req.query?.useExternalApi || "").toLowerCase() === "true";
+    const events = await syncSportsEvents(date, { useExternalApi });
     res.json({
       ok: true,
       count: events.length,
       events,
+      mode: useExternalApi ? "external_api" : "local_refresh",
+      provider: useExternalApi ? (String(process.env.SPORTS_API_PROVIDER || "mock").trim().toLowerCase() || "mock") : "local",
       logs: await listApiSyncLogs(5),
     });
   } catch (error) {
