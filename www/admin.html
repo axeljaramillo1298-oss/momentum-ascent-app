@@ -395,7 +395,85 @@ main{position:relative;z-index:2}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(255,69,0,.3);border-radius:2px}
 
+/* HOY EN VIVO — dashboard destacado de picks del día */
+.live-today{margin:32px 0 36px;padding:24px;background:linear-gradient(135deg,rgba(255,69,0,.08),rgba(255,69,0,.02));border:1px solid rgba(255,69,0,.18);border-radius:8px;opacity:0;animation:fadeUp .5s .5s forwards}
+.live-today-hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.live-today-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:22px;text-transform:uppercase;letter-spacing:.02em}
+.live-today-title em{color:var(--orange);font-style:normal}
+.live-today-pulse{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--green)}
+.live-today-pulse::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);animation:refreshPulse 1.6s ease-in-out infinite}
+.live-today-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:14px}
+.live-today-stat{background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:4px;padding:12px;text-align:center}
+.live-today-stat-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:26px;line-height:1}
+.live-today-stat-lbl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.live-today-picks{display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto}
+.live-today-pick{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(0,0,0,.22);border:1px solid var(--border);border-radius:4px;font-size:12px;transition:border-color .2s}
+.live-today-pick:hover{border-color:rgba(255,69,0,.25)}
+.live-today-pick-info{flex:1;min-width:0}
+.live-today-pick-match{font-weight:700;font-size:12.5px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.live-today-pick-meta{font-size:10.5px;color:var(--muted);margin-top:2px}
+.live-today-pick-conf{font-weight:700;font-size:11.5px;padding:2px 8px;border-radius:3px;background:rgba(255,255,255,.05);flex-shrink:0}
+.live-today-pick-actions{display:flex;gap:4px;flex-shrink:0}
+.live-today-actionbtn{font:700 9px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:5px 10px;border-radius:3px;border:1px solid;background:transparent;cursor:pointer;transition:all .15s;color:var(--muted)}
+.live-today-actionbtn.won{border-color:rgba(74,222,128,.3);color:var(--green)}
+.live-today-actionbtn.won:hover{background:rgba(74,222,128,.1)}
+.live-today-actionbtn.lost{border-color:rgba(248,113,113,.3);color:var(--red)}
+.live-today-actionbtn.lost:hover{background:rgba(248,113,113,.1)}
+.live-today-actionbtn.void{border-color:var(--border);color:var(--muted)}
+.live-today-actionbtn.void:hover{background:rgba(255,255,255,.03)}
+.live-today-actionbtn.done{cursor:default;opacity:.85;background:rgba(255,255,255,.04)}
+.live-today-actionbtn:disabled{opacity:.4;cursor:wait}
+.live-today-empty{padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;background:rgba(0,0,0,.15);border-radius:4px}
+.res-mini{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font:800 9px 'Barlow',sans-serif;letter-spacing:.12em;text-transform:uppercase;border:1px solid;white-space:nowrap}
+.res-mini.won{color:var(--green);border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.06)}
+.res-mini.lost{color:var(--red);border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.06)}
+.res-mini.void{color:var(--muted);border-color:var(--border);background:rgba(255,255,255,.03)}
+.res-mini.pending{color:var(--yellow);border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.05)}
+
+/* BREAKDOWN — Por liga / mercado en historial */
+.bd-card{background:rgba(255,255,255,.018);border:1px solid var(--border);border-radius:6px;padding:18px;margin-top:1.5rem}
+.bd-card-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:16px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:12px}
+.bd-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+.bd-row:last-child{border-bottom:none}
+.bd-row-name{flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bd-row-bar{flex:1.4;max-width:140px;display:flex;align-items:center;gap:8px}
+.bd-row-track{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.bd-row-fill{height:100%;border-radius:2px;transition:width .4s}
+.bd-row-wr{font-weight:700;min-width:42px;text-align:right;font-size:12px}
+.bd-row-count{color:var(--muted);font-size:10px;min-width:50px;text-align:right}
+.bd-empty{color:var(--muted);font-size:12px;text-align:center;padding:18px 0}
+
+/* SPINNER (inline en botones) */
+.btn-spin{display:inline-block;width:11px;height:11px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .65s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TOAST NOTIFICATIONS (reemplazan alert) */
+.toast-stack{position:fixed;top:80px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:340px;pointer-events:none}
+.toast{pointer-events:auto;padding:12px 16px;border-radius:6px;font:600 12px 'Barlow',sans-serif;letter-spacing:.02em;background:rgba(14,14,18,.96);backdrop-filter:blur(12px);border:1px solid var(--border);color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,.4);display:flex;align-items:flex-start;gap:10px;animation:toastIn .25s ease-out;line-height:1.4}
+.toast.toast-out{animation:toastOut .25s ease-in forwards}
+.toast.error{border-color:rgba(248,113,113,.4);background:rgba(40,12,12,.96)}
+.toast.error::before{content:'✕';color:var(--red);font-weight:900;font-size:14px;flex-shrink:0}
+.toast.success{border-color:rgba(74,222,128,.4);background:rgba(12,28,18,.96)}
+.toast.success::before{content:'✓';color:var(--green);font-weight:900;font-size:14px;flex-shrink:0}
+.toast.info{border-color:rgba(245,158,11,.4)}
+.toast.info::before{content:'ℹ';color:var(--yellow);font-weight:900;font-size:14px;flex-shrink:0}
+.toast-msg{flex:1;min-width:0;word-wrap:break-word}
+.toast-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0;line-height:1;flex-shrink:0;opacity:.6;transition:opacity .15s}
+.toast-close:hover{opacity:1}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+@keyframes toastOut{to{opacity:0;transform:translateX(20px)}}
+
+/* AUTO-REFRESH PILL */
+.refresh-pill{position:fixed;bottom:18px;right:18px;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(6,6,8,.85);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);z-index:300;transition:opacity .3s;cursor:default}
+.refresh-pill::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);animation:refreshPulse 2s ease-in-out infinite}
+.refresh-pill.refreshing::before{background:var(--orange);animation-duration:.8s}
+.refresh-pill.paused{opacity:.5}
+.refresh-pill.paused::before{background:var(--muted);animation:none}
+@keyframes refreshPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+
 @media(max-width:640px){
+  .toast-stack{top:60px;right:10px;left:10px;max-width:none}
+  .refresh-pill{bottom:12px;right:12px;font-size:9px;padding:6px 10px}
   .admin-nav{padding:10px 16px}
   .page-hero{padding:24px 16px 20px}
   .page-content{padding:0 16px 60px}
@@ -474,6 +552,24 @@ main{position:relative;z-index:2}
   </section>
 
   <div class="page-content">
+
+    <!-- HOY EN VIVO — resumen del día + acciones rápidas -->
+    <div class="live-today" id="live-today">
+      <div class="live-today-hdr">
+        <div class="live-today-title">Hoy <em>en vivo</em></div>
+        <span class="live-today-pulse">Actualizado automático</span>
+      </div>
+      <div class="live-today-stats">
+        <div class="live-today-stat"><div class="live-today-stat-val" id="lt-total">—</div><div class="live-today-stat-lbl">Picks hoy</div></div>
+        <div class="live-today-stat"><div class="live-today-stat-val" style="color:var(--green)" id="lt-won">—</div><div class="live-today-stat-lbl">Ganados</div></div>
+        <div class="live-today-stat"><div class="live-today-stat-val" style="color:var(--red)" id="lt-lost">—</div><div class="live-today-stat-lbl">Perdidos</div></div>
+        <div class="live-today-stat"><div class="live-today-stat-val" style="color:var(--yellow)" id="lt-pending">—</div><div class="live-today-stat-lbl">Pendientes</div></div>
+        <div class="live-today-stat"><div class="live-today-stat-val" style="color:var(--orange)" id="lt-wr">—</div><div class="live-today-stat-lbl">Win rate</div></div>
+      </div>
+      <div class="live-today-picks" id="lt-picks">
+        <div class="live-today-empty">Cargando picks de hoy…</div>
+      </div>
+    </div>
 
     <!-- OPS BAR -->
     <div class="ops-bar">
@@ -677,6 +773,12 @@ main{position:relative;z-index:2}
         </div>
       </div>
 
+      <!-- BREAKDOWN POR LIGA -->
+      <div class="bd-card" id="by-league-card">
+        <div class="bd-card-title">Rendimiento por liga <span style="font-size:.7rem;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(picks resueltos, top 8)</span></div>
+        <div id="by-league-list"><div class="bd-empty">Sin datos suficientes</div></div>
+      </div>
+
       <div style="overflow-x:auto;background:rgba(255,255,255,.015);border:1px solid var(--border);border-radius:6px;margin-top:1.5rem">
         <table class="picks-hist-table">
           <thead>
@@ -837,6 +939,48 @@ main{position:relative;z-index:2}
     }
     return data;
   }
+
+  // ── TOAST NOTIFICATIONS (reemplazan alert) ────────────────
+  const TOAST_STACK = document.getElementById('toast-stack');
+  function showToast(message, type = 'info', durationMs = 4200){
+    if(!TOAST_STACK) return;
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const msg = document.createElement('span');
+    msg.className = 'toast-msg';
+    msg.textContent = String(message || '');
+    const close = document.createElement('button');
+    close.className = 'toast-close';
+    close.setAttribute('aria-label', 'Cerrar');
+    close.innerHTML = '×';
+    const remove = () => {
+      t.classList.add('toast-out');
+      setTimeout(() => t.remove(), 240);
+    };
+    close.addEventListener('click', remove);
+    t.appendChild(msg);
+    t.appendChild(close);
+    TOAST_STACK.appendChild(t);
+    if(durationMs > 0) setTimeout(remove, durationMs);
+  }
+  // Exponer para handlers globales (markResult, etc.) que están fuera de este IIFE
+  window.adminToast = showToast;
+
+  // ── SPINNER HELPER ────────────────────────────────────────
+  // withSpinner(btn, async fn) — pinta spinner inline en el botón mientras corre fn
+  async function withSpinner(btn, fn){
+    if(!btn || typeof fn !== 'function') return typeof fn === 'function' ? fn() : undefined;
+    const prev = { html: btn.innerHTML, disabled: btn.disabled };
+    btn.disabled = true;
+    btn.innerHTML = `<span class="btn-spin"></span>${prev.html}`;
+    try {
+      return await fn();
+    } finally {
+      btn.innerHTML = prev.html;
+      btn.disabled = prev.disabled;
+    }
+  }
+  window.adminWithSpinner = withSpinner;
 
   // ── LOG ───────────────────────────────────────────────────
   const logEl = document.getElementById('log-list');
@@ -1545,8 +1689,8 @@ main{position:relative;z-index:2}
   document.getElementById('reto-btn-analyze').addEventListener('click', async () => {
     const inv = Number(document.getElementById('reto-inversion').value);
     const meta = Number(document.getElementById('reto-meta').value);
-    if(!inv || !meta || meta <= inv){ alert('La meta debe ser mayor a la inversión.'); return; }
-    if(!scoutResults.size){ alert('Primero ejecuta "Analizar jornada" para que GPT identifique los mejores eventos.'); return; }
+    if(!inv || !meta || meta <= inv){ showToast('La meta debe ser mayor a la inversión.', 'error'); return; }
+    if(!scoutResults.size){ showToast('Primero ejecuta "Analizar jornada" para que GPT identifique los mejores eventos.', 'info'); return; }
 
     document.getElementById('reto-form-section').style.display = 'none';
     document.getElementById('reto-loading-section').style.display = '';
@@ -1584,7 +1728,7 @@ main{position:relative;z-index:2}
       document.getElementById('reto-form-section').style.display = '';
       document.getElementById('reto-btn-analyze').disabled = false;
       addLog(`Error generando reto: ${err.message}`, 'err');
-      alert(`Error: ${err.message}`);
+      showToast(`Error generando reto: ${err.message}`, 'error', 6000);
     }
   });
 
@@ -1925,7 +2069,9 @@ main{position:relative;z-index:2}
     }
   });
 
-  document.getElementById('btn-refresh').addEventListener('click', () => loadEvents());
+  document.getElementById('btn-refresh').addEventListener('click', function(){
+    withSpinner(this, () => loadEvents());
+  });
   document.getElementById('btn-scout').addEventListener('click', runDayScout);
   document.getElementById('btn-tomorrow').addEventListener('click', () => {
     const tomorrow = new Date();
@@ -1987,7 +2133,7 @@ main{position:relative;z-index:2}
 
   async function batchAnalyzeAll() {
     const pending = (events || []).filter(e => !e.hasPick);
-    if (!pending.length) { alert('No hay eventos sin pick para analizar.'); return; }
+    if (!pending.length) { showToast('No hay eventos sin pick para analizar.', 'info'); return; }
 
     batchCancelled = false;
     const modal       = document.getElementById('batch-modal');
@@ -2244,7 +2390,150 @@ main{position:relative;z-index:2}
 
   // ── INIT ──────────────────────────────────────────────────
   document.getElementById('btn-batch').addEventListener('click', batchAnalyzeAll);
-  loadEvents();
+
+  // ── HOY EN VIVO ───────────────────────────────────────────
+  // YYYY-MM-DD en zona CDMX (consistente con backend)
+  function dateKeyMx(date){
+    if(!date) return '';
+    try{
+      const fmt = new Intl.DateTimeFormat('en-CA',{timeZone:'America/Mexico_City',year:'numeric',month:'2-digit',day:'2-digit'});
+      return fmt.format(new Date(date));
+    }catch{return '';}
+  }
+  function todayKeyMx(){ return dateKeyMx(new Date()); }
+
+  function resOf(p){ return p.result || 'pending'; }
+  function liveConfColor(c){ return c>=70 ? 'var(--green)' : c>=60 ? 'var(--yellow)' : 'var(--red)'; }
+
+  async function loadLiveToday(){
+    try {
+      const data = await fetchJson('/api/picks/history?limit=80');
+      const picks = Array.isArray(data?.picks) ? data.picks : [];
+      const todayKey = todayKeyMx();
+      const todayPicks = picks.filter(p => dateKeyMx(p.eventDate || p.event_date || p.createdAt || p.created_at) === todayKey);
+      const won = todayPicks.filter(p => p.result === 'won').length;
+      const lost = todayPicks.filter(p => p.result === 'lost').length;
+      const voidC = todayPicks.filter(p => p.result === 'void').length;
+      const pending = todayPicks.filter(p => !p.result).length;
+      const resolved = won + lost;
+      const wr = resolved ? Math.round(won / resolved * 100) : null;
+
+      document.getElementById('lt-total').textContent = todayPicks.length;
+      document.getElementById('lt-won').textContent = won;
+      document.getElementById('lt-lost').textContent = lost;
+      document.getElementById('lt-pending').textContent = pending;
+      document.getElementById('lt-wr').textContent = wr !== null ? `${wr}%` : '—';
+
+      const ltPicks = document.getElementById('lt-picks');
+      if(!todayPicks.length){
+        ltPicks.innerHTML = '<div class="live-today-empty">No hay picks publicados hoy todavía.</div>';
+        return;
+      }
+      ltPicks.innerHTML = todayPicks.map(p => {
+        const r = resOf(p);
+        const conf = Number(p.confidence || 0);
+        const home = p.homeTeam || p.home_team || '?';
+        const away = p.awayTeam || p.away_team || '?';
+        const pickTxt = p.pickLocked ? '⭐ Premium' : (p.pick || '—');
+        const market = p.market || '';
+        const pickId = p.id;
+        const isResolved = r === 'won' || r === 'lost' || r === 'void';
+        const actions = isResolved
+          ? `<span class="res-mini ${r}">${r==='won'?'✓ Ganó':r==='lost'?'✗ Perdió':'— Void'}</span>`
+          : `<div class="live-today-pick-actions">
+              <button class="live-today-actionbtn won" data-pick-id="${pickId}" data-result="won" title="Marcar ganado">✓</button>
+              <button class="live-today-actionbtn lost" data-pick-id="${pickId}" data-result="lost" title="Marcar perdido">✗</button>
+              <button class="live-today-actionbtn void" data-pick-id="${pickId}" data-result="void" title="Marcar void">—</button>
+            </div>`;
+        return `<div class="live-today-pick" data-pick-id="${pickId}">
+          <div class="live-today-pick-info">
+            <div class="live-today-pick-match">${home} vs ${away}</div>
+            <div class="live-today-pick-meta">${p.league || ''} · ${market}${market ? ' · ' : ''}${pickTxt}</div>
+          </div>
+          <span class="live-today-pick-conf" style="color:${liveConfColor(conf)}">${conf}%</span>
+          ${actions}
+        </div>`;
+      }).join('');
+    } catch(err) {
+      // silent — auto-refresh reintenta
+    }
+  }
+
+  // Delegación de clicks: marcar resultado desde HOY EN VIVO
+  document.getElementById('lt-picks').addEventListener('click', async e => {
+    const btn = e.target.closest('.live-today-actionbtn');
+    if(!btn || btn.disabled || btn.classList.contains('done')) return;
+    const pickId = btn.dataset.pickId;
+    const result = btn.dataset.result;
+    const row = btn.closest('.live-today-pick');
+    const siblings = row?.querySelectorAll('.live-today-actionbtn') || [];
+    siblings.forEach(b => b.disabled = true);
+    try {
+      await fetchJson(`/api/picks/${pickId}/result`, {
+        method: 'PUT',
+        headers: apiHeaders(),
+        body: JSON.stringify({ result })
+      });
+      showToast(`Pick marcado como ${result === 'won' ? 'ganado' : result === 'lost' ? 'perdido' : 'void'}`, 'success', 2500);
+      addLog(`Pick #${pickId} → ${result}`, 'ok');
+      await loadLiveToday();
+    } catch(err) {
+      showToast(`Error al marcar resultado: ${err.message}`, 'error');
+      siblings.forEach(b => b.disabled = false);
+    }
+  });
+
+  // ── AUTO-REFRESH ──────────────────────────────────────────
+  // Refresca eventos del día cada 60s; pill muestra "Hace Xs"
+  const REFRESH_INTERVAL_MS = 60000;
+  let lastRefresh = 0;
+  const refreshPill = document.getElementById('admin-refresh-pill');
+  const refreshTxt = document.getElementById('admin-refresh-text');
+  let refreshTicker = null;
+
+  function paintRefreshPill(){
+    if(!refreshPill || !refreshTxt) return;
+    if(!lastRefresh){ refreshTxt.textContent = 'Cargando…'; return; }
+    const secs = Math.floor((Date.now() - lastRefresh) / 1000);
+    if(secs < 5) refreshTxt.textContent = 'Actualizado ahora';
+    else if(secs < 60) refreshTxt.textContent = `Hace ${secs}s`;
+    else refreshTxt.textContent = `Hace ${Math.floor(secs/60)}min`;
+  }
+
+  async function autoRefreshTick(){
+    if(document.hidden){ refreshPill?.classList.add('paused'); return; }
+    refreshPill?.classList.remove('paused');
+    refreshPill?.classList.add('refreshing');
+    try {
+      await Promise.all([loadEvents(), loadLiveToday()]);
+      lastRefresh = Date.now();
+      paintRefreshPill();
+    }
+    catch(_){ /* silent — la siguiente vuelta reintenta */ }
+    finally { setTimeout(() => refreshPill?.classList.remove('refreshing'), 400); }
+  }
+
+  function startAutoRefresh(){
+    if(refreshTicker) return;
+    refreshTicker = setInterval(autoRefreshTick, REFRESH_INTERVAL_MS);
+    if(!refreshPill.__paintTicker){
+      refreshPill.__paintTicker = setInterval(paintRefreshPill, 5000);
+    }
+    // Refresca inmediato al volver a la pestaña tras inactividad
+    document.addEventListener('visibilitychange', () => {
+      if(!document.hidden && lastRefresh && (Date.now() - lastRefresh) > REFRESH_INTERVAL_MS){
+        autoRefreshTick();
+      }
+    });
+  }
+
+  // Carga inicial + arranca auto-refresh
+  Promise.all([loadEvents(), loadLiveToday()]).then(() => {
+    lastRefresh = Date.now();
+    paintRefreshPill();
+    refreshPill?.classList.remove('paused');
+    startAutoRefresh();
+  });
 })();
 </script>
 
@@ -2345,7 +2634,7 @@ main{position:relative;z-index:2}
       log2(`Plan revocado para ${userId} — ahora es Free`, 'ok');
       if (typeof loadUsers === 'function') loadUsers(document.getElementById('users-search-input')?.value || '');
       else location.reload();
-    } catch(e) { alert('Error al revocar plan'); }
+    } catch(e) { (window.adminToast || alert)('Error al revocar plan', 'error'); }
   });
 
   // ── TOTAL HISTÓRICO STATS ────────────────────────────────
@@ -2392,6 +2681,44 @@ main{position:relative;z-index:2}
     } catch(e) {
       document.getElementById('total-stats-body').innerHTML=`<tr><td colspan="7" style="padding:12px 14px;color:var(--red)">${e.message}</td></tr>`;
     }
+  }
+
+  // ── BREAKDOWN POR LIGA (Paquete B) ──────────────────────
+  function renderByLeague(picks){
+    const el = document.getElementById('by-league-list');
+    if(!el) return;
+    const resolved = picks.filter(p => p.result === 'won' || p.result === 'lost');
+    if(resolved.length < 3){
+      el.innerHTML = '<div class="bd-empty">Sin datos suficientes (mínimo 3 picks resueltos)</div>';
+      return;
+    }
+    const map = {};
+    resolved.forEach(p => {
+      const key = String(p.league || 'Otra').trim() || 'Otra';
+      if(!map[key]) map[key] = { league:key, won:0, lost:0 };
+      if(p.result === 'won') map[key].won++; else map[key].lost++;
+    });
+    const data = Object.values(map)
+      .map(d => ({ ...d, total: d.won + d.lost, winRate: Math.round(d.won/(d.won+d.lost)*100) }))
+      .filter(d => d.total >= 2)
+      .sort((a,b) => b.winRate - a.winRate || b.total - a.total)
+      .slice(0, 8);
+    if(!data.length){
+      el.innerHTML = '<div class="bd-empty">Sin ligas con suficientes picks (mínimo 2 resueltos)</div>';
+      return;
+    }
+    el.innerHTML = data.map(d => {
+      const wr = d.winRate;
+      const color = wr>=60 ? 'var(--green)' : wr>=50 ? 'var(--yellow)' : 'var(--red)';
+      return `<div class="bd-row">
+        <div class="bd-row-name" title="${d.league}">${d.league}</div>
+        <div class="bd-row-bar">
+          <div class="bd-row-track"><div class="bd-row-fill" style="width:${wr}%;background:${color}"></div></div>
+          <span class="bd-row-wr" style="color:${color}">${wr}%</span>
+        </div>
+        <div class="bd-row-count">${d.won}/${d.total}</div>
+      </div>`;
+    }).join('');
   }
 
   // ── HISTORIAL DE PICKS & STATS ──────────────────────────
@@ -2499,6 +2826,9 @@ main{position:relative;z-index:2}
         html += dayPicks.map(pickRow).join('');
       });
       tbody.innerHTML = html;
+
+      // Breakdown por liga (Paquete B)
+      renderByLeague(picks);
     } catch(e) {
       tbody.innerHTML=`<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--red)">${e.message}</td></tr>`;
       log2(`Error cargando historial: ${e.message}`, 'err');
@@ -2647,7 +2977,7 @@ main{position:relative;z-index:2}
         document.getElementById(editId).style.display = 'none';
         await loadAdminRetos();
       } catch(err) {
-        alert('Error: ' + err.message);
+        (window.adminToast || alert)('Error: ' + err.message, 'error');
         saveFieldsBtn.disabled = false;
         saveFieldsBtn.textContent = 'Guardar';
       }
@@ -2677,7 +3007,7 @@ main{position:relative;z-index:2}
       if (!res.ok) throw new Error('Error al marcar resultado');
       await loadAdminRetos();
     } catch(err) {
-      alert('Error al marcar resultado: ' + err.message);
+      (window.adminToast || alert)('Error al marcar resultado: ' + err.message, 'error');
       btn.disabled = false;
       btn.textContent = result === 'won' ? 'W' : result === 'lost' ? 'L' : 'V';
     }
@@ -2696,7 +3026,7 @@ main{position:relative;z-index:2}
       if (!res.ok) throw new Error('publish_failed');
       await loadAdminRetos();
     } catch(err) {
-      alert('Error al publicar reto: ' + err.message);
+      (window.adminToast || alert)('Error al publicar reto: ' + err.message, 'error');
       btn.disabled = false;
       btn.textContent = 'Publicar ahora';
     }
@@ -2749,5 +3079,12 @@ main{position:relative;z-index:2}
     <button class="pub-modal-cancel" onclick="closePubModal()">Cancelar</button>
   </div>
 </div>
+
+<!-- TOAST STACK (notificaciones, reemplaza alert()) -->
+<div class="toast-stack" id="toast-stack"></div>
+
+<!-- AUTO-REFRESH PILL -->
+<div class="refresh-pill paused" id="admin-refresh-pill" title="Datos del panel se refrescan automáticamente cada 60 segundos"><span id="admin-refresh-text">Cargando…</span></div>
+
 </body>
 </html>

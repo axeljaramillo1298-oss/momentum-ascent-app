@@ -68,6 +68,183 @@ const buildFallbackSportsPick = ({ event = {}, stats = {}, historicalContext = [
   };
 };
 
+// ── Performance feedback loop ─────────────────────────────────────
+// Build a compact performance summary from past resolved picks so the
+// IA can self-calibrate based on its real win rate per league/market.
+function buildPerformanceContext(picks, options = {}) {
+  if (!Array.isArray(picks) || picks.length === 0) return null;
+  const { league, market, minResolved = 5, maxRecent = 30 } = options;
+
+  const isResolved = (p) => p && (p.result === "won" || p.result === "lost");
+  const resolvedAll = picks.filter(isResolved);
+  const resolved = resolvedAll.slice(0, Math.max(1, Number(maxRecent) || 30));
+  if (resolved.length < Math.max(1, Number(minResolved) || 5)) return null;
+
+  const norm = (v) => safeStr(v).toLowerCase();
+  const wonCount = (arr) => arr.filter((p) => p.result === "won").length;
+  const lostCount = (arr) => arr.filter((p) => p.result === "lost").length;
+  const wr = (arr) => (arr.length ? Math.round((wonCount(arr) / arr.length) * 100) : 0);
+
+  // Global stats
+  const total = resolved.length;
+  const won = wonCount(resolved);
+  const lost = lostCount(resolved);
+  const winRate = wr(resolved);
+
+  // Group helper
+  const groupBy = (arr, keyFn) => {
+    const map = new Map();
+    for (const p of arr) {
+      const k = keyFn(p);
+      if (!k) continue;
+      if (!map.has(k)) map.set(k, []);
+      map.get(k).push(p);
+    }
+    return map;
+  };
+
+  const buildBuckets = (map, minCount = 2) => {
+    const list = [];
+    for (const [key, arr] of map.entries()) {
+      if (arr.length < minCount) continue;
+      list.push({
+        key,
+        total: arr.length,
+        won: wonCount(arr),
+        lost: lostCount(arr),
+        winRate: wr(arr),
+      });
+    }
+    return list.sort((a, b) => b.winRate - a.winRate || b.total - a.total);
+  };
+
+  const byLeagueMap = groupBy(resolved, (p) => safeStr(p.league));
+  const byMarketMap = groupBy(resolved, (p) => norm(p.market));
+  const byLeague = buildBuckets(byLeagueMap, 2).slice(0, 5);
+  const byMarket = buildBuckets(byMarketMap, 2).slice(0, 5);
+
+  // Calibration on high-confidence picks (>= 70)
+  const highConf = resolved.filter((p) => Number(p.confidence || 0) >= 70);
+  let calibration = null;
+  if (highConf.length >= 3) {
+    const realWR = wonCount(highConf) / highConf.length; // 0..1
+    const avgConf =
+      highConf.reduce((s, p) => s + Number(p.confidence || 0), 0) / highConf.length / 100; // 0..1
+    const factor = avgConf > 0 ? realWR / avgConf : 1;
+    let status = "calibrado";
+    if (factor < 0.85) status = "sobre-confiable";
+    else if (factor > 1.1) status = "sub-confiable";
+    calibration = {
+      sampleSize: highConf.length,
+      avgConfidence: Math.round(avgConf * 100),
+      realWinRate: Math.round(realWR * 100),
+      factor: Number(factor.toFixed(2)),
+      status,
+    };
+  }
+
+  // Current streak — pick most recent, count consecutive same result
+  let streak = null;
+  if (resolved.length) {
+    const firstType = resolved[0].result; // 'won' | 'lost'
+    let count = 0;
+    for (const p of resolved) {
+      if (p.result === firstType) count++;
+      else break;
+    }
+    streak = { type: firstType, count };
+  }
+
+  // Optional league-specific stats
+  let leagueSpecific = null;
+  if (league) {
+    const arr = resolved.filter((p) => safeStr(p.league) === safeStr(league));
+    if (arr.length >= 2) {
+      leagueSpecific = {
+        league: safeStr(league),
+        total: arr.length,
+        won: wonCount(arr),
+        lost: lostCount(arr),
+        winRate: wr(arr),
+      };
+    }
+  }
+
+  // Optional market-specific stats
+  let marketSpecific = null;
+  if (market) {
+    const arr = resolved.filter((p) => norm(p.market) === norm(market));
+    if (arr.length >= 2) {
+      marketSpecific = {
+        market: safeStr(market),
+        total: arr.length,
+        won: wonCount(arr),
+        lost: lostCount(arr),
+        winRate: wr(arr),
+      };
+    }
+  }
+
+  // Build promptText (~700 chars max, Spanish)
+  const lines = [];
+  lines.push(`PERFORMANCE HISTORICA (ultimos ${total} picks resueltos):`);
+  lines.push(`- WR global: ${winRate}% (${won}W-${lost}L)`);
+  if (byLeague.length) {
+    const best = byLeague.slice(0, 2).map((b) => `${b.key} ${b.winRate}% (${b.won}-${b.lost})`).join(", ");
+    lines.push(`- Mejores ligas: ${best}`);
+    const worst = [...byLeague].reverse().slice(0, 1).map((b) => `${b.key} ${b.winRate}% (${b.won}-${b.lost})`).join(", ");
+    if (worst && worst !== best) lines.push(`- Peores ligas: ${worst}`);
+  }
+  if (byMarket.length) {
+    const best = byMarket.slice(0, 2).map((b) => `${b.key.toUpperCase()} ${b.winRate}% (${b.won}-${b.lost})`).join(", ");
+    lines.push(`- Mejores mercados: ${best}`);
+    const worst = [...byMarket].reverse().slice(0, 1).map((b) => `${b.key.toUpperCase()} ${b.winRate}% (${b.won}-${b.lost})`).join(", ");
+    if (worst && worst !== best) lines.push(`- Peores mercados: ${worst}`);
+  }
+  if (calibration) {
+    const hint =
+      calibration.status === "sobre-confiable"
+        ? "estas declarando mas confianza de la real, baja conf"
+        : calibration.status === "sub-confiable"
+        ? "podrias ser mas asertivo cuando hay datos"
+        : "confianza alineada con resultados reales";
+    lines.push(
+      `- Calibracion: con conf>=70% declaras ${calibration.avgConfidence}% y aciertas ${calibration.realWinRate}% (${calibration.status}, ${hint})`
+    );
+  }
+  if (streak && streak.count >= 2) {
+    const sign = streak.type === "won" ? "+" : "-";
+    lines.push(`- Racha: ${sign}${streak.count} ${streak.type === "won" ? "ganados" : "perdidos"} consecutivos`);
+  }
+  if (leagueSpecific) {
+    lines.push(
+      `- En esta liga (${leagueSpecific.league}): WR ${leagueSpecific.winRate}% (${leagueSpecific.won}-${leagueSpecific.lost})`
+    );
+  }
+  if (marketSpecific) {
+    lines.push(
+      `- En este mercado (${marketSpecific.market}): WR ${marketSpecific.winRate}% (${marketSpecific.won}-${marketSpecific.lost})`
+    );
+  }
+  lines.push(
+    "INSTRUCCION: considera tu historial. Si la liga/mercado tiene WR bajo, se conservador; si alto, mas asertivo. Calibra confidence con base en tu tasa real."
+  );
+
+  let promptText = lines.join("\n");
+  if (promptText.length > 700) promptText = promptText.slice(0, 697) + "...";
+
+  return {
+    summary: { winRate, won, lost, total },
+    byLeague,
+    byMarket,
+    calibration,
+    streak,
+    ...(leagueSpecific ? { leagueSpecific } : {}),
+    ...(marketSpecific ? { marketSpecific } : {}),
+    promptText,
+  };
+}
+
 const extractJsonObject = (raw) => {
   const text = safeStr(raw);
   const start = text.indexOf("{");
@@ -311,7 +488,7 @@ async function generateAiPlan(payload = {}) {
   };
 }
 
-async function generateSportsPick({ event = {}, stats = {}, historicalContext = [] } = {}) {
+async function generateSportsPick({ event = {}, stats = {}, historicalContext = [], historyPicks = [] } = {}) {
   const apiKey = safeStr(process.env.OPENAI_API_KEY);
   const model = safeStr(process.env.OPENAI_MODEL) || "gpt-4o-mini";
   const fallbackModels = String(process.env.OPENAI_MODEL_FALLBACKS || "")
@@ -322,6 +499,9 @@ async function generateSportsPick({ event = {}, stats = {}, historicalContext = 
   if (!apiKey) {
     return buildFallbackSportsPick({ event, stats, historicalContext });
   }
+
+  const perfCtx = buildPerformanceContext(historyPicks, { league: event.league });
+  const perfBlock = perfCtx ? `\n\n${perfCtx.promptText}\n` : "";
 
   const systemPrompt = [
     "Eres un analista de picks deportivos para un MVP informativo.",
@@ -340,8 +520,10 @@ async function generateSportsPick({ event = {}, stats = {}, historicalContext = 
     `Estado: ${safeStr(event.status)}.`,
     `Stats JSON: ${JSON.stringify(stats || {}).slice(0, OPENAI_MAX_CONTEXT_CHARS)}`,
     `Contexto historico: ${JSON.stringify(historicalContext || []).slice(0, OPENAI_MAX_CONTEXT_CHARS)}`,
+    perfBlock ? perfBlock.trim() : "",
     "Elige un mercado razonable segun los datos disponibles.",
-  ].join("\n\n");
+    "Recuerda: la respuesta DEBE seguir EXACTAMENTE el JSON descrito en el sistema. No agregues campos.",
+  ].filter(Boolean).join("\n\n");
 
   const modelsToTry = [model, ...fallbackModels.filter((m) => m !== model)];
   let content = "";
@@ -438,7 +620,7 @@ const buildFallbackMultiplePicks = ({ event = {}, stats = {} }) => {
 };
 
 // GPT-4o generates 3 complete pick candidates in different markets
-async function generateMultiplePicksGPT({ event = {}, stats = {}, historicalContext = [] } = {}) {
+async function generateMultiplePicksGPT({ event = {}, stats = {}, historicalContext = [], historyPicks = [] } = {}) {
   const apiKey = safeStr(process.env.OPENAI_API_KEY);
   const model = safeStr(process.env.OPENAI_MODEL) || "gpt-4o";
   const home = safeStr(event.home_team || event.homeTeam || "Local");
@@ -448,6 +630,9 @@ async function generateMultiplePicksGPT({ event = {}, stats = {}, historicalCont
   const date = safeStr(event.event_date || event.eventDate || "");
 
   if (!apiKey) return buildFallbackMultiplePicks({ event, stats });
+
+  const perfCtx = buildPerformanceContext(historyPicks, { league: event.league });
+  const perfBlock = perfCtx ? `\n${perfCtx.promptText}\n` : "";
 
   const systemPrompt = [
     "Eres un analista deportivo experto para un servicio informativo de picks deportivos.",
@@ -469,8 +654,10 @@ async function generateMultiplePicksGPT({ event = {}, stats = {}, historicalCont
     `Estado: ${safeStr(event.status || "scheduled")}`,
     `\nEstadisticas disponibles:\n${JSON.stringify(stats || {}).slice(0, 4000)}`,
     `\nContexto historico (ultimos picks del sistema):\n${JSON.stringify(historicalContext || []).slice(0, 1500)}`,
+    perfBlock ? `\n${perfBlock.trim()}` : "",
     `\nGenera exactamente 3 picks en mercados completamente diferentes. Cada pick necesita analisis completo con razonamiento coherente con los datos disponibles.`,
-  ].join("\n");
+    `\nMantén EXACTAMENTE el formato JSON descrito en el sistema. No agregues campos extra.`,
+  ].filter(Boolean).join("\n");
 
   try {
     const controller = new AbortController();
@@ -522,7 +709,7 @@ async function generateMultiplePicksGPT({ event = {}, stats = {}, historicalCont
 }
 
 // Claude acts as judge: evaluates GPT candidates and selects the best one
-async function selectBestPickWithClaude({ event = {}, candidates = [] } = {}) {
+async function selectBestPickWithClaude({ event = {}, candidates = [], historyPicks = [] } = {}) {
   const apiKey = safeStr(process.env.ANTHROPIC_API_KEY);
   const home = safeStr(event.home_team || event.homeTeam || "Local");
   const away = safeStr(event.away_team || event.awayTeam || "Visita");
@@ -555,6 +742,11 @@ async function selectBestPickWithClaude({ event = {}, candidates = [] } = {}) {
     .map((c, i) => [`--- Candidato ${i + 1} ---`, `Mercado: ${c.market}`, `Pick: ${c.pick}`, `Confianza GPT: ${c.confidence}%`, `Riesgo GPT: ${c.risk_level}`, `Analisis: ${c.analysis}`].join("\n"))
     .join("\n\n");
 
+  // Build performance context — use first candidate's market as hint when available
+  const candidateMarket = candidates[0]?.market || "";
+  const perfCtx = buildPerformanceContext(historyPicks, { league: event.league, market: candidateMarket });
+  const perfBlock = perfCtx ? `\n${perfCtx.promptText}\n` : "";
+
   const userPrompt = [
     `Evento: ${league} | ${home} vs ${away}`,
     `Deporte: ${sport}`,
@@ -562,9 +754,10 @@ async function selectBestPickWithClaude({ event = {}, candidates = [] } = {}) {
     ``,
     `Picks candidatos generados por GPT-4o:`,
     candidatesText,
-    ``,
+    perfBlock ? perfBlock.trim() : "",
     `Evalua los ${candidates.length} candidatos y elige el mejor con razonamiento claro.`,
-  ].join("\n");
+    `Recuerda: la respuesta DEBE seguir EXACTAMENTE el JSON definido en el sistema.`,
+  ].filter(Boolean).join("\n");
 
   try {
     const { content, model } = await callClaudeOnce({ apiKey, systemPrompt, userPrompt, maxTokens: 1200 });
@@ -598,9 +791,9 @@ async function selectBestPickWithClaude({ event = {}, candidates = [] } = {}) {
 }
 
 // Orchestrate: GPT generates 3 candidates → Claude judges → return all
-async function runDualAnalysis({ event = {}, stats = {}, historicalContext = [] } = {}) {
-  const candidates = await generateMultiplePicksGPT({ event, stats, historicalContext });
-  const claudeResult = await selectBestPickWithClaude({ event, candidates });
+async function runDualAnalysis({ event = {}, stats = {}, historicalContext = [], historyPicks = [] } = {}) {
+  const candidates = await generateMultiplePicksGPT({ event, stats, historicalContext, historyPicks });
+  const claudeResult = await selectBestPickWithClaude({ event, candidates, historyPicks });
   return { candidates, claudeResult };
 }
 
@@ -688,7 +881,7 @@ const getSportMarketConfig = (sport, home, away) => {
   };
 };
 
-async function analyzeMarketsGPT({ event = {}, stats = {} } = {}) {
+async function analyzeMarketsGPT({ event = {}, stats = {}, historyPicks = [] } = {}) {
   const apiKey = safeStr(process.env.OPENAI_API_KEY);
   const model = safeStr(process.env.OPENAI_MODEL) || "gpt-4o";
   const home = safeStr(event.home_team || event.homeTeam || "Local");
@@ -700,6 +893,9 @@ async function analyzeMarketsGPT({ event = {}, stats = {} } = {}) {
 
   const mkFallback = () => ({ ...sportCfg.fallback, provider: "fallback" });
   if (!apiKey) return mkFallback();
+
+  const perfCtx = buildPerformanceContext(historyPicks, { league: event.league });
+  const perfBlock = perfCtx ? perfCtx.promptText : "";
 
   const systemPrompt = [
     `Eres un analista deportivo senior especializado en ${sportCfg.label} para una plataforma premium de apuestas deportivas.`,
@@ -729,9 +925,11 @@ async function analyzeMarketsGPT({ event = {}, stats = {} } = {}) {
     `Deporte: ${sportCfg.label}`,
     `Fecha: ${date}`,
     stats && Object.keys(stats).length ? `Stats: ${JSON.stringify(stats).slice(0, 3200)}` : "Stats: limitados",
+    perfBlock ? `\n${perfBlock}` : "",
     `Analiza los 5 mercados de ${sportCfg.label} usando SOLO la informacion disponible.`,
     "Si no hay datos suficientes para un mercado, baja confianza y explica brevemente.",
-  ].join("\n");
+    "Mantén EXACTAMENTE el JSON descrito en el sistema; no agregues campos.",
+  ].filter(Boolean).join("\n");
 
   try {
     if (OPENAI_WEB_SEARCH_ENABLED) {
@@ -780,7 +978,7 @@ async function analyzeMarketsGPT({ event = {}, stats = {} } = {}) {
 }
 
 // ── Claude: independent second-pass review + choose best market ──
-async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday = [], stats = {} } = {}) {
+async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday = [], stats = {}, historyPicks = [] } = {}) {
   const apiKey = safeStr(process.env.ANTHROPIC_API_KEY);
   const home = safeStr(event.home_team || event.homeTeam || "Local");
   const away = safeStr(event.away_team || event.awayTeam || "Visita");
@@ -985,7 +1183,21 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
     "tipo refleja el equilibrio del portafolio. NO prometas ganancias.",
   ].join(" ");
 
-  const userPrompt = [
+  // Build performance context — try to surface the GPT-top market WR if relevant
+  const topMarketKey = (() => {
+    const opts = [
+      { key: "ml", conf: gptMarkets.ml?.conf || 0 },
+      { key: "over_under", conf: gptMarkets.goles?.conf || 0 },
+      { key: "btts", conf: gptMarkets.btts?.conf || 0 },
+      { key: "handicap", conf: gptMarkets.handicap?.conf || 0 },
+      { key: "corners", conf: gptMarkets.corners?.conf || 0 },
+    ];
+    return opts.sort((a, b) => b.conf - a.conf)[0]?.key || "";
+  })();
+  const perfCtxDecide = buildPerformanceContext(historyPicks, { league: event.league, market: topMarketKey });
+  const perfBlockDecide = perfCtxDecide ? `\n${perfCtxDecide.promptText}\n` : "";
+
+  const userPromptParts = [
     `Evento: ${league} | ${home} vs ${away}`,
     `Contexto: ${safeStr(gptMarkets.resumen || "")}`,
     ``,
@@ -995,10 +1207,16 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
     marketsText,
     ``,
     `Picks publicados hoy: ${publishedText}`,
-    ``,
-    `Haz una segunda validacion independiente usando los Stats y compara contra GPT antes de decidir.`,
-    `Elige el mejor mercado para publicar. Sin relleno.`,
-  ].join("\n");
+  ];
+  if (perfBlockDecide) {
+    userPromptParts.push("");
+    userPromptParts.push(perfBlockDecide.trim());
+  }
+  userPromptParts.push("");
+  userPromptParts.push(`Haz una segunda validacion independiente usando los Stats y compara contra GPT antes de decidir.`);
+  userPromptParts.push(`Elige el mejor mercado para publicar. Sin relleno.`);
+  userPromptParts.push(`Mantén EXACTAMENTE el JSON descrito en el sistema; no agregues campos.`);
+  const userPrompt = userPromptParts.join("\n");
 
   try {
     const { content, model } = await callClaudeOnce({ apiKey, systemPrompt, userPrompt, maxTokens: 1200 });
@@ -1240,6 +1458,7 @@ async function scoutDayEventsGPT(events = []) {
 module.exports = {
   generateAiPlan,
   buildFallbackPlan,
+  buildPerformanceContext,
   generateSportsPick,
   generateMultiplePicksGPT,
   selectBestPickWithClaude,

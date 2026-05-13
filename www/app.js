@@ -4222,10 +4222,6 @@ function initGodModePanel() {
   const planDays = document.getElementById("god-plan-days");
   const challengeType = document.getElementById("god-challenge-type");
   const betAmount = document.getElementById("god-bet-amount");
-  const contractEnabled = document.getElementById("god-contract-enabled");
-  const betEnabled = document.getElementById("god-bet-enabled");
-  const extraDietBasic = document.getElementById("god-extra-diet-basic");
-  const extraDietPlus = document.getElementById("god-extra-diet-plus");
   const bankName = document.getElementById("god-bank-name");
   const bankHolder = document.getElementById("god-bank-holder");
   const bankClabe = document.getElementById("god-bank-clabe");
@@ -4275,11 +4271,6 @@ function initGodModePanel() {
   const buildGodExtras = () => {
     const selectedPlan = String(planId?.value || "free").toLowerCase();
     return {
-      diet_basic: Boolean(extraDietBasic?.checked),
-      diet_plus: Boolean(extraDietPlus?.checked),
-      nutrition_plan: extraDietPlus?.checked ? "pro" : extraDietBasic?.checked ? "basic" : "",
-      contract_enabled: Boolean(contractEnabled?.checked),
-      bet_mode: Boolean(betEnabled?.checked),
       bet_amount: Math.max(0, Number(betAmount?.value || 0)),
       challenge_type: selectedPlan === "retos" ? String(challengeType?.value || "").trim() : "",
     };

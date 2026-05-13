@@ -1599,6 +1599,9 @@ app.post("/api/picks/generate/:eventId", requireAdmin, async (req, res) => {
         createdAt: row.createdAt,
       }));
 
+    // Fetch broader history for performance feedback loop (resolved picks)
+    const historyPicks = await listPickHistory(60).catch(() => []);
+
     const aiPick = await generateSportsPick({
       event: {
         sport: event.sport,
@@ -1610,6 +1613,7 @@ app.post("/api/picks/generate/:eventId", requireAdmin, async (req, res) => {
       },
       stats: stats?.statsJson || {},
       historicalContext,
+      historyPicks,
     });
 
     const savedPick = await saveAiPick({
@@ -1660,10 +1664,14 @@ app.post("/api/picks/generate-dual/:eventId", requireAdmin, async (req, res) => 
       .slice(0, 8)
       .map((row) => ({ league: row.league, market: row.market, confidence: row.confidence, riskLevel: row.riskLevel, createdAt: row.createdAt }));
 
+    // Fetch broader history for performance feedback loop (resolved picks)
+    const historyPicks = await listPickHistory(60).catch(() => []);
+
     const { candidates, claudeResult } = await runDualAnalysis({
       event: { sport: event.sport, league: event.league, home_team: event.homeTeam, away_team: event.awayTeam, event_date: event.eventDate, status: event.status },
       stats: stats?.statsJson || {},
       historicalContext,
+      historyPicks,
     });
 
     const sessionId = `dual-${eventId}-${Date.now()}`;
@@ -1712,9 +1720,13 @@ app.post("/api/picks/gpt-markets/:eventId", requireAdmin, async (req, res) => {
       stats = await saveEventStats({ eventId, sourceApi: pulledStats.sourceApi, statsJson: pulledStats.statsJson });
     }
 
+    // Fetch broader history for performance feedback loop (resolved picks)
+    const historyPicks = await listPickHistory(60).catch(() => []);
+
     const markets = await analyzeMarketsGPT({
       event: { sport: event.sport, league: event.league, home_team: event.homeTeam, away_team: event.awayTeam, event_date: event.eventDate },
       stats: stats?.statsJson || {},
+      historyPicks,
     });
 
     res.json({ ok: true, eventId, event: { sport: event.sport, league: event.league, homeTeam: event.homeTeam, awayTeam: event.awayTeam, eventDate: event.eventDate }, markets });
@@ -1761,11 +1773,15 @@ app.post("/api/picks/claude-decide", requireAdmin, async (req, res) => {
       .slice(0, 8)
       .map((p) => ({ market: p.market, pick: p.pick, riskLevel: p.riskLevel }));
 
+    // Fetch broader history for performance feedback loop (resolved picks)
+    const historyPicks = await listPickHistory(60).catch(() => []);
+
     const decision = await claudeDecideMarket({
       event: { sport: event.sport, league: event.league, home_team: event.homeTeam, away_team: event.awayTeam, event_date: event.eventDate },
       stats: stats?.statsJson || {},
       gptMarkets,
       publishedToday,
+      historyPicks,
     });
 
     res.json({ ok: true, eventId, decision });
