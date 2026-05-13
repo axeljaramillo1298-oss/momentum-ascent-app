@@ -6,6 +6,7 @@ const crypto = require("node:crypto");
 const { generateAiPlan, buildFallbackPlan, generateSportsPick, runDualAnalysis, analyzeMarketsGPT, claudeDecideMarket, scoutDayEventsGPT, generateRetoEscalera, selectTopPicksOfDay, calculateExpectedValue } = require("./ai");
 const { generateEmbedding, findKNearest, hashText } = require("./embeddings");
 const { rateLimitMiddleware } = require("./rate-limit");
+const socialPublisher = require("./social-publisher");
 const sportsApiService = require("./sportsApiService");
 const { sendWhatsAppText, getWhatsAppConfigStatus } = require("./whatsapp");
 const { startCoachOnboardingForUser, handleIncomingCoachMessage } = require("./coach-whatsapp");
@@ -2653,6 +2654,96 @@ app.post("/api/admin/news/event-relevant", requireAdmin, async (req, res) => {
     res.json({ ok: true, count: results.length, results });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error?.message || "news_event_relevant_failed") });
+  }
+});
+
+// ── SOCIAL PUBLISHER → Make.com webhook (Batch 5) ───────────────
+// Status del módulo (¿está configurado MAKE_WEBHOOK_URL?)
+app.get("/api/admin/social/status", requireAdmin, (req, res) => {
+  res.json({ ok: true, ...socialPublisher.getConfigStatus() });
+});
+
+// GET preview del texto que se mandaría para un pick específico
+app.get("/api/admin/social/preview/:pickId", requireAdmin, async (req, res) => {
+  try {
+    const pickId = Number(req.params.pickId);
+    if (!pickId) return res.status(400).json({ ok: false, error: "pick_id_required" });
+    const allPicks = await listPickHistory(500);
+    const pick = allPicks.find((p) => Number(p.id) === pickId);
+    if (!pick) return res.status(404).json({ ok: false, error: "pick_not_found" });
+    const kind = String(req.query.kind || "auto");
+    const payload = socialPublisher.buildPickPayload(pick, { kind });
+    res.json({ ok: true, preview: payload });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "preview_failed") });
+  }
+});
+
+// POST publicar un pick específico en redes (via Make webhook)
+// Body: { pickId, channels?, kind?, scheduledAt?, imageUrl?, customText? }
+app.post("/api/admin/social/publish", requireAdmin, async (req, res) => {
+  try {
+    const pickId = Number(req.body?.pickId);
+    if (!pickId) return res.status(400).json({ ok: false, error: "pick_id_required" });
+    const allPicks = await listPickHistory(500);
+    const pick = allPicks.find((p) => Number(p.id) === pickId);
+    if (!pick) return res.status(404).json({ ok: false, error: "pick_not_found" });
+
+    const channels = Array.isArray(req.body?.channels) && req.body.channels.length
+      ? req.body.channels.filter((c) => typeof c === "string").map((c) => c.toLowerCase())
+      : ["facebook"];
+    const kind = String(req.body?.kind || "auto");
+    const scheduledAt = typeof req.body?.scheduledAt === "string" ? req.body.scheduledAt : null;
+    const imageUrl = typeof req.body?.imageUrl === "string" ? req.body.imageUrl : null;
+    const customText = typeof req.body?.customText === "string" ? req.body.customText : null;
+
+    const payload = socialPublisher.buildPickPayload(pick, { channels, kind, scheduledAt, imageUrl, customText });
+    const result = await socialPublisher.sendToMakeWebhook(payload);
+
+    // Log en notifications_log si está la función
+    if (typeof logNotification === "function") {
+      try {
+        await logNotification({
+          channel: "make_webhook",
+          recipient: payload.channel,
+          type: "pick_published_social",
+          subject: `${pick.homeTeam || ""} vs ${pick.awayTeam || ""}`,
+          payload: JSON.stringify({ pickId, kind: payload.meta?.kind, channels, scheduledAt }),
+          status: result.ok ? "sent" : "failed",
+          error: result.ok ? null : String(result.error || result.reason || "unknown"),
+        });
+      } catch (_) {}
+    }
+
+    if (!result.ok) {
+      const status = result.skipped ? 501 : 502;
+      return res.status(status).json({ ok: false, ...result, payload });
+    }
+    res.json({ ok: true, result, payloadSent: payload });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "social_publish_failed") });
+  }
+});
+
+// POST test endpoint — manda un payload de prueba al webhook
+app.post("/api/admin/social/test", requireAdmin, async (req, res) => {
+  try {
+    const payload = {
+      channel: "test",
+      channels: ["test"],
+      text: req.body?.text || "🧪 Test desde Momentum Ascent — si ves esto en tu trigger de Make, el webhook está OK.",
+      imageUrl: req.body?.imageUrl || null,
+      scheduledAt: null,
+      meta: { kind: "test", source: "admin", timestamp: new Date().toISOString() },
+    };
+    const result = await socialPublisher.sendToMakeWebhook(payload);
+    if (!result.ok) {
+      const status = result.skipped ? 501 : 502;
+      return res.status(status).json({ ok: false, ...result, payloadSent: payload });
+    }
+    res.json({ ok: true, result, payloadSent: payload });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "social_test_failed") });
   }
 });
 

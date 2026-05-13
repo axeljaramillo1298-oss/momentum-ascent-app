@@ -3137,6 +3137,7 @@ main{position:relative;z-index:2}
             <button class="res-btn-sm won ${res==='won'?'active':''}" onclick="markResultStat(${id},'won',this)">✓</button>
             <button class="res-btn-sm lost ${res==='lost'?'active':''}" onclick="markResultStat(${id},'lost',this)">✗</button>
             <button class="res-btn-sm void ${res==='void'?'active':''}" onclick="markResultStat(${id},'void',this)">—</button>
+            <button class="res-btn-sm" style="border-color:rgba(59,130,246,.3);color:#60a5fa" title="Publicar en FB/IG via Make.com" onclick="openSocialModal(${id})">📘</button>
           </div></td>
         </tr>`;
       }
@@ -3171,6 +3172,133 @@ main{position:relative;z-index:2}
     if(typeof window.markResult === 'function') await window.markResult(pickId, result, btn);
     await Promise.all([loadPickStats(), loadTotalStats()]);
   };
+
+  // ── SOCIAL PUBLISHER MODAL (Make.com webhook) ──────────────
+  const spOverlay = document.getElementById('sp-overlay');
+  const spPickInfo = document.getElementById('sp-pick-info');
+  const spKindTags = document.getElementById('sp-kind-tags');
+  const spChannelTags = document.getElementById('sp-channel-tags');
+  const spText = document.getElementById('sp-text');
+  const spImageUrl = document.getElementById('sp-image-url');
+  const spSchedule = document.getElementById('sp-schedule');
+  const spSendBtn = document.getElementById('sp-send-btn');
+  const spTestBtn = document.getElementById('sp-test-btn');
+  const spCancelBtn = document.getElementById('sp-cancel');
+  const spStatus = document.getElementById('sp-status');
+  let spCurrentPickId = null;
+  let spCurrentKind = 'auto';
+  let spSelectedChannels = new Set(['facebook']);
+
+  async function fetchPickPreview(pickId, kind) {
+    spStatus.textContent = 'Cargando preview...';
+    try {
+      const data = await apiFetch(`/api/admin/social/preview/${pickId}?kind=${encodeURIComponent(kind)}`, { headers: apiH() });
+      if (data?.ok && data.preview) {
+        spText.value = data.preview.text || '';
+        const m = data.preview.meta || {};
+        spPickInfo.innerHTML = `<strong>${m.homeTeam || ''} vs ${m.awayTeam || ''}</strong><br>
+          <span style="color:var(--muted);font-size:11px">${m.league || ''} · ${m.market || ''} · ${m.confidence || 0}% · ${m.isPremium ? '⭐ PREMIUM' : '🆓 FREE'}${m.topRank ? ` · ★ Top ${m.topRank}` : ''}</span>`;
+        spStatus.textContent = `Preview cargado. Kind: ${m.kind}.`;
+      }
+    } catch (err) {
+      spStatus.textContent = `Error cargando preview: ${err.message}`;
+    }
+  }
+
+  window.openSocialModal = async function(pickId) {
+    spCurrentPickId = pickId;
+    spCurrentKind = 'auto';
+    spSelectedChannels = new Set(['facebook']);
+    spText.value = '';
+    spImageUrl.value = '';
+    spSchedule.value = '';
+    spStatus.textContent = '';
+    // Reset selected tags
+    spKindTags.querySelectorAll('.fr-tag').forEach(t => t.classList.toggle('selected', t.dataset.kind === 'auto'));
+    spChannelTags.querySelectorAll('.fr-tag').forEach(t => t.classList.toggle('selected', t.dataset.ch === 'facebook'));
+    spOverlay.classList.add('open');
+    await fetchPickPreview(pickId, 'auto');
+  };
+
+  function closeSocialModal() {
+    spOverlay?.classList.remove('open');
+    spCurrentPickId = null;
+  }
+
+  spOverlay?.addEventListener('click', e => { if (e.target === spOverlay) closeSocialModal(); });
+  spCancelBtn?.addEventListener('click', closeSocialModal);
+
+  spKindTags?.addEventListener('click', async e => {
+    const t = e.target.closest('.fr-tag');
+    if (!t) return;
+    spCurrentKind = t.dataset.kind;
+    spKindTags.querySelectorAll('.fr-tag').forEach(x => x.classList.toggle('selected', x === t));
+    if (spCurrentPickId) await fetchPickPreview(spCurrentPickId, spCurrentKind);
+  });
+
+  spChannelTags?.addEventListener('click', e => {
+    const t = e.target.closest('.fr-tag');
+    if (!t) return;
+    const ch = t.dataset.ch;
+    if (spSelectedChannels.has(ch)) { spSelectedChannels.delete(ch); t.classList.remove('selected'); }
+    else { spSelectedChannels.add(ch); t.classList.add('selected'); }
+  });
+
+  spSendBtn?.addEventListener('click', async () => {
+    if (!spCurrentPickId) return;
+    if (!spSelectedChannels.size) { spStatus.textContent = '⚠ Selecciona al menos un canal.'; return; }
+    spSendBtn.disabled = true;
+    spStatus.textContent = 'Enviando a Make.com...';
+    try {
+      const data = await apiFetch('/api/admin/social/publish', {
+        method: 'POST',
+        headers: apiH(),
+        body: JSON.stringify({
+          pickId: spCurrentPickId,
+          channels: [...spSelectedChannels],
+          kind: spCurrentKind,
+          customText: spText.value.trim() || null,
+          imageUrl: spImageUrl.value.trim() || null,
+          scheduledAt: spSchedule.value ? new Date(spSchedule.value).toISOString() : null,
+        }),
+      });
+      if (data?.ok) {
+        spStatus.textContent = `✅ Enviado a Make. Status HTTP ${data.result?.status || '?'}.`;
+        (window.adminToast || alert)('Pick enviado al webhook de Make', 'success');
+        setTimeout(closeSocialModal, 1500);
+      } else {
+        spStatus.textContent = `Error: ${data?.error || data?.reason || 'desconocido'}`;
+      }
+    } catch (err) {
+      spStatus.textContent = `Error: ${err.message}`;
+    } finally {
+      spSendBtn.disabled = false;
+    }
+  });
+
+  spTestBtn?.addEventListener('click', async () => {
+    spTestBtn.disabled = true;
+    spStatus.textContent = 'Mandando test al webhook...';
+    try {
+      const data = await apiFetch('/api/admin/social/test', {
+        method: 'POST',
+        headers: apiH(),
+        body: JSON.stringify({ text: '🧪 Test desde admin panel — ' + new Date().toLocaleString('es-MX') }),
+      });
+      if (data?.ok) {
+        spStatus.textContent = `✅ Test enviado. HTTP ${data.result?.status || '?'}. Revisa el run en Make.com.`;
+        (window.adminToast || alert)('Test webhook enviado', 'success');
+      } else if (data?.skipped) {
+        spStatus.textContent = `⚠ Webhook no configurado. Setea env var MAKE_WEBHOOK_URL en Render.`;
+      } else {
+        spStatus.textContent = `Error: ${data?.error || 'desconocido'}`;
+      }
+    } catch (err) {
+      spStatus.textContent = `Error: ${err.message}`;
+    } finally {
+      spTestBtn.disabled = false;
+    }
+  });
 
   document.getElementById('btn-search-users').addEventListener('click', () => loadUsers(document.getElementById('users-search-input').value));
   document.getElementById('users-search-input').addEventListener('keydown', e => { if(e.key==='Enter') loadUsers(e.target.value); });
@@ -3441,6 +3569,46 @@ main{position:relative;z-index:2}
       <button class="fr-skip" id="fr-skip" type="button">Saltar</button>
       <button class="fr-save" id="fr-save" type="button">Guardar y cerrar</button>
     </div>
+  </div>
+</div>
+
+<!-- SOCIAL PUBLISHER MODAL (Make.com webhook) -->
+<div class="fr-overlay" id="sp-overlay" role="dialog" aria-modal="true">
+  <div class="fr-modal" style="max-width:560px">
+    <h3>📘 Publicar en redes</h3>
+    <p class="fr-modal-sub">Edita el texto antes de enviar al webhook de Make.com. Make decide en qué canales publicar según el scenario configurado.</p>
+    <div id="sp-pick-info" class="fr-modal-pick">—</div>
+
+    <label class="fr-label">Tipo de publicación</label>
+    <div class="fr-tags" id="sp-kind-tags">
+      <button class="fr-tag selected" data-kind="auto" type="button">Auto (según tier)</button>
+      <button class="fr-tag" data-kind="free_pick" type="button">Pick libre</button>
+      <button class="fr-tag" data-kind="premium_teaser" type="button">Teaser premium</button>
+    </div>
+
+    <label class="fr-label">Canales</label>
+    <div class="fr-tags" id="sp-channel-tags">
+      <button class="fr-tag selected" data-ch="facebook" type="button">Facebook</button>
+      <button class="fr-tag" data-ch="instagram" type="button">Instagram</button>
+      <button class="fr-tag" data-ch="x" type="button">X (Twitter)</button>
+    </div>
+
+    <label class="fr-label" for="sp-text">Texto del post (editable)</label>
+    <textarea class="fr-notes" id="sp-text" rows="10" style="min-height:180px;font-family:'Barlow',sans-serif" placeholder="Cargando preview…"></textarea>
+
+    <label class="fr-label" for="sp-image-url">URL de imagen (opcional — imgbb / cualquier CDN público)</label>
+    <input class="bank-modal-input" id="sp-image-url" type="url" placeholder="https://i.ibb.co/..." style="width:100%;background:rgba(255,255,255,.03);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:10px 12px;font:600 12px 'Barlow',sans-serif" />
+
+    <label class="fr-label" for="sp-schedule">Programar (opcional, formato ISO, en blanco = enviar ya)</label>
+    <input class="bank-modal-input" id="sp-schedule" type="datetime-local" style="width:100%;background:rgba(255,255,255,.03);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:10px 12px;font:600 12px 'Barlow',sans-serif" />
+
+    <div class="fr-actions">
+      <button class="fr-skip" id="sp-cancel" type="button">Cancelar</button>
+      <button class="fr-skip" id="sp-test-btn" type="button" style="border-color:rgba(245,158,11,.4);color:var(--yellow)">🧪 Test webhook</button>
+      <button class="fr-save" id="sp-send-btn" type="button">Enviar a Make</button>
+    </div>
+
+    <div id="sp-status" style="margin-top:14px;font-size:11.5px;color:var(--muted);line-height:1.5"></div>
   </div>
 </div>
 
