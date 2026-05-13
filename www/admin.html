@@ -2657,7 +2657,7 @@ main{position:relative;z-index:2}
   }
 
   // Delegación de clicks: marcar resultado desde HOY EN VIVO
-  document.getElementById('lt-picks').addEventListener('click', async e => {
+  document.getElementById('lt-picks')?.addEventListener('click', async e => {
     const btn = e.target.closest('.live-today-actionbtn');
     if(!btn || btn.disabled || btn.classList.contains('done')) return;
     const pickId = btn.dataset.pickId;
@@ -2712,7 +2712,7 @@ main{position:relative;z-index:2}
   }
 
   // Toggle de tags
-  frTagsEl.addEventListener('click', e => {
+  frTagsEl?.addEventListener('click', e => {
     const t = e.target.closest('.fr-tag');
     if(!t) return;
     const tag = t.dataset.tag;
@@ -2721,13 +2721,13 @@ main{position:relative;z-index:2}
   });
 
   // Cerrar al click fuera del modal
-  frOverlay.addEventListener('click', e => {
+  frOverlay?.addEventListener('click', e => {
     if(e.target === frOverlay) closeFailReasonModal();
   });
 
-  frSkipBtn.addEventListener('click', closeFailReasonModal);
+  frSkipBtn?.addEventListener('click', closeFailReasonModal);
 
-  frSaveBtn.addEventListener('click', async () => {
+  frSaveBtn?.addEventListener('click', async () => {
     if(!frCurrentPickId) return closeFailReasonModal();
     const tags = [...frSelectedTags];
     const notes = frNotesEl.value.trim();
