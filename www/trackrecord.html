@@ -150,6 +150,17 @@ body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;ov
 .conf-insight-text{flex:1;font-size:13px;line-height:1.5;color:var(--text)}
 .conf-insight-text strong{color:var(--yellow)}
 
+/* PREMIUM GATE (más persuasivo) */
+.locked-pick{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:4px;background:linear-gradient(135deg,rgba(245,192,74,.12),rgba(245,192,74,.04));border:1px solid rgba(245,192,74,.28);font-size:11px;font-weight:700;text-decoration:none;color:#F5C04A;letter-spacing:.04em;white-space:nowrap;transition:all .2s}
+.locked-pick:hover{background:linear-gradient(135deg,rgba(245,192,74,.22),rgba(245,192,74,.08));border-color:rgba(245,192,74,.5);transform:translateY(-1px)}
+.locked-icon{font-size:12px}
+.locked-label{font-weight:800;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px}
+.locked-cta{font-size:9.5px;color:rgba(245,192,74,.7);letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+
+/* TOP BADGE — picks seleccionados por la IA */
+.top-pick-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:3px;background:linear-gradient(135deg,#FF4500,#FF6B2B);color:#fff;font:800 8.5px 'Barlow Condensed',sans-serif;letter-spacing:.12em;text-transform:uppercase;margin-right:6px;box-shadow:0 1px 4px rgba(255,69,0,.4)}
+.top-pick-badge::before{content:'★';font-size:9px}
+
 /* REFRESH INDICATOR */
 .refresh-pill{position:fixed;bottom:18px;right:18px;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(6,6,8,.85);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);z-index:300;transition:opacity .3s}
 .refresh-pill::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s ease-in-out infinite}
@@ -408,14 +419,19 @@ body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;ov
       const isPremium = (p.planTier||'free')==='premium';
       const modelLabel = String(p.modelUsed||p.model_used||'IA').replace('claude-','Claude ').replace('gpt-4','GPT-4').replace(/-\d{8}$/,'');
       const pickDisplay = p.pickLocked
-        ? '<span style="color:var(--muted);font-size:11px">⭐ Solo Premium</span>'
+        ? `<a href="planes.html" class="locked-pick" title="Solo visible para Premium">
+             <span class="locked-icon">⭐</span>
+             <span class="locked-label">Premium</span>
+             <span class="locked-cta">desbloquear →</span>
+           </a>`
         : (p.pick||'—');
+      const topBadge = p.topRank ? `<span class="top-pick-badge">Top ${p.topRank}</span>` : '';
       return `<tr>
         <td style="color:var(--muted);white-space:nowrap;font-size:12px">${fmtDate(p.eventDate)}</td>
         <td>
           <div class="match-name">
             <span class="tier-dot ${isPremium?'premium':'free'}"></span>
-            ${p.homeTeam||p.home_team||'?'} vs ${p.awayTeam||p.away_team||'?'}
+            ${topBadge}${p.homeTeam||p.home_team||'?'} vs ${p.awayTeam||p.away_team||'?'}
           </div>
           <div class="match-league">${p.league||''}</div>
         </td>
@@ -457,9 +473,10 @@ body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;ov
         : '<span class="res-chip pending">·</span>';
       const isPremium = (p.planTier||'free')==='premium';
       const pickTxt = p.pickLocked ? '⭐ Premium' : (p.pick || '');
+      const topBadge = p.topRank ? `<span class="top-pick-badge">Top ${p.topRank}</span>` : '';
       return `<div class="today-pick-row">
         <div class="today-pick-info">
-          <div class="today-pick-match"><span class="tier-dot ${isPremium?'premium':'free'}"></span>${p.homeTeam||p.home_team||'?'} vs ${p.awayTeam||p.away_team||'?'}</div>
+          <div class="today-pick-match"><span class="tier-dot ${isPremium?'premium':'free'}"></span>${topBadge}${p.homeTeam||p.home_team||'?'} vs ${p.awayTeam||p.away_team||'?'}</div>
           <div class="today-pick-meta">${p.league||''} · ${pickTxt}</div>
         </div>
         ${resChip}

@@ -3,7 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const crypto = require("node:crypto");
-const { generateAiPlan, buildFallbackPlan, generateSportsPick, runDualAnalysis, analyzeMarketsGPT, claudeDecideMarket, scoutDayEventsGPT, generateRetoEscalera } = require("./ai");
+const { generateAiPlan, buildFallbackPlan, generateSportsPick, runDualAnalysis, analyzeMarketsGPT, claudeDecideMarket, scoutDayEventsGPT, generateRetoEscalera, selectTopPicksOfDay, calculateExpectedValue } = require("./ai");
 const sportsApiService = require("./sportsApiService");
 const { sendWhatsAppText, getWhatsAppConfigStatus } = require("./whatsapp");
 const { startCoachOnboardingForUser, handleIncomingCoachMessage } = require("./coach-whatsapp");
@@ -51,6 +51,7 @@ const {
   listPicksByDate,
   listPickHistory,
   updatePickResult,
+  setPickFailReason,
   logApiSync,
   saveRetoDraft,
   publishReto,
@@ -2020,6 +2021,29 @@ app.put("/api/picks/:id/result", requireAdmin, async (req, res) => {
   }
 });
 
+// Registra la razón de fallo de un pick (alimenta el contexto de la IA en futuros picks similares)
+app.post("/api/picks/:id/fail-reason", requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ ok: false, error: "pick id required" });
+    if (typeof setPickFailReason !== "function") {
+      return res.status(501).json({ ok: false, error: "fail_reason_not_supported" });
+    }
+    const { reason, tags, notes } = req.body || {};
+    const tagsArr = Array.isArray(tags) ? tags.filter((t) => t && typeof t === "string") : [];
+    const result = await setPickFailReason(id, {
+      reason: typeof reason === "string" ? reason.trim().slice(0, 80) : null,
+      tags: tagsArr.length ? tagsArr : null,
+      notes: typeof notes === "string" ? notes.trim().slice(0, 1000) : null,
+    });
+    res.json({ ok: true, ...result });
+  } catch (error) {
+    const msg = String(error?.message || "fail_reason_update_failed");
+    const status = msg === "pick_not_found" ? 404 : msg === "pick_id_required" ? 400 : 500;
+    res.status(status).json({ ok: false, error: msg });
+  }
+});
+
 app.get("/api/picks/today", async (req, res) => {
   try {
     const viewerPlanId = await getViewerPlanId(req);
@@ -2055,7 +2079,7 @@ app.get("/api/picks/today", async (req, res) => {
       res.json({
         ok: true,
         date: dateKey,
-        picks: picks.map((pick) => redactPickForViewer({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER }, viewerPlanId)),
+        picks: enrichPicksWithTopRank(picks).map((pick) => redactPickForViewer({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER }, viewerPlanId)),
         eventsAvailable: events.length,
       });
       return;
@@ -2063,10 +2087,44 @@ app.get("/api/picks/today", async (req, res) => {
     res.json({
       ok: true,
       date: dateKey,
-      picks: picks.map((pick) => redactPickForViewer({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER }, viewerPlanId)),
+      picks: enrichPicksWithTopRank(picks).map((pick) => redactPickForViewer({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER }, viewerPlanId)),
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || "picks_today_failed") });
+  }
+});
+
+// Helper: enriquece picks con topRank (TOP 3 del día por score combinado)
+function enrichPicksWithTopRank(picks){
+  try {
+    if (!Array.isArray(picks) || !picks.length || typeof selectTopPicksOfDay !== "function") return picks;
+    const ranked = selectTopPicksOfDay(picks, { topN: 3, minConfidence: 60 });
+    if (!ranked.length) return picks;
+    const rankMap = new Map(ranked.map((p) => [p.id, p.topRank]));
+    return picks.map((p) => (rankMap.has(p.id) ? { ...p, topRank: rankMap.get(p.id) } : p));
+  } catch (_) {
+    return picks;
+  }
+}
+
+// TOP 3 picks del día (puede usarse desde marketing, scorecard, etc.)
+app.get("/api/picks/top-today", async (req, res) => {
+  try {
+    const viewerPlanId = await getViewerPlanId(req);
+    const isPremiumViewer = viewerPlanId !== "free";
+    const dateKey = String(req.query.date || toDateKey()).trim();
+    let picks = filterPublishedPicks((await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, dateKey)));
+    picks = picks.map((p) => ((p?.planTier || "free") === "premium" && !isPremiumViewer) ? { ...p, pickLocked: true } : p);
+    const ranked = (typeof selectTopPicksOfDay === "function")
+      ? selectTopPicksOfDay(picks, { topN: 3, minConfidence: 60 })
+      : picks.slice(0, 3);
+    res.json({
+      ok: true,
+      date: dateKey,
+      picks: ranked.map((pick) => redactPickForViewer({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER }, viewerPlanId)),
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || "top_picks_failed") });
   }
 });
 
@@ -2075,10 +2133,20 @@ app.get("/api/picks/history", async (req, res) => {
     const viewerPlanId = await getViewerPlanId(req);
     const isPremiumViewer = viewerPlanId !== "free";
     const limit = Number(req.query.limit || 100);
-    const picks = filterPublishedPicks(await listPickHistory(limit)).map((p) => {
+    let picks = filterPublishedPicks(await listPickHistory(limit)).map((p) => {
       if ((p?.planTier || "free") === "premium" && !isPremiumViewer) return { ...p, pickLocked: true };
       return p;
     });
+    // Tag con topRank solo los picks del día actual (TOP 3)
+    const todayKey = toDateKey();
+    const todayPicks = picks.filter((pick) => matchesDateKey(pick?.eventDate, todayKey));
+    if (todayPicks.length && typeof selectTopPicksOfDay === "function") {
+      try {
+        const ranked = selectTopPicksOfDay(todayPicks, { topN: 3, minConfidence: 60 });
+        const rankMap = new Map(ranked.map((p) => [p.id, p.topRank]));
+        picks = picks.map((p) => (rankMap.has(p.id) ? { ...p, topRank: rankMap.get(p.id) } : p));
+      } catch (_) {}
+    }
     res.json({
       ok: true,
       picks: picks.map((pick) => redactPickForViewer({ ...pick, disclaimer: SPORTS_PICK_DISCLAIMER }, viewerPlanId)),

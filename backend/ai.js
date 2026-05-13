@@ -245,6 +245,136 @@ function buildPerformanceContext(picks, options = {}) {
   };
 }
 
+// ── Expected Value calculation ────────────────────────────────────
+// Compares declared confidence (model probability) vs implied market
+// probability from decimal odds. Returns null if odds is missing or
+// out of a reasonable range.
+function calculateExpectedValue(confidence, odds) {
+  const conf = Number(confidence);
+  const o = Number(odds);
+  if (!Number.isFinite(conf) || conf < 0 || conf > 100) return null;
+  if (!Number.isFinite(o) || o < 1.01 || o > 50) return null;
+
+  const p = conf / 100;
+  const marketP = 1 / o;
+  const ev = p * (o - 1) - (1 - p); // expected value per 1 unit stake
+  const edge = p - marketP;
+
+  let recommendation = "neutral";
+  if (edge >= 0.05 && ev > 0.10) recommendation = "strong";
+  else if (edge > 0 && ev > 0) recommendation = "positive";
+  else if (ev < -0.05) recommendation = "avoid";
+  else recommendation = "neutral"; // ev within -0.05..0.05
+
+  return {
+    ev: Number(ev.toFixed(4)),
+    evPercent: Number((ev * 100).toFixed(2)),
+    edge: Number(edge.toFixed(4)),
+    recommendation,
+  };
+}
+
+// ── Streak insurance ──────────────────────────────────────────────
+// Detects N+ consecutive recent losses among resolved picks (most-recent
+// first). When triggered, the IA should be more selective: raise the
+// effective confidence threshold and avoid weak markets.
+function shouldApplyStreakInsurance(picks, options = {}) {
+  const lossThreshold = Math.max(1, Number(options.lossThreshold) || 3);
+  const minConfidenceBump = Math.max(1, Number(options.minConfidenceBump) || 8);
+
+  const inactive = {
+    active: false,
+    consecutiveLosses: 0,
+    confidenceBump: 0,
+    instruction: "",
+  };
+
+  if (!Array.isArray(picks) || picks.length === 0) return inactive;
+
+  const isResolved = (p) => p && (p.result === "won" || p.result === "lost");
+  let consecutiveLosses = 0;
+  for (const p of picks) {
+    if (!isResolved(p)) continue;
+    if (p.result === "lost") {
+      consecutiveLosses++;
+    } else {
+      break;
+    }
+  }
+
+  if (consecutiveLosses < lossThreshold) {
+    return { ...inactive, consecutiveLosses };
+  }
+
+  const baseThreshold = 65;
+  const bump = minConfidenceBump;
+  const instruction =
+    `⚠️ STREAK INSURANCE ACTIVO: ${consecutiveLosses} pérdidas seguidas. ` +
+    `Sé más selectivo. Solo recomienda picks con confidence muy alta (>= ${baseThreshold + bump}%) ` +
+    `y descarta mercados con WR histórico < 60%. Si no hay candidatos claros, NO publiques.`;
+
+  return {
+    active: true,
+    consecutiveLosses,
+    confidenceBump: bump,
+    instruction,
+  };
+}
+
+// ── Top picks of the day ──────────────────────────────────────────
+// Ranks picks by a combined score (confidence + league WR + EV when
+// odds are available). Does not mutate inputs — returns shallow copies
+// with `topScore` and `topRank` fields added.
+function selectTopPicksOfDay(picks, options = {}) {
+  const topN = Math.max(1, Number(options.topN) || 3);
+  const minConfidence = Math.max(0, Number(options.minConfidence) || 60);
+
+  if (!Array.isArray(picks) || picks.length === 0) return [];
+
+  const scored = [];
+  for (const p of picks) {
+    if (!p) continue;
+    const confidence = Number(p.confidence || 0);
+    if (confidence < minConfidence) continue;
+
+    const leagueWR = Number(
+      p.leagueHistoricalWR != null ? p.leagueHistoricalWR : 50
+    );
+
+    let evContribution = confidence; // default when no odds
+    let evInfo = null;
+    if (p.odds != null) {
+      evInfo = calculateExpectedValue(confidence, p.odds);
+      if (evInfo) {
+        // Map evPercent (~-100..+100) into a 0..100 contribution.
+        // 0% EV → 50, +20% EV → 70, -20% EV → 30 (clamped 0..100).
+        const mapped = 50 + evInfo.evPercent;
+        evContribution = Math.max(0, Math.min(100, mapped));
+      }
+    }
+
+    const topScore = Number(
+      (0.6 * confidence + 0.2 * leagueWR + 0.2 * evContribution).toFixed(2)
+    );
+
+    scored.push({
+      pick: { ...p },
+      topScore,
+      evInfo,
+    });
+  }
+
+  scored.sort((a, b) => b.topScore - a.topScore);
+
+  const top = scored.slice(0, topN).map((entry, idx) => {
+    const out = { ...entry.pick, topScore: entry.topScore, topRank: idx + 1 };
+    if (entry.evInfo) out.expectedValue = entry.evInfo;
+    return out;
+  });
+
+  return top;
+}
+
 const extractJsonObject = (raw) => {
   const text = safeStr(raw);
   const start = text.indexOf("{");
@@ -502,6 +632,8 @@ async function generateSportsPick({ event = {}, stats = {}, historicalContext = 
 
   const perfCtx = buildPerformanceContext(historyPicks, { league: event.league });
   const perfBlock = perfCtx ? `\n\n${perfCtx.promptText}\n` : "";
+  const streakInsurance = shouldApplyStreakInsurance(historyPicks);
+  const insuranceBlock = streakInsurance.active ? `\n\n${streakInsurance.instruction}\n` : "";
 
   const systemPrompt = [
     "Eres un analista de picks deportivos para un MVP informativo.",
@@ -510,6 +642,7 @@ async function generateSportsPick({ event = {}, stats = {}, historicalContext = 
     "No prometas ganancias.",
     "No uses palabras como seguro, garantizado o apuesta garantizada.",
     "Si hay pocos datos, reduce confidence y dilo claramente.",
+    "Si en Stats hay odds (cuotas decimales), considera el Expected Value: tu probabilidad implicita (confidence/100) debe superar a la implicita del mercado (1/odds) para que haya valor.",
     "analysis debe ser breve, claro y entendible en espanol.",
   ].join(" ");
 
@@ -521,7 +654,9 @@ async function generateSportsPick({ event = {}, stats = {}, historicalContext = 
     `Stats JSON: ${JSON.stringify(stats || {}).slice(0, OPENAI_MAX_CONTEXT_CHARS)}`,
     `Contexto historico: ${JSON.stringify(historicalContext || []).slice(0, OPENAI_MAX_CONTEXT_CHARS)}`,
     perfBlock ? perfBlock.trim() : "",
+    insuranceBlock ? insuranceBlock.trim() : "",
     "Elige un mercado razonable segun los datos disponibles.",
+    "Si hay odds en Stats, calcula mentalmente el EV y prefiere mercados con valor positivo.",
     "Recuerda: la respuesta DEBE seguir EXACTAMENTE el JSON descrito en el sistema. No agregues campos.",
   ].filter(Boolean).join("\n\n");
 
@@ -896,6 +1031,8 @@ async function analyzeMarketsGPT({ event = {}, stats = {}, historyPicks = [] } =
 
   const perfCtx = buildPerformanceContext(historyPicks, { league: event.league });
   const perfBlock = perfCtx ? perfCtx.promptText : "";
+  const streakInsurance = shouldApplyStreakInsurance(historyPicks);
+  const insuranceBlock = streakInsurance.active ? streakInsurance.instruction : "";
 
   const systemPrompt = [
     `Eres un analista deportivo senior especializado en ${sportCfg.label} para una plataforma premium de apuestas deportivas.`,
@@ -916,6 +1053,7 @@ async function analyzeMarketsGPT({ event = {}, stats = {}, historyPicks = [] } =
     "11. Totales en beisbol: La conf del mercado goles debe reflejar ERA del pitcher abridor. Si no tienes ERA en Stats, pon conf <= 55 en goles y explica que falta el pitcher.",
     "12. Totales en basketball: Incluye pace (ritmo de juego) de ambos equipos si esta en Stats. Sin pace, conf del total no debe superar 60.",
     "13. Antes de asignar cualquier conf >= 70: lista mentalmente 2 factores en contra del pick. Si existen 2 o mas factores en contra, reduce conf entre 8 y 12 puntos.",
+    "14. Si en Stats hay odds (cuotas decimales) de un mercado, considera el Expected Value: tu probabilidad implicita (conf/100) debe superar a la implicita del mercado (1/odds) para que el pick tenga valor. Cuando hay odds, ajusta tu conf y nota considerando el EV.",
     `Criterios prioritarios para ${sportCfg.label}:`,
     ...sportCfg.criteria,
   ].join(" ");
@@ -926,7 +1064,9 @@ async function analyzeMarketsGPT({ event = {}, stats = {}, historyPicks = [] } =
     `Fecha: ${date}`,
     stats && Object.keys(stats).length ? `Stats: ${JSON.stringify(stats).slice(0, 3200)}` : "Stats: limitados",
     perfBlock ? `\n${perfBlock}` : "",
+    insuranceBlock ? `\n${insuranceBlock}` : "",
     `Analiza los 5 mercados de ${sportCfg.label} usando SOLO la informacion disponible.`,
+    "Si Stats incluye odds para un mercado, evalua el Expected Value y prefiere mercados con valor positivo.",
     "Si no hay datos suficientes para un mercado, baja confianza y explica brevemente.",
     "Mantén EXACTAMENTE el JSON descrito en el sistema; no agregues campos.",
   ].filter(Boolean).join("\n");
@@ -1196,6 +1336,8 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
   })();
   const perfCtxDecide = buildPerformanceContext(historyPicks, { league: event.league, market: topMarketKey });
   const perfBlockDecide = perfCtxDecide ? `\n${perfCtxDecide.promptText}\n` : "";
+  const streakInsuranceDecide = shouldApplyStreakInsurance(historyPicks);
+  const insuranceBlockDecide = streakInsuranceDecide.active ? streakInsuranceDecide.instruction : "";
 
   const userPromptParts = [
     `Evento: ${league} | ${home} vs ${away}`,
@@ -1212,7 +1354,12 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
     userPromptParts.push("");
     userPromptParts.push(perfBlockDecide.trim());
   }
+  if (insuranceBlockDecide) {
+    userPromptParts.push("");
+    userPromptParts.push(insuranceBlockDecide);
+  }
   userPromptParts.push("");
+  userPromptParts.push(`Si en Stats o en las notas hay odds (cuotas) para algun mercado, evalua el Expected Value (tu prob = conf/100 vs prob implicita = 1/odds) y prefiere mercados con valor positivo.`);
   userPromptParts.push(`Haz una segunda validacion independiente usando los Stats y compara contra GPT antes de decidir.`);
   userPromptParts.push(`Elige el mejor mercado para publicar. Sin relleno.`);
   userPromptParts.push(`Mantén EXACTAMENTE el JSON descrito en el sistema; no agregues campos.`);
@@ -1459,6 +1606,9 @@ module.exports = {
   generateAiPlan,
   buildFallbackPlan,
   buildPerformanceContext,
+  calculateExpectedValue,
+  shouldApplyStreakInsurance,
+  selectTopPicksOfDay,
   generateSportsPick,
   generateMultiplePicksGPT,
   selectBestPickWithClaude,

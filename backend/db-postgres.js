@@ -289,6 +289,9 @@ async function initDb() {
   await pool.query("ALTER TABLE ai_picks ADD COLUMN IF NOT EXISTS plan_tier TEXT NOT NULL DEFAULT 'free'");
   await pool.query("ALTER TABLE ai_picks ADD COLUMN IF NOT EXISTS full_data TEXT NOT NULL DEFAULT ''");
   await pool.query("ALTER TABLE ai_picks ADD COLUMN IF NOT EXISTS result TEXT NOT NULL DEFAULT ''");
+  await pool.query("ALTER TABLE ai_picks ADD COLUMN IF NOT EXISTS fail_reason TEXT NULL");
+  await pool.query("ALTER TABLE ai_picks ADD COLUMN IF NOT EXISTS fail_reason_tags TEXT NULL");
+  await pool.query("ALTER TABLE ai_picks ADD COLUMN IF NOT EXISTS fail_notes TEXT NULL");
   return DB_META;
 }
 
@@ -1739,6 +1742,28 @@ async function saveAiPick(payload) {
   };
 }
 
+function mapAiPickRow(row) {
+  if (!row) return null;
+  const failReason = row.failReason == null ? null : safeStr(row.failReason) || null;
+  const failReasonTagsRaw = row.failReasonTags == null ? null : safeStr(row.failReasonTags) || null;
+  const failNotes = row.failNotes == null ? null : safeStr(row.failNotes) || null;
+  const failReasonTagsList = failReasonTagsRaw
+    ? failReasonTagsRaw.split(",").map((t) => t.trim()).filter(Boolean)
+    : [];
+  return {
+    ...row,
+    id: Number(row.id),
+    eventId: Number(row.eventId),
+    confidence: Number(row.confidence || 0),
+    fail_reason: failReason,
+    failReason,
+    fail_reason_tags: failReasonTagsRaw,
+    failReasonTags: failReasonTagsList,
+    fail_notes: failNotes,
+    failNotes,
+  };
+}
+
 async function getLatestAiPickForEvent(eventId) {
   const result = await pool.query(
     `
@@ -1746,7 +1771,9 @@ async function getLatestAiPickForEvent(eventId) {
            e.home_team AS "homeTeam", e.away_team AS "awayTeam", e.event_date AS "eventDate",
            e.status AS "eventStatus", p.pick, p.market, p.confidence, p.analysis,
            p.risk_level AS "riskLevel", p.model_used AS "modelUsed", p.status,
-           p.plan_tier AS "planTier", p.full_data AS "fullData", p.result, p.created_at AS "createdAt"
+           p.plan_tier AS "planTier", p.full_data AS "fullData", p.result,
+           p.fail_reason AS "failReason", p.fail_reason_tags AS "failReasonTags", p.fail_notes AS "failNotes",
+           p.created_at AS "createdAt"
     FROM ai_picks p
     INNER JOIN sports_events e ON e.id = p.event_id
     WHERE p.event_id = $1
@@ -1755,8 +1782,7 @@ async function getLatestAiPickForEvent(eventId) {
     `,
     [Number(eventId || 0)]
   );
-  const row = result.rows[0];
-  return row ? { ...row, id: Number(row.id), eventId: Number(row.eventId), confidence: Number(row.confidence || 0) } : null;
+  return mapAiPickRow(result.rows[0]);
 }
 
 async function listPicksByDate(dateKey) {
@@ -1767,7 +1793,9 @@ async function listPicksByDate(dateKey) {
            e.home_team AS "homeTeam", e.away_team AS "awayTeam", e.event_date AS "eventDate",
            e.status AS "eventStatus", p.pick, p.market, p.confidence, p.analysis,
            p.risk_level AS "riskLevel", p.model_used AS "modelUsed", p.status,
-           p.plan_tier AS "planTier", p.full_data AS "fullData", p.result, p.created_at AS "createdAt"
+           p.plan_tier AS "planTier", p.full_data AS "fullData", p.result,
+           p.fail_reason AS "failReason", p.fail_reason_tags AS "failReasonTags", p.fail_notes AS "failNotes",
+           p.created_at AS "createdAt"
     FROM ai_picks p
     INNER JOIN sports_events e ON e.id = p.event_id
     WHERE TO_CHAR(e.event_date AT TIME ZONE 'UTC', 'YYYY-MM-DD') = $1
@@ -1775,7 +1803,7 @@ async function listPicksByDate(dateKey) {
     `,
     [normalized]
   );
-  return result.rows.map((row) => ({ ...row, id: Number(row.id), eventId: Number(row.eventId), confidence: Number(row.confidence || 0) }));
+  return result.rows.map(mapAiPickRow);
 }
 
 async function listPickHistory(limit = 100) {
@@ -1785,7 +1813,9 @@ async function listPickHistory(limit = 100) {
            e.home_team AS "homeTeam", e.away_team AS "awayTeam", e.event_date AS "eventDate",
            e.status AS "eventStatus", p.pick, p.market, p.confidence, p.analysis,
            p.risk_level AS "riskLevel", p.model_used AS "modelUsed", p.status,
-           p.plan_tier AS "planTier", p.full_data AS "fullData", p.result, p.created_at AS "createdAt"
+           p.plan_tier AS "planTier", p.full_data AS "fullData", p.result,
+           p.fail_reason AS "failReason", p.fail_reason_tags AS "failReasonTags", p.fail_notes AS "failNotes",
+           p.created_at AS "createdAt"
     FROM ai_picks p
     INNER JOIN sports_events e ON e.id = p.event_id
     ORDER BY p.created_at DESC
@@ -1793,7 +1823,7 @@ async function listPickHistory(limit = 100) {
     `,
     [Math.max(1, Math.min(500, Number(limit || 100)))]
   );
-  return result.rows.map((row) => ({ ...row, id: Number(row.id), eventId: Number(row.eventId), confidence: Number(row.confidence || 0) }));
+  return result.rows.map(mapAiPickRow);
 }
 
 async function updatePickResult({ id, result }) {
@@ -1802,6 +1832,26 @@ async function updatePickResult({ id, result }) {
   if (!allowed.includes(normalized)) throw new Error("invalid_result");
   await pool.query(`UPDATE ai_picks SET result = $1 WHERE id = $2`, [normalized, Number(id || 0)]);
   return { id: Number(id || 0), result: normalized };
+}
+
+async function setPickFailReason(pickId, { reason, tags, notes } = {}) {
+  const id = Number(pickId || 0);
+  if (!id) throw new Error("pick_id_required");
+  const reasonStr = reason == null || reason === "" ? null : safeStr(reason) || null;
+  let tagsStr = null;
+  if (Array.isArray(tags)) {
+    const cleaned = tags.map((t) => safeStr(t)).filter(Boolean);
+    tagsStr = cleaned.length ? cleaned.join(",") : null;
+  } else if (tags != null && tags !== "") {
+    tagsStr = safeStr(tags) || null;
+  }
+  const notesStr = notes == null || notes === "" ? null : safeStr(notes) || null;
+  const res = await pool.query(
+    `UPDATE ai_picks SET fail_reason = $1, fail_reason_tags = $2, fail_notes = $3 WHERE id = $4`,
+    [reasonStr, tagsStr, notesStr, id]
+  );
+  if (!res.rowCount) throw new Error("pick_not_found");
+  return { ok: true, pickId: id };
 }
 
 async function savePickCandidates({ eventId, sessionId, candidates, claudeSelectedIndex, claudeReasoning, claudeModel, claudeFinalPick }) {
@@ -2070,6 +2120,7 @@ module.exports = {
   listPicksByDate,
   listPickHistory,
   updatePickResult,
+  setPickFailReason,
   logApiSync,
   listApiSyncLogs,
   getAdminDashboard,

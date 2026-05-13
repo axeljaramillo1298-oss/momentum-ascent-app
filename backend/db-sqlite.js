@@ -230,6 +230,15 @@ if (!aiPicksColumns.includes("full_data")) {
 if (!aiPicksColumns.includes("result")) {
   db.exec("ALTER TABLE ai_picks ADD COLUMN result TEXT NOT NULL DEFAULT ''");
 }
+if (!aiPicksColumns.includes("fail_reason")) {
+  try { db.exec("ALTER TABLE ai_picks ADD COLUMN fail_reason TEXT NULL"); } catch (e) { /* already exists */ }
+}
+if (!aiPicksColumns.includes("fail_reason_tags")) {
+  try { db.exec("ALTER TABLE ai_picks ADD COLUMN fail_reason_tags TEXT NULL"); } catch (e) { /* already exists */ }
+}
+if (!aiPicksColumns.includes("fail_notes")) {
+  try { db.exec("ALTER TABLE ai_picks ADD COLUMN fail_notes TEXT NULL"); } catch (e) { /* already exists */ }
+}
 
 const nowIso = () => new Date().toISOString();
 const safeStr = (value) => String(value || "").trim();
@@ -887,6 +896,9 @@ SELECT
   p.plan_tier AS planTier,
   p.full_data AS fullData,
   p.result,
+  p.fail_reason AS failReason,
+  p.fail_reason_tags AS failReasonTags,
+  p.fail_notes AS failNotes,
   p.created_at AS createdAt
 FROM ai_picks p
 INNER JOIN sports_events e ON e.id = p.event_id
@@ -916,6 +928,9 @@ SELECT
   p.plan_tier AS planTier,
   p.full_data AS fullData,
   p.result,
+  p.fail_reason AS failReason,
+  p.fail_reason_tags AS failReasonTags,
+  p.fail_notes AS failNotes,
   p.created_at AS createdAt
 FROM ai_picks p
 INNER JOIN sports_events e ON e.id = p.event_id
@@ -944,6 +959,9 @@ SELECT
   p.plan_tier AS planTier,
   p.full_data AS fullData,
   p.result,
+  p.fail_reason AS failReason,
+  p.fail_reason_tags AS failReasonTags,
+  p.fail_notes AS failNotes,
   p.created_at AS createdAt
 FROM ai_picks p
 INNER JOIN sports_events e ON e.id = p.event_id
@@ -1707,6 +1725,12 @@ function parseEventStats(row) {
 
 function parseAiPick(row) {
   if (!row) return null;
+  const failReason = row.failReason == null ? null : String(row.failReason).trim() || null;
+  const failReasonTagsRaw = row.failReasonTags == null ? null : String(row.failReasonTags).trim() || null;
+  const failNotes = row.failNotes == null ? null : String(row.failNotes).trim() || null;
+  const failReasonTagsList = failReasonTagsRaw
+    ? failReasonTagsRaw.split(",").map((t) => t.trim()).filter(Boolean)
+    : [];
   return {
     id: Number(row.id),
     eventId: Number(row.eventId),
@@ -1727,6 +1751,12 @@ function parseAiPick(row) {
     planTier: row.planTier || "free",
     fullData: row.fullData || "",
     result: row.result || "",
+    fail_reason: failReason,
+    failReason,
+    fail_reason_tags: failReasonTagsRaw,
+    failReasonTags: failReasonTagsList,
+    fail_notes: failNotes,
+    failNotes,
     createdAt: row.createdAt,
   };
 }
@@ -1832,6 +1862,26 @@ function updatePickResult({ id, result }) {
   if (!allowed.includes(normalized)) throw new Error("invalid_result");
   updatePickResultStmt.run(normalized, Number(id));
   return { id: Number(id), result: normalized };
+}
+
+const setPickFailReasonStmt = db.prepare(
+  `UPDATE ai_picks SET fail_reason = ?, fail_reason_tags = ?, fail_notes = ? WHERE id = ?`
+);
+function setPickFailReason(pickId, { reason, tags, notes } = {}) {
+  const id = Number(pickId || 0);
+  if (!id) throw new Error("pick_id_required");
+  const reasonStr = reason == null || reason === "" ? null : safeStr(reason) || null;
+  let tagsStr = null;
+  if (Array.isArray(tags)) {
+    const cleaned = tags.map((t) => safeStr(t)).filter(Boolean);
+    tagsStr = cleaned.length ? cleaned.join(",") : null;
+  } else if (tags != null && tags !== "") {
+    tagsStr = safeStr(tags) || null;
+  }
+  const notesStr = notes == null || notes === "" ? null : safeStr(notes) || null;
+  const info = setPickFailReasonStmt.run(reasonStr, tagsStr, notesStr, id);
+  if (!info.changes) throw new Error("pick_not_found");
+  return { ok: true, pickId: id };
 }
 
 function getLatestAiPickForEvent(eventId) {
@@ -2040,6 +2090,7 @@ module.exports = {
   listPicksByDate: async (dateKey) => listPicksByDate(dateKey),
   listPickHistory: async (limit) => listPickHistory(limit),
   updatePickResult: async (payload) => updatePickResult(payload),
+  setPickFailReason: async (pickId, payload) => setPickFailReason(pickId, payload),
   logApiSync: async (payload) => logApiSync(payload),
   listApiSyncLogs: async (limit) => listApiSyncLogs(limit),
   saveRetoDraft: async (payload) => saveRetoDraft(payload),

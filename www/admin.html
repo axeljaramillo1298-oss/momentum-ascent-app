@@ -395,6 +395,33 @@ main{position:relative;z-index:2}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(255,69,0,.3);border-radius:2px}
 
+/* TOP PICK BADGE — picks seleccionados como TOP del día */
+.top-pick-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:3px;background:linear-gradient(135deg,#FF4500,#FF6B2B);color:#fff;font:800 8.5px 'Barlow Condensed',sans-serif;letter-spacing:.12em;text-transform:uppercase;margin-right:6px;box-shadow:0 1px 4px rgba(255,69,0,.4);vertical-align:middle}
+.top-pick-badge::before{content:'★';font-size:9px}
+
+/* FAIL REASON MODAL */
+.fr-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:9000;display:none;align-items:center;justify-content:center;padding:20px}
+.fr-overlay.open{display:flex}
+.fr-modal{background:var(--dark2);border:1px solid var(--border);border-radius:8px;padding:24px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto}
+.fr-modal h3{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:22px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:6px}
+.fr-modal-sub{font-size:11px;color:var(--muted);margin-bottom:18px;line-height:1.5}
+.fr-modal-pick{background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.2);border-radius:4px;padding:10px 12px;font-size:12px;margin-bottom:16px;line-height:1.4}
+.fr-modal-pick-name{font-weight:700}
+.fr-modal-pick-meta{font-size:10.5px;color:var(--muted);margin-top:3px}
+.fr-label{display:block;font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;margin-top:14px}
+.fr-tags{display:flex;flex-wrap:wrap;gap:6px}
+.fr-tag{font:700 10px 'Barlow',sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:rgba(255,255,255,.02);color:var(--muted);cursor:pointer;transition:all .15s;user-select:none}
+.fr-tag:hover{border-color:rgba(255,69,0,.3);color:var(--text)}
+.fr-tag.selected{background:rgba(255,69,0,.15);border-color:var(--orange);color:var(--orange)}
+.fr-notes{width:100%;background:rgba(255,255,255,.03);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:10px 12px;font:400 12px 'Barlow',sans-serif;resize:vertical;min-height:70px}
+.fr-notes:focus{outline:none;border-color:rgba(255,69,0,.35)}
+.fr-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+.fr-skip{background:none;border:1px solid var(--border);color:var(--muted);padding:10px 18px;border-radius:4px;font:700 11px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.fr-skip:hover{color:var(--text)}
+.fr-save{background:var(--orange);color:#fff;border:none;padding:10px 22px;border-radius:4px;font:700 11px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .15s}
+.fr-save:hover{background:var(--orange2)}
+.fr-save:disabled{opacity:.5;cursor:wait}
+
 /* HOY EN VIVO — dashboard destacado de picks del día */
 .live-today{margin:32px 0 36px;padding:24px;background:linear-gradient(135deg,rgba(255,69,0,.08),rgba(255,69,0,.02));border:1px solid rgba(255,69,0,.18);border-radius:8px;opacity:0;animation:fadeUp .5s .5s forwards}
 .live-today-hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
@@ -2445,9 +2472,10 @@ main{position:relative;z-index:2}
               <button class="live-today-actionbtn lost" data-pick-id="${pickId}" data-result="lost" title="Marcar perdido">✗</button>
               <button class="live-today-actionbtn void" data-pick-id="${pickId}" data-result="void" title="Marcar void">—</button>
             </div>`;
+        const topBadge = p.topRank ? `<span class="top-pick-badge">Top ${p.topRank}</span>` : '';
         return `<div class="live-today-pick" data-pick-id="${pickId}">
           <div class="live-today-pick-info">
-            <div class="live-today-pick-match">${home} vs ${away}</div>
+            <div class="live-today-pick-match">${topBadge}${home} vs ${away}</div>
             <div class="live-today-pick-meta">${p.league || ''} · ${market}${market ? ' · ' : ''}${pickTxt}</div>
           </div>
           <span class="live-today-pick-conf" style="color:${liveConfColor(conf)}">${conf}%</span>
@@ -2476,10 +2504,80 @@ main{position:relative;z-index:2}
       });
       showToast(`Pick marcado como ${result === 'won' ? 'ganado' : result === 'lost' ? 'perdido' : 'void'}`, 'success', 2500);
       addLog(`Pick #${pickId} → ${result}`, 'ok');
+      // Si perdió, abrir modal para taggear razón (mejora el contexto IA futuro)
+      if(result === 'lost'){
+        const matchTxt = row?.querySelector('.live-today-pick-match')?.textContent || '';
+        const metaTxt = row?.querySelector('.live-today-pick-meta')?.textContent || '';
+        openFailReasonModal(pickId, matchTxt, metaTxt);
+      }
       await loadLiveToday();
     } catch(err) {
       showToast(`Error al marcar resultado: ${err.message}`, 'error');
       siblings.forEach(b => b.disabled = false);
+    }
+  });
+
+  // ── FAIL REASON MODAL ─────────────────────────────────────
+  const frOverlay = document.getElementById('fr-overlay');
+  const frPickName = document.getElementById('fr-pick-name');
+  const frPickMeta = document.getElementById('fr-pick-meta');
+  const frTagsEl = document.getElementById('fr-tags');
+  const frNotesEl = document.getElementById('fr-notes-input');
+  const frSkipBtn = document.getElementById('fr-skip');
+  const frSaveBtn = document.getElementById('fr-save');
+  let frCurrentPickId = null;
+  let frSelectedTags = new Set();
+
+  function openFailReasonModal(pickId, matchTxt, metaTxt){
+    frCurrentPickId = pickId;
+    frSelectedTags.clear();
+    frPickName.textContent = matchTxt || '—';
+    frPickMeta.textContent = metaTxt || '—';
+    frNotesEl.value = '';
+    frTagsEl.querySelectorAll('.fr-tag').forEach(t => t.classList.remove('selected'));
+    frOverlay.classList.add('open');
+  }
+  function closeFailReasonModal(){
+    frOverlay.classList.remove('open');
+    frCurrentPickId = null;
+  }
+
+  // Toggle de tags
+  frTagsEl.addEventListener('click', e => {
+    const t = e.target.closest('.fr-tag');
+    if(!t) return;
+    const tag = t.dataset.tag;
+    if(frSelectedTags.has(tag)){ frSelectedTags.delete(tag); t.classList.remove('selected'); }
+    else { frSelectedTags.add(tag); t.classList.add('selected'); }
+  });
+
+  // Cerrar al click fuera del modal
+  frOverlay.addEventListener('click', e => {
+    if(e.target === frOverlay) closeFailReasonModal();
+  });
+
+  frSkipBtn.addEventListener('click', closeFailReasonModal);
+
+  frSaveBtn.addEventListener('click', async () => {
+    if(!frCurrentPickId) return closeFailReasonModal();
+    const tags = [...frSelectedTags];
+    const notes = frNotesEl.value.trim();
+    if(!tags.length && !notes){ closeFailReasonModal(); return; }
+    frSaveBtn.disabled = true;
+    try {
+      const primaryReason = tags[0] || 'other';
+      await fetchJson(`/api/picks/${frCurrentPickId}/fail-reason`, {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({ reason: primaryReason, tags, notes })
+      });
+      showToast('Motivo registrado · la IA lo verá en futuros picks', 'success', 3000);
+      addLog(`Fail reason guardado para pick #${frCurrentPickId}: ${tags.join(', ')}`, 'ok');
+      closeFailReasonModal();
+    } catch(err){
+      showToast(`Error guardando motivo: ${err.message}`, 'error');
+    } finally {
+      frSaveBtn.disabled = false;
     }
   });
 
@@ -2792,9 +2890,11 @@ main{position:relative;z-index:2}
         const tierChip = (p.planTier||'free')==='premium'?'<span style="color:#F5C04A;font-size:9px;font-weight:800">⭐ PREM</span>':'<span style="color:var(--muted);font-size:9px">FREE</span>';
         const confColor = Number(p.confidence)>=70?'var(--green)':Number(p.confidence)>=60?'var(--yellow)':'var(--red)';
         const id = Number(p.id||0);
-        return `<tr>
+        const topBadge = p.topRank ? `<span class="top-pick-badge">Top ${p.topRank}</span>` : '';
+        const failTitle = p.failReason || p.fail_reason ? ` title="Fallo: ${(p.fail_reason_tags || p.failReasonTags || '').replace(/"/g,'&quot;')}"` : '';
+        return `<tr${failTitle}>
           <td></td>
-          <td style="font-weight:600;font-size:12px">${match}</td>
+          <td style="font-weight:600;font-size:12px">${topBadge}${match}</td>
           <td style="color:var(--muted)">${p.market||'—'}</td>
           <td>${p.pick||'—'}</td>
           <td style="color:${confColor};font-weight:700">${p.confidence||'—'}%</td>
@@ -3077,6 +3177,38 @@ main{position:relative;z-index:2}
       </button>
     </div>
     <button class="pub-modal-cancel" onclick="closePubModal()">Cancelar</button>
+  </div>
+</div>
+
+<!-- FAIL REASON MODAL (se abre cuando admin marca un pick como perdido) -->
+<div class="fr-overlay" id="fr-overlay" role="dialog" aria-modal="true">
+  <div class="fr-modal">
+    <h3>¿Por qué falló este pick?</h3>
+    <p class="fr-modal-sub">Tu respuesta queda guardada y se inyecta al contexto de la IA en futuros picks similares. Puedes saltar este paso.</p>
+    <div class="fr-modal-pick">
+      <div class="fr-modal-pick-name" id="fr-pick-name">—</div>
+      <div class="fr-modal-pick-meta" id="fr-pick-meta">—</div>
+    </div>
+
+    <label class="fr-label">Motivos (elige los que aplican)</label>
+    <div class="fr-tags" id="fr-tags">
+      <button class="fr-tag" data-tag="injury" type="button">Lesión imprevista</button>
+      <button class="fr-tag" data-tag="upset" type="button">Upset / sorpresa</button>
+      <button class="fr-tag" data-tag="weather" type="button">Clima</button>
+      <button class="fr-tag" data-tag="lineup_change" type="button">Cambio de alineación</button>
+      <button class="fr-tag" data-tag="late_news" type="button">Noticia de última hora</button>
+      <button class="fr-tag" data-tag="model_error" type="button">Error del modelo</button>
+      <button class="fr-tag" data-tag="bad_call" type="button">Decisión arbitral</button>
+      <button class="fr-tag" data-tag="other" type="button">Otro</button>
+    </div>
+
+    <label class="fr-label" for="fr-notes-input">Notas opcionales</label>
+    <textarea class="fr-notes" id="fr-notes-input" placeholder="Ej: Star player fuera 30 min antes del partido. La IA no podía saberlo."></textarea>
+
+    <div class="fr-actions">
+      <button class="fr-skip" id="fr-skip" type="button">Saltar</button>
+      <button class="fr-save" id="fr-save" type="button">Guardar y cerrar</button>
+    </div>
   </div>
 </div>
 
