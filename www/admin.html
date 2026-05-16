@@ -320,7 +320,7 @@ main{position:relative;z-index:2}
 
 /* RETO MODAL */
 .reto-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:9500;display:flex;align-items:center;justify-content:center;padding:16px}
-.reto-modal-box{background:#0e0e12;border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:36px;max-width:520px;width:100%;box-shadow:0 40px 100px rgba(0,0,0,.7),0 0 60px rgba(59,130,246,.05)}
+.reto-modal-box{background:#0e0e12;border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:36px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;overscroll-behavior:contain;box-shadow:0 40px 100px rgba(0,0,0,.7),0 0 60px rgba(59,130,246,.05)}
 .reto-modal-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:28px;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:4px;color:var(--text)}
 .reto-modal-title span{color:#60a5fa}
 .reto-modal-sub{font-size:12px;color:var(--muted);margin-bottom:24px;line-height:1.6}
