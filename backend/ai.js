@@ -44,6 +44,94 @@ const normalizeRiskLevel = (value) => {
   return "MEDIO";
 };
 
+// ── IIHF Hockey Tiers (rev. 2026-05-15) ────────────────────────────
+// Tier A = potencias históricas del mundial; Tier B = resto.
+// Cuando Tier A vs Tier B, el margen final suele ser ≥2 goles en >60% de partidos.
+const IIHF_TIER_A_TEAMS = new Set([
+  "canadá", "canada", "estados unidos", "usa", "estados-unidos",
+  "suecia", "sweden", "finlandia", "finland",
+  "chequia", "czech republic", "czechia", "república checa", "republica checa",
+  "rusia", "russia", "suiza", "switzerland",
+]);
+
+const isIIHFEvent = (event = {}) => {
+  const league = String(event.league || "").toLowerCase();
+  return league.includes("iihf");
+};
+
+const teamTierA = (team) => IIHF_TIER_A_TEAMS.has(String(team || "").toLowerCase().trim());
+
+const getIIHFMatchupTier = (event = {}) => {
+  if (!isIIHFEvent(event)) return null;
+  const home = String(event.home_team || event.homeTeam || "").trim();
+  const away = String(event.away_team || event.awayTeam || "").trim();
+  const homeA = teamTierA(home);
+  const awayA = teamTierA(away);
+  if (homeA && awayA) return { type: "A_vs_A", tierATeam: null, tierBTeam: null, home, away };
+  if (homeA && !awayA) return { type: "mismatch", tierATeam: home, tierBTeam: away, home, away, tierAIsHome: true };
+  if (!homeA && awayA) return { type: "mismatch", tierATeam: away, tierBTeam: home, home, away, tierAIsHome: false };
+  return { type: "B_vs_B", tierATeam: null, tierBTeam: null, home, away };
+};
+
+// ── Sport-specific addendum (inyecta reglas contextuales al prompt) ─────
+const buildSportContextAdendum = (event = {}) => {
+  const sport = String(event.sport || "").toLowerCase();
+  const league = String(event.league || "").toLowerCase();
+  const lines = [];
+
+  // Baseball MLB / LMB
+  if (sport.includes("baseball") || sport.includes("beisbol") || league.includes("mlb") || league.includes("liga mexicana")) {
+    lines.push("⚾ BEISBOL — El pitcher abridor define ~60% del resultado. OBLIGATORIO: si en Stats NO hay info del pitcher abridor (nombre, ERA, WHIP, ponches recientes), confidence MAX = 55 para Totales y MAX = 60 para ML. Si lo tienes, cítalo en analysis (ej. 'X ERA 2.4 últimas 3 aperturas').");
+  }
+
+  // Basketball NBA / Playoffs
+  if (sport.includes("basket") || league.includes("nba")) {
+    lines.push("🏀 BASKETBALL — Verifica si algún equipo viene de back-to-back (B2B): equipos en B2B suelen perder o cubrir menos puntos. En PLAYOFFS, NO asumas automáticamente que 'más posesiones = más puntos': la intensidad defensiva también sube. Para Over/Under cita ritmo (pace) específico si lo tienes en Stats; sin pace, confidence en totales MAX = 60.");
+  }
+
+  // Hockey IIHF — tier awareness (corrige el patrón detectado el 15-may)
+  if (sport.includes("hockey") && league.includes("iihf")) {
+    const tier = getIIHFMatchupTier(event);
+    if (tier?.type === "mismatch") {
+      lines.push(
+        `🏒 IIHF TIER MISMATCH — ${tier.tierATeam} (Tier A: potencia mundial) vs ${tier.tierBTeam} (Tier B). ` +
+        `Históricamente Tier A despacha por ≥2 goles en >60% de estos partidos. ` +
+        `EVITA spread protector (+1.5, +2.5) al Tier B — pierde más del 50% del tiempo. ` +
+        `PREFIERE: ML de ${tier.tierATeam}, Over en totales (suelen ser >5.5 goles), o handicap -1.5 a favor de ${tier.tierATeam}.`
+      );
+    } else if (tier?.type === "A_vs_A") {
+      lines.push("🏒 IIHF TIER A vs TIER A — Partido cerrado entre potencias mundiales. PREFIERE Under totales o BTTS (ambos anotan). Reduce confidence general en 5-8 puntos vs un mismatch.");
+    } else if (tier?.type === "B_vs_B") {
+      lines.push("🏒 IIHF TIER B vs TIER B — Partido impredecible entre selecciones de menor nivel mundial. Confidence MAX = 60 en TODOS los mercados.");
+    }
+  }
+
+  // NHL Playoffs
+  if (sport.includes("hockey") && (league.includes("nhl") || league.includes("playoff"))) {
+    lines.push("🏒 NHL PLAYOFFS — Los partidos son históricamente más cerrados y bajos en goles que temporada regular. PREFIERE Under totales sobre Over. Si la serie está empatada (3-3 = Game 7), reduce confidence en favoritos por presión psicológica.");
+  }
+
+  // European football top-tier
+  if (sport.includes("foot") && (league.includes("bundes") || league.includes("premier league") || league.includes("la liga") || league.includes("serie a") || league.includes("ligue 1"))) {
+    lines.push("⚽ FÚTBOL EUROPEO TOP — Verifica si el equipo viene de partido de Champions/Europa League entre semana: la rotación de 4-6 titulares es regla, no excepción. Sin info explícita de rotación o lineup confirmado, evita confidence > 65 en MLs de favorito europeo top.");
+  }
+
+  return lines.length ? "\n\nCONTEXTO ESPECÍFICO DEL DEPORTE/LIGA:\n" + lines.join("\n") : "";
+};
+
+// ── Pick stability check for Reto Escalera legs ─────────────────────
+// Filtra picks volátiles que no deberían ir en un parlay multi-leg
+const isStablePickForParlay = (pick = {}) => {
+  const market = String(pick.market || "").toLowerCase();
+  const text = String(pick.pick || "").toLowerCase();
+  const conf = Number(pick.confidence || 0);
+  // No usar ML visitante en legs (más volátil)
+  if ((market.includes("1x2") || market.includes("moneyline") || market === "ml") && (text.includes("visitante") || text.includes("away"))) return false;
+  // Confidence mínima 65 para legs de parlay
+  if (conf < 65) return false;
+  return true;
+};
+
 const buildFallbackSportsPick = ({ event = {}, stats = {}, historicalContext = [] }) => {
   const sport = safeStr(event.sport || "deporte");
   const league = safeStr(event.league || "liga");
@@ -659,6 +747,8 @@ async function generateSportsPick({ event = {}, stats = {}, historicalContext = 
   const streakInsurance = shouldApplyStreakInsurance(historyPicks);
   const insuranceBlock = streakInsurance.active ? `\n\n${streakInsurance.instruction}\n` : "";
 
+  const sportAdendum = buildSportContextAdendum(event);
+
   const systemPrompt = [
     "Eres un analista de picks deportivos para un MVP informativo.",
     "Debes responder SOLO JSON valido con esta estructura exacta:",
@@ -667,8 +757,10 @@ async function generateSportsPick({ event = {}, stats = {}, historicalContext = 
     "No uses palabras como seguro, garantizado o apuesta garantizada.",
     "Si hay pocos datos, reduce confidence y dilo claramente.",
     "Si en Stats hay odds (cuotas decimales), considera el Expected Value: tu probabilidad implicita (confidence/100) debe superar a la implicita del mercado (1/odds) para que haya valor.",
-    "analysis debe ser breve, claro y entendible en espanol.",
-  ].join(" ");
+    "Si la muestra histórica disponible es N<5 partidos, confidence MAX = 55.",
+    "analysis debe ser breve, claro y en español. OBLIGATORIO: cita AL MENOS UN STAT NUMÉRICO específico del JSON Stats (ej. 'Liverpool 8/10 visitas con victoria', 'pace 102', 'ERA 2.4'). Si no hay stats numéricos, di explícitamente 'sin stats numéricos disponibles' en analysis.",
+    sportAdendum,
+  ].filter(Boolean).join(" ");
 
   const userPrompt = [
     `Evento: ${safeStr(event.league)} | ${safeStr(event.home_team || event.homeTeam)} vs ${safeStr(event.away_team || event.awayTeam)}.`,
@@ -793,6 +885,8 @@ async function generateMultiplePicksGPT({ event = {}, stats = {}, historicalCont
   const perfCtx = buildPerformanceContext(historyPicks, { league: event.league });
   const perfBlock = perfCtx ? `\n${perfCtx.promptText}\n` : "";
 
+  const sportAdendum = buildSportContextAdendum(event);
+
   const systemPrompt = [
     "Eres un analista deportivo experto para un servicio informativo de picks deportivos.",
     "Para el evento indicado, genera EXACTAMENTE 3 picks en mercados DISTINTOS.",
@@ -800,11 +894,12 @@ async function generateMultiplePicksGPT({ event = {}, stats = {}, historicalCont
     '{"picks":[{"pick":"...","market":"...","confidence":0,"risk_level":"BAJO|MEDIO|ALTO","analysis":"...","disclaimer":"Contenido informativo. No garantiza ganancias."},{"pick":"...","market":"...","confidence":0,"risk_level":"BAJO|MEDIO|ALTO","analysis":"...","disclaimer":"Contenido informativo. No garantiza ganancias."},{"pick":"...","market":"...","confidence":0,"risk_level":"BAJO|MEDIO|ALTO","analysis":"...","disclaimer":"Contenido informativo. No garantiza ganancias."}]}',
     "Reglas:",
     "- Los 3 picks DEBEN ser en mercados diferentes (ej: 1X2, Over/Under, Ambos marcan, Handicap, BTTS, Double Chance)",
-    "- analysis: 3-4 oraciones en espanol con razonamiento estadistico claro, usando los datos disponibles",
-    "- confidence: entero 0-100 segun solidez de datos. Si faltan datos, baja confidence y explicalo",
+    "- analysis: 3-4 oraciones en español con razonamiento estadístico claro. OBLIGATORIO citar AL MENOS UN STAT NUMÉRICO específico del JSON Stats por cada pick (ej. 'Liverpool 8/10 visitas con victoria', 'pace 102 posesiones', 'ERA 2.4'). Si no hay stats numéricos, dilo explícitamente.",
+    "- confidence: entero 0-100. Si la muestra histórica es N<5 partidos, confidence MAX = 55. Si faltan datos clave del deporte (pitcher en MLB, pace en NBA), confidence MAX = 60 en mercados afectados.",
     "- NO prometas ganancias. NO uses 'seguro', 'garantizado', 'apuesta segura'",
-    "- market debe ser el nombre tecnico del mercado en ingles o espanol (ej: 1X2, over_under, both_teams_score, handicap)",
-  ].join(" ");
+    "- market debe ser el nombre técnico del mercado (ej: 1X2, over_under, both_teams_score, handicap)",
+    sportAdendum,
+  ].filter(Boolean).join(" ");
 
   const userPrompt = [
     `Evento: ${league} | ${home} vs ${away}`,
@@ -882,20 +977,26 @@ async function selectBestPickWithClaude({ event = {}, candidates = [], historyPi
     return { selectedIndex: bestIdx, reasoning: "Seleccion automatica por confianza maxima (Claude no disponible).", confidenceAdjustment: 0, finalPick: { ...best, provider: "fallback-judge" }, model: "fallback-judge" };
   }
 
+  const sportAdendum = buildSportContextAdendum(event);
+
   const systemPrompt = [
-    "Eres un analista deportivo senior. Tu rol es JUEZ: evalua picks generados por GPT-4o y elige el MEJOR.",
-    "Criterios de evaluacion:",
-    "1. Solidez del razonamiento estadistico con los datos disponibles",
-    "2. Coherencia entre confianza numerica, nivel de riesgo y analisis escrito",
+    "Eres un analista deportivo senior. Tu rol es JUEZ: evalúas picks generados por GPT-4o y eliges el MEJOR — o te abstienes si ninguno vale.",
+    "Criterios de evaluación:",
+    "1. Solidez del razonamiento estadístico con los datos disponibles",
+    "2. Coherencia entre confianza numérica, nivel de riesgo y análisis escrito",
     "3. Valor real del mercado sugerido para el tipo de evento",
-    "4. Precision y claridad del analisis en espanol",
-    "Responde SOLO JSON valido con esta estructura:",
-    '{"selected_index":0,"reasoning":"Explicacion breve y directa de por que este pick es superior (2-4 oraciones en espanol)","confidence_adjustment":0,"final_pick":{"pick":"...","market":"...","confidence":0,"risk_level":"BAJO|MEDIO|ALTO","analysis":"Analisis refinado o mejorado del pick seleccionado","disclaimer":"Contenido informativo. No garantiza ganancias."}}',
-    "selected_index: 0, 1 o 2 (indice base-0 del candidato elegido)",
+    "4. Precisión y claridad del análisis en español",
+    "5. Cumplimiento de las reglas del deporte/liga (ver contexto al final)",
+    "ABSTENCIÓN: Si NINGÚN candidato cumple criterios básicos (todos con confidence <55, todos sin stats numéricos citados, todos contradicen reglas del deporte, todos con EV negativo claro), responde con selected_index = -1 y explica por qué te abstienes.",
+    "Responde SOLO JSON válido con esta estructura:",
+    '{"selected_index":0,"abstain":false,"reasoning":"Explicación breve (2-4 oraciones en español)","confidence_adjustment":0,"final_pick":{"pick":"...","market":"...","confidence":0,"risk_level":"BAJO|MEDIO|ALTO","analysis":"Análisis refinado del pick seleccionado","disclaimer":"Contenido informativo. No garantiza ganancias."}}',
+    "selected_index: 0, 1, 2 (índice base-0 del candidato elegido) o -1 (abstención)",
+    "abstain: true SI Y SOLO SI selected_index = -1. En ese caso, final_pick puede omitirse o ser un objeto vacío.",
     "confidence_adjustment: entero entre -10 y +10 que ajusta la confianza del pick elegido",
-    "final_pick: version refinada del pick seleccionado, puedes mejorar el analisis manteniendo el mercado y pick base",
+    "final_pick: versión refinada del pick seleccionado, puedes mejorar el análisis manteniendo mercado y pick base. OBLIGATORIO citar al menos un stat numérico en analysis.",
     "NO prometas ganancias. NO uses 'seguro', 'garantizado'.",
-  ].join(" ");
+    sportAdendum,
+  ].filter(Boolean).join(" ");
 
   const candidatesText = candidates
     .map((c, i) => [`--- Candidato ${i + 1} ---`, `Mercado: ${c.market}`, `Pick: ${c.pick}`, `Confianza GPT: ${c.confidence}%`, `Riesgo GPT: ${c.risk_level}`, `Analisis: ${c.analysis}`].join("\n"))
@@ -923,12 +1024,36 @@ async function selectBestPickWithClaude({ event = {}, candidates = [], historyPi
     const parsed = extractJsonObject(content);
     if (!parsed) throw new Error("claude_invalid_json");
 
-    const selectedIndex = Math.max(0, Math.min(candidates.length - 1, Number(parsed.selected_index ?? 0)));
+    const rawIdx = Number(parsed.selected_index ?? 0);
+    const abstainFlag = Boolean(parsed.abstain) || rawIdx === -1 || rawIdx < 0;
+
+    // Abstention path — Claude rejects all candidates
+    if (abstainFlag) {
+      return {
+        selectedIndex: -1,
+        abstain: true,
+        reasoning: safeStr(parsed.reasoning) || "Claude se abstuvo: ningún candidato cumple los criterios mínimos para este evento.",
+        confidenceAdjustment: 0,
+        finalPick: {
+          pick: "—",
+          market: "abstención",
+          confidence: 0,
+          risk_level: "ALTO",
+          analysis: safeStr(parsed.reasoning) || "Sin pick recomendado para este evento.",
+          disclaimer: "Contenido informativo. No garantiza ganancias.",
+          provider: "claude-judge-abstain",
+        },
+        model,
+      };
+    }
+
+    const selectedIndex = Math.max(0, Math.min(candidates.length - 1, rawIdx));
     const selectedCandidate = candidates[selectedIndex] || candidates[0];
     const rawFinal = parsed.final_pick || {};
 
     return {
       selectedIndex,
+      abstain: false,
       reasoning: safeStr(parsed.reasoning) || "Claude selecciono el pick con mayor solidez estadistica.",
       confidenceAdjustment: Math.max(-10, Math.min(10, Number(parsed.confidence_adjustment || 0))),
       finalPick: {
@@ -1080,7 +1205,8 @@ async function analyzeMarketsGPT({ event = {}, stats = {}, historyPicks = [] } =
     "14. Si en Stats hay odds (cuotas decimales) de un mercado, considera el Expected Value: tu probabilidad implicita (conf/100) debe superar a la implicita del mercado (1/odds) para que el pick tenga valor. Cuando hay odds, ajusta tu conf y nota considerando el EV.",
     `Criterios prioritarios para ${sportCfg.label}:`,
     ...sportCfg.criteria,
-  ].join(" ");
+    buildSportContextAdendum(event),
+  ].filter(Boolean).join(" ");
 
   const userPrompt = [
     `Evento: ${league} | ${home} vs ${away}`,
@@ -1523,12 +1649,17 @@ async function generateRetoEscalera({ events = [], inversion = 500, meta = 5000,
   const systemPrompt = [
     "Eres un analista senior de apuestas deportivas especializado en parlays/escaleras para una plataforma premium.",
     "Tu objetivo: generar el RETO ESCALERA óptimo con los eventos disponibles.",
-    "REGLAS DE SELECCIÓN:",
+    "REGLAS DE SELECCIÓN (críticas — afectan win rate del parlay):",
     "1. Usa los stats y momios reales si están disponibles (marcados con '—' cuando no los hay). Si hay momios de casas, úsalos en 'odds'; si no, estima un valor realista para ese mercado.",
     "2. Para cada leg elige el mercado MÁS PREDECIBLE del deporte: fútbol→handicap asiático o totales; basketball→spread o totales; baseball→run line o totales; hockey→puck line o totales.",
-    "3. El campo 'analysis' debe ser CORTO: máximo 2 oraciones directas con el argumento principal (tendencia histórica, posición en tabla, racha, contexto del juego). NO menciones qué datos faltan ni de dónde vienen las estimaciones.",
-    "4. El campo 'odds' debe ser el momio decimal real si está disponible; si no, estimado realista (handicap asiático ≈1.85-1.95, run line ≈1.80-1.90, totales ≈1.88).",
-    "5. El campo 'eventDate' en el JSON debe ser el ISO UTC exacto del evento tal como se proporcionó en el contexto.",
+    "3. PROHIBIDO usar 1X2 / Moneyline VISITANTE como leg de escalera — es históricamente el mercado más volátil y mata parlays. Si el favorito es visitante, usa handicap del favorito en lugar de ML.",
+    "4. PREFIERE en este orden de estabilidad: (a) Under en totales de favorito local, (b) Handicap asiático -0.5/-1 del favorito local, (c) BTTS Sí en partidos con ambos ofensivos, (d) ML del favorito local con cuota ≤1.65, (e) Over totales solo cuando hay evidencia clara de ambos ofensivos.",
+    "5. CADA LEG debe tener confidence ≥ 65. Si no encuentras 3 legs con confidence ≥ 65, devuelve feasible:false con alert explicando qué falta.",
+    "6. IIHF Hockey: NO uses spread protector (+1.5) del Tier B. Si Tier A (Canadá, USA, Suecia, Finlandia, Chequia, Rusia, Suiza) juega contra Tier B, prefiere ML o Over.",
+    "7. NBA Playoffs: PREFIERE Under totales sobre Over — la defensa también sube en playoffs. Si la serie está 3-3 (Game 7), evita ese partido para el reto (alta varianza).",
+    "8. El campo 'analysis' debe ser CORTO: máximo 2 oraciones directas con el argumento principal (tendencia, racha, ventaja clara). OBLIGATORIO citar un stat numérico específico (ej. '8/10 victorias casa', 'ERA 2.4', 'pace 102'). NO menciones qué datos faltan.",
+    "9. El campo 'odds' debe ser el momio decimal real si está disponible; si no, estimado realista (handicap asiático ≈1.85-1.95, run line ≈1.80-1.90, totales ≈1.88).",
+    "10. El campo 'eventDate' en el JSON debe ser el ISO UTC exacto del evento tal como se proporcionó en el contexto.",
     `Inversión: $${inversion} MXN · Meta: $${meta} MXN · Ratio objetivo: ${ratio.toFixed(2)}x.`,
     `Sugiere entre 3 y 4 legs. Con ${suggestedLegs} legs necesitarías odds de ~${targetOddsPerLeg.toFixed(2)} por leg.`,
     "Si los eventos no alcanzan para la meta, pon feasible:false y explica en alert.",
@@ -1554,6 +1685,25 @@ async function generateRetoEscalera({ events = [], inversion = 500, meta = 5000,
     const content = safeStr(data?.content?.[0]?.text);
     const parsed = extractJsonObject(content);
     if (!parsed || !Array.isArray(parsed.legs)) return mkFallback();
+
+    // Post-filter de seguridad: descartar legs que violen reglas de estabilidad
+    // (1X2 visitante / confidence < 65). El modelo debería respetar las reglas,
+    // pero validamos en código para evitar parlays débiles.
+    const unstableLegs = parsed.legs.filter((l) => !isStablePickForParlay(l));
+    if (unstableLegs.length > 0) {
+      const reasons = unstableLegs.map((l) => `${l.match || "leg"} (${l.market}/${l.pick}, conf ${l.confidence})`).join("; ");
+      parsed.alert = (parsed.alert ? parsed.alert + " · " : "") + `Legs descartados por baja estabilidad: ${reasons}.`;
+      parsed.legs = parsed.legs.filter((l) => isStablePickForParlay(l));
+      if (parsed.legs.length < 2) {
+        parsed.feasible = false;
+        parsed.alert = (parsed.alert + " Insuficientes legs estables para armar el reto.").trim();
+      } else {
+        // Recalcular combined odds tras filtrar
+        parsed.combinedOdds = parseFloat(parsed.legs.reduce((acc, l) => acc * Number(l.odds || 1), 1).toFixed(2));
+        parsed.projectedWin = parseFloat((inversion * parsed.combinedOdds).toFixed(2));
+      }
+    }
+
     // Ensure leg results are null
     parsed.legs = parsed.legs.map((l, i) => ({ ...l, legIndex: i, result: null }));
     parsed.projectedWin = parsed.projectedWin || parseFloat((inversion * (parsed.combinedOdds || 1)).toFixed(2));

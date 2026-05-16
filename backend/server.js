@@ -1830,6 +1830,7 @@ app.post("/api/picks/generate-dual/:eventId", requireAdmin, aiGenLimiter, async 
       candidates: gptCandidates,
       claudeSelection: {
         selectedIndex: claudeResult.selectedIndex,
+        abstain: Boolean(claudeResult.abstain),
         reasoning: claudeResult.reasoning,
         confidenceAdjustment: claudeResult.confidenceAdjustment,
         claudePickId: claudePick?.id || null,
