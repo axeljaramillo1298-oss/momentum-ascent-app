@@ -284,7 +284,11 @@ textarea.field-input{min-height:80px;resize:vertical}
 
       <!-- PICKS + STAKE -->
       <div class="section-card" style="animation-delay:.6s">
-        <div class="section-kicker">Picks del día + stake sugerido</div>
+        <div class="section-kicker" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <span>Picks del día + stake sugerido</span>
+          <button id="bank-recalc-wins-btn" type="button" style="font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid rgba(74,222,128,.4);background:rgba(74,222,128,.08);color:#4ade80;cursor:pointer;font-weight:600">🔄 Recalcular ganancias</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Si tus números no cuadran con la casa: captura la <strong>cuota</strong> de cada pick y presiona "Recalcular ganancias". Se ajustan automáticamente con la fórmula real <code>stake × (cuota − 1)</code>.</div>
         <div class="pick-bank-list" id="bank-picks-list">
           <div style="padding:24px;text-align:center;color:var(--muted)">Cargando picks…</div>
         </div>
@@ -399,6 +403,36 @@ textarea.field-input{min-height:80px;resize:vertical}
     return Number(Math.min(Math.max(base*m,.5),Math.max(base*2,4.5)).toFixed(2));
   };
   const isResolved = s => { const v=String(s||'').toLowerCase(); return v==='won'||v==='lost'||v==='closed'; };
+
+  // ── CÁLCULO CORRECTO DE GANANCIA/PÉRDIDA (igual que Playdoit) ─────
+  // Para WIN: net = stake * (odds - 1)  → ganancia NETA arriba del stake
+  // Para LOST: net = -stake             → pérdida del monto apostado
+  // Payout total casa = stake + net (si ganaste) o 0 (si perdiste)
+  const calcNetFromStakeAndOdds = (stake, odds, status) => {
+    const s = Number(stake || 0);
+    const o = Number(odds || 0);
+    const st = String(status || '').toLowerCase();
+    if (st === 'lost') return -Math.abs(s);
+    if (st === 'won' && s > 0 && o > 1) return Number((s * (o - 1)).toFixed(2));
+    return null; // no se puede calcular automáticamente
+  };
+  const calcPayoutTotal = (stake, net, status) => {
+    const s = Number(stake || 0);
+    const n = Number(net || 0);
+    const st = String(status || '').toLowerCase();
+    if (st === 'won') return s + n;       // recuperas stake + ganancia
+    if (st === 'lost') return 0;          // pierdes todo
+    return null;
+  };
+  // Extrae odds del pick si vienen en el response del API
+  const oddsFromPick = pick => {
+    const candidates = [pick?.odds, pick?.recommendedOdds, pick?.statsJson?.odds];
+    for (const c of candidates) {
+      const n = Number(c);
+      if (Number.isFinite(n) && n > 1.01) return n;
+    }
+    return null;
+  };
   const computeMetrics = picks => {
     const rows=Object.values(tracking||{});
     const pnl=rows.reduce((s,r)=>s+Number(r?.net||0),0);
@@ -455,6 +489,8 @@ textarea.field-input{min-height:80px;resize:vertical}
       const picks = Array.isArray(remote?.picks) ? remote.picks : [];
 
       // Sync admin-marked results into local tracking
+      // FIX (15-may): auto-calcular net cuando admin marca como 'won' y hay odds disponibles
+      // Antes dejaba net vacío para wins → PnL subestimado vs Playdoit
       let adminSyncDirty = false;
       picks.forEach(pick => {
         const pid = String(pick.id);
@@ -463,9 +499,19 @@ textarea.field-input{min-height:80px;resize:vertical}
         const row = tracking[pid];
         if (!row || (!isResolved(row.status) && row.status !== adminRes)) {
           const stake = row?.stake || Number(Number(bankState.totalBank||0)*(recommendedPct(pick)/100)).toFixed(2);
+          const existingOdds = row?.odds || oddsFromPick(pick);
+          // Calcular net automáticamente si:
+          //   - el usuario ya capturó uno → respetar
+          //   - sino, calcular con la fórmula correcta (won: stake*(odds-1) si hay odds; lost: -stake)
+          let computedNet = row?.net !== undefined && row?.net !== '' ? row.net : '';
+          if (computedNet === '') {
+            const auto = calcNetFromStakeAndOdds(stake, existingOdds, adminRes);
+            if (auto !== null) computedNet = String(auto);
+          }
           tracking[pid] = {
             stake,
-            net: row?.net !== undefined && row?.net !== '' ? row.net : (adminRes === 'lost' ? (-Math.abs(Number(stake))).toFixed(2) : ''),
+            odds: existingOdds || row?.odds || '',
+            net: computedNet,
             status: adminRes,
             adminSynced: true,
           };
@@ -486,7 +532,7 @@ textarea.field-input{min-height:80px;resize:vertical}
         const stakePct = recommendedPct(pick);
         const suggested = Number(bankState.totalBank||0) * (stakePct/100);
         const pid = String(pick.id);
-        const row = tracking[pid] || { stake: suggested.toFixed(2), net: '', status: 'pending' };
+        const row = tracking[pid] || { stake: suggested.toFixed(2), odds: oddsFromPick(pick) || '', net: '', status: 'pending' };
         const status = String(row.status || 'pending').toLowerCase();
         const adminRes = String(pick.result || '').toLowerCase();
 
@@ -502,6 +548,14 @@ textarea.field-input{min-height:80px;resize:vertical}
           const label = v==='pending' ? 'Pendiente' : v==='won' ? '✓ Ganada' : '✗ Perdida';
           return `<button class="pbk-status-btn ${v} ${status===v?'active':''}" data-status-btn="${pid}" data-status-val="${v}" type="button">${label}</button>`;
         }).join('');
+
+        // Línea informativa: cuánto te paga la casa en total
+        const payoutTotal = calcPayoutTotal(row.stake, row.net, status);
+        const payoutLine = (status === 'won' && payoutTotal !== null && payoutTotal > 0)
+          ? `<div class="pbk-payout-info" id="pbk-payout-${pid}" style="font-size:11px;color:#9ca3af;margin-top:6px">Casa te pagó: <strong style="color:#4ade80">${formatMoney(payoutTotal)}</strong> (stake ${formatMoney(Number(row.stake||0))} + ganancia ${formatMoney(Number(row.net||0))})</div>`
+          : (status === 'lost')
+            ? `<div class="pbk-payout-info" id="pbk-payout-${pid}" style="font-size:11px;color:#9ca3af;margin-top:6px">Casa te pagó: <strong style="color:#f87171">$0</strong> (perdiste el stake ${formatMoney(Number(row.stake||0))})</div>`
+            : `<div class="pbk-payout-info" id="pbk-payout-${pid}" style="font-size:11px;color:#9ca3af;margin-top:6px"></div>`;
 
         card.innerHTML = `
           ${adminBanner}
@@ -524,31 +578,70 @@ textarea.field-input{min-height:80px;resize:vertical}
           </div>
           <div class="pbk-track">
             <div class="field-group"><label class="field-lbl">Stake real apostado</label><input class="field-input" data-bank-stake="${pid}" type="number" min="0" step="0.01" value="${row.stake||''}" /></div>
-            <div class="field-group"><label class="field-lbl">Resultado neto ($)</label><input class="field-input" data-bank-net="${pid}" type="number" step="0.01" value="${row.net||''}" placeholder="+350 / −200" /></div>
+            <div class="field-group"><label class="field-lbl" title="Cuota decimal de la casa (ej: 1.85). Sirve para calcular tu ganancia automáticamente.">Cuota (odds)</label><input class="field-input" data-bank-odds="${pid}" type="number" min="1.01" step="0.01" value="${row.odds||''}" placeholder="1.85" /></div>
+            <div class="field-group"><label class="field-lbl" title="Lo que GANASTE arriba del stake. Si pierdes queda negativo. Se calcula auto con stake×(cuota−1) cuando marcas GANADA.">Ganancia neta ($)</label><input class="field-input" data-bank-net="${pid}" type="number" step="0.01" value="${row.net||''}" placeholder="auto si capturas cuota" /></div>
             <div class="field-group pbk-status-group"><label class="field-lbl">Estado</label><div class="pbk-status-btns">${stBtns}</div></div>
             <button class="btn-primary pbk-save-btn" type="button" data-bank-save="${pid}">Guardar</button>
           </div>
+          ${payoutLine}
           <div class="pbk-track-note" id="pbk-note-${pid}" style="color:${status==='won'?'#4ade80':status==='lost'?'#f87171':''}">
-            ${isResolved(status) ? `Stake: ${formatMoney(Number(row.stake||0))} · neto: ${formatMoney(Number(row.net||0))} · ${status==='won'?'Ganada':'Perdida'}` : `Sugerencia: no sobrepasar ${formatMoney(Number(bankState.totalBank||0)*(Number(bankState.maxExposurePercent||0)/100))} de exposición total en el día.`}
+            ${isResolved(status) ? `Stake: ${formatMoney(Number(row.stake||0))} · ganancia: ${formatMoney(Number(row.net||0))} · ${status==='won'?'Ganada':'Perdida'}` : `Sugerencia: no sobrepasar ${formatMoney(Number(bankState.totalBank||0)*(Number(bankState.maxExposurePercent||0)/100))} de exposición total en el día.`}
           </div>`;
 
         listEl.appendChild(card);
 
-        // Status button toggle
+        // Helper local del card: recalcula net automáticamente y actualiza display de payout
+        const recalcCardNet = (forceStatus) => {
+          const stInput = card.querySelector(`[data-bank-stake="${pid}"]`);
+          const odInput = card.querySelector(`[data-bank-odds="${pid}"]`);
+          const ntInput = card.querySelector(`[data-bank-net="${pid}"]`);
+          const activeBtn = card.querySelector(`[data-status-btn="${pid}"].active`);
+          const st = forceStatus || (activeBtn ? activeBtn.getAttribute('data-status-val') : status);
+          const stake = Number(stInput?.value || 0);
+          const odds = Number(odInput?.value || 0);
+          const auto = calcNetFromStakeAndOdds(stake, odds, st);
+          // Auto-rellenar solo si net está vacío o si recién cambió status (no pisar capturas manuales)
+          if (auto !== null && (!ntInput.value || ntInput.dataset.autoFilled === '1')) {
+            ntInput.value = auto.toFixed(2);
+            ntInput.dataset.autoFilled = '1';
+          }
+          // Actualizar línea de payout
+          const payoutEl = document.getElementById(`pbk-payout-${pid}`);
+          if (payoutEl) {
+            const currentNet = Number(ntInput.value || 0);
+            const payout = calcPayoutTotal(stake, currentNet, st);
+            if (st === 'won' && payout !== null && payout > 0) {
+              payoutEl.innerHTML = `Casa te pagó: <strong style="color:#4ade80">${formatMoney(payout)}</strong> (stake ${formatMoney(stake)} + ganancia ${formatMoney(currentNet)})`;
+            } else if (st === 'lost') {
+              payoutEl.innerHTML = `Casa te pagó: <strong style="color:#f87171">$0</strong> (perdiste el stake ${formatMoney(stake)})`;
+            } else {
+              payoutEl.innerHTML = '';
+            }
+          }
+        };
+
+        // Status button toggle — auto-recalcula net cuando cambia status
         card.querySelectorAll(`[data-status-btn="${pid}"]`).forEach(sb => {
           sb.addEventListener('click', () => {
             const val = sb.getAttribute('data-status-val');
             card.querySelectorAll(`[data-status-btn="${pid}"]`).forEach(b => b.classList.remove('active'));
             sb.classList.add('active');
-            if (val === 'lost') {
-              const netInput = card.querySelector(`[data-bank-net="${pid}"]`);
-              const stakeInput = card.querySelector(`[data-bank-stake="${pid}"]`);
-              if (netInput && !netInput.value && stakeInput?.value) {
-                netInput.value = (-Math.abs(Number(stakeInput.value))).toFixed(2);
-              }
-            }
+            // Marcar el net como "fresh" para que recalcCardNet lo pueda sobrescribir
+            const netInput = card.querySelector(`[data-bank-net="${pid}"]`);
+            if (netInput) { netInput.value = ''; delete netInput.dataset.autoFilled; }
+            recalcCardNet(val);
           });
         });
+
+        // Reactividad: cuando user cambia stake u odds, recalcular net
+        ['stake', 'odds'].forEach(field => {
+          const inp = card.querySelector(`[data-bank-${field}="${pid}"]`);
+          if (inp) inp.addEventListener('input', () => recalcCardNet());
+        });
+
+        // Si user captura net manualmente, marcar como manual para no sobrescribirlo
+        const netInputBind = card.querySelector(`[data-bank-net="${pid}"]`);
+        if (netInputBind) netInputBind.addEventListener('input', () => { delete netInputBind.dataset.autoFilled; recalcCardNet(); });
       });
 
       // Save buttons
@@ -559,6 +652,7 @@ textarea.field-input{min-height:80px;resize:vertical}
           const status = activeBtn ? activeBtn.getAttribute('data-status-val') : 'pending';
           tracking[id] = {
             stake: Number(listEl.querySelector(`[data-bank-stake="${id}"]`)?.value || 0),
+            odds: Number(listEl.querySelector(`[data-bank-odds="${id}"]`)?.value || 0) || '',
             net: Number(listEl.querySelector(`[data-bank-net="${id}"]`)?.value || 0),
             status,
           };
@@ -569,7 +663,7 @@ textarea.field-input{min-height:80px;resize:vertical}
           const n = document.getElementById(`pbk-note-${id}`);
           if (n) {
             const label = status==='won'?'Ganada':status==='lost'?'Perdida':'Pendiente';
-            n.textContent = `Stake: ${formatMoney(tracking[id].stake)} · neto: ${formatMoney(tracking[id].net)} · ${label}`;
+            n.textContent = `Stake: ${formatMoney(tracking[id].stake)} · ganancia: ${formatMoney(tracking[id].net)} · ${label}`;
             n.style.color = status==='won'?'#4ade80':status==='lost'?'#f87171':'';
           }
           showToast('Movimiento guardado.', 'success');
@@ -579,6 +673,28 @@ textarea.field-input{min-height:80px;resize:vertical}
     } catch {
       listEl.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted)">No se pudo cargar el stake sugerido.</div>';
     }
+  };
+
+  // Botón global "Recalcular wins" — arregla los nets vacíos o incorrectos del histórico
+  // usando la fórmula correcta (stake × (odds − 1)) cuando hay cuota capturada.
+  const recalcAllWins = () => {
+    let fixed = 0;
+    Object.keys(tracking).forEach(pid => {
+      const t = tracking[pid] || {};
+      if (String(t.status||'').toLowerCase() !== 'won') return;
+      const stake = Number(t.stake || 0);
+      const odds = Number(t.odds || 0);
+      const currentNet = Number(t.net || 0);
+      if (stake > 0 && odds > 1) {
+        const expected = Number((stake * (odds - 1)).toFixed(2));
+        // Recalcular si el net actual está vacío, en 0, o difiere significativamente
+        if (Math.abs(currentNet - expected) > 0.01) {
+          tracking[pid].net = expected;
+          fixed += 1;
+        }
+      }
+    });
+    return fixed;
   };
 
   // billing info
@@ -604,6 +720,21 @@ textarea.field-input{min-height:80px;resize:vertical}
     setTimeout(() => { btn.textContent = 'Guardar control'; btn.disabled = false; }, 2000);
   });
   document.getElementById('bank-reset-btn').addEventListener('click', async()=>{ tracking={}; await saveRemote(); await renderPicks(); if(typeof showToast==='function') showToast('Sesión reiniciada.','info'); });
+  // Botón "Recalcular ganancias" — itera wins con cuota capturada y recalcula net = stake × (cuota − 1)
+  const recalcBtn = document.getElementById('bank-recalc-wins-btn');
+  if (recalcBtn) {
+    recalcBtn.addEventListener('click', async () => {
+      recalcBtn.textContent = '⏳ Recalculando…';
+      recalcBtn.disabled = true;
+      const fixed = recalcAllWins();
+      await saveRemote();
+      await renderPicks();
+      if (typeof showToast === 'function') {
+        showToast(fixed > 0 ? `${fixed} ganancia${fixed===1?'':'s'} recalculada${fixed===1?'':'s'} con la fórmula correcta.` : 'No hubo cambios: todas las wins ya tienen su ganancia correcta o falta capturar la cuota.', fixed > 0 ? 'success' : 'info');
+      }
+      setTimeout(() => { recalcBtn.textContent = '🔄 Recalcular ganancias'; recalcBtn.disabled = false; }, 1500);
+    });
+  }
 })();
 </script>
 
