@@ -502,36 +502,56 @@ textarea.field-input{min-height:80px;resize:vertical}
       const picks = Array.isArray(remote?.picks) ? remote.picks : [];
 
       // Sync admin-marked results into local tracking
-      // FIX (15-may): auto-calcular net + payout cuando admin marca como 'won'
-      // Antes dejaba net vacío para wins → PnL subestimado vs Playdoit
+      // FIX (17-may): cuando admin marca won/lost, acomoda automáticamente el payout y net:
+      //   - LOST → fuerza payout = 0 SIEMPRE (aunque user había capturado un payout pendiente)
+      //   - WON  → respeta payout capturado por user; si no hay, deriva de odds del pick
+      //   - NET  → SIEMPRE se deriva de stake + payout (mantiene integridad matemática)
+      // Permite flujo: usuario captura pendiente con payout esperado HOY → mañana admin marca
+      // resultado → bank se acomoda solo sin que el user tenga que reabrir cada apuesta.
       let adminSyncDirty = false;
       picks.forEach(pick => {
         const pid = String(pick.id);
         const adminRes = String(pick.result || '').toLowerCase();
         if (adminRes !== 'won' && adminRes !== 'lost') return;
         const row = tracking[pid];
-        if (!row || (!isResolved(row.status) && row.status !== adminRes)) {
-          const stake = row?.stake || Number(Number(bankState.totalBank||0)*(recommendedPct(pick)/100)).toFixed(2);
+
+        // Sync si: no había row, o el status del user difiere del admin
+        if (!row || row.status !== adminRes) {
+          const stake = Number(row?.stake || Number(bankState.totalBank||0)*(recommendedPct(pick)/100));
           const existingOdds = row?.odds || oddsFromPick(pick) || '';
-          // Si ya hay payout capturado → respetar. Sino, derivar de odds (si hay) o dejar vacío.
-          let payout = row?.payout !== undefined && row?.payout !== '' ? row.payout : '';
-          if (payout === '') {
-            if (adminRes === 'lost') {
-              payout = 0;
+
+          // PAYOUT
+          let payout;
+          if (adminRes === 'lost') {
+            // Perdió: forzar a 0 SIEMPRE (sobreescribe captura pendiente del user)
+            payout = 0;
+          } else {
+            // Ganó: respetar captura del user (es el dato más confiable)
+            const userPayout = Number(row?.payout || 0);
+            if (userPayout > 0) {
+              payout = userPayout;
             } else if (existingOdds) {
+              // Derivar de odds del pick si no hay captura
               const auto = calcPayoutFromStakeAndOdds(stake, existingOdds, adminRes);
-              if (auto !== null) payout = auto;
+              payout = auto !== null ? auto : '';
+            } else {
+              payout = '';
             }
           }
-          // Net se deriva de payout - stake
-          let computedNet = row?.net !== undefined && row?.net !== '' ? row.net : '';
-          if (computedNet === '' && payout !== '') {
+
+          // NET — siempre derivar de stake + payout (integridad matemática)
+          let computedNet = '';
+          if (payout !== '') {
             const auto = calcNetFromStakeAndPayout(stake, payout, adminRes);
-            if (auto !== null) computedNet = String(auto);
+            if (auto !== null) computedNet = auto;
           }
+
+          // ODDS derivada (para mostrar en display)
+          const derivedOdds = (payout !== '' && stake > 0) ? calcOddsFromStakeAndPayout(stake, payout) : (existingOdds || '');
+
           tracking[pid] = {
             stake,
-            odds: existingOdds,
+            odds: derivedOdds || existingOdds || '',
             payout,
             net: computedNet,
             status: adminRes,
@@ -698,8 +718,12 @@ textarea.field-input{min-height:80px;resize:vertical}
     }
   };
 
-  // Botón global "Recalcular ganancias" — recalcula net de TODOS los wins/losses
-  // a partir de los datos capturados (stake + payout). Resuelve histórico mal calculado.
+  // Botón global "Recalcular ganancias" — recalcula net + payout + odds de TODOS los
+  // wins/losses a partir de los datos capturados. Resuelve histórico mal calculado.
+  // Reglas:
+  //   - LOST: fuerza payout = 0 (aunque user lo dejó con valor) → net = -stake
+  //   - WON con payout > 0: deriva net = payout - stake, odds = payout / stake
+  //   - WON sin payout pero con odds (formato viejo): deriva payout = stake × odds
   const recalcAllWins = () => {
     let fixed = 0;
     Object.keys(tracking).forEach(pid => {
@@ -708,15 +732,22 @@ textarea.field-input{min-height:80px;resize:vertical}
       if (status !== 'won' && status !== 'lost') return;
       const stake = Number(t.stake || 0);
       let payout = Number(t.payout || 0);
-      // Backwards-compat: si no hay payout pero sí odds (tracking viejo), derivar payout
-      if (!payout && t.odds && status === 'won') {
-        payout = Number(t.stake) * Number(t.odds);
-        tracking[pid].payout = payout;
-      }
+
       if (status === 'lost') {
-        tracking[pid].payout = 0;
-        payout = 0;
+        // Forzar payout = 0 si está incorrectamente > 0 (caso: capturado como pendiente
+        // con payout esperado, luego marcado lost por admin)
+        if (payout !== 0) {
+          tracking[pid].payout = 0;
+          payout = 0;
+        }
+      } else if (status === 'won') {
+        // Backwards-compat: si no hay payout pero sí odds (tracking viejo), derivar
+        if (!payout && t.odds) {
+          payout = Number(t.stake) * Number(t.odds);
+          tracking[pid].payout = payout;
+        }
       }
+
       const currentNet = Number(t.net || 0);
       const expected = calcNetFromStakeAndPayout(stake, payout, status);
       if (expected !== null && Math.abs(currentNet - expected) > 0.01) {
@@ -724,6 +755,10 @@ textarea.field-input{min-height:80px;resize:vertical}
         // Actualizar también odds derivada
         const o = calcOddsFromStakeAndPayout(stake, payout);
         if (o !== null) tracking[pid].odds = o;
+        fixed += 1;
+      } else if (status === 'lost' && payout === 0 && currentNet !== -stake) {
+        // Caso edge: lost con payout=0 pero net mal calculado
+        tracking[pid].net = -stake;
         fixed += 1;
       }
     });
