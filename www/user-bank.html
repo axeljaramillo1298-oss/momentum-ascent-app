@@ -278,6 +278,7 @@ textarea.field-input{min-height:80px;resize:vertical}
         <div class="btn-row">
           <button class="btn-primary" id="bank-save-btn" type="button">Guardar control</button>
           <button class="btn-secondary" id="bank-reset-btn" type="button">Resetear sesión</button>
+          <button id="bank-newbank-btn" type="button" style="background:linear-gradient(135deg,#22c55e 0%,#16a34a 100%);color:white;border:none;padding:10px 18px;border-radius:6px;font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 14px rgba(34,197,94,.25)">💰 Nuevo Bank</button>
         </div>
         <div class="config-note" id="bank-rules-note">El sistema calculará stake sugerido por pick con base en tu unidad y el riesgo de cada selección.</div>
       </div>
@@ -828,6 +829,47 @@ textarea.field-input{min-height:80px;resize:vertical}
     setTimeout(() => { btn.textContent = 'Guardar control'; btn.disabled = false; }, 2000);
   });
   document.getElementById('bank-reset-btn').addEventListener('click', async()=>{ tracking={}; await saveRemote(); await renderPicks(); if(typeof showToast==='function') showToast('Sesión reiniciada.','info'); });
+
+  // Botón "Nuevo Bank" — reinicia TODO desde cero con un nuevo monto inicial.
+  // Limpia tracking + ajusta totalBank al valor capturado. Útil al reset semanal,
+  // cuando depositas más fondos, o cuando empiezas con un bank real distinto.
+  const newBankBtn = document.getElementById('bank-newbank-btn');
+  if (newBankBtn) {
+    newBankBtn.addEventListener('click', async () => {
+      const current = Number(bankState.totalBank || 0);
+      const input = prompt(
+        `Configura un NUEVO BANK desde cero.\n\n` +
+        `Esto va a:\n` +
+        `  • Borrar TODO el tracking de apuestas (pendientes, ganadas, perdidas)\n` +
+        `  • Reiniciar el bank con el nuevo monto que indiques\n` +
+        `  • Mantener la configuración (% stake, stop-loss, etc.)\n\n` +
+        `Bank actual: $${current.toLocaleString('es-MX')}\n` +
+        `¿Cuánto es tu NUEVO bank inicial? (solo número, ej: 5000)`,
+        String(current || '')
+      );
+      if (input === null) return; // cancelado
+      const newAmount = Number(String(input).replace(/[^0-9.]/g, ''));
+      if (!Number.isFinite(newAmount) || newAmount <= 0) {
+        if (typeof showToast === 'function') showToast('Monto inválido. Operación cancelada.', 'error');
+        return;
+      }
+      // Confirmar destrucción
+      const ok = confirm(
+        `⚠️ CONFIRMAR\n\n` +
+        `Vas a reiniciar todo desde $${newAmount.toLocaleString('es-MX')}.\n` +
+        `Todas las apuestas registradas se borrarán permanentemente.\n\n` +
+        `¿Continuar?`
+      );
+      if (!ok) return;
+      // Reset total
+      tracking = {};
+      bankState.totalBank = newAmount;
+      await saveRemote();
+      await renderPicks();
+      bindConfig(); // refresca el input visual del bank en la config
+      if (typeof showToast === 'function') showToast(`💰 Nuevo bank iniciado con $${newAmount.toLocaleString('es-MX')}`, 'success');
+    });
+  }
   // Date navigation handlers — prev/next/today/input
   const dateInput = document.getElementById('bank-date-input');
   const dateBtnPrev = document.getElementById('bank-date-prev');
