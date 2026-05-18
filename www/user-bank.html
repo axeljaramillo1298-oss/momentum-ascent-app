@@ -530,12 +530,10 @@ textarea.field-input{min-height:80px;resize:vertical}
       const picks = Array.isArray(remote?.picks) ? remote.picks : [];
 
       // Sync admin-marked results into local tracking
-      // FIX (17-may): cuando admin marca won/lost, acomoda automáticamente el payout y net:
-      //   - LOST → fuerza payout = 0 SIEMPRE (aunque user había capturado un payout pendiente)
-      //   - WON  → respeta payout capturado por user; si no hay, deriva de odds del pick
-      //   - NET  → SIEMPRE se deriva de stake + payout (mantiene integridad matemática)
-      // Permite flujo: usuario captura pendiente con payout esperado HOY → mañana admin marca
-      // resultado → bank se acomoda solo sin que el user tenga que reabrir cada apuesta.
+      // FIX (17-may): cuando admin marca won/lost, acomoda automáticamente el payout y net.
+      // FIX (18-may): NO crear tracking automático si pick ya está resuelto y no había row
+      //   (protege contra "Nuevo Bank" que reaparece picks ya resueltos con stake fantasma).
+      //   El usuario debe capturar manualmente picks pasados que quiera trackear.
       let adminSyncDirty = false;
       picks.forEach(pick => {
         const pid = String(pick.id);
@@ -543,8 +541,14 @@ textarea.field-input{min-height:80px;resize:vertical}
         if (adminRes !== 'won' && adminRes !== 'lost') return;
         const row = tracking[pid];
 
-        // Sync si: no había row, o el status del user difiere del admin
-        if (!row || row.status !== adminRes) {
+        // 🛡️ Protección: si NO hay row (usuario reseteó o nunca apostó) Y el pick YA está
+        // resuelto en admin → NO auto-crear tracking. El user debe capturarlo manualmente
+        // si lo quiere registrar como apuesta histórica.
+        if (!row) return;
+
+        // Sync si: el status del user difiere del admin (user lo marcó pending o
+        // marcó algo distinto, y el admin tiene la versión final)
+        if (row.status !== adminRes) {
           const stake = Number(row?.stake || Number(bankState.totalBank||0)*(recommendedPct(pick)/100));
           const existingOdds = row?.odds || oddsFromPick(pick) || '';
 
