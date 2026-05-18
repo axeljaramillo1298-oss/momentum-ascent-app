@@ -285,8 +285,17 @@ textarea.field-input{min-height:80px;resize:vertical}
       <!-- PICKS + STAKE -->
       <div class="section-card" style="animation-delay:.6s">
         <div class="section-kicker" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-          <span>Picks del día + stake sugerido</span>
+          <span>Picks + stake sugerido</span>
           <button id="bank-recalc-wins-btn" type="button" style="font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid rgba(74,222,128,.4);background:rgba(74,222,128,.08);color:#4ade80;cursor:pointer;font-weight:600">🔄 Recalcular ganancias</button>
+        </div>
+        <!-- Selector de fecha para navegar entre días -->
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;padding:10px 12px;background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.18);border-radius:8px">
+          <button id="bank-date-prev" type="button" title="Día anterior" style="background:transparent;border:1px solid var(--border);color:var(--text);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:14px">‹</button>
+          <label for="bank-date-input" style="font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-weight:700">Fecha:</label>
+          <input id="bank-date-input" type="date" style="background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:5px;font-family:inherit;font-size:13px;color-scheme:dark" />
+          <button id="bank-date-next" type="button" title="Día siguiente" style="background:transparent;border:1px solid var(--border);color:var(--text);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:14px">›</button>
+          <button id="bank-date-today" type="button" title="Volver a hoy" style="background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.4);color:#60a5fa;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px;font-weight:600">Hoy</button>
+          <span id="bank-date-label" style="font-size:11px;color:var(--muted);margin-left:auto"></span>
         </div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Captura <strong>cuánto apostaste</strong> y <strong>cuánto te pagó la casa</strong>. La cuota y la ganancia se calculan solas. Si tus números no cuadran, presiona "Recalcular ganancias" y se ajustan automáticamente.</div>
         <div class="pick-bank-list" id="bank-picks-list">
@@ -495,10 +504,42 @@ textarea.field-input{min-height:80px;resize:vertical}
     if(typeof showToast==='function') showToast('Control de bank actualizado.','success');
   };
 
+  // ── DATE NAVIGATION ──────────────────────────────────────────
+  // El bank puede navegar a cualquier día (hoy, mañana, ayer, etc.) — útil
+  // para capturar apuestas pendientes del día siguiente antes de que llegue.
+  const todayKey = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  };
+  let selectedDateKey = todayKey();
+  const formatDateLabel = (key) => {
+    try {
+      const [y, m, d] = key.split('-').map(Number);
+      const dt = new Date(y, m-1, d);
+      return dt.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+    } catch { return key; }
+  };
+  const shiftDate = (key, deltaDays) => {
+    const [y, m, d] = key.split('-').map(Number);
+    const dt = new Date(y, m-1, d);
+    dt.setDate(dt.getDate() + deltaDays);
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  };
+
   const renderPicks = async () => {
     const listEl = document.getElementById('bank-picks-list');
+    // Actualizar UI del selector
+    const dateInput = document.getElementById('bank-date-input');
+    const dateLabel = document.getElementById('bank-date-label');
+    if (dateInput) dateInput.value = selectedDateKey;
+    if (dateLabel) {
+      const isToday = selectedDateKey === todayKey();
+      dateLabel.textContent = isToday ? `Hoy · ${formatDateLabel(selectedDateKey)}` : formatDateLabel(selectedDateKey);
+      dateLabel.style.color = isToday ? '#60a5fa' : 'var(--muted)';
+    }
     try {
-      const remote = typeof apiGet==='function' ? await apiGet('/api/picks/today') : {picks:[]};
+      const endpoint = `/api/picks/today?date=${encodeURIComponent(selectedDateKey)}`;
+      const remote = typeof apiGet==='function' ? await apiGet(endpoint) : {picks:[]};
       const picks = Array.isArray(remote?.picks) ? remote.picks : [];
 
       // Sync admin-marked results into local tracking
@@ -562,9 +603,8 @@ textarea.field-input{min-height:80px;resize:vertical}
       });
       if (adminSyncDirty) saveRemote();
 
-      // Drop tracking for picks no longer in today's list
-      const todayPickIds = new Set(picks.map(p => String(p.id)));
-      Object.keys(tracking).forEach(k => { if (!todayPickIds.has(k)) delete tracking[k]; });
+      // (Antes borraba tracking de IDs no presentes. AHORA preservamos tracking
+      // de otros días para que al navegar entre fechas no se pierda lo capturado.)
 
       paintMetrics(picks);
       if (!picks.length) { listEl.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted)">No hay picks cargados para hoy.</div>'; return; }
@@ -788,6 +828,40 @@ textarea.field-input{min-height:80px;resize:vertical}
     setTimeout(() => { btn.textContent = 'Guardar control'; btn.disabled = false; }, 2000);
   });
   document.getElementById('bank-reset-btn').addEventListener('click', async()=>{ tracking={}; await saveRemote(); await renderPicks(); if(typeof showToast==='function') showToast('Sesión reiniciada.','info'); });
+  // Date navigation handlers — prev/next/today/input
+  const dateInput = document.getElementById('bank-date-input');
+  const dateBtnPrev = document.getElementById('bank-date-prev');
+  const dateBtnNext = document.getElementById('bank-date-next');
+  const dateBtnToday = document.getElementById('bank-date-today');
+  if (dateInput) {
+    dateInput.value = selectedDateKey;
+    dateInput.addEventListener('change', async () => {
+      const v = String(dateInput.value || '').trim();
+      if (v) {
+        selectedDateKey = v;
+        await renderPicks();
+      }
+    });
+  }
+  if (dateBtnPrev) {
+    dateBtnPrev.addEventListener('click', async () => {
+      selectedDateKey = shiftDate(selectedDateKey, -1);
+      await renderPicks();
+    });
+  }
+  if (dateBtnNext) {
+    dateBtnNext.addEventListener('click', async () => {
+      selectedDateKey = shiftDate(selectedDateKey, 1);
+      await renderPicks();
+    });
+  }
+  if (dateBtnToday) {
+    dateBtnToday.addEventListener('click', async () => {
+      selectedDateKey = todayKey();
+      await renderPicks();
+    });
+  }
+
   // Botón "Recalcular ganancias" — itera wins con cuota capturada y recalcula net = stake × (cuota − 1)
   const recalcBtn = document.getElementById('bank-recalc-wins-btn');
   if (recalcBtn) {
