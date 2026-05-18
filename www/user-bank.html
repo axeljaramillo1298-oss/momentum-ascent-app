@@ -392,11 +392,47 @@ textarea.field-input{min-height:80px;resize:vertical}
   };
 
   const riskClass = r => { const v=String(r||'').toUpperCase(); return v==='BAJO'?'low':v==='ALTO'?'high':'mid'; };
-  const recommendedPct = pick => {
+
+  // Stake bruto sugerido por pick según confianza, riesgo y unitPercent del bank
+  const rawRecommendedPct = pick => {
     const c=Number(pick?.confidence||0), r=String(pick?.riskLevel||pick?.risk_level||'').toUpperCase(), base=Number(bankState.unitPercent||2);
     let m=c>=75?1.8:c>=68?1.45:c>=62?1.15:c>=56?0.9:0.65;
     if(r==='ALTO') m*=.6; if(r==='MEDIO') m*=.9; if(r==='BAJO') m*=1.1;
     return Number(Math.min(Math.max(base*m,.5),Math.max(base*2,4.5)).toFixed(2));
+  };
+
+  // Helper: calcula stakes escalados de TODOS los picks del día.
+  // Si la suma de stakes brutos excede maxExposurePercent del bank,
+  // escala proporcionalmente todos los stakes para que la suma respete el tope.
+  // Esto evita que con 9 picks × 15% el usuario apueste 135% del bank.
+  let _scaledStakeCache = { picksKey: '', pcts: {}, scaled: false, factor: 1, rawTotal: 0 };
+  const computeScaledStakePcts = (picks) => {
+    const key = (picks||[]).map(p => String(p.id)).sort().join(',') + ':' + bankState.unitPercent + ':' + bankState.maxExposurePercent;
+    if (_scaledStakeCache.picksKey === key) return _scaledStakeCache;
+    const raw = {};
+    let total = 0;
+    (picks||[]).forEach(p => {
+      const r = rawRecommendedPct(p);
+      raw[String(p.id)] = r;
+      total += r;
+    });
+    const maxExp = Number(bankState.maxExposurePercent || 50);
+    const scaled = total > maxExp;
+    const factor = scaled ? (maxExp / total) : 1;
+    const pcts = {};
+    Object.keys(raw).forEach(pid => {
+      pcts[pid] = Number((raw[pid] * factor).toFixed(2));
+    });
+    _scaledStakeCache = { picksKey: key, pcts, scaled, factor, rawTotal: Number(total.toFixed(2)) };
+    return _scaledStakeCache;
+  };
+
+  // recommendedPct ahora consulta el cache calculado por computeScaledStakePcts
+  // (renderPicks invoca computeScaledStakePcts ANTES de iterar para poblar el cache)
+  const recommendedPct = pick => {
+    const pid = String(pick?.id || '');
+    if (_scaledStakeCache.pcts[pid] !== undefined) return _scaledStakeCache.pcts[pid];
+    return rawRecommendedPct(pick);
   };
   const isResolved = s => { const v=String(s||'').toLowerCase(); return v==='won'||v==='lost'||v==='closed'; };
 
@@ -599,7 +635,16 @@ textarea.field-input{min-height:80px;resize:vertical}
 
       paintMetrics(picks);
       if (!picks.length) { listEl.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted)">No hay picks cargados para hoy.</div>'; return; }
-      listEl.innerHTML='';
+
+      // Pre-calcular escalado de stakes para que la suma respete el max exposure
+      const scaleInfo = computeScaledStakePcts(picks);
+      listEl.innerHTML = '';
+      if (scaleInfo.scaled) {
+        const banner = document.createElement('div');
+        banner.style.cssText = 'padding:10px 14px;margin-bottom:12px;background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.35);border-radius:8px;font-size:11px;color:#facc15;line-height:1.5';
+        banner.innerHTML = `⚖️ <strong>Stakes ajustados automáticamente</strong> — ${picks.length} picks suman ${scaleInfo.rawTotal.toFixed(1)}% del bank con los % brutos. El sistema escaló todos por ×${scaleInfo.factor.toFixed(3)} para respetar tu tope de exposición (${bankState.maxExposurePercent}% del bank = ${formatMoney(Number(bankState.totalBank||0)*Number(bankState.maxExposurePercent||0)/100)}).<br><span style="opacity:.75">Sugerencia: si quieres stakes individuales más grandes, baja la cantidad de picks que apuestes o aumenta el % de exposición máx en la config.</span>`;
+        listEl.appendChild(banner);
+      }
 
       picks.forEach(pick => {
         const stakePct = recommendedPct(pick);
