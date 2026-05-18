@@ -229,7 +229,7 @@ textarea.field-input{min-height:80px;resize:vertical}
         <div class="upsell-cta-left">
           <div class="upsell-cta-eyebrow">Plan Apex · $399 MXN/mes</div>
           <div class="upsell-cta-title">Gestión seria<br>de tu <span>bank</span></div>
-          <div class="upsell-cta-sub">Picks con análisis dual GPT + Claude, cuenta bancaria de pago, stake sugerido por pick y tracking completo de ganancias y pérdidas.</div>
+          <div class="upsell-cta-sub">Picks con análisis dual GPT + Claude, stake sugerido por pick y tracking completo de ganancias y pérdidas.</div>
         </div>
         <a class="upsell-cta-btn" href="planes.html">Activar Apex →</a>
       </div>
@@ -237,20 +237,6 @@ textarea.field-input{min-height:80px;resize:vertical}
 
     <!-- ── APEX FULL VIEW ────────────────────────────────── -->
     <div id="apex-view" style="display:none">
-
-      <!-- DATOS BANCARIOS -->
-      <div class="section-card" style="animation-delay:.4s">
-        <div class="section-kicker">Datos bancarios</div>
-        <div class="data-grid">
-          <div class="data-cell"><div class="data-cell-lbl">Banco</div><div class="data-cell-val" id="bank-name">—</div></div>
-          <div class="data-cell"><div class="data-cell-lbl">Titular</div><div class="data-cell-val" id="bank-holder">—</div></div>
-          <div class="data-cell"><div class="data-cell-lbl">CLABE</div><div class="data-cell-val" id="bank-clabe">—</div></div>
-          <div class="data-cell"><div class="data-cell-lbl">Número de cuenta</div><div class="data-cell-val" id="bank-account">—</div></div>
-          <div class="data-cell"><div class="data-cell-lbl">WhatsApp confirmación</div><div class="data-cell-val" id="bank-whatsapp">—</div></div>
-          <div class="data-cell"><div class="data-cell-lbl">Usuario</div><div class="data-cell-val" id="bank-user-email">—</div></div>
-        </div>
-        <div class="data-note" id="bank-note">Cargando instrucciones…</div>
-      </div>
 
       <!-- GESTIÓN OPERATIVA -->
       <div class="section-card" style="animation-delay:.5s">
@@ -806,17 +792,7 @@ textarea.field-input{min-height:80px;resize:vertical}
     return fixed;
   };
 
-  // billing info
-  try {
-    const billing = typeof getBillingTarget==='function' ? await getBillingTarget() : {bankName:'—',accountHolder:'—',clabe:'—',accountNumber:'—',whatsapp:'—',note:''};
-    document.getElementById('bank-name').textContent = billing.bankName||'—';
-    document.getElementById('bank-holder').textContent = billing.accountHolder||'—';
-    document.getElementById('bank-clabe').textContent = billing.clabe||'—';
-    document.getElementById('bank-account').textContent = billing.accountNumber||'—';
-    document.getElementById('bank-whatsapp').textContent = billing.whatsapp||'—';
-    document.getElementById('bank-note').textContent = billing.note || 'Envía el comprobante al WhatsApp configurado para validar tu acceso.';
-  } catch { document.getElementById('bank-note').textContent='No se pudo cargar la cuenta bancaria.'; }
-  document.getElementById('bank-user-email').textContent = user?.email||'—';
+  // (Sección de "Datos bancarios" removida — no aplicaba a este apartado del bankroll)
 
   await loadRemote();
   bindConfig();
