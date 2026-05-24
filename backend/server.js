@@ -157,7 +157,11 @@ const RL_DB = {
   countRateLimitEvents: (...args) => typeof countRateLimitEvents === "function" ? countRateLimitEvents(...args) : Promise.resolve(0),
 };
 const getUserKeyFromReq = (req) => getRequestEmail(req) || String(req.ip || req.connection?.remoteAddress || "anon");
-const POLICY_AI_GEN = { bucket: "ai_generation", maxEvents: Math.max(5, Number(process.env.RATE_LIMIT_AI_PER_HOUR || 30)), windowMs: 60 * 60 * 1000 };
+// Rate limit AI: subido default de 30 a 500/hora (2026-05-25) para que el batch del admin
+// no falle a partir de ~38 eventos. 500 calls/h ÷ 2 calls/evento (GPT+Claude) = ~250 eventos por hora.
+// Todos los endpoints que usan aiGenLimiter son admin-only (requireAdmin antes), así que el riesgo
+// de abuso por usuarios normales no aplica. Para sobrescribir en prod: env RATE_LIMIT_AI_PER_HOUR.
+const POLICY_AI_GEN = { bucket: "ai_generation", maxEvents: Math.max(5, Number(process.env.RATE_LIMIT_AI_PER_HOUR || 500)), windowMs: 60 * 60 * 1000 };
 const aiGenLimiter = (typeof rateLimitMiddleware === "function")
   ? rateLimitMiddleware(POLICY_AI_GEN, getUserKeyFromReq, RL_DB)
   : (req, res, next) => next();

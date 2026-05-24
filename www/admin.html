@@ -987,35 +987,63 @@ main{position:relative;z-index:2}
     // Timeout adaptativo:
     // - Endpoints de IA (generate*, gpt-*, claude-*, reto/generate): 120s
     // - Resto (health, picks, sports, etc): 60s
-    // Esto evita matar a Claude/GPT que pueden tardar 30-60s legítimamente
-    // pero también evita que un endpoint colgado deje el UI esperando forever.
     const isAiEndpoint = /\/api\/(picks\/(generate|gpt-|claude-)|reto\/generate)/.test(path);
     const defaultTimeout = isAiEndpoint ? 120000 : 60000;
-    const controller = new AbortController();
     const timeoutMs = Number(options.timeoutMs) || defaultTimeout;
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    let res;
-    try {
-      res = await fetch(`${API_BASE}${path}`, { ...options, signal: controller.signal });
-    } catch (netErr) {
+
+    // Retry con exponential backoff para 429 (rate limited) y 408/0 (timeout/network).
+    // Sólo reintenta si la pista del servidor o un default razonable lo permite.
+    const maxRetries = Number.isFinite(options.maxRetries) ? options.maxRetries : 3;
+    let attempt = 0;
+
+    while (true) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      let res;
+      try {
+        res = await fetch(`${API_BASE}${path}`, { ...options, signal: controller.signal });
+      } catch (netErr) {
+        clearTimeout(timer);
+        const isAbort = netErr.name === "AbortError";
+        const err = new Error(isAbort ? `timeout (${timeoutMs}ms)` : (netErr.message || "network_error"));
+        err.status = isAbort ? 408 : 0;
+        // Retry on network/timeout (might be transient)
+        if (attempt < maxRetries) {
+          attempt++;
+          const backoffMs = Math.min(2000 * Math.pow(2, attempt - 1), 15000); // 2s, 4s, 8s, 15s cap
+          await new Promise(r => setTimeout(r, backoffMs));
+          continue;
+        }
+        throw err;
+      }
       clearTimeout(timer);
-      const isAbort = netErr.name === "AbortError";
-      const err = new Error(isAbort ? `timeout (${timeoutMs}ms)` : (netErr.message || "network_error"));
-      err.status = isAbort ? 408 : 0;
-      throw err;
+
+      // 429: respeta Retry-After si viene, sino backoff exponencial
+      if (res.status === 429 && attempt < maxRetries) {
+        const retryAfterHeader = res.headers.get('Retry-After');
+        const retryAfterSec = retryAfterHeader ? Number(retryAfterHeader) : null;
+        const backoffMs = (retryAfterSec && retryAfterSec > 0)
+          ? Math.min(retryAfterSec * 1000, 60000) // cap a 60s para no congelar la UI
+          : Math.min(2000 * Math.pow(2, attempt), 15000);
+        attempt++;
+        // Drenar body para liberar conexión
+        try { await res.text(); } catch (_) {}
+        await new Promise(r => setTimeout(r, backoffMs));
+        continue;
+      }
+
+      const text = await res.text();
+      let data = null;
+      try { data = text ? JSON.parse(text) : null; } catch(_){}
+      if(!res.ok){
+        const apiError = data?.error || data?.message || `HTTP ${res.status}`;
+        const err = new Error(apiError);
+        err.status = res.status;
+        err.data = data;
+        throw err;
+      }
+      return data;
     }
-    clearTimeout(timer);
-    const text = await res.text();
-    let data = null;
-    try { data = text ? JSON.parse(text) : null; } catch(_){}
-    if(!res.ok){
-      const apiError = data?.error || data?.message || `HTTP ${res.status}`;
-      const err = new Error(apiError);
-      err.status = res.status;
-      err.data = data;
-      throw err;
-    }
-    return data;
   }
 
   // ── TOAST NOTIFICATIONS (reemplazan alert) ────────────────
@@ -2453,8 +2481,10 @@ main{position:relative;z-index:2}
       }
 
       // Pausa entre eventos para respetar rate limits
+      // Bajada de 1200ms a 700ms el 2026-05-25 — el límite del backend pasó a 500/h (vs 30/h)
+      // y fetchJson ya tiene retry con backoff para 429.
       if (i < pending.length - 1 && !batchCancelled) {
-        await new Promise(r => setTimeout(r, 1200));
+        await new Promise(r => setTimeout(r, 700));
       }
     }
 
