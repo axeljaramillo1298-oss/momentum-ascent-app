@@ -44,15 +44,30 @@ const normalizeRiskLevel = (value) => {
   return "MEDIO";
 };
 
-// ── IIHF Hockey Tiers (rev. 2026-05-15) ────────────────────────────
+// ── IIHF Hockey Tiers (rev. 2026-05-24) ────────────────────────────
 // Tier A = potencias históricas del mundial; Tier B = resto.
 // Cuando Tier A vs Tier B, el margen final suele ser ≥2 goles en >60% de partidos.
+//
+// Update 2026-05-24 (análisis semanal):
+//  · IIHF total semana (mié-sáb): 1-5 → 16.7% WR; histórico 9-10 → 47.4% WR.
+//  · 5 de 6 Overs 5.5 IIHF de la semana fallaron (incl. Finlandia 70% conf y Suecia 68% conf).
+//  · Conclusión: IIHF World Championship es un mercado estructuralmente difícil.
+//    El prompt nuevo cap-ea confidence MAX = 65 en Overs 5+ goles dentro de IIHF,
+//    incluso si hay tier mismatch (el mismatch parcial no garantiza goleo).
 const IIHF_TIER_A_TEAMS = new Set([
   "canadá", "canada", "estados unidos", "usa", "estados-unidos",
   "suecia", "sweden", "finlandia", "finland",
   "chequia", "czech republic", "czechia", "república checa", "republica checa",
   "rusia", "russia", "suiza", "switzerland",
 ]);
+
+// Tier intermedio (B+): selecciones que ya no son "fáciles" para Tier A. Si el rival
+// del Tier A pertenece a este set, NO asumir goleada. Cap de confidence agresivo.
+const IIHF_TIER_B_PLUS_TEAMS = new Set([
+  "eslovaquia", "slovakia", "alemania", "germany", "letonia", "latvia",
+  "dinamarca", "denmark", "noruega", "norway", "austria", "francia", "france",
+]);
+const teamTierBPlus = (team) => IIHF_TIER_B_PLUS_TEAMS.has(String(team || "").toLowerCase().trim());
 
 const isIIHFEvent = (event = {}) => {
   const league = String(event.league || "").toLowerCase();
@@ -84,26 +99,47 @@ const buildSportContextAdendum = (event = {}) => {
     lines.push("⚾ BEISBOL — El pitcher abridor define ~60% del resultado. OBLIGATORIO: si en Stats NO hay info del pitcher abridor (nombre, ERA, WHIP, ponches recientes), confidence MAX = 55 para Totales y MAX = 60 para ML. Si lo tienes, cítalo en analysis (ej. 'X ERA 2.4 últimas 3 aperturas').");
   }
 
-  // Basketball NBA / Playoffs
+  // Basketball NBA / Playoffs (update 2026-05-24)
+  // Histórico Overs NBA >=220: 6-4 (60% WR). Caso 2026-05-21: Knicks Over 221.5 lost con 68% conf.
+  // Cap confidence en Overs altos para evitar parlays inestables.
   if (sport.includes("basket") || league.includes("nba")) {
-    lines.push("🏀 BASKETBALL — Verifica si algún equipo viene de back-to-back (B2B): equipos en B2B suelen perder o cubrir menos puntos. En PLAYOFFS, NO asumas automáticamente que 'más posesiones = más puntos': la intensidad defensiva también sube. Para Over/Under cita ritmo (pace) específico si lo tienes en Stats; sin pace, confidence en totales MAX = 60.");
+    lines.push("🏀 BASKETBALL — Verifica si algún equipo viene de back-to-back (B2B): equipos en B2B suelen perder o cubrir menos puntos. En PLAYOFFS, NO asumas automáticamente que 'más posesiones = más puntos': la intensidad defensiva también sube. Para Over/Under cita ritmo (pace) específico si lo tienes en Stats; sin pace, confidence en totales MAX = 60. ⚠️ OVERS CON LÍNEA >=220 puntos: confidence MAX = 67 (datos internos: estos Overs ganan ~60% del tiempo, menos que la confianza típica de 68-70).");
   }
 
-  // Hockey IIHF — tier awareness (corrige el patrón detectado el 15-may)
+  // Hockey IIHF — tier awareness (rev 2026-05-24 tras análisis semanal)
+  // Datos histórico: IIHF 9-10 → 47.4% WR (peor que coin flip).
+  // Semana mié-sáb 2026-05-20/23: IIHF 1-5 → 16.7% WR (Overs 5.5 0-3).
+  // Por eso: cap confidence MAX = 65 en Overs ≥5 goles dentro de IIHF.
+  // Y si el rival del Tier A es Tier B+ (Eslovaquia, Letonia, Alemania, Dinamarca,
+  // Noruega, Austria, Francia), NO asumir goleada — es mismatch parcial, no total.
   if (sport.includes("hockey") && league.includes("iihf")) {
     const tier = getIIHFMatchupTier(event);
     if (tier?.type === "mismatch") {
-      lines.push(
-        `🏒 IIHF TIER MISMATCH — ${tier.tierATeam} (Tier A: potencia mundial) vs ${tier.tierBTeam} (Tier B). ` +
-        `Históricamente Tier A despacha por ≥2 goles en >60% de estos partidos. ` +
-        `EVITA spread protector (+1.5, +2.5) al Tier B — pierde más del 50% del tiempo. ` +
-        `PREFIERE: ML de ${tier.tierATeam}, Over en totales (suelen ser >5.5 goles), o handicap -1.5 a favor de ${tier.tierATeam}.`
-      );
+      const rivalBPlus = teamTierBPlus(tier.tierBTeam);
+      if (rivalBPlus) {
+        lines.push(
+          `🏒 IIHF TIER MISMATCH PARCIAL — ${tier.tierATeam} (Tier A) vs ${tier.tierBTeam} (Tier B+, competitivo). ` +
+          `Margen y goleo NO garantizados: en estos cruces el Tier A gana ~55% pero con scoreline cerrado. ` +
+          `EVITA Overs 5.5+ (datos recientes: 0-3 en 2026-05-22). EVITA handicap -1.5 con confidence > 65. ` +
+          `PREFIERE: ML ${tier.tierATeam} con cuota ≤1.55 (confidence MAX = 65), Under 5.5 o Under 6.5 si hay tendencia defensiva del Tier B+. ` +
+          `Confidence MAX = 65 en CUALQUIER mercado de este partido.`
+        );
+      } else {
+        lines.push(
+          `🏒 IIHF TIER MISMATCH — ${tier.tierATeam} (Tier A: potencia mundial) vs ${tier.tierBTeam} (Tier B). ` +
+          `Históricamente Tier A despacha por ≥2 goles en >60% de estos partidos. ` +
+          `EVITA spread protector (+1.5, +2.5) al Tier B — pierde más del 50% del tiempo. ` +
+          `PREFIERE: ML de ${tier.tierATeam}, Over 4.5 (no Over 5.5 — datos recientes muestran que 5.5 falla con frecuencia), o handicap -1.5 a favor de ${tier.tierATeam}. ` +
+          `Confidence MAX en Over 5.5 = 65 (la línea es demasiado alta para confianza superior).`
+        );
+      }
     } else if (tier?.type === "A_vs_A") {
-      lines.push("🏒 IIHF TIER A vs TIER A — Partido cerrado entre potencias mundiales. PREFIERE Under totales o BTTS (ambos anotan). Reduce confidence general en 5-8 puntos vs un mismatch.");
+      lines.push("🏒 IIHF TIER A vs TIER A — Partido cerrado entre potencias mundiales. PREFIERE Under totales o BTTS (ambos anotan). Reduce confidence general en 5-8 puntos vs un mismatch. Confidence MAX = 65.");
     } else if (tier?.type === "B_vs_B") {
       lines.push("🏒 IIHF TIER B vs TIER B — Partido impredecible entre selecciones de menor nivel mundial. Confidence MAX = 60 en TODOS los mercados.");
     }
+    // Cap global IIHF para Overs altos (independiente del tier)
+    lines.push("🏒 IIHF GLOBAL — Overs 5.5+ históricamente fallan ~67% del tiempo en este torneo (dataset interno mayo 2026). NO recomiendes Over 5.5+ con confidence > 65 sin evidencia explícita (ej. ambos equipos promedian >3.5 GF/partido).");
   }
 
   // NHL Playoffs
@@ -120,15 +156,50 @@ const buildSportContextAdendum = (event = {}) => {
 };
 
 // ── Pick stability check for Reto Escalera legs ─────────────────────
-// Filtra picks volátiles que no deberían ir en un parlay multi-leg
+// Filtra picks volátiles que no deberían ir en un parlay multi-leg.
+//
+// Update 2026-05-24 (análisis semanal):
+//  · Excluye Overs NBA con threshold >= 220 puntos (aprendizaje 2026-05-21:
+//    Knicks Over 221.5 falló con 68% confidence; histórico de Overs NBA >=220
+//    es 6-4 → 60% WR, no apto para parlay 3+ legs).
+//  · Excluye TODOS los picks IIHF con confidence < 70 (IIHF 47% WR histórico,
+//    muy volátil para parlays).
+//  · Excluye Overs IIHF de 5.5+ goles independiente del confidence (datos
+//    semana mié-sáb: 0-3 en Overs 5.5 IIHF).
 const isStablePickForParlay = (pick = {}) => {
   const market = String(pick.market || "").toLowerCase();
   const text = String(pick.pick || "").toLowerCase();
+  const league = String(pick.league || "").toLowerCase();
   const conf = Number(pick.confidence || 0);
+
   // No usar ML visitante en legs (más volátil)
   if ((market.includes("1x2") || market.includes("moneyline") || market === "ml") && (text.includes("visitante") || text.includes("away"))) return false;
+
   // Confidence mínima 65 para legs de parlay
   if (conf < 65) return false;
+
+  // NBA: excluir Overs con threshold >= 220 pts (no son suficientemente estables para parlay).
+  // Match: "Over 220 pts", "Over 221.5 puntos", "Over 220.5", etc.
+  if ((league.includes("nba") || league.includes("basketball")) && text.startsWith("over")) {
+    const m = text.match(/over\s*(\d+(?:\.\d+)?)/);
+    if (m) {
+      const total = parseFloat(m[1]);
+      if (Number.isFinite(total) && total >= 220) return false;
+    }
+  }
+
+  // IIHF: descartar Overs 5.5+ y exigir confidence >= 70 para cualquier mercado
+  if (league.includes("iihf")) {
+    if (text.startsWith("over")) {
+      const m = text.match(/over\s*(\d+(?:\.\d+)?)/);
+      if (m) {
+        const total = parseFloat(m[1]);
+        if (Number.isFinite(total) && total >= 5.5) return false;
+      }
+    }
+    if (conf < 70) return false;
+  }
+
   return true;
 };
 
@@ -1791,4 +1862,10 @@ module.exports = {
   claudeDecideMarket,
   scoutDayEventsGPT,
   generateRetoEscalera,
+  // Exposed for testing and for ad-hoc scripts (no behavioral change)
+  isStablePickForParlay,
+  buildSportContextAdendum,
+  getIIHFMatchupTier,
+  IIHF_TIER_A_TEAMS,
+  IIHF_TIER_B_PLUS_TEAMS,
 };
