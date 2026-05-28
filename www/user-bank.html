@@ -116,6 +116,47 @@ textarea.field-input{min-height:80px;resize:vertical}
 .pbk-admin-banner.lost{color:#f87171;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2)}
 .pbk-track-note{font-size:11px;color:var(--muted);margin-top:8px;transition:color .3s}
 
+/* ── COMBINADAS (parlays) ── */
+.pbk-actions-col{display:flex;flex-direction:column;gap:6px;align-self:end}
+.pbk-combine-btn{font:700 10px 'Barlow',sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:9px 14px;background:rgba(167,139,250,.1);color:var(--purple);border:1px solid rgba(167,139,250,.35);border-radius:3px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.pbk-combine-btn:hover{background:rgba(167,139,250,.18);border-color:rgba(167,139,250,.6)}
+.pbk-combine-btn.selected{background:rgba(167,139,250,.28);border-color:var(--purple);color:#fff}
+.pick-bank-card.in-combo{opacity:.55;border-color:rgba(167,139,250,.3)}
+.pbk-combo-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--purple);padding:5px 12px;border:1px solid rgba(167,139,250,.35);border-radius:20px;background:rgba(167,139,250,.08);margin-top:8px}
+
+/* Builder bar flotante */
+.combo-builder{position:fixed;left:50%;transform:translateX(-50%);bottom:74px;z-index:350;width:min(560px,calc(100% - 28px));background:rgba(18,14,26,.97);backdrop-filter:blur(16px);border:1px solid rgba(167,139,250,.45);border-radius:12px;padding:14px 18px;box-shadow:0 14px 44px rgba(0,0,0,.55);display:none}
+.combo-builder.active{display:block;animation:fadeUp .28s forwards}
+.combo-builder-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.combo-builder-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:19px;text-transform:uppercase;letter-spacing:.02em;color:var(--purple)}
+.combo-builder-hint{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5}
+.combo-builder-legs{display:grid;gap:6px;margin-bottom:12px;max-height:150px;overflow-y:auto}
+.combo-builder-leg{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--text);padding:7px 10px;background:rgba(255,255,255,.03);border-radius:5px}
+.combo-builder-leg em{color:var(--muted);font-size:10.5px;font-style:normal}
+.combo-builder-leg button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;flex-shrink:0}
+.combo-builder-leg button:hover{color:var(--red)}
+
+/* Cards de combinada creada */
+.combo-section{margin-bottom:18px}
+.combo-section-head{display:flex;align-items:center;gap:8px;font-size:9.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--purple);margin-bottom:12px}
+.combo-section-head::before{content:'';width:16px;height:1px;background:var(--purple)}
+.combo-list{display:grid;gap:12px}
+.combo-card{background:linear-gradient(135deg,rgba(167,139,250,.07),rgba(255,255,255,.02));border:1px solid rgba(167,139,250,.32);border-radius:8px;padding:18px}
+.combo-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.combo-card-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:19px;text-transform:uppercase;letter-spacing:.02em;color:#fff;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.combo-card-title .cc-count{font-size:10px;font-weight:800;color:var(--purple);background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);border-radius:20px;padding:3px 10px;letter-spacing:.08em}
+.combo-legs{display:grid;gap:6px;margin-bottom:14px}
+.combo-leg{display:flex;align-items:baseline;gap:10px;font-size:13px;padding:8px 12px;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.05);border-radius:5px}
+.combo-leg-num{font-size:10px;font-weight:800;color:var(--purple);flex-shrink:0}
+.combo-leg-match{font-weight:600;color:var(--text)}
+.combo-leg-pick{font-size:11px;color:var(--muted);margin-left:auto;text-align:right;flex-shrink:0}
+.combo-del-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:4px;cursor:pointer;font-size:11px;padding:6px 11px;transition:all .2s;white-space:nowrap}
+.combo-del-btn:hover{color:var(--red);border-color:rgba(248,113,113,.4)}
+.combo-suggest{font-size:11px;padding:9px 12px;border-radius:6px;margin-bottom:12px;line-height:1.5;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.combo-suggest.won{color:var(--green);background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25)}
+.combo-suggest.lost{color:var(--red);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25)}
+.combo-suggest button{font:700 9.5px 'Barlow',sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:5px 12px;border-radius:20px;cursor:pointer;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:var(--text)}
+
 /* ── UPSELL (non-Apex) ── */
 .upsell-section{opacity:0;animation:fadeUp .5s .4s forwards}
 .upsell-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
@@ -285,6 +326,13 @@ textarea.field-input{min-height:80px;resize:vertical}
           <span id="bank-date-label" style="font-size:11px;color:var(--muted);margin-left:auto"></span>
         </div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Captura <strong>cuánto apostaste</strong> y <strong>cuánto te pagó la casa</strong>. La cuota y la ganancia se calculan solas. Si tus números no cuadran, presiona "Recalcular ganancias" y se ajustan automáticamente.</div>
+
+        <!-- COMBINADAS DEL DÍA -->
+        <div class="combo-section" id="bank-combo-section" style="display:none">
+          <div class="combo-section-head">Combinadas del día</div>
+          <div class="combo-list" id="bank-combos-list"></div>
+        </div>
+
         <div class="pick-bank-list" id="bank-picks-list">
           <div style="padding:24px;text-align:center;color:var(--muted)">Cargando picks…</div>
         </div>
@@ -293,6 +341,17 @@ textarea.field-input{min-height:80px;resize:vertical}
     </div>
   </div>
 </main>
+
+<!-- BUILDER DE COMBINADA (flotante) -->
+<div class="combo-builder" id="combo-builder">
+  <div class="combo-builder-top">
+    <div class="combo-builder-title">🔗 Nueva combinada</div>
+    <button class="btn-secondary" id="combo-builder-cancel" type="button" style="padding:6px 14px">Cancelar</button>
+  </div>
+  <div class="combo-builder-hint">Toca <strong>Combinar</strong> en los picks que quieras juntar. La combinada gana solo si <strong>todos</strong> ganan, pero el momio se multiplica.</div>
+  <div class="combo-builder-legs" id="combo-builder-legs"></div>
+  <button class="btn-primary" id="combo-builder-create" type="button" style="width:100%" disabled>Crear combinada (0)</button>
+</div>
 
 <nav class="bottom-nav" aria-label="Navegación principal">
   <a class="bottom-nav-item" href="user-hoy.html"><span class="bottom-nav-icon">🎯</span><span>Picks</span></a>
@@ -313,6 +372,7 @@ textarea.field-input{min-height:80px;resize:vertical}
 
   const BANK_STATE_KEY = 'momentum_bank_control_v1';
   const BANK_TRACK_KEY = 'momentum_bank_tracking_v1';
+  const BANK_COMBO_KEY = 'momentum_bank_combos_v1';
   const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
   const sub = typeof syncCurrentSubscriptionFromApi === 'function'
     ? (await syncCurrentSubscriptionFromApi()) || (typeof getCurrentSubscription === 'function' ? getCurrentSubscription() : null)
@@ -368,10 +428,15 @@ textarea.field-input{min-height:80px;resize:vertical}
   const localFallback = { totalBank:10000, unitPercent:2, stopLossPercent:6, maxExposurePercent:10, targetPercent:8, personalRule:'', ...loadScoped(BANK_STATE_KEY,{}) };
   let bankState = { ...localFallback };
   let tracking = loadScoped(BANK_TRACK_KEY, {});
+  let combos = loadScoped(BANK_COMBO_KEY, {});
+  // Estado del armado de combinada en curso (no persiste)
+  let comboBuilder = { active: false, legs: [] };
+  let lastRenderedDateKey = null;
 
   const persistLocal = () => {
     saveScoped(BANK_STATE_KEY, { totalBank:bankState.totalBank, unitPercent:bankState.unitPercent, stopLossPercent:bankState.stopLossPercent, maxExposurePercent:bankState.maxExposurePercent, targetPercent:bankState.targetPercent, personalRule:bankState.personalRule });
     saveScoped(BANK_TRACK_KEY, tracking);
+    saveScoped(BANK_COMBO_KEY, combos);
   };
   const loadRemote = async () => {
     if(!user?.id || typeof apiGet !== 'function') return;
@@ -381,6 +446,7 @@ textarea.field-input{min-height:80px;resize:vertical}
       if(p && typeof p === 'object'){
         bankState = { totalBank:Number(p.totalBank||localFallback.totalBank), unitPercent:Number(p.unitPercent||localFallback.unitPercent), stopLossPercent:Number(p.stopLossPercent||localFallback.stopLossPercent), maxExposurePercent:Number(p.maxExposurePercent||localFallback.maxExposurePercent), targetPercent:Number(p.targetPercent||localFallback.targetPercent), personalRule:String(p.personalRule||'') };
         tracking = p.tracking&&typeof p.tracking==='object'?p.tracking:{};
+        combos = p.combos&&typeof p.combos==='object'?p.combos:{};
         persistLocal();
       }
     } catch{}
@@ -388,7 +454,7 @@ textarea.field-input{min-height:80px;resize:vertical}
   const saveRemote = async () => {
     persistLocal();
     if(!user?.id || typeof apiRequest !== 'function') return;
-    try { await apiRequest(`/bank-control/${encodeURIComponent(user.id)}`,{method:'POST',body:{...bankState,tracking}}); } catch{}
+    try { await apiRequest(`/bank-control/${encodeURIComponent(user.id)}`,{method:'POST',body:{...bankState,tracking,combos}}); } catch{}
   };
 
   const riskClass = r => { const v=String(r||'').toUpperCase(); return v==='BAJO'?'low':v==='ALTO'?'high':'mid'; };
@@ -436,6 +502,26 @@ textarea.field-input{min-height:80px;resize:vertical}
   };
   const isResolved = s => { const v=String(s||'').toLowerCase(); return v==='won'||v==='lost'||v==='closed'; };
 
+  // ── COMBINADAS (parlays) ───────────────────────────────────
+  const genComboId = () => `combo_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,6)}`;
+  // Devuelve el id del combo que contiene este pick, o null
+  const comboIdForPick = (pickId) => {
+    const pid = String(pickId);
+    for (const cid of Object.keys(combos||{})) {
+      const c = combos[cid];
+      if (c && Array.isArray(c.legs) && c.legs.some(l => String(l.pickId) === pid)) return cid;
+    }
+    return null;
+  };
+  // Snapshot mínimo de un pick para que la combinada sobreviva al navegar entre fechas
+  const legSnapshot = (pick) => ({
+    pickId: String(pick.id),
+    match: `${pick.homeTeam||pick.home_team||'—'} vs ${pick.awayTeam||pick.away_team||'—'}`,
+    market: pick.market || '',
+    pick: pick.pick || '',
+    odds: oddsFromPick(pick) || null,
+  });
+
   // ── CÁLCULO CORRECTO DE GANANCIA/PÉRDIDA (igual que Playdoit) ─────
   // Flujo nuevo (simplificado para el usuario):
   //   - Captura STAKE (cuánto apostó) y PAYOUT (cuánto te pagó la casa en total)
@@ -479,9 +565,25 @@ textarea.field-input{min-height:80px;resize:vertical}
     return null;
   };
   const computeMetrics = picks => {
-    const rows=Object.values(tracking||{});
-    const pnl=rows.reduce((s,r)=>s+Number(r?.net||0),0);
-    const exp=(picks||[]).reduce((s,p)=>{const r=tracking[String(p.id)]||{}; return isResolved(r?.status)?s:s+Number(r?.stake||0);},0);
+    // PnL acumulado: net de apuestas individuales (excluyendo las que están dentro de
+    // una combinada, para no doble-contar) + net de TODAS las combinadas.
+    let pnl = 0;
+    Object.keys(tracking||{}).forEach(pid => {
+      if (comboIdForPick(pid)) return;
+      pnl += Number(tracking[pid]?.net || 0);
+    });
+    Object.values(combos||{}).forEach(c => { pnl += Number(c?.net || 0); });
+    // Exposición activa del día: stake no resuelto de picks individuales del día (no en combo)
+    // + stake no resuelto de combinadas del día.
+    let exp = 0;
+    (picks||[]).forEach(p => {
+      if (comboIdForPick(p.id)) return;
+      const r = tracking[String(p.id)] || {};
+      if (!isResolved(r?.status)) exp += Number(r?.stake || 0);
+    });
+    Object.values(combos||{}).forEach(c => {
+      if (c?.dateKey === selectedDateKey && !isResolved(c?.status)) exp += Number(c?.stake || 0);
+    });
     return { pnl, exp, currentBank:Number(bankState.totalBank||0)+pnl, stopLoss:Number(bankState.totalBank||0)*(Number(bankState.stopLossPercent||0)/100), target:Number(bankState.totalBank||0)*(Number(bankState.targetPercent||0)/100) };
   };
   const paintMetrics = picks => {
@@ -549,8 +651,206 @@ textarea.field-input{min-height:80px;resize:vertical}
     return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
   };
 
+  // ── Builder de combinada (selección en curso) ─────────────
+  const toggleComboLeg = (pick) => {
+    const pid = String(pick.id);
+    if (comboIdForPick(pid)) return; // ya pertenece a una combinada existente
+    const idx = comboBuilder.legs.findIndex(l => l.pickId === pid);
+    if (idx >= 0) comboBuilder.legs.splice(idx, 1);
+    else comboBuilder.legs.push(legSnapshot(pick));
+    comboBuilder.active = comboBuilder.legs.length > 0;
+    renderComboBuilder();
+  };
+
+  const renderComboBuilder = () => {
+    const bar = document.getElementById('combo-builder');
+    const legsEl = document.getElementById('combo-builder-legs');
+    const createBtn = document.getElementById('combo-builder-create');
+    if (!bar) return;
+    bar.classList.toggle('active', comboBuilder.active && comboBuilder.legs.length > 0);
+    if (legsEl) {
+      legsEl.innerHTML = comboBuilder.legs.map(l =>
+        `<div class="combo-builder-leg"><div>${l.match} <em>· ${l.pick||l.market||'—'}</em></div><button type="button" data-builder-remove="${l.pickId}" title="Quitar">✕</button></div>`
+      ).join('') || '<div style="font-size:11px;color:var(--muted)">Sin picks seleccionados todavía.</div>';
+      legsEl.querySelectorAll('[data-builder-remove]').forEach(b => {
+        b.addEventListener('click', () => {
+          const pid = b.getAttribute('data-builder-remove');
+          const i = comboBuilder.legs.findIndex(l => l.pickId === pid);
+          if (i >= 0) comboBuilder.legs.splice(i, 1);
+          comboBuilder.active = comboBuilder.legs.length > 0;
+          renderComboBuilder();
+        });
+      });
+    }
+    if (createBtn) {
+      const n = comboBuilder.legs.length;
+      createBtn.textContent = `Crear combinada (${n})`;
+      createBtn.disabled = n < 2;
+    }
+    // Reflejar selección en los botones "Combinar" de las cards visibles
+    document.querySelectorAll('[data-combine]').forEach(btn => {
+      const pid = btn.getAttribute('data-combine');
+      btn.classList.toggle('selected', comboBuilder.legs.some(l => l.pickId === pid));
+    });
+  };
+
+  const cancelComboBuilder = () => {
+    comboBuilder = { active: false, legs: [] };
+    renderComboBuilder();
+  };
+
+  const createCombo = async () => {
+    if (comboBuilder.legs.length < 2) return;
+    const id = genComboId();
+    combos[id] = {
+      id,
+      dateKey: selectedDateKey,
+      legs: comboBuilder.legs.map(l => ({ ...l })),
+      stake: '', payout: '', odds: '', net: '', status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+    // Quitar tracking individual de los legs para no doble-contar en PnL/exposición
+    comboBuilder.legs.forEach(l => { delete tracking[l.pickId]; });
+    comboBuilder = { active: false, legs: [] };
+    await saveRemote();
+    await renderPicks();
+    if (typeof showToast === 'function') showToast('Combinada creada. Captura cuánto metiste y cuánto te regresó.', 'success');
+  };
+
+  // ── Render de combinadas del día ──────────────────────────
+  const renderCombos = (picks) => {
+    const section = document.getElementById('bank-combo-section');
+    const listEl = document.getElementById('bank-combos-list');
+    if (!section || !listEl) return;
+    const dayCombos = Object.values(combos||{}).filter(c => c?.dateKey === selectedDateKey);
+    if (!dayCombos.length) { section.style.display = 'none'; listEl.innerHTML = ''; return; }
+    section.style.display = '';
+    listEl.innerHTML = '';
+
+    dayCombos.forEach(combo => {
+      const cid = combo.id;
+      const status = String(combo.status || 'pending').toLowerCase();
+
+      // Sugerencia auto a partir de los resultados (admin) de los legs, si están cargados
+      const legResults = combo.legs.map(l => {
+        const p = (picks||[]).find(pp => String(pp.id) === String(l.pickId));
+        return p ? String(p.result || '').toLowerCase() : null;
+      });
+      const allResolved = legResults.length > 0 && legResults.every(r => r === 'won' || r === 'lost');
+      const anyLost = legResults.some(r => r === 'lost');
+      const suggestedStatus = allResolved ? (anyLost ? 'lost' : 'won') : null;
+
+      const legsHtml = combo.legs.map((l, i) =>
+        `<div class="combo-leg"><span class="combo-leg-num">${i+1}</span><span class="combo-leg-match">${l.match}</span><span class="combo-leg-pick">${l.pick||l.market||'—'}</span></div>`
+      ).join('');
+
+      const stBtns = ['pending','won','lost'].map(v => {
+        const label = v==='pending'?'Pendiente':v==='won'?'✓ Ganada':'✗ Perdida';
+        return `<button class="pbk-status-btn ${v} ${status===v?'active':''}" data-combo-status="${cid}" data-status-val="${v}" type="button">${label}</button>`;
+      }).join('');
+
+      const oddsCalc = calcOddsFromStakeAndPayout(combo.stake, combo.payout);
+      const netCalc = calcNetFromStakeAndPayout(combo.stake, combo.payout, status);
+      const oddsDisplay = oddsCalc !== null ? `${oddsCalc.toFixed(2)}x` : '—';
+      const netDisplay = netCalc !== null ? formatMoney(netCalc) : '—';
+      const netColor = netCalc === null ? '#9ca3af' : (netCalc > 0 ? '#4ade80' : netCalc < 0 ? '#f87171' : '#9ca3af');
+
+      let suggestHtml = '';
+      if (suggestedStatus && suggestedStatus !== status) {
+        suggestHtml = `<div class="combo-suggest ${suggestedStatus}">${suggestedStatus==='won'?'✓ Todos los picks ganaron':'✗ Al menos un pick perdió'} — sugerencia: marcar como ${suggestedStatus==='won'?'GANADA':'PERDIDA'}. <button type="button" data-combo-apply="${cid}" data-apply-val="${suggestedStatus}">Aplicar</button></div>`;
+      }
+
+      const card = document.createElement('article');
+      card.className = 'combo-card';
+      card.innerHTML = `
+        <div class="combo-card-top">
+          <div class="combo-card-title">🔗 Combinada <span class="cc-count">${combo.legs.length} picks</span></div>
+          <button class="combo-del-btn" type="button" data-combo-del="${cid}">Eliminar</button>
+        </div>
+        <div class="combo-legs">${legsHtml}</div>
+        ${suggestHtml}
+        <div class="pbk-track">
+          <div class="field-group"><label class="field-lbl" title="Lo que apostaste en la combinada">¿Cuánto apostaste?</label><input class="field-input" data-combo-stake="${cid}" type="number" min="0" step="0.01" value="${combo.stake||''}" placeholder="ej: 100" /></div>
+          <div class="field-group"><label class="field-lbl" title="Lo que la casa te pagó EN TOTAL si ganó la combinada. Si perdió, pon 0.">¿Cuánto te pagó la casa?</label><input class="field-input" data-combo-payout="${cid}" type="number" min="0" step="0.01" value="${combo.payout||''}" placeholder="ej: 650 (si ganó) · 0 (si perdió)" /></div>
+          <div class="field-group pbk-status-group"><label class="field-lbl">Estado</label><div class="pbk-status-btns">${stBtns}</div></div>
+          <button class="btn-primary pbk-save-btn" type="button" data-combo-save="${cid}">Guardar</button>
+        </div>
+        <div class="pbk-calc-row" style="display:flex;gap:14px;flex-wrap:wrap;padding:10px 14px;background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.14);border-radius:6px;margin-top:8px;font-size:11px;color:#9ca3af">
+          <div><span style="opacity:.7">Momio combinado:</span> <strong id="combo-odds-${cid}" style="color:#A78BFA">${oddsDisplay}</strong></div>
+          <div><span style="opacity:.7">Ganancia neta:</span> <strong id="combo-net-${cid}" style="color:${netColor}">${netDisplay}</strong></div>
+        </div>`;
+      listEl.appendChild(card);
+
+      const recalc = (forceStatus) => {
+        const stInput = card.querySelector(`[data-combo-stake="${cid}"]`);
+        const poInput = card.querySelector(`[data-combo-payout="${cid}"]`);
+        const oddsEl = document.getElementById(`combo-odds-${cid}`);
+        const netEl = document.getElementById(`combo-net-${cid}`);
+        const activeBtn = card.querySelector(`[data-combo-status="${cid}"].active`);
+        const st = forceStatus || (activeBtn ? activeBtn.getAttribute('data-status-val') : status);
+        const stake = Number(stInput?.value || 0);
+        let payout = Number(poInput?.value || 0);
+        if (st === 'lost') { if (poInput) poInput.value = '0'; payout = 0; }
+        const odds = calcOddsFromStakeAndPayout(stake, payout);
+        const net = calcNetFromStakeAndPayout(stake, payout, st);
+        if (oddsEl) oddsEl.textContent = odds !== null ? `${odds.toFixed(2)}x` : '—';
+        if (netEl) { netEl.textContent = net !== null ? formatMoney(net) : '—'; netEl.style.color = net === null ? '#9ca3af' : (net > 0 ? '#4ade80' : net < 0 ? '#f87171' : '#9ca3af'); }
+      };
+
+      card.querySelectorAll(`[data-combo-status="${cid}"]`).forEach(sb => {
+        sb.addEventListener('click', () => {
+          card.querySelectorAll(`[data-combo-status="${cid}"]`).forEach(b => b.classList.remove('active'));
+          sb.classList.add('active');
+          recalc(sb.getAttribute('data-status-val'));
+        });
+      });
+      ['stake','payout'].forEach(f => {
+        const inp = card.querySelector(`[data-combo-${f}="${cid}"]`);
+        if (inp) inp.addEventListener('input', () => recalc());
+      });
+
+      const applyBtn = card.querySelector(`[data-combo-apply="${cid}"]`);
+      if (applyBtn) applyBtn.addEventListener('click', () => {
+        const val = applyBtn.getAttribute('data-apply-val');
+        card.querySelectorAll(`[data-combo-status="${cid}"]`).forEach(b => b.classList.toggle('active', b.getAttribute('data-status-val') === val));
+        recalc(val);
+      });
+
+      const saveBtn = card.querySelector(`[data-combo-save="${cid}"]`);
+      if (saveBtn) saveBtn.addEventListener('click', async () => {
+        const activeBtn = card.querySelector(`[data-combo-status="${cid}"].active`);
+        const st = activeBtn ? activeBtn.getAttribute('data-status-val') : 'pending';
+        const stake = Number(card.querySelector(`[data-combo-stake="${cid}"]`)?.value || 0);
+        let payout = Number(card.querySelector(`[data-combo-payout="${cid}"]`)?.value || 0);
+        if (st === 'lost') payout = 0;
+        const net = calcNetFromStakeAndPayout(stake, payout, st);
+        const odds = calcOddsFromStakeAndPayout(stake, payout);
+        combos[cid] = { ...combos[cid], stake, payout, odds: odds || '', net: net !== null ? net : 0, status: st };
+        saveBtn.textContent = '✓ Guardado'; saveBtn.disabled = true;
+        await saveRemote();
+        paintMetrics(picks);
+        if (typeof showToast === 'function') showToast('Combinada guardada.', 'success');
+        setTimeout(() => { saveBtn.textContent = 'Guardar'; saveBtn.disabled = false; }, 2000);
+      });
+
+      const delBtn = card.querySelector(`[data-combo-del="${cid}"]`);
+      if (delBtn) delBtn.addEventListener('click', async () => {
+        if (!confirm('¿Eliminar esta combinada? Los picks volverán a estar disponibles individualmente.')) return;
+        delete combos[cid];
+        await saveRemote();
+        await renderPicks();
+        if (typeof showToast === 'function') showToast('Combinada eliminada.', 'info');
+      });
+    });
+  };
+
   const renderPicks = async () => {
     const listEl = document.getElementById('bank-picks-list');
+    // Si cambió el día con una combinada a medio armar, descartar el armado
+    if (lastRenderedDateKey !== null && lastRenderedDateKey !== selectedDateKey && comboBuilder.legs.length) {
+      comboBuilder = { active: false, legs: [] };
+    }
+    lastRenderedDateKey = selectedDateKey;
     // Actualizar UI del selector
     const dateInput = document.getElementById('bank-date-input');
     const dateLabel = document.getElementById('bank-date-label');
@@ -573,6 +873,7 @@ textarea.field-input{min-height:80px;resize:vertical}
       let adminSyncDirty = false;
       picks.forEach(pick => {
         const pid = String(pick.id);
+        if (comboIdForPick(pid)) return; // los legs de una combinada no se trackean individual
         const adminRes = String(pick.result || '').toLowerCase();
         if (adminRes !== 'won' && adminRes !== 'lost') return;
         const row = tracking[pid];
@@ -634,7 +935,8 @@ textarea.field-input{min-height:80px;resize:vertical}
       // de otros días para que al navegar entre fechas no se pierda lo capturado.)
 
       paintMetrics(picks);
-      if (!picks.length) { listEl.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted)">No hay picks cargados para hoy.</div>'; return; }
+      renderCombos(picks);
+      if (!picks.length) { listEl.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted)">No hay picks cargados para hoy.</div>'; renderComboBuilder(); return; }
 
       // Pre-calcular escalado de stakes para que la suma respete el max exposure
       const scaleInfo = computeScaledStakePcts(picks);
@@ -647,9 +949,29 @@ textarea.field-input{min-height:80px;resize:vertical}
       }
 
       picks.forEach(pick => {
+        const pid = String(pick.id);
+        // Si el pick ya está dentro de una combinada → card atenuada, sin captura individual
+        if (comboIdForPick(pid)) {
+          const card = document.createElement('article');
+          card.className = 'pick-bank-card in-combo';
+          card.innerHTML = `
+            <div class="pbk-top">
+              <div>
+                <div class="pbk-match">${pick.homeTeam||pick.home_team||'—'} vs ${pick.awayTeam||pick.away_team||'—'}</div>
+                <div class="pbk-meta">
+                  <span>${pick.league||'—'}</span><span>·</span>
+                  <span>${pick.market||'Mercado'}</span><span>·</span>
+                  <span>${pick.pick||'Selección'}</span>
+                </div>
+              </div>
+              <span class="risk-pill ${riskClass(pick.riskLevel||pick.risk_level)}">${pick.riskLevel||pick.risk_level||'MEDIO'}</span>
+            </div>
+            <div class="pbk-combo-badge">🔗 En combinada</div>`;
+          listEl.appendChild(card);
+          return;
+        }
         const stakePct = recommendedPct(pick);
         const suggested = Number(bankState.totalBank||0) * (stakePct/100);
-        const pid = String(pick.id);
         const row = tracking[pid] || { stake: suggested.toFixed(2), odds: oddsFromPick(pick) || '', payout: '', net: '', status: 'pending' };
         const status = String(row.status || 'pending').toLowerCase();
         const adminRes = String(pick.result || '').toLowerCase();
@@ -702,7 +1024,10 @@ textarea.field-input{min-height:80px;resize:vertical}
             <div class="field-group"><label class="field-lbl" title="Lo que apostaste en pesos">¿Cuánto apostaste?</label><input class="field-input" data-bank-stake="${pid}" type="number" min="0" step="0.01" value="${row.stake||''}" placeholder="ej: 100" /></div>
             <div class="field-group"><label class="field-lbl" title="Lo que la casa te pagó EN TOTAL (incluyendo tu stake). Si perdiste, pon 0.">¿Cuánto te pagó la casa?</label><input class="field-input" data-bank-payout="${pid}" type="number" min="0" step="0.01" value="${row.payout||''}" placeholder="ej: 185 (si ganaste) · 0 (si perdiste)" /></div>
             <div class="field-group pbk-status-group"><label class="field-lbl">Estado</label><div class="pbk-status-btns">${stBtns}</div></div>
-            <button class="btn-primary pbk-save-btn" type="button" data-bank-save="${pid}">Guardar</button>
+            <div class="pbk-actions-col">
+              <button class="btn-primary pbk-save-btn" type="button" data-bank-save="${pid}">Guardar</button>
+              <button class="pbk-combine-btn" type="button" data-combine="${pid}">🔗 Combinar</button>
+            </div>
           </div>
           <div class="pbk-calc-row" id="pbk-calc-${pid}" style="display:flex;gap:14px;flex-wrap:wrap;padding:10px 14px;background:rgba(59,130,246,.04);border:1px solid rgba(59,130,246,.12);border-radius:6px;margin-top:8px;font-size:11px;color:#9ca3af">
             <div><span style="opacity:.7">Cuota calculada:</span> <strong id="pbk-odds-${pid}" style="color:#60a5fa">${oddsDisplay}</strong></div>
@@ -789,6 +1114,17 @@ textarea.field-input{min-height:80px;resize:vertical}
           setTimeout(() => { btn.textContent = 'Guardar'; btn.disabled = false; }, 2000);
         });
       });
+
+      // Botones "Combinar" — agregan/quitan el pick del armado de combinada en curso
+      listEl.querySelectorAll('[data-combine]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const pick = picks.find(p => String(p.id) === String(btn.getAttribute('data-combine')));
+          if (pick) toggleComboLeg(pick);
+        });
+      });
+
+      // Sincronizar el estado visual del builder con las cards recién pintadas
+      renderComboBuilder();
     } catch {
       listEl.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted)">No se pudo cargar el stake sugerido.</div>';
     }
@@ -895,6 +1231,12 @@ textarea.field-input{min-height:80px;resize:vertical}
       if (typeof showToast === 'function') showToast(`💰 Nuevo bank iniciado con $${newAmount.toLocaleString('es-MX')}`, 'success');
     });
   }
+  // Combo builder handlers — crear / cancelar
+  const comboCreateBtn = document.getElementById('combo-builder-create');
+  const comboCancelBtn = document.getElementById('combo-builder-cancel');
+  if (comboCreateBtn) comboCreateBtn.addEventListener('click', createCombo);
+  if (comboCancelBtn) comboCancelBtn.addEventListener('click', cancelComboBuilder);
+
   // Date navigation handlers — prev/next/today/input
   const dateInput = document.getElementById('bank-date-input');
   const dateBtnPrev = document.getElementById('bank-date-prev');
