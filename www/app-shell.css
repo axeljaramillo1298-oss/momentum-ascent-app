@@ -1,0 +1,234 @@
+/* ============================================================
+   APP SHELL — Momentum Ascent
+   Capa de rediseño "app premium". TODO va bajo .app-redesign
+   para que las pantallas que NO opten por el rediseño queden
+   intactas (styles.css es compartido entre todas las páginas).
+
+   Convive con el <style> inline de cada pantalla:
+     orden de carga = styles.css -> app-shell.css -> inline
+   Aquí viven los tokens + componentes compartidos (header de app,
+   bottom-nav con iconos SVG, estados de press, foco, scrollbars,
+   motion). Lo específico de cada pantalla vive en su inline.
+   ============================================================ */
+
+.app-redesign {
+  /* ── Tokens base (tinte cálido, nunca #000/#fff puros) ── */
+  --bg:            oklch(0.16 0.012 55);   /* carbón cálido */
+  --bg-2:          oklch(0.205 0.014 55);  /* superficie elevada */
+  --surface:       oklch(0.225 0.013 58);  /* card */
+  --surface-2:     oklch(0.265 0.015 58);  /* card hover / nested fill */
+  --line:          oklch(0.34 0.02 58 / 0.55); /* bordes */
+  --line-soft:     oklch(0.34 0.02 58 / 0.28);
+
+  /* Marca: el naranja se conserva; se suma crema cálida como realce */
+  --brand:         oklch(0.685 0.205 38);  /* ≈ #FF4500 elevado */
+  --brand-strong:  oklch(0.62 0.21 36);
+  --brand-soft:    oklch(0.685 0.205 38 / 0.14);
+  --cream:         oklch(0.93 0.045 78);   /* realce cálido */
+
+  /* Sombra única y suave (estilo Drip) + halo de marca */
+  --shadow:        0 22px 48px -20px oklch(0 0 0 / 0.62);
+  --shadow-sm:     0 8px 22px -14px oklch(0 0 0 / 0.5);
+  --glow-brand:    0 10px 30px -12px oklch(0.685 0.205 38 / 0.45);
+
+  /* Radios generosos (lenguaje app) */
+  --r-xl: 26px;
+  --r-lg: 20px;
+  --r-md: 14px;
+  --r-sm: 10px;
+  --r-pill: 999px;
+
+  /* Curvas de easing fuertes (Emil) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-io:  cubic-bezier(0.77, 0, 0.175, 1);
+
+  /* Safe-area para el bottom-nav (Capacitor / notch) */
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+/* Pintamos el lienzo cálido con un par de auroras muy sutiles */
+.app-redesign body,
+body.app-redesign {
+  background:
+    radial-gradient(60% 50% at 85% -5%, oklch(0.685 0.205 38 / 0.10), transparent 60%),
+    radial-gradient(70% 45% at 10% 0%, oklch(0.55 0.12 320 / 0.08), transparent 65%),
+    var(--bg) !important;
+}
+
+/* ── Press feedback universal en cualquier control ──────────
+   Subtle, instantáneo. Aplica a botones, links de acción y chips. */
+.app-redesign button,
+.app-redesign .btn-refresh,
+.app-redesign .btn-hist,
+.app-redesign .btn-share,
+.app-redesign .btn-save,
+.app-redesign .btn-follow-pick,
+.app-redesign .bank-action-btn,
+.app-redesign .perf-empty-cta,
+.app-redesign .filter-btn,
+.app-redesign .date-chip,
+.app-redesign .bottom-nav-item {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 140ms var(--ease-out), background 180ms var(--ease-out),
+              border-color 180ms var(--ease-out), color 180ms var(--ease-out),
+              box-shadow 180ms var(--ease-out);
+}
+.app-redesign button:active,
+.app-redesign .btn-refresh:active,
+.app-redesign .btn-hist:active,
+.app-redesign .btn-share:active,
+.app-redesign .btn-save:active,
+.app-redesign .btn-follow-pick:active,
+.app-redesign .bank-action-btn:active,
+.app-redesign .perf-empty-cta:active,
+.app-redesign .filter-btn:active,
+.app-redesign .date-chip:active {
+  transform: scale(0.97);
+}
+
+/* Foco visible y de marca (accesibilidad) */
+.app-redesign :focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ── APP HEADER ─────────────────────────────────────────────
+   Convierte .user-panel-top en una barra de app compacta,
+   sticky y con blur. Oculta los links de texto (el bottom-nav
+   ya cubre la navegación) y deja logo + saludo + chip de fecha. */
+.app-redesign .user-panel-top {
+  position: sticky;
+  top: 0;
+  z-index: 250;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 18px 10px;
+  background: oklch(0.16 0.012 55 / 0.72);
+  backdrop-filter: saturate(140%) blur(18px);
+  -webkit-backdrop-filter: saturate(140%) blur(18px);
+  border-bottom: 1px solid var(--line-soft);
+}
+.app-redesign .logo-wordmark {
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  background: none;            /* nada de gradient text */
+  color: var(--cream);
+}
+.app-redesign .logo-icon { width: 30px; height: 30px; }
+
+/* Los links de texto del header desktop se ocultan en favor del
+   bottom-nav; el header queda limpio tipo app. */
+.app-redesign .nav-actions { display: none !important; }
+
+/* ── BOTTOM NAV (iconos SVG, indicador activo, safe-area) ──── */
+.app-redesign .bottom-nav {
+  z-index: 300;
+  padding: 8px 8px calc(8px + var(--safe-b));
+  gap: 4px;
+  border-top: 1px solid var(--line-soft);
+  background: oklch(0.155 0.012 55 / 0.86);
+  backdrop-filter: saturate(150%) blur(22px);
+  -webkit-backdrop-filter: saturate(150%) blur(22px);
+}
+.app-redesign .bottom-nav-item {
+  position: relative;
+  gap: 5px;
+  padding: 8px 4px 6px;
+  border-radius: var(--r-md);
+  font-size: 9.5px;
+  letter-spacing: 0.07em;
+  color: oklch(0.72 0.02 65 / 0.65);
+}
+.app-redesign .bottom-nav-item .bn-ico {
+  width: 23px; height: 23px;
+  display: block;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 200ms var(--ease-out);
+}
+/* Oculta el emoji viejo si quedara, deja el SVG */
+.app-redesign .bottom-nav-icon { display: none; }
+.app-redesign .bottom-nav-item:hover { color: var(--cream); }
+.app-redesign .bottom-nav-active {
+  color: var(--brand);
+}
+.app-redesign .bottom-nav-active .bn-ico { transform: translateY(-1px) scale(1.06); }
+/* Pastilla/indicador del item activo */
+.app-redesign .bottom-nav-active::before {
+  content: "";
+  position: absolute;
+  inset: 4px 14px auto;
+  height: calc(100% - 8px);
+  border-radius: var(--r-md);
+  background: var(--brand-soft);
+  z-index: -1;
+}
+
+/* ── Scrollbar discreta y de marca ──────────────────────────── */
+.app-redesign ::-webkit-scrollbar { width: 9px; height: 9px; }
+.app-redesign ::-webkit-scrollbar-thumb {
+  background: oklch(0.34 0.02 58 / 0.7);
+  border-radius: var(--r-pill);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.app-redesign ::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Respeta prefers-reduced-motion ─────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .app-redesign *,
+  .app-redesign *::before,
+  .app-redesign *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Hover-intent solo en dispositivos con cursor fino */
+@media (hover: hover) and (pointer: fine) {
+  .app-redesign .bottom-nav-item:hover .bn-ico { transform: translateY(-1px); }
+}
+
+/* ── LOGIN / AUTH / STUB CARDS ───────────────────────────────
+   Varias pantallas (registro, onboarding-4..9, demo, app-inicio)
+   usan el patrón .login-card de styles.css. Lo alineamos a la
+   línea de diseño en un solo lugar. styles.css bloque "V11" usa
+   !important, así que ganamos con body.app-redesign + !important.
+   (registro.html tiene overrides inline propios que cargan después
+   y siguen mandando ahí — sin regresión.) */
+body.app-redesign .login-card {
+  border-radius: var(--r-xl) !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: var(--shadow) !important;
+}
+body.app-redesign .login-title {
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  color: var(--cream) !important;
+}
+body.app-redesign .login-register-btn,
+body.app-redesign .sports-hero-actions .primary {
+  background: var(--brand) !important;
+  color: #1a0d06 !important;
+  border: none !important;
+  border-radius: var(--r-pill) !important;
+  box-shadow: var(--glow-brand) !important;
+}
+body.app-redesign .sports-hero-actions .ghost {
+  border-radius: var(--r-pill) !important;
+}
+
+/* ── Helpers genéricos "mismo lenguaje" para landings/admin ──
+   Solo formas (radios) sobre clases muy comunes; el color/fondo lo
+   maneja cada página. Sin !important para no pelear con layouts. */
+.app-redesign .card,
+.app-redesign .panel,
+.app-redesign .modal,
+.app-redesign .tile {
+  border-radius: var(--r-lg);
+}

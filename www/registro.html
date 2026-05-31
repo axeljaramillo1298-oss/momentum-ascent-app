@@ -5,8 +5,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Acceso | Momentum Ascent</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="app-shell.css" />
+    <style>
+      /* ── Capa app-premium (aditiva, gana por orden de carga + app-redesign) ──
+         Re-estiliza .login-* sin tocar markup/IDs/form. styles.css usa
+         !important en varias reglas → aquí también, con prefijo .app-redesign. */
+      :root{
+        --orange:#FF5A1F;
+        --dark:#100c0b;
+        --border:rgba(255,232,216,.10);
+        --text:#f6efe7;
+        --muted:rgba(246,239,231,.46);
+        --green:#46E59A;
+        --red:#FF6B6B;
+        --yellow:#FFB23E;
+      }
+
+      /* Card de auth: radio XL + una sola sombra suave (sin stripe shimmer) */
+      body.app-redesign .login-card{
+        border-radius:var(--r-xl,26px) !important;
+        border:1px solid var(--border) !important;
+        background:var(--surface,rgba(255,232,216,.035)) !important;
+        box-shadow:var(--shadow) !important;
+      }
+      /* Quita la barra superior animada (acento viejo) de forma limpia */
+      body.app-redesign .login-card::before{
+        background:var(--orange) !important;
+        animation:none !important;
+        opacity:.85;
+      }
+      /* Título: sin gradient-text (prohibido por el sistema), crema sólida */
+      body.app-redesign .login-title{
+        background:none !important;
+        -webkit-background-clip:initial !important;
+        -webkit-text-fill-color:currentColor !important;
+        background-clip:initial !important;
+        color:var(--text) !important;
+      }
+
+      /* Inputs: radio medio + foco de marca (sin pisar el focus-visible global) */
+      body.app-redesign .login-input{
+        border-radius:var(--r-md,14px) !important;
+        background:rgba(255,232,216,.04) !important;
+        border:1.5px solid var(--border) !important;
+        color:var(--text);
+      }
+      body.app-redesign .login-input::placeholder{ color:var(--muted); }
+      body.app-redesign .login-input:focus{
+        border-color:rgba(255,90,31,.55) !important;
+        background:var(--brand-soft,rgba(255,90,31,.08)) !important;
+        box-shadow:0 0 0 3px rgba(255,90,31,.16) !important;
+      }
+
+      /* Botón primario: pill naranja, texto oscuro, glow de marca */
+      body.app-redesign .login-submit{
+        border-radius:var(--r-pill,999px) !important;
+        background:var(--orange) !important;
+        color:#1a0d06 !important;
+        box-shadow:var(--glow-brand) !important;
+      }
+      body.app-redesign .login-submit:hover{
+        box-shadow:var(--glow-brand) !important;
+        filter:brightness(1.06);
+        transform:translateY(-2px) !important;
+      }
+
+      /* Botón secundario (crear cuenta) + back: pill ghost */
+      body.app-redesign .login-register-btn{
+        border-radius:var(--r-pill,999px) !important;
+        border:1px solid var(--border) !important;
+        background:rgba(255,232,216,.04) !important;
+        color:var(--text);
+      }
+      body.app-redesign .login-register-btn:hover{
+        border-color:rgba(255,232,216,.22) !important;
+        background:rgba(255,232,216,.07) !important;
+        color:var(--text);
+      }
+
+      /* Divider + feedback heredan tokens nuevos */
+      body.app-redesign .login-divider::before,
+      body.app-redesign .login-divider::after{ background:var(--border); }
+      body.app-redesign .login-divider span{ color:var(--muted); }
+      body.app-redesign .login-back{ color:var(--muted); }
+      body.app-redesign .login-back:hover{ color:var(--text); }
+    </style>
   </head>
-  <body>
+  <body class="app-redesign">
     <div class="noise"></div>
     <div class="stars"></div>
     <main class="login-shell">

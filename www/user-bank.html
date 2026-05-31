@@ -5,19 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Control de Bank | Momentum Ascent</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="app-shell.css" />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --orange:#FF4500;
-  --dark:#060608;
-  --border:rgba(255,255,255,0.07);
-  --text:#f0ede8;
-  --muted:rgba(240,237,232,0.4);
-  --green:#4ADE80;
-  --red:#F87171;
-  --yellow:#F59E0B;
+  /* Nombres que consume app.js — se conservan, valores elevados (igualados a user-hoy) */
+  --orange:#FF5A1F;
+  --dark:#100c0b;
+  --border:rgba(255,232,216,0.10);
+  --text:#f6efe7;
+  --muted:rgba(246,239,231,0.46);
+  --green:#46E59A;
+  --red:#FF6B6B;
+  --yellow:#FFB23E;
   --purple:#A78BFA;
 }
 html{scroll-behavior:smooth}
@@ -35,17 +37,17 @@ main{position:relative;z-index:2}
 .up-nav-active{color:var(--text);background:rgba(255,255,255,.06)}
 
 /* HERO */
-.page-hero{padding:36px 52px 32px;position:relative}
-.page-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:360px;background:radial-gradient(ellipse 60% 80% at 20% 20%,rgba(80,20,120,.18) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 80% 40%,rgba(255,69,0,.05) 0%,transparent 70%);pointer-events:none}
+.page-hero{padding:22px 22px 14px;position:relative;min-height:auto}
+.page-hero::before{content:'';position:absolute;top:-40px;left:0;right:0;height:220px;background:radial-gradient(ellipse 55% 70% at 82% 0%,rgba(255,90,31,.12) 0%,transparent 68%);pointer-events:none}
 .hero-inner{display:flex;justify-content:space-between;align-items:flex-start;gap:40px;position:relative;z-index:1}
 .hero-left{flex:1}
 .page-eyebrow{font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;opacity:0;animation:fadeUp .5s .1s forwards}
 .page-eyebrow::before{content:'';width:20px;height:1px;background:var(--muted)}
-.page-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(56px,8vw,104px);text-transform:uppercase;letter-spacing:-.02em;line-height:.88;opacity:0;animation:fadeUp .6s .2s forwards}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(34px,8vw,52px);text-transform:uppercase;letter-spacing:-.015em;line-height:.92;opacity:0;animation:fadeUp .6s .2s forwards}
 .page-title span{color:var(--orange)}
 .page-desc{margin-top:16px;font-size:14px;color:var(--muted);max-width:420px;line-height:1.65;font-weight:300;opacity:0;animation:fadeUp .5s .35s forwards}
 .hero-chip-row{display:flex;gap:10px;margin-top:18px;align-items:center;flex-wrap:wrap;opacity:0;animation:fadeUp .4s .45s forwards}
-.plan-chip{display:inline-flex;align-items:center;gap:6px;font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,69,0,.4);background:rgba(255,69,0,.08);color:var(--orange)}
+.plan-chip{display:inline-flex;align-items:center;gap:6px;font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,90,31,.4);background:rgba(255,90,31,.08);color:var(--orange)}
 .plan-chip.apex{border-color:rgba(245,192,74,.4);background:rgba(245,192,74,.08);color:#F5C04A}
 .plan-status-txt{font-size:12px;color:var(--muted)}
 
@@ -53,7 +55,7 @@ main{position:relative;z-index:2}
 .page-content{padding:0 52px 140px;position:relative;z-index:2}
 
 /* SECTION CARD */
-.section-card{background:rgba(255,255,255,.022);border:1px solid var(--border);border-radius:8px;padding:24px 28px;margin-bottom:20px;opacity:0;animation:fadeUp .5s forwards}
+.section-card{background:rgba(255,255,255,.022);border:1px solid var(--border);border-radius:var(--r-lg,20px);padding:24px 28px;margin-bottom:20px;box-shadow:var(--shadow-sm);opacity:0;animation:fadeUp .5s forwards}
 .section-kicker{font-size:9.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .section-kicker::before{content:'';width:16px;height:1px;background:var(--muted)}
 .section-subtitle{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(28px,4vw,44px);text-transform:uppercase;letter-spacing:-.01em;line-height:.9;margin-bottom:12px}
@@ -64,7 +66,7 @@ main{position:relative;z-index:2}
 .data-cell{background:rgba(255,255,255,.018);border:1px solid var(--border);border-radius:6px;padding:14px 16px}
 .data-cell-lbl{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
 .data-cell-val{font-size:16px;font-weight:600;line-height:1.3}
-.data-note{margin-top:14px;padding:14px 18px;background:linear-gradient(135deg,rgba(167,139,250,.07),rgba(255,69,0,.04));border:1px solid rgba(167,139,250,.18);border-radius:6px;font-size:12.5px;color:rgba(240,237,232,.6);line-height:1.7}
+.data-note{margin-top:14px;padding:14px 18px;background:linear-gradient(135deg,rgba(167,139,250,.07),rgba(255,90,31,.04));border:1px solid rgba(167,139,250,.18);border-radius:6px;font-size:12.5px;color:rgba(240,237,232,.6);line-height:1.7}
 
 /* METRICS ROW */
 .metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
@@ -78,18 +80,18 @@ main{position:relative;z-index:2}
 .field-group{display:grid;gap:5px}
 .field-lbl{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .field-input{width:100%;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:10px 12px;font:500 14px 'Barlow',sans-serif;transition:border-color .2s}
-.field-input:focus{outline:none;border-color:rgba(255,69,0,.4)}
+.field-input:focus{outline:none;border-color:rgba(255,90,31,.4)}
 textarea.field-input{min-height:80px;resize:vertical}
 .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-.btn-primary{font:700 11px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:10px 22px;background:var(--orange);color:#fff;border:none;border-radius:3px;cursor:pointer;transition:background .2s}
-.btn-primary:hover{background:#e03d00}
-.btn-secondary{font:700 11px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:10px 20px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:3px;cursor:pointer;transition:all .2s}
+.btn-primary{font:700 11px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:10px 22px;background:var(--orange);color:#1a0d06;border:none;border-radius:var(--r-pill,999px);cursor:pointer;box-shadow:var(--glow-brand);transition:filter .2s,box-shadow .2s}
+.btn-primary:hover{filter:brightness(1.07)}
+.btn-secondary{font:700 11px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:10px 20px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:var(--r-pill,999px);cursor:pointer;transition:all .2s}
 .btn-secondary:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
 .config-note{margin-top:12px;font-size:11.5px;color:var(--muted);padding:12px 14px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:4px;line-height:1.6}
 
 /* PICK BANK CARDS */
 .pick-bank-list{display:grid;gap:12px;margin-top:16px}
-.pick-bank-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:18px}
+.pick-bank-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:var(--r-lg,20px);padding:18px;box-shadow:var(--shadow-sm)}
 .pbk-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
 .pbk-match{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.01em}
 .pbk-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:4px}
@@ -118,7 +120,7 @@ textarea.field-input{min-height:80px;resize:vertical}
 
 /* ── COMBINADAS (parlays) ── */
 .pbk-actions-col{display:flex;flex-direction:column;gap:6px;align-self:end}
-.pbk-combine-btn{font:700 10px 'Barlow',sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:9px 14px;background:rgba(167,139,250,.1);color:var(--purple);border:1px solid rgba(167,139,250,.35);border-radius:3px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.pbk-combine-btn{font:700 10px 'Barlow',sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:9px 14px;background:rgba(167,139,250,.1);color:var(--purple);border:1px solid rgba(167,139,250,.35);border-radius:var(--r-pill,999px);cursor:pointer;transition:all .2s;white-space:nowrap}
 .pbk-combine-btn:hover{background:rgba(167,139,250,.18);border-color:rgba(167,139,250,.6)}
 .pbk-combine-btn.selected{background:rgba(167,139,250,.28);border-color:var(--purple);color:#fff}
 .pick-bank-card.in-combo{opacity:.55;border-color:rgba(167,139,250,.3)}
@@ -141,7 +143,7 @@ textarea.field-input{min-height:80px;resize:vertical}
 .combo-section-head{display:flex;align-items:center;gap:8px;font-size:9.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--purple);margin-bottom:12px}
 .combo-section-head::before{content:'';width:16px;height:1px;background:var(--purple)}
 .combo-list{display:grid;gap:12px}
-.combo-card{background:linear-gradient(135deg,rgba(167,139,250,.07),rgba(255,255,255,.02));border:1px solid rgba(167,139,250,.32);border-radius:8px;padding:18px}
+.combo-card{background:linear-gradient(135deg,rgba(167,139,250,.07),rgba(255,255,255,.02));border:1px solid rgba(167,139,250,.32);border-radius:var(--r-lg,20px);padding:18px;box-shadow:var(--shadow-sm)}
 .combo-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
 .combo-card-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:19px;text-transform:uppercase;letter-spacing:.02em;color:#fff;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .combo-card-title .cc-count{font-size:10px;font-weight:800;color:var(--purple);background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);border-radius:20px;padding:3px 10px;letter-spacing:.08em}
@@ -150,7 +152,7 @@ textarea.field-input{min-height:80px;resize:vertical}
 .combo-leg-num{font-size:10px;font-weight:800;color:var(--purple);flex-shrink:0}
 .combo-leg-match{font-weight:600;color:var(--text)}
 .combo-leg-pick{font-size:11px;color:var(--muted);margin-left:auto;text-align:right;flex-shrink:0}
-.combo-del-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:4px;cursor:pointer;font-size:11px;padding:6px 11px;transition:all .2s;white-space:nowrap}
+.combo-del-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:var(--r-pill,999px);cursor:pointer;font-size:11px;padding:6px 11px;transition:all .2s;white-space:nowrap}
 .combo-del-btn:hover{color:var(--red);border-color:rgba(248,113,113,.4)}
 .combo-suggest{font-size:11px;padding:9px 12px;border-radius:6px;margin-bottom:12px;line-height:1.5;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .combo-suggest.won{color:var(--green);background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25)}
@@ -160,21 +162,21 @@ textarea.field-input{min-height:80px;resize:vertical}
 /* ── UPSELL (non-Apex) ── */
 .upsell-section{opacity:0;animation:fadeUp .5s .4s forwards}
 .upsell-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
-.upsell-card{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:8px;padding:24px 22px;position:relative;overflow:hidden;transition:border-color .3s,background .3s}
-.upsell-card:hover{border-color:rgba(255,69,0,.25);background:rgba(255,69,0,.03)}
+.upsell-card{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:var(--r-lg,20px);padding:24px 22px;position:relative;overflow:hidden;box-shadow:var(--shadow-sm);transition:border-color .3s,background .3s}
+.upsell-card:hover{border-color:rgba(255,90,31,.25);background:rgba(255,90,31,.03)}
 .upsell-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--orange),transparent);transform:scaleX(0);transform-origin:center;transition:transform .4s}
 .upsell-card:hover::before{transform:scaleX(1)}
 .upsell-icon{font-size:28px;margin-bottom:14px;display:block}
 .upsell-name{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
 .upsell-desc{font-size:12.5px;color:var(--muted);line-height:1.65}
-.upsell-cta-block{background:linear-gradient(135deg,rgba(255,69,0,.08),rgba(167,139,250,.06));border:1px solid rgba(255,69,0,.25);border-radius:8px;padding:28px 32px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.upsell-cta-block{background:linear-gradient(135deg,rgba(255,90,31,.08),rgba(167,139,250,.06));border:1px solid rgba(255,90,31,.25);border-radius:var(--r-lg,20px);padding:28px 32px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;box-shadow:var(--shadow-sm)}
 .upsell-cta-left{}
 .upsell-cta-eyebrow{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
 .upsell-cta-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:32px;text-transform:uppercase;line-height:.95;margin-bottom:6px}
 .upsell-cta-title span{color:var(--orange)}
 .upsell-cta-sub{font-size:13px;color:var(--muted);line-height:1.55}
-.upsell-cta-btn{display:inline-flex;align-items:center;font:700 12px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:13px 28px;background:var(--orange);color:#fff;border:none;border-radius:3px;cursor:pointer;text-decoration:none;white-space:nowrap;transition:background .2s;flex-shrink:0}
-.upsell-cta-btn:hover{background:#e03d00}
+.upsell-cta-btn{display:inline-flex;align-items:center;font:700 12px 'Barlow',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:13px 28px;background:var(--orange);color:#fff;border:none;border-radius:var(--r-pill,999px);cursor:pointer;text-decoration:none;white-space:nowrap;transition:background .2s;flex-shrink:0}
+.upsell-cta-btn:hover{filter:brightness(1.07)}
 
 /* BOTTOM NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:300;display:flex;border-top:1px solid var(--border);background:rgba(6,6,8,.92);backdrop-filter:blur(16px)}
@@ -206,7 +208,7 @@ textarea.field-input{min-height:80px;resize:vertical}
 }
   </style>
 </head>
-<body>
+<body class="app-redesign">
 <canvas id="bg-canvas"></canvas>
 
 <header class="user-panel-top">
@@ -354,11 +356,11 @@ textarea.field-input{min-height:80px;resize:vertical}
 </div>
 
 <nav class="bottom-nav" aria-label="Navegación principal">
-  <a class="bottom-nav-item" href="user-hoy.html"><span class="bottom-nav-icon">🎯</span><span>Picks</span></a>
-  <a class="bottom-nav-item" href="user-reto.html"><span class="bottom-nav-icon">🏔️</span><span>Reto</span></a>
-  <a class="bottom-nav-item bottom-nav-active" href="user-bank.html"><span class="bottom-nav-icon">💰</span><span>Bank</span></a>
-  <a class="bottom-nav-item" href="planes.html"><span class="bottom-nav-icon">💳</span><span>Planes</span></a>
-  <a class="bottom-nav-item" href="user-checkin.html"><span class="bottom-nav-icon">👤</span><span>Cuenta</span></a>
+  <a class="bottom-nav-item" href="user-hoy.html"><svg class="bn-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.6" fill="currentColor" stroke="none"/></svg><span class="bottom-nav-icon">🎯</span><span>Picks</span></a>
+  <a class="bottom-nav-item" href="user-reto.html"><svg class="bn-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19h18"/><path d="M5 19 11 6l3.2 6.5L16.5 9 21 19"/></svg><span class="bottom-nav-icon">🏔️</span><span>Reto</span></a>
+  <a class="bottom-nav-item bottom-nav-active" href="user-bank.html"><svg class="bn-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/><path d="M16 14.5h2.5"/></svg><span class="bottom-nav-icon">💰</span><span>Bank</span></a>
+  <a class="bottom-nav-item" href="planes.html"><svg class="bn-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17 5 8l4 3 3-5 3 5 4-3 2 9z"/><path d="M3 20h18"/></svg><span class="bottom-nav-icon">💳</span><span>Planes</span></a>
+  <a class="bottom-nav-item" href="user-checkin.html"><svg class="bn-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/></svg><span class="bottom-nav-icon">👤</span><span>Cuenta</span></a>
 </nav>
 
 <script src="app.js"></script>

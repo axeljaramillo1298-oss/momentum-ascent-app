@@ -5,19 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Mi Cuenta | Momentum Ascent</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="app-shell.css" />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --orange:#FF4500;
-  --dark:#060608;
-  --border:rgba(255,255,255,0.07);
-  --text:#f0ede8;
-  --muted:rgba(240,237,232,0.4);
-  --green:#4ADE80;
-  --red:#F87171;
-  --yellow:#F59E0B;
+  --orange:#FF5A1F;
+  --dark:#100c0b;
+  --border:rgba(255,232,216,.10);
+  --text:#f6efe7;
+  --muted:rgba(246,239,231,.46);
+  --green:#46E59A;
+  --red:#FF6B6B;
+  --yellow:#FFB23E;
   --purple:#A78BFA;
 }
 html{scroll-behavior:smooth}
@@ -39,28 +40,28 @@ main{position:relative;z-index:2}
 .nav-logout:hover{color:var(--red)}
 
 /* HERO */
-.page-hero{padding:52px 52px 40px;position:relative;overflow:hidden}
-.page-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:400px;background:radial-gradient(ellipse 60% 80% at 20% 20%,rgba(80,20,120,.18) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 80% 40%,rgba(255,69,0,.05) 0%,transparent 70%);pointer-events:none}
+.page-hero{padding:22px 22px 14px;position:relative;overflow:hidden;min-height:auto}
+.page-hero::before{content:'';position:absolute;top:-40px;left:0;right:0;height:220px;background:radial-gradient(ellipse 55% 70% at 82% 0%,rgba(255,90,31,.12) 0%,transparent 68%);pointer-events:none}
 .hero-inner{display:flex;justify-content:space-between;align-items:flex-start;gap:40px;position:relative;z-index:1}
 .hero-left{flex:1}
 .page-eyebrow{font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;opacity:0;animation:fadeUp .5s .1s forwards}
 .page-eyebrow::before{content:'';width:20px;height:1px;background:var(--muted)}
-.page-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(56px,7vw,96px);text-transform:uppercase;letter-spacing:-.02em;line-height:.9;opacity:0;animation:fadeUp .6s .2s forwards}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:clamp(34px,8vw,52px);text-transform:uppercase;letter-spacing:-.015em;line-height:.92;opacity:0;animation:fadeUp .6s .2s forwards}
 .page-desc{margin-top:16px;font-size:14px;color:var(--muted);max-width:380px;line-height:1.65;font-weight:300;opacity:0;animation:fadeUp .5s .35s forwards}
 
 /* AVATAR BLOCK */
 .hero-right{display:flex;flex-direction:column;align-items:flex-end;gap:14px;padding-top:4px;opacity:0;animation:fadeUp .6s .3s forwards;flex-shrink:0}
-.avatar-box{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,rgba(255,69,0,.3),rgba(167,139,250,.2));border:2px solid rgba(255,69,0,.3);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--orange)}
-.user-email-chip{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--muted);background:rgba(255,255,255,.04);border:1px solid var(--border);padding:6px 14px;border-radius:3px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.plan-chip{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,69,0,.35);background:rgba(255,69,0,.08);color:var(--orange)}
+.avatar-box{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,rgba(255,90,31,.3),rgba(167,139,250,.2));border:2px solid rgba(255,90,31,.3);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--orange)}
+.user-email-chip{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--muted);background:rgba(255,255,255,.04);border:1px solid var(--border);padding:6px 14px;border-radius:var(--r-pill,999px);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plan-chip{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,90,31,.35);background:rgba(255,90,31,.08);color:var(--orange)}
 
 /* CONTENT */
 .page-content{padding:0 52px 140px;position:relative;z-index:2;opacity:0;animation:fadeUp .5s .5s forwards}
 .cuenta-grid{display:grid;grid-template-columns:1fr 300px;gap:24px}
 
 /* INFO CARDS */
-.info-card{background:rgba(255,255,255,.022);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px;transition:border-color .25s}
-.info-card:hover{border-color:rgba(255,69,0,.18)}
+.info-card{background:var(--surface,rgba(255,255,255,.022));border:1px solid var(--border);border-radius:var(--r-lg,20px);overflow:hidden;margin-bottom:12px;box-shadow:var(--shadow-sm);transition:border-color .25s,box-shadow .25s}
+.info-card:hover{border-color:rgba(255,90,31,.18);box-shadow:var(--shadow)}
 .info-card-hdr{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
 .info-card-tag{font-size:8.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid rgba(255,255,255,.12);color:var(--muted)}
 .info-card-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:17px;text-transform:uppercase;letter-spacing:.04em}
@@ -78,8 +79,8 @@ main{position:relative;z-index:2}
 
 /* SIDEBAR */
 .sidebar-col{display:flex;flex-direction:column;gap:14px}
-.side-card{background:rgba(255,255,255,.022);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .25s}
-.side-card:hover{border-color:rgba(255,69,0,.18)}
+.side-card{background:var(--surface,rgba(255,255,255,.022));border:1px solid var(--border);border-radius:var(--r-lg,20px);overflow:hidden;box-shadow:var(--shadow-sm);transition:border-color .25s,box-shadow .25s}
+.side-card:hover{border-color:rgba(255,90,31,.18);box-shadow:var(--shadow)}
 .side-card-hdr{padding:14px 18px 10px;border-bottom:1px solid var(--border)}
 .side-card-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;text-transform:uppercase;letter-spacing:.05em}
 .side-card-body{padding:14px 18px}
@@ -90,14 +91,14 @@ main{position:relative;z-index:2}
 
 /* ACTIONS */
 .action-grid{display:flex;flex-direction:column;gap:8px}
-.btn-action{display:block;width:100%;font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:12px 18px;border-radius:4px;text-decoration:none;text-align:center;cursor:pointer;transition:all .2s}
-.btn-action.primary{background:var(--orange);color:#fff;border:none}
-.btn-action.primary:hover{background:#e03d00}
+.btn-action{display:block;width:100%;font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:12px 18px;border-radius:var(--r-pill,999px);text-decoration:none;text-align:center;cursor:pointer;transition:all .2s}
+.btn-action.primary{background:var(--orange);color:#1a0d06;border:none;box-shadow:var(--glow-brand)}
+.btn-action.primary:hover{filter:brightness(1.06)}
 .btn-action.ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
 .btn-action.ghost:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
 .btn-action.danger{background:rgba(248,113,113,.08);color:var(--red);border:1px solid rgba(248,113,113,.2)}
 .btn-action.danger:hover{background:rgba(248,113,113,.14)}
-.btn-action.admin{background:linear-gradient(135deg,rgba(167,139,250,.12),rgba(255,69,0,.08));color:var(--purple);border:1px solid rgba(167,139,250,.25)}
+.btn-action.admin{background:linear-gradient(135deg,rgba(167,139,250,.12),rgba(255,90,31,.08));color:var(--purple);border:1px solid rgba(167,139,250,.25)}
 .btn-action.admin:hover{border-color:rgba(167,139,250,.4)}
 
 /* BOTTOM NAV */
@@ -122,20 +123,20 @@ main{position:relative;z-index:2}
   .page-content{padding:0 16px 140px}
   .info-card-hdr{padding:12px 14px}
   .data-row{padding:10px 14px}
-  .data-label{font-size:9px}
+  .data-lbl{font-size:9px}
   .data-val{font-size:13px}
 }
 @media(max-width:390px){
   .page-hero{padding:14px 12px 14px}
   .page-content{padding:0 12px 140px}
   .avatar-box{width:64px;height:64px;font-size:22px}
-  .hero-name{font-size:clamp(28px,10vw,44px)}
+  .page-title{font-size:clamp(28px,10vw,44px)}
   .info-card-hdr{padding:10px 12px}
   .data-row{padding:8px 12px;flex-direction:column;align-items:flex-start;gap:4px}
 }
   </style>
 </head>
-<body>
+<body class="app-redesign">
 <canvas id="bg-canvas"></canvas>
 
 <header class="user-panel-top">
@@ -264,18 +265,23 @@ main{position:relative;z-index:2}
 
 <nav class="bottom-nav" aria-label="Navegacion principal">
   <a class="bottom-nav-item" href="user-hoy.html">
+    <svg class="bn-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.6" fill="currentColor" stroke="none"/></svg>
     <span class="bottom-nav-icon">🎯</span><span>Picks</span>
   </a>
   <a class="bottom-nav-item" href="user-progreso.html">
+    <svg class="bn-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19h18"/><path d="M5 19 11 6l3.2 6.5L16.5 9 21 19"/></svg>
     <span class="bottom-nav-icon">📚</span><span>Historial</span>
   </a>
   <a class="bottom-nav-item" href="user-bank.html">
+    <svg class="bn-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/><path d="M16 14.5h2.5"/></svg>
     <span class="bottom-nav-icon">💰</span><span>Bank</span>
   </a>
   <a class="bottom-nav-item" href="planes.html">
+    <svg class="bn-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17 5 8l4 3 3-5 3 5 4-3 2 9z"/><path d="M3 20h18"/></svg>
     <span class="bottom-nav-icon">💳</span><span>Planes</span>
   </a>
   <a class="bottom-nav-item bottom-nav-active" href="user-checkin.html">
+    <svg class="bn-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/></svg>
     <span class="bottom-nav-icon">👤</span><span>Cuenta</span>
   </a>
 </nav>
