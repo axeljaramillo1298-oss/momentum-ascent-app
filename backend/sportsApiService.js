@@ -306,19 +306,82 @@ async function getTodayEvents(date) {
 
 async function getEventStats(event = {}) {
   const normalized = normalizeEvent(event);
-  if (normalized.stats) {
-    return {
-      sourceApi: provider || "mock",
-      statsJson: normalized.stats,
-    };
+  const base = normalized.stats
+    ? { sourceApi: provider || "mock", statsJson: normalized.stats }
+    : (() => {
+        const mock = buildMockEvents().find((item) => item.externalId === normalized.externalId);
+        return {
+          sourceApi: provider || "mock",
+          statsJson: mock?.stats || { note: "Sin datos suficientes del proveedor; se usa contexto limitado." },
+        };
+      })();
+
+  // ── Enriquecimiento con team_stats (rev 2026-06-01) ──────────────
+  // Lookup en BD por nombre+liga+deporte de cada equipo. Si hay stats frescos
+  // (<14 días), los inyecta en statsJson.team_stats para que el prompt los use.
+  // Best-effort — si falla, mantiene comportamiento anterior.
+  try {
+    const db = require("./db");
+    if (typeof db.getTeamStatsBySlug === "function") {
+      const homeName = event.homeTeam || event.home_team || normalized.homeTeam || "";
+      const awayName = event.awayTeam || event.away_team || normalized.awayTeam || "";
+      const league = event.league || normalized.league || "";
+      const sport = (event.sport || normalized.sport || "football").toLowerCase();
+      const homeSlug = typeof db.teamSlug === "function" ? db.teamSlug(homeName) : "";
+      const awaySlug = typeof db.teamSlug === "function" ? db.teamSlug(awayName) : "";
+      const MAX_AGE_DAYS = 14;
+      const [homeStats, awayStats] = await Promise.all([
+        homeSlug ? db.getTeamStatsBySlug({ teamSlug: homeSlug, league, sport, maxAgeDays: MAX_AGE_DAYS }) : null,
+        awaySlug ? db.getTeamStatsBySlug({ teamSlug: awaySlug, league, sport, maxAgeDays: MAX_AGE_DAYS }) : null,
+      ]);
+
+      if (homeStats || awayStats) {
+        const projectField = (statsRow, keys) => {
+          if (!statsRow) return null;
+          const out = {};
+          for (const k of keys) {
+            const v = statsRow[k];
+            if (v != null && v !== "") out[k] = v;
+          }
+          return Object.keys(out).length ? out : null;
+        };
+
+        const sportFields = {
+          football: ["goals_for_avg", "goals_against_avg", "corners_for_avg", "corners_against_avg", "btts_pct", "over_25_pct", "clean_sheets_pct", "form_last_5", "home_record", "away_record", "sample_size", "last_updated"],
+          baseball: ["era_team", "era_bullpen", "ops_team", "ops_vs_lhp", "ops_vs_rhp", "runs_for_avg", "runs_against_avg", "form_last_5", "home_record", "away_record", "sample_size", "last_updated"],
+          basketball: ["pace", "off_rating", "def_rating", "points_for_avg", "points_against_avg", "form_last_5", "home_record", "away_record", "sample_size", "last_updated"],
+          hockey: ["goals_for_per_game", "goals_against_per_game", "power_play_pct", "penalty_kill_pct", "form_last_5", "home_record", "away_record", "sample_size", "last_updated"],
+        };
+        const fields = sportFields[sport] || sportFields.football;
+
+        const enriched = { ...base.statsJson };
+        enriched.team_stats = {
+          source: "sofascore_scrape",
+          home: projectField(homeStats, fields),
+          away: projectField(awayStats, fields),
+        };
+
+        // Proyecciones cuando hay data de ambos
+        if (sport === "football" && homeStats && awayStats) {
+          const cFor = (Number(homeStats.corners_for_avg || 0) + Number(awayStats.corners_for_avg || 0)) / 2;
+          const cAg = (Number(homeStats.corners_against_avg || 0) + Number(awayStats.corners_against_avg || 0)) / 2;
+          if (cFor || cAg) enriched.team_stats.projected_corners_total = Math.round((cFor + cAg) * 10) / 10;
+          const gFor = Number(homeStats.goals_for_avg || 0) + Number(awayStats.goals_for_avg || 0);
+          if (gFor) enriched.team_stats.projected_goals_total = Math.round(gFor * 10) / 10;
+        }
+
+        if (homeStats?.stale || awayStats?.stale) {
+          enriched.team_stats.warning = "stats potencialmente desactualizados (>14 días)";
+        }
+
+        return { sourceApi: `${base.sourceApi}+team_stats`, statsJson: enriched };
+      }
+    }
+  } catch (statsErr) {
+    console.error("[getEventStats] team_stats lookup failed:", statsErr.message || statsErr);
   }
-  const mock = buildMockEvents().find((item) => item.externalId === normalized.externalId);
-  return {
-    sourceApi: provider || "mock",
-    statsJson: mock?.stats || {
-      note: "Sin datos suficientes del proveedor; se usa contexto limitado.",
-    },
-  };
+
+  return base;
 }
 
 module.exports = {

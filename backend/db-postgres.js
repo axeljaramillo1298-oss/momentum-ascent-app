@@ -258,6 +258,59 @@ CREATE TABLE IF NOT EXISTS ai_pick_candidates (
   created_at TIMESTAMPTZ NOT NULL
 );
 
+-- Pipeline de stats por equipo (rev 2026-06-01) — alimenta getEventStats
+-- Scrapeado desde Sofascore al cargar la cartelera del día.
+-- Cobertura cross-sport: stats relevantes a cada disciplina.
+CREATE TABLE IF NOT EXISTS team_stats (
+  id BIGSERIAL PRIMARY KEY,
+  team_name TEXT NOT NULL,
+  team_slug TEXT NOT NULL,                  -- "manchester-city", para joins consistentes
+  league TEXT NOT NULL,
+  sport TEXT NOT NULL,                      -- football | baseball | basketball | hockey
+  season TEXT NOT NULL DEFAULT '',          -- "2025-26" | "2026" (deportes US)
+  -- ── Fútbol ──
+  goals_for_avg NUMERIC(5,2),
+  goals_against_avg NUMERIC(5,2),
+  corners_for_avg NUMERIC(5,2),
+  corners_against_avg NUMERIC(5,2),
+  btts_pct NUMERIC(5,2),                    -- % de partidos con BTTS
+  over_25_pct NUMERIC(5,2),                 -- % Over 2.5 goles
+  clean_sheets_pct NUMERIC(5,2),
+  -- ── Béisbol ──
+  era_team NUMERIC(5,2),                    -- ERA del staff entero
+  era_bullpen NUMERIC(5,2),                 -- ERA del bullpen específico
+  ops_team NUMERIC(5,3),                    -- OPS general
+  ops_vs_lhp NUMERIC(5,3),                  -- OPS vs zurdos
+  ops_vs_rhp NUMERIC(5,3),                  -- OPS vs derechos
+  runs_for_avg NUMERIC(5,2),                -- carreras por partido
+  runs_against_avg NUMERIC(5,2),
+  -- ── Basketball ──
+  pace NUMERIC(5,2),                        -- ritmo de juego
+  off_rating NUMERIC(5,2),                  -- offensive rating
+  def_rating NUMERIC(5,2),
+  points_for_avg NUMERIC(5,2),
+  points_against_avg NUMERIC(5,2),
+  -- ── Hockey ──
+  goals_for_per_game NUMERIC(5,2),
+  goals_against_per_game NUMERIC(5,2),
+  power_play_pct NUMERIC(5,2),
+  penalty_kill_pct NUMERIC(5,2),
+  -- ── Forma y resultados ──
+  form_last_5 TEXT,                         -- "W-W-D-L-W"
+  home_record TEXT,                         -- "8-2-1"
+  away_record TEXT,                         -- "5-3-3"
+  sample_size INTEGER NOT NULL DEFAULT 0,   -- # partidos usados
+  -- ── Meta ──
+  source TEXT NOT NULL DEFAULT 'sofascore',
+  source_url TEXT,
+  raw_json JSONB,                           -- todo lo extra que se haya parseado
+  last_updated TIMESTAMPTZ NOT NULL,
+  UNIQUE(team_slug, league, sport)
+);
+CREATE INDEX IF NOT EXISTS idx_team_stats_slug_sport ON team_stats(team_slug, sport);
+CREATE INDEX IF NOT EXISTS idx_team_stats_league ON team_stats(league);
+CREATE INDEX IF NOT EXISTS idx_team_stats_last_updated ON team_stats(last_updated DESC);
+
 CREATE TABLE IF NOT EXISTS reto_parlays (
   id BIGSERIAL PRIMARY KEY,
   status TEXT NOT NULL DEFAULT 'draft',
@@ -2734,7 +2787,135 @@ async function getLatestOddsSnapshot(pickId) {
   };
 }
 
+// ════════════════════════════════════════════════════════════════
+// team_stats helpers (rev 2026-06-01) — pipeline de stats por equipo
+// ════════════════════════════════════════════════════════════════
+
+function teamSlug(name) {
+  return String(name || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+// UPSERT por (team_slug, league, sport). Acepta partial — solo actualiza columnas presentes.
+async function upsertTeamStats(payload = {}) {
+  const teamName = safeStr(payload.teamName || payload.team_name);
+  const league = safeStr(payload.league);
+  const sport = safeStr(payload.sport).toLowerCase();
+  if (!teamName || !league || !sport) throw new Error("teamName_league_sport_required");
+  const slug = safeStr(payload.teamSlug || payload.team_slug) || teamSlug(teamName);
+  const now = nowIso();
+  // Lista de columnas opcionales y sus valores
+  const cols = {
+    season: payload.season,
+    goals_for_avg: payload.goalsForAvg ?? payload.goals_for_avg,
+    goals_against_avg: payload.goalsAgainstAvg ?? payload.goals_against_avg,
+    corners_for_avg: payload.cornersForAvg ?? payload.corners_for_avg,
+    corners_against_avg: payload.cornersAgainstAvg ?? payload.corners_against_avg,
+    btts_pct: payload.bttsPct ?? payload.btts_pct,
+    over_25_pct: payload.over25Pct ?? payload.over_25_pct,
+    clean_sheets_pct: payload.cleanSheetsPct ?? payload.clean_sheets_pct,
+    era_team: payload.eraTeam ?? payload.era_team,
+    era_bullpen: payload.eraBullpen ?? payload.era_bullpen,
+    ops_team: payload.opsTeam ?? payload.ops_team,
+    ops_vs_lhp: payload.opsVsLhp ?? payload.ops_vs_lhp,
+    ops_vs_rhp: payload.opsVsRhp ?? payload.ops_vs_rhp,
+    runs_for_avg: payload.runsForAvg ?? payload.runs_for_avg,
+    runs_against_avg: payload.runsAgainstAvg ?? payload.runs_against_avg,
+    pace: payload.pace,
+    off_rating: payload.offRating ?? payload.off_rating,
+    def_rating: payload.defRating ?? payload.def_rating,
+    points_for_avg: payload.pointsForAvg ?? payload.points_for_avg,
+    points_against_avg: payload.pointsAgainstAvg ?? payload.points_against_avg,
+    goals_for_per_game: payload.goalsForPerGame ?? payload.goals_for_per_game,
+    goals_against_per_game: payload.goalsAgainstPerGame ?? payload.goals_against_per_game,
+    power_play_pct: payload.powerPlayPct ?? payload.power_play_pct,
+    penalty_kill_pct: payload.penaltyKillPct ?? payload.penalty_kill_pct,
+    form_last_5: payload.formLast5 ?? payload.form_last_5,
+    home_record: payload.homeRecord ?? payload.home_record,
+    away_record: payload.awayRecord ?? payload.away_record,
+    sample_size: payload.sampleSize ?? payload.sample_size,
+    source: payload.source,
+    source_url: payload.sourceUrl ?? payload.source_url,
+    raw_json: payload.rawJson ?? payload.raw_json,
+  };
+  // Filtrar columnas con valor presente
+  const present = Object.entries(cols).filter(([_, v]) => v !== undefined && v !== null && v !== "");
+  // Mandatory cols
+  const mandatoryColumns = ["team_name", "team_slug", "league", "sport", "last_updated"];
+  const mandatoryValues = [teamName, slug, league, sport, now];
+  const allColumns = mandatoryColumns.concat(present.map(([k]) => k));
+  const placeholders = allColumns.map((_, i) => `$${i + 1}`).join(", ");
+  const updateSet = allColumns
+    .filter((c) => !["team_slug", "league", "sport"].includes(c)) // claves no se actualizan
+    .map((c) => `${c} = EXCLUDED.${c}`)
+    .join(", ");
+  const rawJsonValue = cols.raw_json && typeof cols.raw_json === "object" ? JSON.stringify(cols.raw_json) : cols.raw_json;
+  const allValues = mandatoryValues.concat(
+    present.map(([k, v]) => (k === "raw_json" ? rawJsonValue : v))
+  );
+  const sql = `
+    INSERT INTO team_stats (${allColumns.join(", ")})
+    VALUES (${placeholders})
+    ON CONFLICT (team_slug, league, sport) DO UPDATE SET ${updateSet}
+    RETURNING id, team_name AS "teamName", team_slug AS "teamSlug", league, sport, last_updated AS "lastUpdated"
+  `;
+  const res = await pool.query(sql, allValues);
+  return res.rows[0] || null;
+}
+
+async function getTeamStatsBySlug({ teamSlug: slug, teamName, league, sport, maxAgeDays = null } = {}) {
+  const slugFinal = safeStr(slug) || teamSlug(teamName || "");
+  const leagueFinal = safeStr(league);
+  const sportFinal = safeStr(sport).toLowerCase();
+  if (!slugFinal || !sportFinal) return null;
+  // Si league está vacío, hacemos un match más laxo (cualquier liga, prefiere el más reciente)
+  let res;
+  if (leagueFinal) {
+    res = await pool.query(
+      `SELECT * FROM team_stats WHERE team_slug = $1 AND league = $2 AND sport = $3 LIMIT 1`,
+      [slugFinal, leagueFinal, sportFinal]
+    );
+  } else {
+    res = await pool.query(
+      `SELECT * FROM team_stats WHERE team_slug = $1 AND sport = $2 ORDER BY last_updated DESC LIMIT 1`,
+      [slugFinal, sportFinal]
+    );
+  }
+  const row = res.rows[0];
+  if (!row) return null;
+  // Verificar frescura si se pidió
+  if (maxAgeDays != null) {
+    const updated = new Date(row.last_updated);
+    const ageDays = (Date.now() - updated.getTime()) / (1000 * 60 * 60 * 24);
+    if (ageDays > maxAgeDays) {
+      return { ...row, stale: true, ageDays: Math.round(ageDays * 10) / 10 };
+    }
+  }
+  return row;
+}
+
+// Lista equipos que necesitan refresh (sin stats o stats viejos)
+async function listTeamsNeedingStatsRefresh({ maxAgeDays = 7 } = {}) {
+  const res = await pool.query(
+    `SELECT team_name, team_slug, league, sport, last_updated
+     FROM team_stats
+     WHERE last_updated < NOW() - ($1 || ' days')::interval
+     ORDER BY last_updated ASC
+     LIMIT 200`,
+    [String(maxAgeDays)]
+  );
+  return res.rows || [];
+}
+
 module.exports = {
+  // team_stats helpers (rev 2026-06-01)
+  upsertTeamStats,
+  getTeamStatsBySlug,
+  listTeamsNeedingStatsRefresh,
+  teamSlug,
   DB_META,
   initDb,
   ensureUser,
