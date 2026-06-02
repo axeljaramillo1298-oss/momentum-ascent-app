@@ -1464,11 +1464,22 @@ async function analyzeMarketsGPT({ event = {}, stats = {}, historyPicks = [] } =
     // Histórico: 1 pick en 337 (0% WR). El mercado es ignorado por GPT/Claude.
     // Causa: data de corners por equipo casi nunca está en Stats. Decisión:
     // explicitar la regla — solo elegir Corners si hay data clara, sino conf baja.
-    "10b. Corners: SOLO asigna conf >= 60 si Stats incluye datos explicitos de promedio de corners por partido para AMBOS equipos en al menos 5 partidos recientes. Sin esos datos, pon conf <= 50 y en la nota indica 'sin data de corners'. NUNCA inventes proyecciones de corners — historico de esta plataforma muestra 0% WR cuando se publica sin data.",
-    "11. Totales en beisbol: La conf del mercado goles debe reflejar ERA del pitcher abridor. Si no tienes ERA en Stats, pon conf <= 55 en goles y explica que falta el pitcher.",
-    "12. Totales en basketball: Incluye pace (ritmo de juego) de ambos equipos si esta en Stats. Sin pace, conf del total no debe superar 60.",
+    "10b. Corners: SOLO asigna conf >= 60 si Stats.team_stats.home.corners_for_avg Y Stats.team_stats.away.corners_for_avg estan presentes (campos reales en nuestra BD). Cita ambos valores numericos en la nota (ej. 'Local 6.5/p, Visit 5.8/p, proyeccion 10.7'). Si Stats.team_stats.projected_corners_total existe, usalo para elegir linea: Over X.5 si projected >= X+1; Under X.5 si projected <= X-1; diferencia < 1 corner = conf MAX 60. Sin esos campos: conf <= 50 y nota 'team_stats sin corners'. NUNCA inventes — historico 0% WR / 337 picks sin data.",
+    "11. Totales en beisbol: La conf del mercado goles debe reflejar ERA del pitcher abridor. Si Stats.team_stats trae era_bullpen/runs_for_avg/runs_against_avg de ambos equipos, citalos en la nota. Si no tienes ERA en Stats, pon conf <= 55 en goles y explica que falta el pitcher.",
+    "12. Totales en basketball: Incluye pace (ritmo de juego) de ambos equipos si esta en Stats. Si Stats.team_stats.home.pace Y away.pace existen, citalos exacto en la nota. Sin pace, conf del total no debe superar 60.",
     "13. Antes de asignar cualquier conf >= 70: lista mentalmente 2 factores en contra del pick. Si existen 2 o mas factores en contra, reduce conf entre 8 y 12 puntos.",
     "14. Si en Stats hay odds (cuotas decimales) de un mercado, considera el Expected Value: tu probabilidad implicita (conf/100) debe superar a la implicita del mercado (1/odds) para que el pick tenga valor. Cuando hay odds, ajusta tu conf y nota considerando el EV.",
+    // ── 15. team_stats por deporte (rev 2026-06-01) ──────────────────
+    // Inyectado desde sportsApiService.getEventStats con shape:
+    //   stats.team_stats = { source:'db', home:{...}, away:{...},
+    //                        projected_corners_total?, projected_goals_total? }
+    // Los valores son numbers reales (no strings).
+    "15. TEAM_STATS (BD interna): Si Stats incluye `team_stats` con source='db', esos son datos reales de nuestra base por equipo. USALOS como fuente PRIMARIA y cita el valor numerico exacto en la nota cuando apliques.",
+    "15a. FUTBOL — team_stats.home/away contiene: corners_for_avg, corners_against_avg, btts_pct, over_25_pct, goals_for_avg, goals_against_avg, clean_sheets_pct, form_last_5. Mercado BTTS: aprueba SOLO si home.btts_pct >= 60 Y away.btts_pct >= 60 (citalos). Mercado Goles Over 2.5: aprueba si over_25_pct promedio >= 60 O projected_goals_total >= 2.8. Mercado Corners: ver regla 10b.",
+    "15b. BEISBOL (MLB/LMB) — team_stats.home/away contiene: era_team, era_bullpen, ops_team, ops_vs_lhp, ops_vs_rhp, runs_for_avg, runs_against_avg. Run Line +1.5 visitante (regla 3c): SOLO conf >= 65 si home.era_bullpen > 4.50 explicito (citalo). Mercado ML: usa ops_vs_lhp/rhp del bateo del rival vs mano del abridor. Totales: cita runs_for_avg + era_bullpen de ambos.",
+    "15c. BASKETBALL (NBA) — team_stats.home/away contiene: pace, off_rating, def_rating, points_for_avg, points_against_avg. Totales Over linea L: requiere (home.pace + away.pace) / 2 >= 100 Y suma off_rating + def_rating del rival favorable. Cita pace exacto en nota. Sin pace de ambos: conf MAX 60 (regla 12).",
+    "15d. HOCKEY (NHL/IIHF) — team_stats.home/away contiene: goals_for_per_game, goals_against_per_game, power_play_pct, penalty_kill_pct. Totales (goles): cita goals_for_per_game de ambos. Puck Line: PP% del favorito > 22 favorece -1.5. Sin power_play_pct/PK%: conf totales MAX 62.",
+    "15e. REGLA TRANSVERSAL — Si team_stats esta AUSENTE para este evento (no aparece la clave o source != 'db'), conf MAX GLOBAL en todos los mercados de este evento = 65. Esto es deliberado: en la ultima semana el 100% de picks 75+% sin team_stats fallaron.",
     `Criterios prioritarios para ${sportCfg.label}:`,
     ...sportCfg.criteria,
     buildSportContextAdendum(event),
@@ -1478,7 +1489,9 @@ async function analyzeMarketsGPT({ event = {}, stats = {}, historyPicks = [] } =
     `Evento: ${league} | ${home} vs ${away}`,
     `Deporte: ${sportCfg.label}`,
     `Fecha: ${date}`,
-    stats && Object.keys(stats).length ? `Stats: ${JSON.stringify(stats).slice(0, 3200)}` : "Stats: limitados",
+    // team_stats viene primero y entero (no se trunca); el resto se corta a 4000
+    ...(stats?.team_stats ? [`team_stats (BD, prioritario): ${JSON.stringify(stats.team_stats)}`] : ["team_stats: NO DISPONIBLE — aplica regla 15e (conf MAX 65 en todos los mercados)"]),
+    stats && Object.keys(stats).length ? `Stats restantes: ${JSON.stringify({ ...stats, team_stats: undefined }).slice(0, 4000)}` : "Stats: limitados",
     perfBlock ? `\n${perfBlock}` : "",
     insuranceBlock ? `\n${insuranceBlock}` : "",
     `Analiza los 5 mercados de ${sportCfg.label} usando SOLO la informacion disponible.`,
@@ -1728,8 +1741,16 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
     "   3c. Run Line +1.5 visitante (MLB): SOLO si bullpen del local es flojo (ERA bullpen > 4.0) o el local viene de 2+ derrotas. Sin esa evidencia, conf MAX 65 — caso Reds-Braves +1.5 dom 31 falló al 70% sin evidencia.",
     "   3d. Si todos los criterios fallan (sin H2H, sin forma, sin contexto), descarta Handicap.",
     "4b. Corners: SOLO elige Corners como mercado normal si gptMarkets.corners.conf >= 65 Y la nota de GPT cita un promedio numérico de corners para ambos equipos (ej. 'Local 6.5/partido, Visit 4.8/partido'). Sin esa cita explícita, NUNCA elijas Corners. Histórico: 1 pick en 337 (0% WR) — el mercado es de baja confiabilidad sin data específica.",
-    "4. Totales beisbol: elige Over/Under si la nota de GPT menciona ERA o pitch de cualquier lanzador. Sin ninguna mencion de ERA, elige ML.",
-    "5. Totales basketball: elige Over/Under si la nota menciona pace o ritmo. Sin pace, prefiere ML.",
+    // ── DATA OBLIGATORIA DESDE team_stats (rev 2026-06-01) ────────────
+    // Las stats vienen ahora desde BD en stats.team_stats con source='db'.
+    // El juez DEBE leer esos campos antes de aprobar mercados dependientes.
+    "4c. CORNERS via team_stats: PROHIBIDO aprobar pick de Corners sin citar `stats.team_stats.home.corners_for_avg` Y `stats.team_stats.away.corners_against_avg` en razonamiento. Si esos campos faltan en stats, RECHAZA Corners y elige otro mercado. Si `stats.team_stats.projected_corners_total` existe, valida linea: Over X.5 requiere projected >= X+0.5; Under X.5 requiere projected <= X-0.5; diferencia < 1 corner = RECHAZA. Si projected diverge >= 2 corners de la linea, Corners es candidato fuerte (conf hasta 75).",
+    "4d. GOLES futbol via team_stats: si `stats.team_stats.projected_goals_total` existe, valida: Over 2.5 requiere projected >= 2.8; Under 2.5 requiere projected <= 2.2. Cita el numero en razonamiento.",
+    "4e. BTTS via team_stats: aprueba SOLO si stats.team_stats.home.btts_pct >= 60 Y stats.team_stats.away.btts_pct >= 60 (cita ambos %). Sin esos campos, RECHAZA BTTS (regla 2 reforzada).",
+    "4. Totales beisbol: elige Over/Under si la nota de GPT menciona ERA o pitch de cualquier lanzador. Si stats.team_stats.home.era_bullpen o away.era_bullpen existen, citalos. Sin ninguna mencion de ERA y sin era_bullpen en team_stats, elige ML.",
+    "5. Totales basketball: elige Over/Under si la nota menciona pace o ritmo. Si stats.team_stats.home.pace Y away.pace existen, citalos en razonamiento (ej. 'pace 101.3 vs 99.8'). Sin pace en team_stats ni en nota, prefiere ML.",
+    "5b. Totales hockey: cita stats.team_stats.home.power_play_pct y penalty_kill_pct si existen. Over goles requiere PP% combinado >= 22 o PK% combinado <= 78.",
+    "5c. team_stats AUSENTE: si stats.team_stats no esta o source != 'db' para el deporte de este evento, confianza MAX FINAL del pick elegido = 65 (todos los mercados). Esto refleja que sin data real, el modelo descalibra (semana 2026-05-25 a 2026-06-01: 100% WR perdedora en picks 75+ sin team_stats).",
     noDrawSport
       ? "6. MMA CRITICO: en peleas de MMA el mercado Corners = metodo de victoria (KO/TKO/SUB) — win rate historico 0%. PROHIBIDO elegir Corners en MMA. Usa SOLO ML (ganador de la pelea) o Goles (Over/Under de rondas). Si GPT da alta conf a Corners en MMA, elige ML del mismo peleador. Para Over/Under beisbol o totales con favorito muy claro: Over/Under es el mercado con mejor valor."
       : "6. DC REGLA CRITICA: DC solo cuando el equipo favorecido es LOCAL (resultado = '1X', local+empate). Si el equipo favorecido es VISITANTE, usa ML directo — NUNCA X2 DC (visitante+empate): win rate historico X2 DC = 25% vs 100% de DC 1X. DC tampoco aplica si el favorito es tan dominante que ML < 1.40 — prefiere Over/Under.",
@@ -1767,11 +1788,17 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
   const streakInsuranceDecide = shouldApplyStreakInsurance(historyPicks);
   const insuranceBlockDecide = streakInsuranceDecide.active ? streakInsuranceDecide.instruction : "";
 
+  // team_stats se extrae primero y se sirve íntegro (regla 4c-5c lo exige).
+  // El resto del stats se trunca como antes pero ya sin team_stats duplicado.
+  const teamStatsBlock = stats?.team_stats
+    ? `team_stats (BD, source=${stats.team_stats.source || "?"}): ${JSON.stringify(stats.team_stats)}`
+    : "team_stats: NO DISPONIBLE — aplica regla 5c (conf MAX 65)";
   const userPromptParts = [
     `Evento: ${league} | ${home} vs ${away}`,
     `Contexto: ${safeStr(gptMarkets.resumen || "")}`,
     ``,
-    `Stats disponibles: ${stats && Object.keys(stats).length ? JSON.stringify(stats).slice(0, 3200) : "limitados"}`,
+    teamStatsBlock,
+    `Stats restantes: ${stats && Object.keys(stats).length ? JSON.stringify({ ...stats, team_stats: undefined }).slice(0, 3200) : "limitados"}`,
     ``,
     `Analisis GPT-4o por mercado:`,
     marketsText,

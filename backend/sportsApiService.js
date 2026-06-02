@@ -341,7 +341,15 @@ async function getEventStats(event = {}) {
           const out = {};
           for (const k of keys) {
             const v = statsRow[k];
-            if (v != null && v !== "") out[k] = v;
+            if (v == null || v === "") continue;
+            // PG NUMERIC viene como string; castear a Number para que el LLM no
+            // tenga que parsear "6.50" en cada lectura. Si no es numérico, dejar
+            // el valor original (form_last_5, home_record, etc. son strings).
+            if (typeof v === "string" && /^-?\d+(\.\d+)?$/.test(v)) {
+              out[k] = Number(v);
+            } else {
+              out[k] = v;
+            }
           }
           return Object.keys(out).length ? out : null;
         };
@@ -354,12 +362,26 @@ async function getEventStats(event = {}) {
         };
         const fields = sportFields[sport] || sportFields.football;
 
-        const enriched = { ...base.statsJson };
-        enriched.team_stats = {
-          source: "sofascore_scrape",
-          home: projectField(homeStats, fields),
-          away: projectField(awayStats, fields),
+        // Construir el objeto enriched ANTEPONIENDO team_stats al inicio
+        // — esto garantiza que en JSON.stringify(stats) los datos críticos
+        // estén al principio del string y NO caigan en el truncate (los
+        // prompts cortan a 3200-4000 chars).
+        const enriched = {
+          team_stats: {
+            source: "db",
+            home: projectField(homeStats, fields),
+            away: projectField(awayStats, fields),
+          },
+          ...base.statsJson,
         };
+        // Si base.statsJson traía un team_stats fantasma, sobrescribimos
+        if (base.statsJson?.team_stats) {
+          enriched.team_stats = {
+            source: "db",
+            home: projectField(homeStats, fields),
+            away: projectField(awayStats, fields),
+          };
+        }
 
         // Proyecciones cuando hay data de ambos
         if (sport === "football" && homeStats && awayStats) {
