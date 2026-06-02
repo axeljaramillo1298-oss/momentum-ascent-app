@@ -2430,7 +2430,7 @@ app.get("/api/picks/today", async (req, res) => {
 function enrichPicksWithTopRank(picks){
   try {
     if (!Array.isArray(picks) || !picks.length || typeof selectTopPicksOfDay !== "function") return picks;
-    const ranked = selectTopPicksOfDay(picks, { topN: 3, minConfidence: 60 });
+    const ranked = selectTopPicksOfDay(picks, { topN: 3, minConfidence: 70 });
     if (!ranked.length) return picks;
     const rankMap = new Map(ranked.map((p) => [p.id, p.topRank]));
     return picks.map((p) => (rankMap.has(p.id) ? { ...p, topRank: rankMap.get(p.id) } : p));
@@ -2448,7 +2448,7 @@ app.get("/api/picks/top-today", async (req, res) => {
     let picks = filterPublishedPicks((await listPickHistory(500)).filter((pick) => matchesDateKey(pick?.eventDate, dateKey)));
     picks = picks.map((p) => ((p?.planTier || "free") === "premium" && !isPremiumViewer) ? { ...p, pickLocked: true } : p);
     const ranked = (typeof selectTopPicksOfDay === "function")
-      ? selectTopPicksOfDay(picks, { topN: 3, minConfidence: 60 })
+      ? selectTopPicksOfDay(picks, { topN: 3, minConfidence: 70 })
       : picks.slice(0, 3);
     res.json({
       ok: true,

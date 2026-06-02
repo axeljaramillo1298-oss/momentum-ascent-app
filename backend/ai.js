@@ -508,9 +508,17 @@ function shouldApplyStreakInsurance(picks, options = {}) {
 // Ranks picks by a combined score (confidence + league WR + EV when
 // odds are available). Does not mutate inputs — returns shallow copies
 // with `topScore` and `topRank` fields added.
+//
+// Update 2026-06-01 (análisis semanal):
+//  · Default minConfidence subió de 60 → 70.
+//  · Razón: en la semana 25-may a 01-jun, picks <70% confidence ganaron
+//    77% (banda 60-64) y picks 70+ ganaron 56% (descalibración fuerte).
+//  · Aun así, TOPs deben representar lo más sólido del día: si nada
+//    pasa el umbral, regresa vacío (mejor 0 TOPs que TOPs débiles).
+//  · El umbral configurable se mantiene por compatibilidad histórica.
 function selectTopPicksOfDay(picks, options = {}) {
   const topN = Math.max(1, Number(options.topN) || 3);
-  const minConfidence = Math.max(0, Number(options.minConfidence) || 60);
+  const minConfidence = Math.max(0, Number(options.minConfidence) || 70);
 
   if (!Array.isArray(picks) || picks.length === 0) return [];
 
