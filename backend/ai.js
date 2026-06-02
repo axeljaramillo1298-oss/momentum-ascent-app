@@ -1459,7 +1459,12 @@ async function analyzeMarketsGPT({ event = {}, stats = {}, historyPicks = [] } =
     "7. Si odds y estadistica se contradicen, refleja eso con menor confianza.",
     "8. El resumen menciona que factores pesaron mas.",
     "9. BTTS (ambos anotan): Solo asigna conf >= 65 si tienes evidencia de que AMBOS equipos anotaron en al menos 6 de sus ultimos 8 partidos. Sin ese dato, pon conf <= 55.",
-    "10. Handicap asiatico: Solo asigna conf >= 65 si hay una ventaja clara de forma (al menos 4-1 en ultimos 5 partidos) o diferencia significativa de nivel. Sin ese dato, pon conf <= 58.",
+    "10. Handicap asiatico: Solo asigna conf >= 65 si hay una ventaja clara de forma (al menos 4-1 en ultimos 5 partidos) o diferencia significativa de nivel. Sin ese dato, pon conf <= 58. NOTA: Handicap historico en esta plataforma rinde 71% WR (15-6) — es un mercado robusto cuando hay data, no lo descartes por defecto en partidos parejos con cuota ML castigada (<1.40).",
+    // ── Corners: regla específica (rev 2026-06-01) ──────────────
+    // Histórico: 1 pick en 337 (0% WR). El mercado es ignorado por GPT/Claude.
+    // Causa: data de corners por equipo casi nunca está en Stats. Decisión:
+    // explicitar la regla — solo elegir Corners si hay data clara, sino conf baja.
+    "10b. Corners: SOLO asigna conf >= 60 si Stats incluye datos explicitos de promedio de corners por partido para AMBOS equipos en al menos 5 partidos recientes. Sin esos datos, pon conf <= 50 y en la nota indica 'sin data de corners'. NUNCA inventes proyecciones de corners — historico de esta plataforma muestra 0% WR cuando se publica sin data.",
     "11. Totales en beisbol: La conf del mercado goles debe reflejar ERA del pitcher abridor. Si no tienes ERA en Stats, pon conf <= 55 en goles y explica que falta el pitcher.",
     "12. Totales en basketball: Incluye pace (ritmo de juego) de ambos equipos si esta en Stats. Sin pace, conf del total no debe superar 60.",
     "13. Antes de asignar cualquier conf >= 70: lista mentalmente 2 factores en contra del pick. Si existen 2 o mas factores en contra, reduce conf entre 8 y 12 puntos.",
@@ -1714,10 +1719,15 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
         ].join(" "),
     "=== REGLAS DE SELECCION DE MERCADO NORMAL ===",
     noDrawSport
-      ? "1. ML cuando la ventaja es moderada y los momios dan valor (cuota estimada >= 1.45). Si el favorito es tan claro que su ML tiene cuota < 1.40, prefiere Over/Under o Spread — mejor valor."
-      : "1. ML o DC solo si la ventaja es MODERADA y los momios son razonables (cuota ML >= 1.40, DC >= 1.20). Si el favorito es tan aplastante que ML o DC tendrian cuotas castigadas, prefiere Goles Over/Under o Handicap asiatico.",
+      ? "1. ML cuando la ventaja es moderada y los momios dan valor (cuota estimada >= 1.45). Si el favorito es tan claro que su ML tiene cuota < 1.40, prefiere Over/Under, Spread o Handicap — mejor valor. NOTA: Handicap rinde 71% WR historico (15-6) en esta plataforma, considéralo cuando ML está castigado por cuota muy baja."
+      : "1. ML o DC solo si la ventaja es MODERADA y los momios son razonables (cuota ML >= 1.40, DC >= 1.20). Si el favorito es tan aplastante que ML o DC tendrian cuotas castigadas, prefiere Goles Over/Under o Handicap asiatico. PRIORIDAD HISTORICA (rev 2026-06-01): DC y Doble Oportunidad rinden 100% WR (8-0) en esta plataforma cuando aplican (favorito LOCAL con cuota ML entre 1.30 y 1.70). Si el contexto cumple ese rango, prefiere DC 1X sobre ML directo — mejor valor + mejor WR observado.",
     "2. BTTS: PROHIBIDO salvo que GPT mencione EXPLICITAMENTE que ambos equipos anotaron en 7+ de sus ultimos 8 partidos. Sin ese dato exacto, descarta BTTS — win rate historico 0% cuando se publica sin datos solidos.",
-    "3. Handicap/Spread: solo si se cumplen TODOS estos criterios: H2H >= 8/10 a favor del equipo, forma actual 4-1 o mejor en ultimos 5, y confianza del mercado >= 70%. Sin todos estos datos verificados, descarta Handicap — win rate historico 33% en este sistema.",
+    "3. Handicap/Spread: REGLA REVISADA (rev 2026-06-01) — historico actualizado de esta plataforma muestra 71% WR (15-6, conf prom 70.4%). Reglas:",
+    "   3a. Handicap es mercado VIABLE cuando hay ventaja clara: H2H >= 6/10 a favor + forma reciente 3-2 o mejor + diferencia de nivel o motivación clara.",
+    "   3b. Cuando ML del favorito tiene cuota < 1.40 (favorito muy claro), Handicap asiático -0.5/-1.5 da mejor valor que ML directo. NO descartes por defecto en partidos asimétricos.",
+    "   3c. Run Line +1.5 visitante (MLB): SOLO si bullpen del local es flojo (ERA bullpen > 4.0) o el local viene de 2+ derrotas. Sin esa evidencia, conf MAX 65 — caso Reds-Braves +1.5 dom 31 falló al 70% sin evidencia.",
+    "   3d. Si todos los criterios fallan (sin H2H, sin forma, sin contexto), descarta Handicap.",
+    "4b. Corners: SOLO elige Corners como mercado normal si gptMarkets.corners.conf >= 65 Y la nota de GPT cita un promedio numérico de corners para ambos equipos (ej. 'Local 6.5/partido, Visit 4.8/partido'). Sin esa cita explícita, NUNCA elijas Corners. Histórico: 1 pick en 337 (0% WR) — el mercado es de baja confiabilidad sin data específica.",
     "4. Totales beisbol: elige Over/Under si la nota de GPT menciona ERA o pitch de cualquier lanzador. Sin ninguna mencion de ERA, elige ML.",
     "5. Totales basketball: elige Over/Under si la nota menciona pace o ritmo. Sin pace, prefiere ML.",
     noDrawSport
@@ -2087,4 +2097,136 @@ module.exports = {
   LIBERTADORES_HIGH_ALTITUDE_HOMES,
   BRASILEIRAO_TOP_TEAMS,
   getEventHourCDMX,
+  // Auto-classifier de fail_reason_tags (rev 2026-06-01)
+  autoClassifyFailTags,
 };
+
+// ════════════════════════════════════════════════════════════════
+// Auto-classifier de fail_reason_tags (rev 2026-06-01)
+// ════════════════════════════════════════════════════════════════
+// Cuando un pick se marca como "lost" en /api/picks/:id/result, este helper
+// genera automáticamente un set de tags de categoría para alimentar el
+// análisis semanal y los adendums futuros del prompt.
+//
+// Razones:
+// - Antes de esto, fail_reason_tags estaba vacío en 100% de los fallos (0/25
+//   en la semana del 25-may al 01-jun).
+// - Sin tags, el análisis semanal solo podía cruzar por liga/mercado a mano.
+// - Con tags automáticos, podemos detectar patrones tipo "mlb_unders_nocturno"
+//   o "conf_75plus" sin intervención manual.
+function autoClassifyFailTags({ pick, market, confidence, riskLevel, league, sport, eventDate } = {}) {
+  const tags = [];
+  const conf = Number(confidence) || 0;
+  const lg = String(league || "").toLowerCase();
+  const mk = String(market || "").toLowerCase();
+  const pk = String(pick || "").toLowerCase();
+  const sp = String(sport || "").toLowerCase();
+  const rk = String(riskLevel || "").toUpperCase();
+
+  // ── Calibración de confianza (banda crítica detectada en análisis 06-01)
+  if (conf >= 80) tags.push("conf_80plus");
+  else if (conf >= 75) tags.push("conf_75_79");
+  else if (conf >= 70) tags.push("conf_70_74");
+  else if (conf >= 65) tags.push("conf_65_69");
+  else if (conf >= 60) tags.push("conf_60_64");
+  else tags.push("conf_low");
+
+  // ── Por liga
+  if (lg.includes("libertadores")) tags.push("conmebol_libertadores");
+  if (lg.includes("sudamericana")) tags.push("conmebol_sudamericana");
+  if (lg.includes("brasileir")) tags.push("brasileirao");
+  if (lg.includes("iihf")) tags.push("iihf");
+  if (lg.includes("nba")) tags.push("nba");
+  if (lg.includes("nhl")) tags.push("nhl");
+  if (lg.includes("mlb")) tags.push("mlb");
+  if (lg.includes("liga mexicana") || lg.startsWith("lmb")) tags.push("lmb");
+  if (lg.includes("friendly")) tags.push("friendly_international");
+  if (lg.includes("mls")) tags.push("mls");
+  if (lg.includes("dimayor")) tags.push("liga_dimayor");
+  if (lg.includes("repechaje") || lg.includes("relegation")) tags.push("repechaje");
+  if (lg.includes("liga mx") || lg === "liga mx") tags.push("liga_mx");
+  if (lg.includes("champions league")) tags.push("uefa_champions");
+  if (lg.includes("copa argentina")) tags.push("copa_argentina");
+  if (lg.includes("ligue 1")) tags.push("ligue_1");
+  if (lg.includes("eliteserien")) tags.push("eliteserien");
+  if (lg.includes("eredivisie")) tags.push("eredivisie");
+  if (lg.includes("serie a")) tags.push("serie_a");
+  if (lg.includes("laliga") || lg === "la liga" || lg === "la_liga") tags.push("laliga");
+  if (lg.includes("premier league")) tags.push("premier_league");
+  if (lg.includes("bundesliga")) tags.push("bundesliga");
+
+  // ── Por mercado
+  if (mk.includes("1x2") || mk === "ml") {
+    tags.push("market_1x2");
+    if (pk.includes("visit") || pk.match(/\b(visitor|visitante|away)\b/i)) tags.push("ml_visitante");
+    else if (pk.match(/\b(local|home)\b/i)) tags.push("ml_local");
+  }
+  if (mk.includes("dc") || mk.includes("doble oportunidad") || /\b(1x|x2)\b/i.test(pk) || pk.includes("local o empate") || pk.includes("visitante o empate")) {
+    tags.push("market_dc");
+    if (pk.includes("1x") || pk.includes("local o empate")) tags.push("dc_1x");
+    if (pk.includes("x2") || pk.includes("visitante o empate")) tags.push("dc_x2");
+  }
+  if (mk.includes("gol") || mk.includes("total") || pk.includes("over") || pk.includes("under")) {
+    tags.push("market_goles");
+    if (pk.includes("over")) tags.push("market_over");
+    if (pk.includes("under")) tags.push("market_under");
+    // Detectar línea alta NBA (más de 220 pts) — caso del cap 67
+    const nbaOverMatch = pk.match(/over\s+(\d+(?:\.\d+)?)\s*(?:pts|puntos)?/i);
+    if (sp === "basketball" && nbaOverMatch) {
+      const total = Number(nbaOverMatch[1]);
+      if (total >= 220) tags.push("nba_over_220plus");
+    }
+    // IIHF Over 5.5+ caso especial (la "bomba" del 82%)
+    if (lg.includes("iihf") && pk.includes("over") && /5\.5|6\.5|7\.5/.test(pk)) tags.push("iihf_over_55plus");
+  }
+  if (mk.includes("handicap") || mk.includes("run line") || mk.includes("puck line") || mk.includes("spread")) {
+    tags.push("market_handicap");
+    if (pk.includes("visit") || /[+]\d+\.5/.test(pk)) tags.push("handicap_visitante");
+    if (pk.includes("local") || /[-]\d+\.5/.test(pk)) tags.push("handicap_local");
+    // MLB Run Line +1.5 visitante (caso Reds-Braves dom 31)
+    if (sp === "baseball" && pk.includes("visit") && pk.includes("+1.5")) tags.push("mlb_rl_visitante_plus15");
+  }
+  if (mk.includes("btts") || pk.includes("ambos anotan") || pk.includes("btts")) tags.push("market_btts");
+  if (mk.includes("corners")) tags.push("market_corners");
+
+  // ── Hora del kickoff CDMX (patrones detectados)
+  if (eventDate) {
+    try {
+      const dt = new Date(eventDate);
+      if (!isNaN(dt.getTime())) {
+        const hourCDMX = (dt.getUTCHours() + 24 - 6) % 24; // CDMX = UTC-6
+        if (sp === "baseball" && pk.includes("under") && hourCDMX >= 19) {
+          tags.push("mlb_unders_nocturno"); // ≥19:00 CDMX caso Giants/Dodgers Unders mar 26
+        }
+        if (sp === "basketball" && pk.includes("over") && hourCDMX >= 19) {
+          tags.push("nba_overs_nocturno");
+        }
+        if (hourCDMX >= 22 || hourCDMX < 6) tags.push("late_night_cdmx");
+        if (hourCDMX >= 6 && hourCDMX < 12) tags.push("morning_cdmx");
+        if (hourCDMX >= 12 && hourCDMX < 18) tags.push("afternoon_cdmx");
+        if (hourCDMX >= 18 && hourCDMX < 22) tags.push("evening_cdmx");
+      }
+    } catch (_) {}
+  }
+
+  // ── Por nivel de riesgo
+  if (rk) tags.push(`risk_${rk.toLowerCase()}`);
+
+  // ── Combinaciones críticas detectadas en análisis semanal
+  if (conf >= 70 && rk === "BAJO") tags.push("top_candidate");
+  if (lg.includes("brasileir") && mk.includes("1x2")) tags.push("brasileirao_1x2"); // patrón dom 31 (3/4 fallaron)
+  if (lg.includes("libertadores") && mk.includes("1x2") && (pk.includes("visit") || /\b(visitor|visitante|away)\b/i.test(pk))) {
+    tags.push("libertadores_ml_visitante");
+  }
+  if (lg.includes("libertadores") && (mk.includes("gol") || mk.includes("total"))) {
+    if (pk.includes("over")) tags.push("libertadores_over");
+    if (pk.includes("under")) tags.push("libertadores_under"); // caso Fluminense U3.5 al 82% (bomba mié 27)
+  }
+  // Caso especial: pick de alta confianza en Libertadores que falla
+  // (patrón mié 27: Fluminense 82%, Caracas 76%, Ind. del Valle 72%, Corinthians 70%)
+  if (lg.includes("libertadores") && conf >= 70) tags.push("libertadores_high_conf");
+  if (lg.includes("friendly") && conf < 70) tags.push("friendly_low_conf");
+
+  // De-duplicar y retornar
+  return Array.from(new Set(tags));
+}

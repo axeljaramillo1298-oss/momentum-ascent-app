@@ -3,7 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const crypto = require("node:crypto");
-const { generateAiPlan, buildFallbackPlan, generateSportsPick, runDualAnalysis, analyzeMarketsGPT, claudeDecideMarket, scoutDayEventsGPT, generateRetoEscalera, selectTopPicksOfDay, calculateExpectedValue } = require("./ai");
+const { generateAiPlan, buildFallbackPlan, generateSportsPick, runDualAnalysis, analyzeMarketsGPT, claudeDecideMarket, scoutDayEventsGPT, generateRetoEscalera, selectTopPicksOfDay, calculateExpectedValue, autoClassifyFailTags } = require("./ai");
 const { generateEmbedding, findKNearest, hashText } = require("./embeddings");
 const { rateLimitMiddleware } = require("./rate-limit");
 const socialPublisher = require("./social-publisher");
@@ -1925,6 +1925,62 @@ app.post("/api/picks/claude-decide", requireAdmin, aiGenLimiter, async (req, res
       historyPicks,
     });
 
+    // ── Persistir candidatos en ai_pick_candidates (rev 2026-06-01) ──
+    // Antes solo /api/picks/generate-dual persistía candidatos. El admin panel usa
+    // gpt-markets + claude-decide por separado, así que la tabla quedaba vacía.
+    // Bug detectado en análisis semanal del 2026-05-24 que seguía sin resolver.
+    // Esto no afecta el response (best-effort), solo persiste para análisis futuro.
+    try {
+      if (typeof savePickCandidates === "function" && gptMarkets && typeof gptMarkets === "object") {
+        // Iterar todas las keys de gptMarkets que sean candidatos (tienen pick/conf)
+        const candidates = Object.keys(gptMarkets)
+          .filter((k) => {
+            const m = gptMarkets[k];
+            return m && typeof m === "object" && (m.pick || m.conf != null || m.confianza != null);
+          })
+          .map((k) => {
+            const m = gptMarkets[k];
+            return {
+              pick: String(m.pick || ""),
+              market: String(m.mercado || k || ""),
+              confidence: Number(m.conf || m.confianza || 0),
+              analysis: String(m.nota || m.razonamiento || ""),
+              risk_level: String(m.riesgo || "MEDIO"),
+              provider: "openai",
+              model_used: String(gptMarkets.provider || "gpt-4o"),
+            };
+          });
+
+        // Encontrar índice del candidato que Claude eligió (match por mercado)
+        const claudeMercadoLower = String(decision?.mercado || "").toLowerCase().trim();
+        let claudeSelectedIndex = candidates.findIndex((c) => {
+          const cm = c.market.toLowerCase();
+          return cm === claudeMercadoLower || cm.includes(claudeMercadoLower) || claudeMercadoLower.includes(cm);
+        });
+        if (claudeSelectedIndex < 0) claudeSelectedIndex = 0; // fallback al primero
+
+        const sessionId = `claude-${eventId}-${Date.now()}`;
+        await savePickCandidates({
+          eventId,
+          sessionId,
+          candidates,
+          claudeSelectedIndex,
+          claudeReasoning: String(decision?.razonamiento || ""),
+          claudeModel: "claude-sonnet-4-6",
+          claudeFinalPick: {
+            pick: String(decision?.pick || ""),
+            market: String(decision?.mercado || ""),
+            confidence: Number(decision?.confianza || 0),
+            analysis: String(decision?.razonamiento || ""),
+            risk_level: String(decision?.riesgo || "MEDIO"),
+          },
+        });
+      }
+    } catch (persistErr) {
+      // No bloquear el response del admin si falla el persist — solo loggear
+      console.error("[claude-decide] persist candidates failed:", persistErr.message || persistErr);
+    }
+
     res.json({ ok: true, eventId, decision });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || "claude_decide_failed") });
@@ -2192,7 +2248,54 @@ app.put("/api/picks/:id/result", requireAdmin, async (req, res) => {
     const id = Number(req.params.id);
     const { result } = req.body || {};
     if (!id) return res.status(400).json({ ok: false, error: "pick id required" });
-    const updated = await updatePickResult({ id, result: String(result || "") });
+    const normalizedResult = String(result || "").toLowerCase();
+    const updated = await updatePickResult({ id, result: normalizedResult });
+
+    // ── Auto-tagging de fail_reason_tags cuando result=lost (rev 2026-06-01) ──
+    // Antes fail_reason_tags estaba vacío para 100% de los fallos (0/25 en la
+    // semana 25-may a 01-jun). Sin tags, el análisis semanal no podía cruzar
+    // patrones tipo "mlb_unders_nocturno" o "conf_75plus" automáticamente.
+    // Este auto-tagger calcula tags por liga, mercado, confianza, hora kickoff,
+    // y combinaciones críticas detectadas en el análisis 2026-06-01.
+    // Best-effort: si falla, no rompe el response.
+    if (normalizedResult === "lost" && typeof autoClassifyFailTags === "function") {
+      try {
+        // Obtener el pick + evento asociado con un join SQL
+        const db = require("./db");
+        let pickRow = null;
+        let eventRow = null;
+        if (typeof db.getPickForFailTagging === "function") {
+          // Si existe un helper dedicado, usarlo (futuro)
+          pickRow = await db.getPickForFailTagging(id);
+        } else if (typeof db.listPicksByDate === "function" || typeof db.listPickHistory === "function") {
+          // Buscar el pick en el historial reciente (60 picks ~7 días)
+          const history = await db.listPickHistory(80).catch(() => []);
+          pickRow = (Array.isArray(history) ? history : []).find((p) => Number(p.id) === id) || null;
+        }
+        if (pickRow) {
+          const tags = autoClassifyFailTags({
+            pick: pickRow.pick,
+            market: pickRow.market,
+            confidence: pickRow.confidence,
+            riskLevel: pickRow.riskLevel,
+            league: pickRow.league || pickRow.eventLeague,
+            sport: pickRow.sport || pickRow.eventSport,
+            eventDate: pickRow.eventDate || pickRow.event_date,
+          });
+          // Solo guardar si NO había tags previos (no sobreescribir tags manuales)
+          const hadTags = pickRow.failReasonTags && (
+            (Array.isArray(pickRow.failReasonTags) && pickRow.failReasonTags.length > 0) ||
+            (typeof pickRow.failReasonTags === "string" && pickRow.failReasonTags.trim() !== "")
+          );
+          if (!hadTags && tags.length && typeof setPickFailReason === "function") {
+            await setPickFailReason(id, { tags, reason: "auto_classified", notes: null });
+          }
+        }
+      } catch (tagErr) {
+        console.error("[update-pick-result] auto-tagging failed:", tagErr.message || tagErr);
+      }
+    }
+
     res.json({ ok: true, ...updated });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || "result_update_failed") });
