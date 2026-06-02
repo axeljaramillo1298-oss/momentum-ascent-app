@@ -88,6 +88,114 @@ const getIIHFMatchupTier = (event = {}) => {
   return { type: "B_vs_B", tierATeam: null, tierBTeam: null, home, away };
 };
 
+// ── CONMEBOL Tiers (rev 2026-06-01) ─────────────────────────────────
+// Tier-awareness para Libertadores / Sudamericana. Misma lógica que IIHF:
+// cuando hay mismatch fuerte (A vs B), preferir Over goles o ML local
+// fuerte. Cuando es mismatch parcial o A vs A, confidence MAX = 70.
+//
+// Update 2026-06-01 (análisis semanal):
+//  · CONMEBOL Libertadores: 4-6 (40% WR), peor liga de la semana.
+//  · 1X2 falló 3/4: Bolívar 1X (factor altura), Corinthians L (TierA),
+//    Peñarol L (TierA). Solo LDU (TierA real) ganó.
+//  · La "bomba" 82% conf (Fluminense U3.5) falló — equipo TierA con
+//    rival mucho menor (La Guaira TierB) NO garantiza pocos goles;
+//    el favorito sale a anotar.
+//  · Sudamericana 2-2 más balanceado, pero Caracas 1X al 76% falló
+//    (TierA visitante Botafogo no protegió empate).
+const LIBERTADORES_TIER_A_TEAMS = new Set([
+  "flamengo", "palmeiras", "boca juniors", "boca", "river plate", "river",
+  "fluminense", "corinthians", "atlético mineiro", "atletico mineiro", "atlético-mg", "atletico-mg",
+  "internacional", "são paulo", "sao paulo", "independiente del valle",
+  "ldu", "ldu quito", "liga de quito", "vélez", "velez", "vélez sarsfield",
+  "racing club", "estudiantes",
+]);
+const LIBERTADORES_TIER_B_TEAMS = new Set([
+  "platense", "rosario central", "always ready", "bolívar", "bolivar",
+  "central córdoba", "central cordoba", "carabobo", "deportivo táchira", "tachira",
+  "barcelona sc", "alianza lima", "universitario", "sporting cristal",
+  "cerro porteño", "cerro porteno", "olimpia", "libertad",
+  "the strongest", "u. católica", "universidad católica", "universidad catolica",
+]);
+const SUDAMERICANA_TIER_A_TEAMS = new Set([
+  "lanús", "lanus", "atlético nacional", "atletico nacional", "santos",
+  "vasco da gama", "vasco", "athletico paranaense", "rb bragantino", "bragantino",
+  "independiente", "huracán", "huracan", "fortaleza",
+  "botafogo", // tier alto en clubes brasileños
+]);
+const LIBERTADORES_HIGH_ALTITUDE_HOMES = new Set([
+  "bolívar", "bolivar", "the strongest", "always ready", // La Paz
+  "ldu", "ldu quito", "liga de quito", // Quito
+  "u. católica", "universidad católica de quito",
+]);
+
+const teamInSet = (team, set) => set.has(String(team || "").toLowerCase().trim());
+
+const isConmebolEvent = (event = {}) => {
+  const league = String(event.league || "").toLowerCase();
+  return league.includes("libertadores") || league.includes("sudamericana") || league.includes("conmebol");
+};
+
+const getConmebolMatchupTier = (event = {}) => {
+  if (!isConmebolEvent(event)) return null;
+  const league = String(event.league || "").toLowerCase();
+  const home = String(event.home_team || event.homeTeam || "").trim();
+  const away = String(event.away_team || event.awayTeam || "").trim();
+  const tierASet = league.includes("sudamericana") ? SUDAMERICANA_TIER_A_TEAMS : LIBERTADORES_TIER_A_TEAMS;
+  const tierBSet = LIBERTADORES_TIER_B_TEAMS;
+  const homeA = teamInSet(home, tierASet);
+  const awayA = teamInSet(away, tierASet);
+  const homeB = teamInSet(home, tierBSet);
+  const awayB = teamInSet(away, tierBSet);
+  const homeAltitude = teamInSet(home, LIBERTADORES_HIGH_ALTITUDE_HOMES);
+  if (homeA && awayA) return { type: "A_vs_A", home, away, homeAltitude };
+  // Mismatch explícito: A vs B conocido
+  if (homeA && awayB) return { type: "mismatch", tierAIsHome: true, tierATeam: home, tierBTeam: away, home, away, homeAltitude };
+  if (homeB && awayA) return { type: "mismatch", tierAIsHome: false, tierATeam: away, tierBTeam: home, home, away, homeAltitude };
+  // Mismatch parcial: un equipo en Tier A y el otro no clasificado (asumir menor)
+  if (homeA && !awayA) return { type: "mismatch", tierAIsHome: true, tierATeam: home, tierBTeam: away, home, away, homeAltitude };
+  if (!homeA && awayA) return { type: "mismatch", tierAIsHome: false, tierATeam: away, tierBTeam: home, home, away, homeAltitude };
+  return { type: "unknown", home, away, homeAltitude };
+};
+
+// ── Brasileirão Série A team tiers (rev 2026-06-01) ─────────────────
+// Equipos top (g4-g6) vs equipos de media/baja tabla. ML visitante de
+// equipos top/clásicos es engañoso: si el favorito visita a un rival
+// de media tabla, no implica victoria automática.
+//
+// Update 2026-06-01: Brasileirão 6-3 en la semana, pero 3/4 ML 1X2
+// fallaron el domingo 31: Vasco L (65%), Cruzeiro L (62%), São Paulo V (65%).
+const BRASILEIRAO_TOP_TEAMS = new Set([
+  "flamengo", "palmeiras", "fluminense", "corinthians", "atlético mineiro", "atletico mineiro", "atlético-mg",
+  "internacional", "são paulo", "sao paulo", "botafogo", "athletico paranaense", "athletico-pr",
+  "cruzeiro", "grêmio", "gremio", "santos",
+]);
+const isBrasileiraoEvent = (event = {}) => {
+  const league = String(event.league || "").toLowerCase();
+  if (!league.includes("brasileir")) return false;
+  // Excluir Série B / C explícitos
+  if (/serie\s*[bc]/.test(league) || /série\s*[bc]/.test(league)) return false;
+  return true;
+};
+
+// ── MLB hour helper (CDMX) ──────────────────────────────────────────
+// Update 2026-06-01: Unders MLB programados >= 19:00 CDMX fallaron 2/2
+// en la semana (Giants U9.5 conf 72 y Dodgers U8.5 conf 70). Sin Unders
+// nocturnos, MLB sería 6W-3L (66%) en vez de 7W-5L (58%).
+const getEventHourCDMX = (event = {}) => {
+  const dateStr = event.event_date || event.eventDate;
+  if (!dateStr) return null;
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    // Convertir a hora CDMX (UTC-6)
+    const cdmxOffsetMs = -6 * 60 * 60 * 1000;
+    const cdmxDate = new Date(d.getTime() + cdmxOffsetMs);
+    return cdmxDate.getUTCHours();
+  } catch {
+    return null;
+  }
+};
+
 // ── Sport-specific addendum (inyecta reglas contextuales al prompt) ─────
 const buildSportContextAdendum = (event = {}) => {
   const sport = String(event.sport || "").toLowerCase();
@@ -97,6 +205,24 @@ const buildSportContextAdendum = (event = {}) => {
   // Baseball MLB / LMB
   if (sport.includes("baseball") || sport.includes("beisbol") || league.includes("mlb") || league.includes("liga mexicana")) {
     lines.push("⚾ BEISBOL — El pitcher abridor define ~60% del resultado. OBLIGATORIO: si en Stats NO hay info del pitcher abridor (nombre, ERA, WHIP, ponches recientes), confidence MAX = 55 para Totales y MAX = 60 para ML. Si lo tienes, cítalo en analysis (ej. 'X ERA 2.4 últimas 3 aperturas').");
+    // Run Line visitante (+1.5): falló 0/1 en semana 25-may a 01-jun
+    // (Braves +1.5 vs Reds conf 70 → lost). El mercado solo cubre si el
+    // visitante pierde por <= 1 carrera o gana. Con equipo local fuerte
+    // de bullpen sólido, el visitante pierde por 2+ con frecuencia.
+    lines.push("⚾ MLB HANDICAP RUN LINE — Visitante +1.5: confidence MAX = 65 salvo evidencia explícita en Stats de bullpen débil del local (ERA bullpen >4.50) o cierre inestable (cerrador con blown saves recientes). Sin esa evidencia, descarta el mercado o mantén confidence ≤ 62.");
+    // Unders MLB nocturnos (>= 19:00 CDMX): 0/2 en la semana, 2W-3L total.
+    // Los partidos nocturnos suelen ser más altos en runs (clima, fatiga
+    // del bullpen al final del día). Sin evidencia explícita de duelo de
+    // abridores top, cap confidence en Unders nocturnos.
+    const hr = getEventHourCDMX(event);
+    if (Number.isFinite(hr) && hr >= 19) {
+      lines.push(
+        `⚾ MLB UNDER NOCTURNO — Partido programado ${hr}:00 CDMX. ` +
+        `Unders MLB nocturnos (>=19:00 CDMX) fallaron 2/2 en la última semana. ` +
+        `Confidence MAX en Under = 67 salvo que ambos abridores tengan ERA <3.50 confirmado en Stats. ` +
+        `Si tu mejor pick es un Under aquí sin esa evidencia, prefiere otro mercado.`
+      );
+    }
   }
 
   // Basketball NBA / Playoffs (update 2026-05-24)
@@ -145,6 +271,62 @@ const buildSportContextAdendum = (event = {}) => {
   // NHL Playoffs
   if (sport.includes("hockey") && (league.includes("nhl") || league.includes("playoff"))) {
     lines.push("🏒 NHL PLAYOFFS — Los partidos son históricamente más cerrados y bajos en goles que temporada regular. PREFIERE Under totales sobre Over. Si la serie está empatada (3-3 = Game 7), reduce confidence en favoritos por presión psicológica.");
+  }
+
+  // CONMEBOL Libertadores / Sudamericana — tier-awareness (rev 2026-06-01)
+  // Análisis semanal: Libertadores 4-6 (40% WR). Fallos clave:
+  //  - Fluminense U3.5 al 82% (Tier A vs B → favorito sale a anotar)
+  //  - Bolívar 1X (factor altura La Paz no fue suficiente)
+  //  - Corinthians L, Peñarol L (Tier A jugando ML local conf 65-70%)
+  //  - Ind. Valle Over 1.5 al 72% (Tier A vs B no garantiza goleo grupos)
+  // Sudamericana: Caracas o Empate al 76% falló (Botafogo Tier A no protegió empate visitante).
+  if (isConmebolEvent(event)) {
+    const tier = getConmebolMatchupTier(event);
+    const isLibertadores = league.includes("libertadores");
+    const isSudamericana = league.includes("sudamericana");
+    if (tier?.type === "mismatch") {
+      lines.push(
+        `🏆 CONMEBOL TIER MISMATCH — ${tier.tierATeam} (Tier A: club tradicional grande) vs ${tier.tierBTeam} (Tier B). ` +
+        `Históricamente Tier A gana ~55-60% de estos partidos, pero el goleo NO está garantizado en CONMEBOL (defensas conservadoras). ` +
+        `EVITA Overs altos (≥3.5 goles) con confidence > 65 — el favorito puede ganar 1-0 o 2-0. ` +
+        `EVITA Unders altos (≥3.5 protector) con confidence > 70 — el favorito sale a anotar y supera 3 con frecuencia. ` +
+        `PREFIERE: ML ${tier.tierATeam} si cuota ≤ 1.60 (confidence MAX = 70), Over 1.5 (no Over 2.5/3.5), o handicap -1 a favor del Tier A.`
+      );
+    } else if (tier?.type === "A_vs_A") {
+      lines.push("🏆 CONMEBOL TIER A vs TIER A — Partido cerrado entre clubes grandes (clásico continental). Reduce confidence general en 5-8 puntos vs mismatch. Confidence MAX = 65 en 1X2, MAX = 67 en Over/Under. PREFIERE Under 2.5 o BTTS Sí (ambos buenos en ataque).");
+    }
+    if (tier?.homeAltitude) {
+      lines.push(
+        `🏔 CONMEBOL FACTOR ALTITUD — ${tier.home} juega en altura (La Paz / Quito > 2500m). ` +
+        `El factor altitud da ventaja al local pero NO garantiza victoria: confidence MAX en ML local = 68. ` +
+        `Bolívar 1X al 68% falló el 2026-05-27 contra Ind. Rivadavia pese a la altura. ` +
+        `Si vas con local en altura, exige forma reciente buena (4+ wins en últimos 5 partidos en casa).`
+      );
+    }
+    if (isLibertadores) {
+      lines.push("🏆 LIBERTADORES GLOBAL — Última semana 4-6 (40% WR). Fase de grupos: defensas conservadoras, muchos 1-0 / 0-0. Cap confidence MAX = 72 en CUALQUIER mercado de Libertadores fase grupos salvo evidencia explícita de tendencia (4+ partidos similares confirmados en Stats).");
+    }
+    if (isSudamericana) {
+      lines.push("🏆 SUDAMERICANA GLOBAL — Equipos más parejos que Libertadores. Locales no son tan dominantes. Cap confidence MAX = 70 en ML local salvo tendencia 4-1 en últimos 5 confirmada.");
+    }
+  }
+
+  // Brasileirão Série A — rev 2026-06-01
+  // 3/4 ML 1X2 fallaron el domingo 31. Picks de equipos top en
+  // confidence 62-65% son demasiado optimistas: el campeonato es muy
+  // parejo en la zona media-alta de la tabla.
+  if (isBrasileiraoEvent(event)) {
+    const homeRaw = String(event.home_team || event.homeTeam || "").trim();
+    const awayRaw = String(event.away_team || event.awayTeam || "").trim();
+    const homeTop = teamInSet(homeRaw, BRASILEIRAO_TOP_TEAMS);
+    const awayTop = teamInSet(awayRaw, BRASILEIRAO_TOP_TEAMS);
+    lines.push("⚽ BRASILEIRÃO SÉRIE A — Campeonato extremadamente parejo en zona media-alta. Locales NO dominan tanto como en otras ligas. ML LOCAL solo si forma 4-1 o mejor en últimos 5 en casa Y rival sin victorias en sus últimos 3 visitas. Sin esos datos: confidence MAX = 65 en ML 1X2.");
+    if (awayTop && !homeTop) {
+      lines.push(`⚽ BRASILEIRÃO — ${awayRaw} (top) visita a ${homeRaw} (media/baja). ML visitante NO es trivial en Brasileirão. Cap confidence MAX = 65 en ML visitante salvo tendencia 4+ wins en últimas 5 visitas confirmada. Prefiere Doble Oportunidad X2 o Over goles si hay valor.`);
+    }
+    if (homeTop && !awayTop) {
+      lines.push(`⚽ BRASILEIRÃO — ${homeRaw} (top) recibe a ${awayRaw} (media/baja). ML local cap confidence MAX = 68. Empates son frecuentes (~25% del campeonato). Considera Doble Oportunidad 1X.`);
+    }
   }
 
   // European football top-tier
@@ -1876,4 +2058,14 @@ module.exports = {
   getIIHFMatchupTier,
   IIHF_TIER_A_TEAMS,
   IIHF_TIER_B_PLUS_TEAMS,
+  // CONMEBOL / Brasileirão tiers (rev 2026-06-01)
+  getConmebolMatchupTier,
+  isConmebolEvent,
+  isBrasileiraoEvent,
+  LIBERTADORES_TIER_A_TEAMS,
+  LIBERTADORES_TIER_B_TEAMS,
+  SUDAMERICANA_TIER_A_TEAMS,
+  LIBERTADORES_HIGH_ALTITUDE_HOMES,
+  BRASILEIRAO_TOP_TEAMS,
+  getEventHourCDMX,
 };
