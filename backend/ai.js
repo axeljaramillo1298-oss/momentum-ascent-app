@@ -88,6 +88,114 @@ const getIIHFMatchupTier = (event = {}) => {
   return { type: "B_vs_B", tierATeam: null, tierBTeam: null, home, away };
 };
 
+// ── CONMEBOL Tiers (rev 2026-06-01) ─────────────────────────────────
+// Tier-awareness para Libertadores / Sudamericana. Misma lógica que IIHF:
+// cuando hay mismatch fuerte (A vs B), preferir Over goles o ML local
+// fuerte. Cuando es mismatch parcial o A vs A, confidence MAX = 70.
+//
+// Update 2026-06-01 (análisis semanal):
+//  · CONMEBOL Libertadores: 4-6 (40% WR), peor liga de la semana.
+//  · 1X2 falló 3/4: Bolívar 1X (factor altura), Corinthians L (TierA),
+//    Peñarol L (TierA). Solo LDU (TierA real) ganó.
+//  · La "bomba" 82% conf (Fluminense U3.5) falló — equipo TierA con
+//    rival mucho menor (La Guaira TierB) NO garantiza pocos goles;
+//    el favorito sale a anotar.
+//  · Sudamericana 2-2 más balanceado, pero Caracas 1X al 76% falló
+//    (TierA visitante Botafogo no protegió empate).
+const LIBERTADORES_TIER_A_TEAMS = new Set([
+  "flamengo", "palmeiras", "boca juniors", "boca", "river plate", "river",
+  "fluminense", "corinthians", "atlético mineiro", "atletico mineiro", "atlético-mg", "atletico-mg",
+  "internacional", "são paulo", "sao paulo", "independiente del valle",
+  "ldu", "ldu quito", "liga de quito", "vélez", "velez", "vélez sarsfield",
+  "racing club", "estudiantes",
+]);
+const LIBERTADORES_TIER_B_TEAMS = new Set([
+  "platense", "rosario central", "always ready", "bolívar", "bolivar",
+  "central córdoba", "central cordoba", "carabobo", "deportivo táchira", "tachira",
+  "barcelona sc", "alianza lima", "universitario", "sporting cristal",
+  "cerro porteño", "cerro porteno", "olimpia", "libertad",
+  "the strongest", "u. católica", "universidad católica", "universidad catolica",
+]);
+const SUDAMERICANA_TIER_A_TEAMS = new Set([
+  "lanús", "lanus", "atlético nacional", "atletico nacional", "santos",
+  "vasco da gama", "vasco", "athletico paranaense", "rb bragantino", "bragantino",
+  "independiente", "huracán", "huracan", "fortaleza",
+  "botafogo", // tier alto en clubes brasileños
+]);
+const LIBERTADORES_HIGH_ALTITUDE_HOMES = new Set([
+  "bolívar", "bolivar", "the strongest", "always ready", // La Paz
+  "ldu", "ldu quito", "liga de quito", // Quito
+  "u. católica", "universidad católica de quito",
+]);
+
+const teamInSet = (team, set) => set.has(String(team || "").toLowerCase().trim());
+
+const isConmebolEvent = (event = {}) => {
+  const league = String(event.league || "").toLowerCase();
+  return league.includes("libertadores") || league.includes("sudamericana") || league.includes("conmebol");
+};
+
+const getConmebolMatchupTier = (event = {}) => {
+  if (!isConmebolEvent(event)) return null;
+  const league = String(event.league || "").toLowerCase();
+  const home = String(event.home_team || event.homeTeam || "").trim();
+  const away = String(event.away_team || event.awayTeam || "").trim();
+  const tierASet = league.includes("sudamericana") ? SUDAMERICANA_TIER_A_TEAMS : LIBERTADORES_TIER_A_TEAMS;
+  const tierBSet = LIBERTADORES_TIER_B_TEAMS;
+  const homeA = teamInSet(home, tierASet);
+  const awayA = teamInSet(away, tierASet);
+  const homeB = teamInSet(home, tierBSet);
+  const awayB = teamInSet(away, tierBSet);
+  const homeAltitude = teamInSet(home, LIBERTADORES_HIGH_ALTITUDE_HOMES);
+  if (homeA && awayA) return { type: "A_vs_A", home, away, homeAltitude };
+  // Mismatch explícito: A vs B conocido
+  if (homeA && awayB) return { type: "mismatch", tierAIsHome: true, tierATeam: home, tierBTeam: away, home, away, homeAltitude };
+  if (homeB && awayA) return { type: "mismatch", tierAIsHome: false, tierATeam: away, tierBTeam: home, home, away, homeAltitude };
+  // Mismatch parcial: un equipo en Tier A y el otro no clasificado (asumir menor)
+  if (homeA && !awayA) return { type: "mismatch", tierAIsHome: true, tierATeam: home, tierBTeam: away, home, away, homeAltitude };
+  if (!homeA && awayA) return { type: "mismatch", tierAIsHome: false, tierATeam: away, tierBTeam: home, home, away, homeAltitude };
+  return { type: "unknown", home, away, homeAltitude };
+};
+
+// ── Brasileirão Série A team tiers (rev 2026-06-01) ─────────────────
+// Equipos top (g4-g6) vs equipos de media/baja tabla. ML visitante de
+// equipos top/clásicos es engañoso: si el favorito visita a un rival
+// de media tabla, no implica victoria automática.
+//
+// Update 2026-06-01: Brasileirão 6-3 en la semana, pero 3/4 ML 1X2
+// fallaron el domingo 31: Vasco L (65%), Cruzeiro L (62%), São Paulo V (65%).
+const BRASILEIRAO_TOP_TEAMS = new Set([
+  "flamengo", "palmeiras", "fluminense", "corinthians", "atlético mineiro", "atletico mineiro", "atlético-mg",
+  "internacional", "são paulo", "sao paulo", "botafogo", "athletico paranaense", "athletico-pr",
+  "cruzeiro", "grêmio", "gremio", "santos",
+]);
+const isBrasileiraoEvent = (event = {}) => {
+  const league = String(event.league || "").toLowerCase();
+  if (!league.includes("brasileir")) return false;
+  // Excluir Série B / C explícitos
+  if (/serie\s*[bc]/.test(league) || /série\s*[bc]/.test(league)) return false;
+  return true;
+};
+
+// ── MLB hour helper (CDMX) ──────────────────────────────────────────
+// Update 2026-06-01: Unders MLB programados >= 19:00 CDMX fallaron 2/2
+// en la semana (Giants U9.5 conf 72 y Dodgers U8.5 conf 70). Sin Unders
+// nocturnos, MLB sería 6W-3L (66%) en vez de 7W-5L (58%).
+const getEventHourCDMX = (event = {}) => {
+  const dateStr = event.event_date || event.eventDate;
+  if (!dateStr) return null;
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    // Convertir a hora CDMX (UTC-6)
+    const cdmxOffsetMs = -6 * 60 * 60 * 1000;
+    const cdmxDate = new Date(d.getTime() + cdmxOffsetMs);
+    return cdmxDate.getUTCHours();
+  } catch {
+    return null;
+  }
+};
+
 // ── Sport-specific addendum (inyecta reglas contextuales al prompt) ─────
 const buildSportContextAdendum = (event = {}) => {
   const sport = String(event.sport || "").toLowerCase();
@@ -97,6 +205,24 @@ const buildSportContextAdendum = (event = {}) => {
   // Baseball MLB / LMB
   if (sport.includes("baseball") || sport.includes("beisbol") || league.includes("mlb") || league.includes("liga mexicana")) {
     lines.push("⚾ BEISBOL — El pitcher abridor define ~60% del resultado. OBLIGATORIO: si en Stats NO hay info del pitcher abridor (nombre, ERA, WHIP, ponches recientes), confidence MAX = 55 para Totales y MAX = 60 para ML. Si lo tienes, cítalo en analysis (ej. 'X ERA 2.4 últimas 3 aperturas').");
+    // Run Line visitante (+1.5): falló 0/1 en semana 25-may a 01-jun
+    // (Braves +1.5 vs Reds conf 70 → lost). El mercado solo cubre si el
+    // visitante pierde por <= 1 carrera o gana. Con equipo local fuerte
+    // de bullpen sólido, el visitante pierde por 2+ con frecuencia.
+    lines.push("⚾ MLB HANDICAP RUN LINE — Visitante +1.5: confidence MAX = 65 salvo evidencia explícita en Stats de bullpen débil del local (ERA bullpen >4.50) o cierre inestable (cerrador con blown saves recientes). Sin esa evidencia, descarta el mercado o mantén confidence ≤ 62.");
+    // Unders MLB nocturnos (>= 19:00 CDMX): 0/2 en la semana, 2W-3L total.
+    // Los partidos nocturnos suelen ser más altos en runs (clima, fatiga
+    // del bullpen al final del día). Sin evidencia explícita de duelo de
+    // abridores top, cap confidence en Unders nocturnos.
+    const hr = getEventHourCDMX(event);
+    if (Number.isFinite(hr) && hr >= 19) {
+      lines.push(
+        `⚾ MLB UNDER NOCTURNO — Partido programado ${hr}:00 CDMX. ` +
+        `Unders MLB nocturnos (>=19:00 CDMX) fallaron 2/2 en la última semana. ` +
+        `Confidence MAX en Under = 67 salvo que ambos abridores tengan ERA <3.50 confirmado en Stats. ` +
+        `Si tu mejor pick es un Under aquí sin esa evidencia, prefiere otro mercado.`
+      );
+    }
   }
 
   // Basketball NBA / Playoffs (update 2026-05-24)
@@ -145,6 +271,62 @@ const buildSportContextAdendum = (event = {}) => {
   // NHL Playoffs
   if (sport.includes("hockey") && (league.includes("nhl") || league.includes("playoff"))) {
     lines.push("🏒 NHL PLAYOFFS — Los partidos son históricamente más cerrados y bajos en goles que temporada regular. PREFIERE Under totales sobre Over. Si la serie está empatada (3-3 = Game 7), reduce confidence en favoritos por presión psicológica.");
+  }
+
+  // CONMEBOL Libertadores / Sudamericana — tier-awareness (rev 2026-06-01)
+  // Análisis semanal: Libertadores 4-6 (40% WR). Fallos clave:
+  //  - Fluminense U3.5 al 82% (Tier A vs B → favorito sale a anotar)
+  //  - Bolívar 1X (factor altura La Paz no fue suficiente)
+  //  - Corinthians L, Peñarol L (Tier A jugando ML local conf 65-70%)
+  //  - Ind. Valle Over 1.5 al 72% (Tier A vs B no garantiza goleo grupos)
+  // Sudamericana: Caracas o Empate al 76% falló (Botafogo Tier A no protegió empate visitante).
+  if (isConmebolEvent(event)) {
+    const tier = getConmebolMatchupTier(event);
+    const isLibertadores = league.includes("libertadores");
+    const isSudamericana = league.includes("sudamericana");
+    if (tier?.type === "mismatch") {
+      lines.push(
+        `🏆 CONMEBOL TIER MISMATCH — ${tier.tierATeam} (Tier A: club tradicional grande) vs ${tier.tierBTeam} (Tier B). ` +
+        `Históricamente Tier A gana ~55-60% de estos partidos, pero el goleo NO está garantizado en CONMEBOL (defensas conservadoras). ` +
+        `EVITA Overs altos (≥3.5 goles) con confidence > 65 — el favorito puede ganar 1-0 o 2-0. ` +
+        `EVITA Unders altos (≥3.5 protector) con confidence > 70 — el favorito sale a anotar y supera 3 con frecuencia. ` +
+        `PREFIERE: ML ${tier.tierATeam} si cuota ≤ 1.60 (confidence MAX = 70), Over 1.5 (no Over 2.5/3.5), o handicap -1 a favor del Tier A.`
+      );
+    } else if (tier?.type === "A_vs_A") {
+      lines.push("🏆 CONMEBOL TIER A vs TIER A — Partido cerrado entre clubes grandes (clásico continental). Reduce confidence general en 5-8 puntos vs mismatch. Confidence MAX = 65 en 1X2, MAX = 67 en Over/Under. PREFIERE Under 2.5 o BTTS Sí (ambos buenos en ataque).");
+    }
+    if (tier?.homeAltitude) {
+      lines.push(
+        `🏔 CONMEBOL FACTOR ALTITUD — ${tier.home} juega en altura (La Paz / Quito > 2500m). ` +
+        `El factor altitud da ventaja al local pero NO garantiza victoria: confidence MAX en ML local = 68. ` +
+        `Bolívar 1X al 68% falló el 2026-05-27 contra Ind. Rivadavia pese a la altura. ` +
+        `Si vas con local en altura, exige forma reciente buena (4+ wins en últimos 5 partidos en casa).`
+      );
+    }
+    if (isLibertadores) {
+      lines.push("🏆 LIBERTADORES GLOBAL — Última semana 4-6 (40% WR). Fase de grupos: defensas conservadoras, muchos 1-0 / 0-0. Cap confidence MAX = 72 en CUALQUIER mercado de Libertadores fase grupos salvo evidencia explícita de tendencia (4+ partidos similares confirmados en Stats).");
+    }
+    if (isSudamericana) {
+      lines.push("🏆 SUDAMERICANA GLOBAL — Equipos más parejos que Libertadores. Locales no son tan dominantes. Cap confidence MAX = 70 en ML local salvo tendencia 4-1 en últimos 5 confirmada.");
+    }
+  }
+
+  // Brasileirão Série A — rev 2026-06-01
+  // 3/4 ML 1X2 fallaron el domingo 31. Picks de equipos top en
+  // confidence 62-65% son demasiado optimistas: el campeonato es muy
+  // parejo en la zona media-alta de la tabla.
+  if (isBrasileiraoEvent(event)) {
+    const homeRaw = String(event.home_team || event.homeTeam || "").trim();
+    const awayRaw = String(event.away_team || event.awayTeam || "").trim();
+    const homeTop = teamInSet(homeRaw, BRASILEIRAO_TOP_TEAMS);
+    const awayTop = teamInSet(awayRaw, BRASILEIRAO_TOP_TEAMS);
+    lines.push("⚽ BRASILEIRÃO SÉRIE A — Campeonato extremadamente parejo en zona media-alta. Locales NO dominan tanto como en otras ligas. ML LOCAL solo si forma 4-1 o mejor en últimos 5 en casa Y rival sin victorias en sus últimos 3 visitas. Sin esos datos: confidence MAX = 65 en ML 1X2.");
+    if (awayTop && !homeTop) {
+      lines.push(`⚽ BRASILEIRÃO — ${awayRaw} (top) visita a ${homeRaw} (media/baja). ML visitante NO es trivial en Brasileirão. Cap confidence MAX = 65 en ML visitante salvo tendencia 4+ wins en últimas 5 visitas confirmada. Prefiere Doble Oportunidad X2 o Over goles si hay valor.`);
+    }
+    if (homeTop && !awayTop) {
+      lines.push(`⚽ BRASILEIRÃO — ${homeRaw} (top) recibe a ${awayRaw} (media/baja). ML local cap confidence MAX = 68. Empates son frecuentes (~25% del campeonato). Considera Doble Oportunidad 1X.`);
+    }
   }
 
   // European football top-tier
@@ -508,9 +690,17 @@ function shouldApplyStreakInsurance(picks, options = {}) {
 // Ranks picks by a combined score (confidence + league WR + EV when
 // odds are available). Does not mutate inputs — returns shallow copies
 // with `topScore` and `topRank` fields added.
+//
+// Update 2026-06-01 (análisis semanal):
+//  · Default minConfidence subió de 60 → 70.
+//  · Razón: en la semana 25-may a 01-jun, picks <70% confidence ganaron
+//    77% (banda 60-64) y picks 70+ ganaron 56% (descalibración fuerte).
+//  · Aun así, TOPs deben representar lo más sólido del día: si nada
+//    pasa el umbral, regresa vacío (mejor 0 TOPs que TOPs débiles).
+//  · El umbral configurable se mantiene por compatibilidad histórica.
 function selectTopPicksOfDay(picks, options = {}) {
   const topN = Math.max(1, Number(options.topN) || 3);
-  const minConfidence = Math.max(0, Number(options.minConfidence) || 60);
+  const minConfidence = Math.max(0, Number(options.minConfidence) || 70);
 
   if (!Array.isArray(picks) || picks.length === 0) return [];
 
@@ -1269,7 +1459,12 @@ async function analyzeMarketsGPT({ event = {}, stats = {}, historyPicks = [] } =
     "7. Si odds y estadistica se contradicen, refleja eso con menor confianza.",
     "8. El resumen menciona que factores pesaron mas.",
     "9. BTTS (ambos anotan): Solo asigna conf >= 65 si tienes evidencia de que AMBOS equipos anotaron en al menos 6 de sus ultimos 8 partidos. Sin ese dato, pon conf <= 55.",
-    "10. Handicap asiatico: Solo asigna conf >= 65 si hay una ventaja clara de forma (al menos 4-1 en ultimos 5 partidos) o diferencia significativa de nivel. Sin ese dato, pon conf <= 58.",
+    "10. Handicap asiatico: Solo asigna conf >= 65 si hay una ventaja clara de forma (al menos 4-1 en ultimos 5 partidos) o diferencia significativa de nivel. Sin ese dato, pon conf <= 58. NOTA: Handicap historico en esta plataforma rinde 71% WR (15-6) — es un mercado robusto cuando hay data, no lo descartes por defecto en partidos parejos con cuota ML castigada (<1.40).",
+    // ── Corners: regla específica (rev 2026-06-01) ──────────────
+    // Histórico: 1 pick en 337 (0% WR). El mercado es ignorado por GPT/Claude.
+    // Causa: data de corners por equipo casi nunca está en Stats. Decisión:
+    // explicitar la regla — solo elegir Corners si hay data clara, sino conf baja.
+    "10b. Corners: SOLO asigna conf >= 60 si Stats incluye datos explicitos de promedio de corners por partido para AMBOS equipos en al menos 5 partidos recientes. Sin esos datos, pon conf <= 50 y en la nota indica 'sin data de corners'. NUNCA inventes proyecciones de corners — historico de esta plataforma muestra 0% WR cuando se publica sin data.",
     "11. Totales en beisbol: La conf del mercado goles debe reflejar ERA del pitcher abridor. Si no tienes ERA en Stats, pon conf <= 55 en goles y explica que falta el pitcher.",
     "12. Totales en basketball: Incluye pace (ritmo de juego) de ambos equipos si esta en Stats. Sin pace, conf del total no debe superar 60.",
     "13. Antes de asignar cualquier conf >= 70: lista mentalmente 2 factores en contra del pick. Si existen 2 o mas factores en contra, reduce conf entre 8 y 12 puntos.",
@@ -1524,10 +1719,15 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
         ].join(" "),
     "=== REGLAS DE SELECCION DE MERCADO NORMAL ===",
     noDrawSport
-      ? "1. ML cuando la ventaja es moderada y los momios dan valor (cuota estimada >= 1.45). Si el favorito es tan claro que su ML tiene cuota < 1.40, prefiere Over/Under o Spread — mejor valor."
-      : "1. ML o DC solo si la ventaja es MODERADA y los momios son razonables (cuota ML >= 1.40, DC >= 1.20). Si el favorito es tan aplastante que ML o DC tendrian cuotas castigadas, prefiere Goles Over/Under o Handicap asiatico.",
+      ? "1. ML cuando la ventaja es moderada y los momios dan valor (cuota estimada >= 1.45). Si el favorito es tan claro que su ML tiene cuota < 1.40, prefiere Over/Under, Spread o Handicap — mejor valor. NOTA: Handicap rinde 71% WR historico (15-6) en esta plataforma, considéralo cuando ML está castigado por cuota muy baja."
+      : "1. ML o DC solo si la ventaja es MODERADA y los momios son razonables (cuota ML >= 1.40, DC >= 1.20). Si el favorito es tan aplastante que ML o DC tendrian cuotas castigadas, prefiere Goles Over/Under o Handicap asiatico. PRIORIDAD HISTORICA (rev 2026-06-01): DC y Doble Oportunidad rinden 100% WR (8-0) en esta plataforma cuando aplican (favorito LOCAL con cuota ML entre 1.30 y 1.70). Si el contexto cumple ese rango, prefiere DC 1X sobre ML directo — mejor valor + mejor WR observado.",
     "2. BTTS: PROHIBIDO salvo que GPT mencione EXPLICITAMENTE que ambos equipos anotaron en 7+ de sus ultimos 8 partidos. Sin ese dato exacto, descarta BTTS — win rate historico 0% cuando se publica sin datos solidos.",
-    "3. Handicap/Spread: solo si se cumplen TODOS estos criterios: H2H >= 8/10 a favor del equipo, forma actual 4-1 o mejor en ultimos 5, y confianza del mercado >= 70%. Sin todos estos datos verificados, descarta Handicap — win rate historico 33% en este sistema.",
+    "3. Handicap/Spread: REGLA REVISADA (rev 2026-06-01) — historico actualizado de esta plataforma muestra 71% WR (15-6, conf prom 70.4%). Reglas:",
+    "   3a. Handicap es mercado VIABLE cuando hay ventaja clara: H2H >= 6/10 a favor + forma reciente 3-2 o mejor + diferencia de nivel o motivación clara.",
+    "   3b. Cuando ML del favorito tiene cuota < 1.40 (favorito muy claro), Handicap asiático -0.5/-1.5 da mejor valor que ML directo. NO descartes por defecto en partidos asimétricos.",
+    "   3c. Run Line +1.5 visitante (MLB): SOLO si bullpen del local es flojo (ERA bullpen > 4.0) o el local viene de 2+ derrotas. Sin esa evidencia, conf MAX 65 — caso Reds-Braves +1.5 dom 31 falló al 70% sin evidencia.",
+    "   3d. Si todos los criterios fallan (sin H2H, sin forma, sin contexto), descarta Handicap.",
+    "4b. Corners: SOLO elige Corners como mercado normal si gptMarkets.corners.conf >= 65 Y la nota de GPT cita un promedio numérico de corners para ambos equipos (ej. 'Local 6.5/partido, Visit 4.8/partido'). Sin esa cita explícita, NUNCA elijas Corners. Histórico: 1 pick en 337 (0% WR) — el mercado es de baja confiabilidad sin data específica.",
     "4. Totales beisbol: elige Over/Under si la nota de GPT menciona ERA o pitch de cualquier lanzador. Sin ninguna mencion de ERA, elige ML.",
     "5. Totales basketball: elige Over/Under si la nota menciona pace o ritmo. Sin pace, prefiere ML.",
     noDrawSport
@@ -1541,6 +1741,13 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
     '{"mercado":"1X2|Goles|BTTS|Handicap|Corners","pick":"pick normal exacto","confianza":65,"riesgo":"BAJO|MEDIO|ALTO","razonamiento":"2-3 oraciones","tipo":"segura|moderada|arriesgada","safe_pick":"pick DIFERENTE al normal","safe_mercado":"mercado del safe","safe_confianza":73,"safe_riesgo":"BAJO","safe_razonamiento":"por que es mas facil de acertar"}',
     "VALIDACION FINAL antes de responder: (1) safe_pick != pick? (2) safe_confianza > confianza? (3) safe no es BTTS ni Handicap exotico? (4) Si deporte=MMA y mercado=Corners → cambia a ML. (5) Si futbol y safe es X2 DC (visitante+empate) → cambia a ML directo del visitante o goles. Si alguna falla, corrige antes de responder.",
     "Si GPT puso conf >= 70 en BTTS o Handicap sin datos estadisticos, baja esa confianza 15pp.",
+    // ── Cap de confidence por descalibración semanal (2026-06-01) ────
+    // Banda 75-79% conf: 0W-2L. Banda 80+%: 0W-1L (Fluminense U3.5).
+    // Banda 60-64% conf: 17W-5L (77%). El modelo está sobreestimando.
+    // Regla dura: solo confidence ≥ 75 si hay 3+ evidencias numéricas
+    // específicas citadas en analysis (ej. forma 4-1, H2H 8-2, ERA 2.4).
+    // Sin esas 3+ evidencias, confidence MAX = 72.
+    "CALIBRACIÓN OBLIGATORIA (semana 2026-05-25 a 2026-06-01): confidence ≥ 75 solo si analysis cita al menos 3 evidencias numéricas independientes (forma, H2H, stat de mercado, lesión, etc.). Sin esas 3 evidencias, confidence MAX = 72. Confidence ≥ 80 está PROHIBIDA salvo evidencia abrumadora (>=5 datos numéricos y mercado de bajo riesgo). En la última semana, 100% de los picks 75+% fallaron — sé conservador.",
     "tipo refleja el equilibrio del portafolio. NO prometas ganancias.",
   ].join(" ");
 
@@ -1593,10 +1800,22 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
       console.error("[claudeDecideMarket] JSON parse failed. Raw response length:", content?.length, "| preview:", content?.slice(0, 200));
       throw new Error("claude_invalid_json");
     }
+    // ── Hard-cap calibración 2026-06-01 ──────────────────────────────
+    // Aunque el prompt ya pide MAX=72 sin 3 evidencias, validamos en
+    // código contando "evidencias numéricas" como una heurística: si
+    // el razonamiento NO menciona al menos 3 números (forma 4-1, ERA
+    // 2.4, H2H, %, etc.), forzamos confianza ≤ 72.
+    const rawConf = Math.max(0, Math.min(100, Number(parsed.confianza || 60)));
+    const razon = safeStr(parsed.razonamiento) + " " + safeStr(parsed.pick);
+    const numericMentions = (razon.match(/\d+(?:[.,]\d+)?/g) || []).length;
+    const confianza = rawConf >= 75 && numericMentions < 3 ? 72 : rawConf;
+    // Confidence ≥ 80 está prohibida salvo 5+ evidencias numéricas
+    const confianzaFinal = confianza >= 80 && numericMentions < 5 ? 75 : confianza;
+
     return {
       mercado: safeStr(parsed.mercado) || "1X2",
       pick: safeStr(parsed.pick),
-      confianza: Math.max(0, Math.min(100, Number(parsed.confianza || 60))),
+      confianza: confianzaFinal,
       riesgo: normalizeRiskLevel(parsed.riesgo || "MEDIO"),
       razonamiento: safeStr(parsed.razonamiento) || "Claude selecciono el mercado con mayor fundamento.",
       tipo: safeStr(parsed.tipo) || "moderada",
@@ -1868,4 +2087,146 @@ module.exports = {
   getIIHFMatchupTier,
   IIHF_TIER_A_TEAMS,
   IIHF_TIER_B_PLUS_TEAMS,
+  // CONMEBOL / Brasileirão tiers (rev 2026-06-01)
+  getConmebolMatchupTier,
+  isConmebolEvent,
+  isBrasileiraoEvent,
+  LIBERTADORES_TIER_A_TEAMS,
+  LIBERTADORES_TIER_B_TEAMS,
+  SUDAMERICANA_TIER_A_TEAMS,
+  LIBERTADORES_HIGH_ALTITUDE_HOMES,
+  BRASILEIRAO_TOP_TEAMS,
+  getEventHourCDMX,
+  // Auto-classifier de fail_reason_tags (rev 2026-06-01)
+  autoClassifyFailTags,
 };
+
+// ════════════════════════════════════════════════════════════════
+// Auto-classifier de fail_reason_tags (rev 2026-06-01)
+// ════════════════════════════════════════════════════════════════
+// Cuando un pick se marca como "lost" en /api/picks/:id/result, este helper
+// genera automáticamente un set de tags de categoría para alimentar el
+// análisis semanal y los adendums futuros del prompt.
+//
+// Razones:
+// - Antes de esto, fail_reason_tags estaba vacío en 100% de los fallos (0/25
+//   en la semana del 25-may al 01-jun).
+// - Sin tags, el análisis semanal solo podía cruzar por liga/mercado a mano.
+// - Con tags automáticos, podemos detectar patrones tipo "mlb_unders_nocturno"
+//   o "conf_75plus" sin intervención manual.
+function autoClassifyFailTags({ pick, market, confidence, riskLevel, league, sport, eventDate } = {}) {
+  const tags = [];
+  const conf = Number(confidence) || 0;
+  const lg = String(league || "").toLowerCase();
+  const mk = String(market || "").toLowerCase();
+  const pk = String(pick || "").toLowerCase();
+  const sp = String(sport || "").toLowerCase();
+  const rk = String(riskLevel || "").toUpperCase();
+
+  // ── Calibración de confianza (banda crítica detectada en análisis 06-01)
+  if (conf >= 80) tags.push("conf_80plus");
+  else if (conf >= 75) tags.push("conf_75_79");
+  else if (conf >= 70) tags.push("conf_70_74");
+  else if (conf >= 65) tags.push("conf_65_69");
+  else if (conf >= 60) tags.push("conf_60_64");
+  else tags.push("conf_low");
+
+  // ── Por liga
+  if (lg.includes("libertadores")) tags.push("conmebol_libertadores");
+  if (lg.includes("sudamericana")) tags.push("conmebol_sudamericana");
+  if (lg.includes("brasileir")) tags.push("brasileirao");
+  if (lg.includes("iihf")) tags.push("iihf");
+  if (lg.includes("nba")) tags.push("nba");
+  if (lg.includes("nhl")) tags.push("nhl");
+  if (lg.includes("mlb")) tags.push("mlb");
+  if (lg.includes("liga mexicana") || lg.startsWith("lmb")) tags.push("lmb");
+  if (lg.includes("friendly")) tags.push("friendly_international");
+  if (lg.includes("mls")) tags.push("mls");
+  if (lg.includes("dimayor")) tags.push("liga_dimayor");
+  if (lg.includes("repechaje") || lg.includes("relegation")) tags.push("repechaje");
+  if (lg.includes("liga mx") || lg === "liga mx") tags.push("liga_mx");
+  if (lg.includes("champions league")) tags.push("uefa_champions");
+  if (lg.includes("copa argentina")) tags.push("copa_argentina");
+  if (lg.includes("ligue 1")) tags.push("ligue_1");
+  if (lg.includes("eliteserien")) tags.push("eliteserien");
+  if (lg.includes("eredivisie")) tags.push("eredivisie");
+  if (lg.includes("serie a")) tags.push("serie_a");
+  if (lg.includes("laliga") || lg === "la liga" || lg === "la_liga") tags.push("laliga");
+  if (lg.includes("premier league")) tags.push("premier_league");
+  if (lg.includes("bundesliga")) tags.push("bundesliga");
+
+  // ── Por mercado
+  if (mk.includes("1x2") || mk === "ml") {
+    tags.push("market_1x2");
+    if (pk.includes("visit") || pk.match(/\b(visitor|visitante|away)\b/i)) tags.push("ml_visitante");
+    else if (pk.match(/\b(local|home)\b/i)) tags.push("ml_local");
+  }
+  if (mk.includes("dc") || mk.includes("doble oportunidad") || /\b(1x|x2)\b/i.test(pk) || pk.includes("local o empate") || pk.includes("visitante o empate")) {
+    tags.push("market_dc");
+    if (pk.includes("1x") || pk.includes("local o empate")) tags.push("dc_1x");
+    if (pk.includes("x2") || pk.includes("visitante o empate")) tags.push("dc_x2");
+  }
+  if (mk.includes("gol") || mk.includes("total") || pk.includes("over") || pk.includes("under")) {
+    tags.push("market_goles");
+    if (pk.includes("over")) tags.push("market_over");
+    if (pk.includes("under")) tags.push("market_under");
+    // Detectar línea alta NBA (más de 220 pts) — caso del cap 67
+    const nbaOverMatch = pk.match(/over\s+(\d+(?:\.\d+)?)\s*(?:pts|puntos)?/i);
+    if (sp === "basketball" && nbaOverMatch) {
+      const total = Number(nbaOverMatch[1]);
+      if (total >= 220) tags.push("nba_over_220plus");
+    }
+    // IIHF Over 5.5+ caso especial (la "bomba" del 82%)
+    if (lg.includes("iihf") && pk.includes("over") && /5\.5|6\.5|7\.5/.test(pk)) tags.push("iihf_over_55plus");
+  }
+  if (mk.includes("handicap") || mk.includes("run line") || mk.includes("puck line") || mk.includes("spread")) {
+    tags.push("market_handicap");
+    if (pk.includes("visit") || /[+]\d+\.5/.test(pk)) tags.push("handicap_visitante");
+    if (pk.includes("local") || /[-]\d+\.5/.test(pk)) tags.push("handicap_local");
+    // MLB Run Line +1.5 visitante (caso Reds-Braves dom 31)
+    if (sp === "baseball" && pk.includes("visit") && pk.includes("+1.5")) tags.push("mlb_rl_visitante_plus15");
+  }
+  if (mk.includes("btts") || pk.includes("ambos anotan") || pk.includes("btts")) tags.push("market_btts");
+  if (mk.includes("corners")) tags.push("market_corners");
+
+  // ── Hora del kickoff CDMX (patrones detectados)
+  if (eventDate) {
+    try {
+      const dt = new Date(eventDate);
+      if (!isNaN(dt.getTime())) {
+        const hourCDMX = (dt.getUTCHours() + 24 - 6) % 24; // CDMX = UTC-6
+        if (sp === "baseball" && pk.includes("under") && hourCDMX >= 19) {
+          tags.push("mlb_unders_nocturno"); // ≥19:00 CDMX caso Giants/Dodgers Unders mar 26
+        }
+        if (sp === "basketball" && pk.includes("over") && hourCDMX >= 19) {
+          tags.push("nba_overs_nocturno");
+        }
+        if (hourCDMX >= 22 || hourCDMX < 6) tags.push("late_night_cdmx");
+        if (hourCDMX >= 6 && hourCDMX < 12) tags.push("morning_cdmx");
+        if (hourCDMX >= 12 && hourCDMX < 18) tags.push("afternoon_cdmx");
+        if (hourCDMX >= 18 && hourCDMX < 22) tags.push("evening_cdmx");
+      }
+    } catch (_) {}
+  }
+
+  // ── Por nivel de riesgo
+  if (rk) tags.push(`risk_${rk.toLowerCase()}`);
+
+  // ── Combinaciones críticas detectadas en análisis semanal
+  if (conf >= 70 && rk === "BAJO") tags.push("top_candidate");
+  if (lg.includes("brasileir") && mk.includes("1x2")) tags.push("brasileirao_1x2"); // patrón dom 31 (3/4 fallaron)
+  if (lg.includes("libertadores") && mk.includes("1x2") && (pk.includes("visit") || /\b(visitor|visitante|away)\b/i.test(pk))) {
+    tags.push("libertadores_ml_visitante");
+  }
+  if (lg.includes("libertadores") && (mk.includes("gol") || mk.includes("total"))) {
+    if (pk.includes("over")) tags.push("libertadores_over");
+    if (pk.includes("under")) tags.push("libertadores_under"); // caso Fluminense U3.5 al 82% (bomba mié 27)
+  }
+  // Caso especial: pick de alta confianza en Libertadores que falla
+  // (patrón mié 27: Fluminense 82%, Caracas 76%, Ind. del Valle 72%, Corinthians 70%)
+  if (lg.includes("libertadores") && conf >= 70) tags.push("libertadores_high_conf");
+  if (lg.includes("friendly") && conf < 70) tags.push("friendly_low_conf");
+
+  // De-duplicar y retornar
+  return Array.from(new Set(tags));
+}
