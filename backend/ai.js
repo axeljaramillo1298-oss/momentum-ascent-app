@@ -1731,6 +1731,13 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
     '{"mercado":"1X2|Goles|BTTS|Handicap|Corners","pick":"pick normal exacto","confianza":65,"riesgo":"BAJO|MEDIO|ALTO","razonamiento":"2-3 oraciones","tipo":"segura|moderada|arriesgada","safe_pick":"pick DIFERENTE al normal","safe_mercado":"mercado del safe","safe_confianza":73,"safe_riesgo":"BAJO","safe_razonamiento":"por que es mas facil de acertar"}',
     "VALIDACION FINAL antes de responder: (1) safe_pick != pick? (2) safe_confianza > confianza? (3) safe no es BTTS ni Handicap exotico? (4) Si deporte=MMA y mercado=Corners → cambia a ML. (5) Si futbol y safe es X2 DC (visitante+empate) → cambia a ML directo del visitante o goles. Si alguna falla, corrige antes de responder.",
     "Si GPT puso conf >= 70 en BTTS o Handicap sin datos estadisticos, baja esa confianza 15pp.",
+    // ── Cap de confidence por descalibración semanal (2026-06-01) ────
+    // Banda 75-79% conf: 0W-2L. Banda 80+%: 0W-1L (Fluminense U3.5).
+    // Banda 60-64% conf: 17W-5L (77%). El modelo está sobreestimando.
+    // Regla dura: solo confidence ≥ 75 si hay 3+ evidencias numéricas
+    // específicas citadas en analysis (ej. forma 4-1, H2H 8-2, ERA 2.4).
+    // Sin esas 3+ evidencias, confidence MAX = 72.
+    "CALIBRACIÓN OBLIGATORIA (semana 2026-05-25 a 2026-06-01): confidence ≥ 75 solo si analysis cita al menos 3 evidencias numéricas independientes (forma, H2H, stat de mercado, lesión, etc.). Sin esas 3 evidencias, confidence MAX = 72. Confidence ≥ 80 está PROHIBIDA salvo evidencia abrumadora (>=5 datos numéricos y mercado de bajo riesgo). En la última semana, 100% de los picks 75+% fallaron — sé conservador.",
     "tipo refleja el equilibrio del portafolio. NO prometas ganancias.",
   ].join(" ");
 
@@ -1783,10 +1790,22 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
       console.error("[claudeDecideMarket] JSON parse failed. Raw response length:", content?.length, "| preview:", content?.slice(0, 200));
       throw new Error("claude_invalid_json");
     }
+    // ── Hard-cap calibración 2026-06-01 ──────────────────────────────
+    // Aunque el prompt ya pide MAX=72 sin 3 evidencias, validamos en
+    // código contando "evidencias numéricas" como una heurística: si
+    // el razonamiento NO menciona al menos 3 números (forma 4-1, ERA
+    // 2.4, H2H, %, etc.), forzamos confianza ≤ 72.
+    const rawConf = Math.max(0, Math.min(100, Number(parsed.confianza || 60)));
+    const razon = safeStr(parsed.razonamiento) + " " + safeStr(parsed.pick);
+    const numericMentions = (razon.match(/\d+(?:[.,]\d+)?/g) || []).length;
+    const confianza = rawConf >= 75 && numericMentions < 3 ? 72 : rawConf;
+    // Confidence ≥ 80 está prohibida salvo 5+ evidencias numéricas
+    const confianzaFinal = confianza >= 80 && numericMentions < 5 ? 75 : confianza;
+
     return {
       mercado: safeStr(parsed.mercado) || "1X2",
       pick: safeStr(parsed.pick),
-      confianza: Math.max(0, Math.min(100, Number(parsed.confianza || 60))),
+      confianza: confianzaFinal,
       riesgo: normalizeRiskLevel(parsed.riesgo || "MEDIO"),
       razonamiento: safeStr(parsed.razonamiento) || "Claude selecciono el mercado con mayor fundamento.",
       tipo: safeStr(parsed.tipo) || "moderada",
