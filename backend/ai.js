@@ -311,6 +311,71 @@ const buildSportContextAdendum = (event = {}) => {
     }
   }
 
+  // Copa Argentina + cups eliminatorios sudamericanos (rev 2026-06-02)
+  // Patrón: Over 1.5 en torneos cup sudamericanos 1W-3L (25%) últimos 7 días.
+  // Caso: Barracas vs Huracán Over 1.5 al 75% ⭐ TOP 1 falló martes 2-jun.
+  // Razón: eliminatorias defensivas, equipos especulan; 0-0 / 1-0 / 0-1 común.
+  if (sport.includes("foot") && (league.includes("copa argentina") || league.includes("copa libertadores") || league.includes("copa sudamericana"))) {
+    lines.push(
+      "🏆 CUP SUDAMERICANA (Copa Argentina/Libertadores/Sudamericana eliminación) — " +
+      "Over 1.5 goles tiene WR 25% (1-3) últimos 7 días en esta plataforma. Los equipos especulan, " +
+      "0-0 y 1-0 son frecuentes. Cap confidence MAX = 62 en Over 1.5 salvo que stats.team_stats " +
+      "contenga goals_for_avg para AMBOS equipos Y la suma sea >= 2.8 goles (citarlo en analysis). " +
+      "Sin team_stats explícito de goleo, descarta Over 1.5 — prefiere ML o handicap."
+    );
+  }
+
+  // Amistosos internacionales TIER B (rev 2026-06-02)
+  // Patrón: amistosos sin top-25 FIFA, 0W-3L últimos 14 días (Haiti-NZ, Wales-Ghana,
+  // Bulgaria-Montenegro). Cuando al menos uno es TIER A real, 6W-0L (Mexico-Aus,
+  // Croatia-Bel, Cape Verde-Ser, Czechia-Kos, Norway-Swe, Austria-Tun).
+  if (sport.includes("foot") && league.includes("friendly")) {
+    const FRIENDLY_TIER_A = new Set([
+      // Europe top
+      "spain","españa","france","francia","england","inglaterra","belgium","bélgica","belgica",
+      "netherlands","holanda","países bajos","paises bajos","portugal","italy","italia",
+      "germany","alemania","croatia","croacia","switzerland","suiza","denmark","dinamarca",
+      "austria","sweden","suecia","czechia","república checa","republica checa","czech republic",
+      "norway","noruega","poland","polonia","ukraine","ucrania","serbia",
+      // Americas
+      "argentina","brazil","brasil","uruguay","colombia","mexico","méxico","usa","united states",
+      "estados unidos","chile","peru","perú","ecuador","canada","canadá",
+      // Africa top
+      "morocco","marruecos","senegal","egypt","egipto","tunisia","túnez","tunez","algeria","argelia",
+      "nigeria","cameroon","camerún","camerun","ivory coast","costa de marfil","cape verde","cabo verde",
+      // Asia top
+      "japan","japón","japon","south korea","corea del sur","iran","irán","australia","saudi arabia",
+      "arabia saudita","qatar",
+    ]);
+    const homeFr = String(event.home_team || event.homeTeam || "").toLowerCase().trim();
+    const awayFr = String(event.away_team || event.awayTeam || "").toLowerCase().trim();
+    const homeIsA = FRIENDLY_TIER_A.has(homeFr);
+    const awayIsA = FRIENDLY_TIER_A.has(awayFr);
+    if (!homeIsA && !awayIsA) {
+      lines.push(
+        `⚽ AMISTOSO TIER B — ${homeFr} vs ${awayFr}: ninguno top-25 FIFA confirmado. ` +
+        `Histórico últimos 14 días: 0W-3L cuando ninguno es TIER A (Haiti-NZ, Wales-Ghana, Bulgaria-Montenegro). ` +
+        `Cap confidence MAX = 63 en TODOS los mercados de este partido. ` +
+        `Estos partidos son altamente impredecibles — rotación, alineaciones experimentales, intensidad baja. ` +
+        `Si no hay valor claro de momios (cuota >= 1.80), prefiere NO publicar.`
+      );
+    } else if (homeIsA && awayIsA) {
+      lines.push(
+        `⚽ AMISTOSO TIER A vs TIER A — ${homeFr} vs ${awayFr}: ambos top-25 FIFA. ` +
+        `Histórico 2W-0L últimos 14 días (Croatia-Belgium, Norway-Sweden). Confidence normal aplica, ` +
+        `prefiere Under 2.5 o BTTS si ambos tienen estilo defensivo.`
+      );
+    }
+    // mismatch A vs B: permitido pero con cap moderado
+    if ((homeIsA && !awayIsA) || (!homeIsA && awayIsA)) {
+      lines.push(
+        `⚽ AMISTOSO MISMATCH — ${homeIsA ? homeFr : awayFr} (TIER A) vs ${homeIsA ? awayFr : homeFr} (TIER B). ` +
+        `Confidence MAX = 67 en ML del TIER A salvo tendencia de forma 4-1 confirmada. ` +
+        `Caso Wales-Ghana 2-jun: Wales TIER A perdió como local al 65% — los amistosos vs equipos menores no son automáticos.`
+      );
+    }
+  }
+
   // Brasileirão Série A — rev 2026-06-01
   // 3/4 ML 1X2 fallaron el domingo 31. Picks de equipos top en
   // confidence 62-65% son demasiado optimistas: el campeonato es muy
@@ -1468,6 +1533,12 @@ async function analyzeMarketsGPT({ event = {}, stats = {}, historyPicks = [] } =
     "11. Totales en beisbol: La conf del mercado goles debe reflejar ERA del pitcher abridor. Si Stats.team_stats trae era_bullpen/runs_for_avg/runs_against_avg de ambos equipos, citalos en la nota. Si no tienes ERA en Stats, pon conf <= 55 en goles y explica que falta el pitcher.",
     "12. Totales en basketball: Incluye pace (ritmo de juego) de ambos equipos si esta en Stats. Si Stats.team_stats.home.pace Y away.pace existen, citalos exacto en la nota. Sin pace, conf del total no debe superar 60.",
     "13. Antes de asignar cualquier conf >= 70: lista mentalmente 2 factores en contra del pick. Si existen 2 o mas factores en contra, reduce conf entre 8 y 12 puntos.",
+    // ── Cap 75+ DURO (rev 2026-06-02, post-fallo Barracas TOP 1) ────────
+    // Caso martes 2-jun: TOP 1 Barracas vs Huracán Over 1.5 al 75% perdió;
+    // analysis genérico sin un solo número ("es muy poco frecuente que un
+    // partido termine 0-0"). Reglas previas (calibración semanal) no se
+    // respetaron. Esta es DURA: la nota DEBE contener 3 números concretos.
+    "13b. CAP DURO 75+ (rev 2026-06-02): para asignar confidence >= 75 en CUALQUIER mercado, la nota DEBE contener AL MENOS 3 números concretos verificables (formato 'X.Y' o 'X-Y' o 'X%'): ejemplos válidos = ERA 2.4, forma 4-1, H2H 7-3, promedio goles 1.8, OPS 0.785, pace 102.3, corners 6.5/p. Frases genéricas como 'es poco frecuente', 'suelen anotar', 'rara vez termina 0-0' NO cuentan como evidencia numérica. Si no puedes incluir 3 números reales en la nota, confidence MAX = 72. SIN EXCEPCIONES.",
     "14. Si en Stats hay odds (cuotas decimales) de un mercado, considera el Expected Value: tu probabilidad implicita (conf/100) debe superar a la implicita del mercado (1/odds) para que el pick tenga valor. Cuando hay odds, ajusta tu conf y nota considerando el EV.",
     // ── 15. team_stats por deporte (rev 2026-06-01) ──────────────────
     // Inyectado desde sportsApiService.getEventStats con shape:
@@ -1769,6 +1840,12 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
     // específicas citadas en analysis (ej. forma 4-1, H2H 8-2, ERA 2.4).
     // Sin esas 3+ evidencias, confidence MAX = 72.
     "CALIBRACIÓN OBLIGATORIA (semana 2026-05-25 a 2026-06-01): confidence ≥ 75 solo si analysis cita al menos 3 evidencias numéricas independientes (forma, H2H, stat de mercado, lesión, etc.). Sin esas 3 evidencias, confidence MAX = 72. Confidence ≥ 80 está PROHIBIDA salvo evidencia abrumadora (>=5 datos numéricos y mercado de bajo riesgo). En la última semana, 100% de los picks 75+% fallaron — sé conservador.",
+    // ── Cap DURO 75+ (rev 2026-06-02, post-fallo Barracas TOP 1) ────────
+    "CALIBRACIÓN REFORZADA (martes 2-jun): el TOP 1 Barracas Over 1.5 al 75% PERDIÓ con razonamiento genérico ('es poco frecuente que termine 0-0', sin números). Tu razonamiento DEBE contener al menos 3 números concretos (X.Y, X-Y, X%, formato ERA/OPS/pace/promedio) para justificar confianza ≥ 75. Frases genéricas como 'suelen anotar', 'es difícil que falle', 'estadísticamente probable' NO valen. Si GPT te pasa un pick con conf >= 75 pero su nota no tiene 3 números, BAJA la confianza a 72 en tu output. SIN EXCEPCIONES.",
+    // ── Cup sudamericano Over 1.5 (rev 2026-06-02) ────────────────────
+    "REGLA CUP SUDAMERICANA: en Copa Argentina / Copa Libertadores / Copa Sudamericana, Over 1.5 goles tiene 25% WR (1-3) últimos 7 días. Cap confidence MAX = 62 en este mercado-liga combo salvo que el razonamiento cite goals_for_avg de AMBOS equipos de team_stats con suma >= 2.8 (entonces MAX = 70). Sin esa cita: descarta Over 1.5 en cup sudamericana, prefiere ML o handicap.",
+    // ── Amistosos TIER B (rev 2026-06-02) ─────────────────────────────
+    "REGLA AMISTOSOS TIER B: si la liga es 'Int. Friendly Games' y NINGUNO de los equipos es selección top-25 FIFA (lista mental: Spain/France/England/Belgium/Netherlands/Portugal/Italy/Germany/Croatia/Switzerland/Denmark/Austria/Sweden/Czechia/Norway/Poland/Serbia/Argentina/Brazil/Uruguay/Colombia/Mexico/USA/Chile/Peru/Ecuador/Morocco/Senegal/Egypt/Tunisia/Nigeria/Cameroon/Cape Verde/Japan/South Korea/Iran/Australia/Saudi Arabia), cap confidence MAX = 63. Caso 2-jun: Haiti-NZ, Wales-Ghana, Bulgaria-Montenegro 0W-3L recientes.",
     "tipo refleja el equilibrio del portafolio. NO prometas ganancias.",
   ].join(" ");
 
@@ -2253,6 +2330,35 @@ function autoClassifyFailTags({ pick, market, confidence, riskLevel, league, spo
   // (patrón mié 27: Fluminense 82%, Caracas 76%, Ind. del Valle 72%, Corinthians 70%)
   if (lg.includes("libertadores") && conf >= 70) tags.push("libertadores_high_conf");
   if (lg.includes("friendly") && conf < 70) tags.push("friendly_low_conf");
+
+  // ── Patrones nuevos rev 2026-06-02 (post-fallo martes 2-jun) ──────────
+  // MLB Overs línea 7.5+ (no solo nocturno): 1W-2L últimos 7 días
+  if (sp.includes("baseball") && lg.includes("mlb") && pk.includes("over")) {
+    const mlbOverMatch = pk.match(/over\s+(\d+(?:\.\d+)?)/i);
+    if (mlbOverMatch && Number(mlbOverMatch[1]) >= 7.5) tags.push("mlb_overs_7_5_plus");
+  }
+  // Cup match sudamericano Over 1.5 (Copa Argentina / Libertadores cup): 1W-3L últimos 7
+  if ((lg.includes("copa argentina") || lg.includes("libertadores") || lg.includes("sudamericana"))
+      && pk.includes("over") && /1\.5/.test(pk)) {
+    tags.push("cup_sudamerica_over_15");
+  }
+  // Amistoso TIER B (ninguno top-25 FIFA): 0W-3L últimos 14
+  if (lg.includes("friendly")) {
+    const FRIENDLY_TIER_A_TAGS = new Set([
+      "spain","españa","france","francia","england","inglaterra","belgium","bélgica","belgica",
+      "netherlands","holanda","portugal","italy","italia","germany","alemania","croatia","croacia",
+      "switzerland","suiza","denmark","dinamarca","austria","sweden","suecia","czechia",
+      "czech republic","norway","noruega","poland","polonia","ukraine","ucrania","serbia",
+      "argentina","brazil","brasil","uruguay","colombia","mexico","méxico","usa","united states",
+      "chile","peru","perú","ecuador","canada","canadá","morocco","marruecos","senegal","egypt",
+      "egipto","tunisia","túnez","tunez","algeria","argelia","nigeria","cameroon","ivory coast",
+      "cape verde","cabo verde","japan","japón","japon","south korea","corea del sur","iran",
+      "irán","australia","saudi arabia","arabia saudita","qatar",
+    ]);
+    // No tenemos home_team/away_team aquí, pero podemos detectar por pick si menciona equipos
+    // — heurística: si la liga es friendly y el conf < 70, es candidato TIER B
+    if (conf >= 60 && conf < 70) tags.push("friendly_possibly_tier_b");
+  }
 
   // De-duplicar y retornar
   return Array.from(new Set(tags));
