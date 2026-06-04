@@ -362,6 +362,37 @@ async function getEventStats(event = {}) {
         };
         const fields = sportFields[sport] || sportFields.football;
 
+        // ── Calidad de stats (rev 2026-06-04) ────────────────────────
+        // FIX 1: detector de team_stats efectivamente vacío. Calcula
+        // completeness por sport. El prompt usa esto para aplicar caps:
+        //  - 'full'    → ambos equipos con campos críticos del sport
+        //  - 'partial' → falta al menos un campo crítico en algún equipo
+        //  - 'minimal' → ninguno tiene campo crítico (solo runs/form)
+        // Campo crítico por sport (lo que mueve los ML del deporte):
+        //  - baseball: era_team Y ops_team (sabermétricos del staff/bateo)
+        //  - basketball: pace (ritmo, mueve totales)
+        //  - football: goals_for_avg (proyección de goleo)
+        //  - hockey: power_play_pct (PP%, mueve totales y favoritos)
+        const criticalFieldBySport = {
+          baseball: ["era_team", "ops_team"],
+          basketball: ["pace"],
+          football: ["goals_for_avg"],
+          hockey: ["power_play_pct"],
+        };
+        const critical = criticalFieldBySport[sport] || [];
+        const hasAllCritical = (row) => row && critical.every((f) => row[f] != null && row[f] !== "");
+        const hasAnyCritical = (row) => row && critical.some((f) => row[f] != null && row[f] !== "");
+        let completeness = "full";
+        if (critical.length) {
+          const homeFull = hasAllCritical(homeStats);
+          const awayFull = hasAllCritical(awayStats);
+          const homeAny = hasAnyCritical(homeStats);
+          const awayAny = hasAnyCritical(awayStats);
+          if (homeFull && awayFull) completeness = "full";
+          else if (homeAny || awayAny) completeness = "partial";
+          else completeness = "minimal";
+        }
+
         // Construir el objeto enriched ANTEPONIENDO team_stats al inicio
         // — esto garantiza que en JSON.stringify(stats) los datos críticos
         // estén al principio del string y NO caigan en el truncate (los
@@ -369,6 +400,7 @@ async function getEventStats(event = {}) {
         const enriched = {
           team_stats: {
             source: "db",
+            completeness, // 'full' | 'partial' | 'minimal' — lo usa el prompt
             home: projectField(homeStats, fields),
             away: projectField(awayStats, fields),
           },
@@ -378,6 +410,7 @@ async function getEventStats(event = {}) {
         if (base.statsJson?.team_stats) {
           enriched.team_stats = {
             source: "db",
+            completeness,
             home: projectField(homeStats, fields),
             away: projectField(awayStats, fields),
           };

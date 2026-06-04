@@ -351,27 +351,27 @@ const buildSportContextAdendum = (event = {}) => {
     const awayFr = String(event.away_team || event.awayTeam || "").toLowerCase().trim();
     const homeIsA = FRIENDLY_TIER_A.has(homeFr);
     const awayIsA = FRIENDLY_TIER_A.has(awayFr);
-    if (!homeIsA && !awayIsA) {
-      lines.push(
-        `⚽ AMISTOSO TIER B — ${homeFr} vs ${awayFr}: ninguno top-25 FIFA confirmado. ` +
-        `Histórico últimos 14 días: 0W-3L cuando ninguno es TIER A (Haiti-NZ, Wales-Ghana, Bulgaria-Montenegro). ` +
-        `Cap confidence MAX = 63 en TODOS los mercados de este partido. ` +
-        `Estos partidos son altamente impredecibles — rotación, alineaciones experimentales, intensidad baja. ` +
-        `Si no hay valor claro de momios (cuota >= 1.80), prefiere NO publicar.`
-      );
-    } else if (homeIsA && awayIsA) {
+    // FIX 5 (rev 2026-06-04): consolidado en una sola rama de decisión.
+    // Antes existían tres ramas mutuamente excluyentes (B-vs-B, A-vs-A, mismatch)
+    // pero el mismatch A-vs-B activaba cap=67 separado. Patrón Denmark-DR Congo
+    // 3-jun mostró que el TIER A pierde como favorito en mismatch con
+    // demasiada frecuencia (Wales-Ghana 2-jun también). Ahora: si AL MENOS
+    // UNO no es TIER A, aplicamos cap=63. Solo "ambos TIER A" mantiene normal.
+    if (homeIsA && awayIsA) {
       lines.push(
         `⚽ AMISTOSO TIER A vs TIER A — ${homeFr} vs ${awayFr}: ambos top-25 FIFA. ` +
         `Histórico 2W-0L últimos 14 días (Croatia-Belgium, Norway-Sweden). Confidence normal aplica, ` +
         `prefiere Under 2.5 o BTTS si ambos tienen estilo defensivo.`
       );
-    }
-    // mismatch A vs B: permitido pero con cap moderado
-    if ((homeIsA && !awayIsA) || (!homeIsA && awayIsA)) {
+    } else {
+      // Mismatch (uno A uno no-A) o ambos no-A: ambos son volátiles
+      const tierLabel = (!homeIsA && !awayIsA) ? "TIER B (ninguno top-25)" : "MISMATCH (al menos uno NO top-25)";
       lines.push(
-        `⚽ AMISTOSO MISMATCH — ${homeIsA ? homeFr : awayFr} (TIER A) vs ${homeIsA ? awayFr : homeFr} (TIER B). ` +
-        `Confidence MAX = 67 en ML del TIER A salvo tendencia de forma 4-1 confirmada. ` +
-        `Caso Wales-Ghana 2-jun: Wales TIER A perdió como local al 65% — los amistosos vs equipos menores no son automáticos.`
+        `⚽ AMISTOSO ${tierLabel} — ${homeFr} vs ${awayFr}. ` +
+        `Histórico (rev 3-jun): 0W-3L cuando ninguno top-25 (Haiti-NZ, Wales-Ghana, Bulgaria-Montenegro). ` +
+        `Mismatch también falla con frecuencia: Denmark vs DR Congo (Denmark TIER A) perdió 3-jun al 65%, Wales-Ghana 2-jun perdió al 65%. ` +
+        `Cap confidence MAX = 63 en TODOS los mercados de este partido. ` +
+        `Si no hay valor claro de momios (cuota >= 1.80), prefiere NO publicar.`
       );
     }
   }
@@ -1548,9 +1548,33 @@ async function analyzeMarketsGPT({ event = {}, stats = {}, historyPicks = [] } =
     "15. TEAM_STATS (BD interna): Si Stats incluye `team_stats` con source='db', esos son datos reales de nuestra base por equipo. USALOS como fuente PRIMARIA y cita el valor numerico exacto en la nota cuando apliques.",
     "15a. FUTBOL — team_stats.home/away contiene: corners_for_avg, corners_against_avg, btts_pct, over_25_pct, goals_for_avg, goals_against_avg, clean_sheets_pct, form_last_5. Mercado BTTS: aprueba SOLO si home.btts_pct >= 60 Y away.btts_pct >= 60 (citalos). Mercado Goles Over 2.5: aprueba si over_25_pct promedio >= 60 O projected_goals_total >= 2.8. Mercado Corners: ver regla 10b.",
     "15b. BEISBOL (MLB/LMB) — team_stats.home/away contiene: era_team, era_bullpen, ops_team, ops_vs_lhp, ops_vs_rhp, runs_for_avg, runs_against_avg. Run Line +1.5 visitante (regla 3c): SOLO conf >= 65 si home.era_bullpen > 4.50 explicito (citalo). Mercado ML: usa ops_vs_lhp/rhp del bateo del rival vs mano del abridor. Totales: cita runs_for_avg + era_bullpen de ambos.",
+    // ── FIX 2 calibrado (rev 2026-06-04): MLB ML local sin ERA citada ──
+    // Patrón 3-jun: 3/3 TOPs MLB ML local perdieron (Rays 73%, Mariners 67%, Yankees 65%)
+    // sin citar ERA del abridor rival ni ops_vs_lhp/rhp. Histórico:
+    // banda 60-64 ganó 4/4 (100%), banda 65-69 ganó 3/8 (37%), banda 70-74 perdió 0/1.
+    // Cap suave 64 (no 62) para no romper ganadores que sí citaban ERA del rival.
+    "15b-2. BEISBOL ML LOCAL — Para conf >= 65 en ML del local en MLB/LMB, la nota DEBE citar AL MENOS UNO de: (a) ERA del abridor rival con formato X.YZ; (b) team_stats.away.era_team con valor numérico; (c) team_stats.away.ops_team del bateo rival. Si NINGUNO de los 3 esta citado en la nota, conf MAX = 64 en ML local. Records loc/vis no cuentan como evidencia para esta regla.",
+    // ── FIX 3 calibrado (rev 2026-06-04): anti-señal racha W-W-W ──
+    // Patrón 3-jun: los 3 ML local perdedores abrieron citando 'W-W-W-W-W'
+    // como evidencia primaria. Los ganadores históricos NO citaban racha,
+    // citaban diferencial de PCT acumulado. -3pp suave (no -5) para no
+    // matar picks como Suiza-IIHF que sí ganaron con racha.
+    "15b-3. ANTI-SEÑAL RACHA — Si tu unica evidencia primaria para ML local en MLB/LMB es 'forma reciente W-W-W-W-W' del local SIN tambien citar diferencial de WIN% acumulado del local vs visitante (mínimo 100pts de diferencia, ej. .585 vs .461), DEGRADA tu conf en 3 puntos. La racha es ANTI-SEÑAL en MLB: 3/3 ML local con racha W-W-W-W-W perdieron el 3-jun.",
     "15c. BASKETBALL (NBA) — team_stats.home/away contiene: pace, off_rating, def_rating, points_for_avg, points_against_avg. Totales Over linea L: requiere (home.pace + away.pace) / 2 >= 100 Y suma off_rating + def_rating del rival favorable. Cita pace exacto en nota. Sin pace de ambos: conf MAX 60 (regla 12).",
     "15d. HOCKEY (NHL/IIHF) — team_stats.home/away contiene: goals_for_per_game, goals_against_per_game, power_play_pct, penalty_kill_pct. Totales (goles): cita goals_for_per_game de ambos. Puck Line: PP% del favorito > 22 favorece -1.5. Sin power_play_pct/PK%: conf totales MAX 62.",
-    "15e. REGLA TRANSVERSAL — Si team_stats esta AUSENTE para este evento (no aparece la clave o source != 'db'), conf MAX GLOBAL en todos los mercados de este evento = 65. Esto es deliberado: en la ultima semana el 100% de picks 75+% sin team_stats fallaron.",
+    // ── FIX 1+6 unificados (rev 2026-06-04): completeness por sport ──
+    // Antes la regla 15e solo disparaba con 'source != db', pero
+    // sportsApiService SIEMPRE seteaba source='db' aunque era/ops fueran NULL
+    // (loophole estructural detectado 3-jun). Ahora team_stats trae campo
+    // `completeness`: 'full' (campos críticos en ambos) | 'partial' (en uno) |
+    // 'minimal' (en ninguno). Campos críticos: baseball=era_team+ops_team,
+    // basketball=pace, football=goals_for_avg, hockey=power_play_pct.
+    "15e. REGLA TRANSVERSAL — Lee team_stats.completeness ANTES de decidir conf máxima:" +
+    " · completeness='full' (ambos equipos con campos críticos del sport): confidence normal aplica." +
+    " · completeness='partial' (solo uno tiene): conf MAX GLOBAL = 65 en TODOS los mercados de este evento." +
+    " · completeness='minimal' (NI HOME NI AWAY tienen campo crítico del sport, solo runs/form/record): conf MAX GLOBAL = 64." +
+    " · team_stats AUSENTE (no aparece la clave): conf MAX GLOBAL = 62." +
+    " Esto es deliberado: el 3-jun los 5 picks perdedores tenían team_stats con runs_for_avg pero sin era_team/ops_team (completeness='minimal') y se publicaron al 67-73%.",
     `Criterios prioritarios para ${sportCfg.label}:`,
     ...sportCfg.criteria,
     buildSportContextAdendum(event),
@@ -1818,10 +1842,26 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
     "4c. CORNERS via team_stats: PROHIBIDO aprobar pick de Corners sin citar `stats.team_stats.home.corners_for_avg` Y `stats.team_stats.away.corners_against_avg` en razonamiento. Si esos campos faltan en stats, RECHAZA Corners y elige otro mercado. Si `stats.team_stats.projected_corners_total` existe, valida linea: Over X.5 requiere projected >= X+0.5; Under X.5 requiere projected <= X-0.5; diferencia < 1 corner = RECHAZA. Si projected diverge >= 2 corners de la linea, Corners es candidato fuerte (conf hasta 75).",
     "4d. GOLES futbol via team_stats: si `stats.team_stats.projected_goals_total` existe, valida: Over 2.5 requiere projected >= 2.8; Under 2.5 requiere projected <= 2.2. Cita el numero en razonamiento.",
     "4e. BTTS via team_stats: aprueba SOLO si stats.team_stats.home.btts_pct >= 60 Y stats.team_stats.away.btts_pct >= 60 (cita ambos %). Sin esos campos, RECHAZA BTTS (regla 2 reforzada).",
+    // ── FIX 2 calibrado (rev 2026-06-04): MLB ML local sin ERA del rival ──
+    // Patrón 3-jun: 3/3 TOPs MLB ML local perdieron (Rays 73%, Mariners 67%,
+    // Yankees 65%) sin citar ERA del abridor rival ni ops del bateo. Cap suave
+    // a 64 (no 62) para no matar ganadores históricos como Dodgers 27-may que
+    // sí citaban ERA del rival.
+    "4f. MLB/LMB ML LOCAL — Antes de aprobar ML del local en beisbol, verifica que la nota de GPT cite AL MENOS UNO: (a) ERA del abridor rival con formato X.YZ (ej. 'ERA 3.10'); (b) stats.team_stats.away.era_team con valor numérico; (c) stats.team_stats.away.ops_team. Si NINGUNO esta citado, BAJA la confianza del ML a MAX 64 en tu output. Records loc/vis y forma W-W-W NO sustituyen.",
+    // ── FIX 4 suavizado (rev 2026-06-04): verificabilidad de números ──
+    // No bloquea pick si número no está en BD (porque la BD tiene muchos
+    // campos NULL hoy) pero marca riesgo MEDIO si el número es sospechoso.
+    "4g. VERIFICABILIDAD NUMERICA — Si la nota de GPT cita un número específico (ERA X.YZ, OPS .XYZ, pace XX.X) que NO aparece textualmente en stats.team_stats Y NO está respaldado por contexto del evento (ej. nombres de pitchers abridores con sus ERAs conocidas en odds o context), considera que es probable estimación del modelo. Reduce confianza 3pp y marca riesgo=MEDIO. NO rechaces el pick si todo lo demás es coherente.",
     "4. Totales beisbol: elige Over/Under si la nota de GPT menciona ERA o pitch de cualquier lanzador. Si stats.team_stats.home.era_bullpen o away.era_bullpen existen, citalos. Sin ninguna mencion de ERA y sin era_bullpen en team_stats, elige ML.",
     "5. Totales basketball: elige Over/Under si la nota menciona pace o ritmo. Si stats.team_stats.home.pace Y away.pace existen, citalos en razonamiento (ej. 'pace 101.3 vs 99.8'). Sin pace en team_stats ni en nota, prefiere ML.",
     "5b. Totales hockey: cita stats.team_stats.home.power_play_pct y penalty_kill_pct si existen. Over goles requiere PP% combinado >= 22 o PK% combinado <= 78.",
-    "5c. team_stats AUSENTE: si stats.team_stats no esta o source != 'db' para el deporte de este evento, confianza MAX FINAL del pick elegido = 65 (todos los mercados). Esto refleja que sin data real, el modelo descalibra (semana 2026-05-25 a 2026-06-01: 100% WR perdedora en picks 75+ sin team_stats).",
+    // ── FIX 1+6 unificados (rev 2026-06-04): completeness por sport ──
+    "5c. CALIDAD DE STATS — Lee stats.team_stats.completeness ANTES de finalizar confianza:" +
+    " · completeness='full' (ambos equipos con campos críticos del sport): confianza normal." +
+    " · completeness='partial' (solo uno): MAX FINAL = 65 en todos los mercados." +
+    " · completeness='minimal' (NI HOME NI AWAY tienen campo crítico del sport - solo runs/form/record): MAX FINAL = 64." +
+    " · stats.team_stats AUSENTE: MAX FINAL = 62." +
+    " Caso 3-jun: los 5 picks perdedores tenían completeness='minimal' (sin era_team/ops_team) y se publicaron a 67-73%. Esta regla los hubiera capeado a 64.",
     noDrawSport
       ? "6. MMA CRITICO: en peleas de MMA el mercado Corners = metodo de victoria (KO/TKO/SUB) — win rate historico 0%. PROHIBIDO elegir Corners en MMA. Usa SOLO ML (ganador de la pelea) o Goles (Over/Under de rondas). Si GPT da alta conf a Corners en MMA, elige ML del mismo peleador. Para Over/Under beisbol o totales con favorito muy claro: Over/Under es el mercado con mejor valor."
       : "6. DC REGLA CRITICA: DC solo cuando el equipo favorecido es LOCAL (resultado = '1X', local+empate). Si el equipo favorecido es VISITANTE, usa ML directo — NUNCA X2 DC (visitante+empate): win rate historico X2 DC = 25% vs 100% de DC 1X. DC tampoco aplica si el favorito es tan dominante que ML < 1.40 — prefiere Over/Under.",
