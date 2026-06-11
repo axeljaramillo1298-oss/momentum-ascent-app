@@ -205,6 +205,18 @@ const buildSportContextAdendum = (event = {}) => {
   // Baseball MLB / LMB
   if (sport.includes("baseball") || sport.includes("beisbol") || league.includes("mlb") || league.includes("liga mexicana")) {
     lines.push("⚾ BEISBOL — El pitcher abridor define ~60% del resultado. OBLIGATORIO: si en Stats NO hay info del pitcher abridor (nombre, ERA, WHIP, ponches recientes), confidence MAX = 55 para Totales y MAX = 60 para ML. Si lo tienes, cítalo en analysis (ej. 'X ERA 2.4 últimas 3 aperturas').");
+    // ── Totales béisbol PROHIBIDOS sin abridores (rev 2026-06-11) ──────
+    // Dato duro semana 4-7 jun: Over/Under de carreras en MLB+LMB fue
+    // 0W-7L (Giants 18-3 vs Under 8.5, Dodgers 1-0 vs Over 8.5, Toros 3-0
+    // vs Over 8.5, etc.). Fallaron overs Y unders → sin ERA de abridores
+    // el modelo está adivinando una moneda. El cap de 55 no bastó porque
+    // los picks salían a 62-64 citando stats de bateo. Regla dura nueva:
+    lines.push(
+      "⚾ TOTALES BÉISBOL — REGLA DURA (rev 11-jun): los Over/Under de carreras fueron 0W-7L la semana del 4-7 jun (fallaron overs Y unders). " +
+      "El mercado Goles/Totales en béisbol SOLO se permite si el razonamiento cita ERA de AMBOS abridores (o era_bullpen de ambos en team_stats). " +
+      "Stats de bateo (runs_for_avg, OPS) NO bastan por sí solos: sin los abridores, DESCARTA el mercado de totales y elige ML o handicap. " +
+      "ML de favorito claro fue 6W-1L esa misma semana — ahí está el edge en béisbol."
+    );
     // Run Line visitante (+1.5): falló 0/1 en semana 25-may a 01-jun
     // (Braves +1.5 vs Reds conf 70 → lost). El mercado solo cubre si el
     // visitante pierde por <= 1 carrera o gana. Con equipo local fuerte
@@ -374,6 +386,85 @@ const buildSportContextAdendum = (event = {}) => {
         `Si no hay valor claro de momios (cuota >= 1.80), prefiere NO publicar.`
       );
     }
+  }
+
+  // ── FIFA WORLD CUP 2026 (rev 2026-06-11, arranque del torneo) ──────
+  // Calibrado con datos históricos verificados (Frontiers/Sporting Life):
+  //  · Goles por jornada en Rusia 2018: J1=2.38, J2=2.94, J3=2.31.
+  //  · Qatar 2022 fase de grupos: 2.50 goles/partido, 4 empates 0-0 de
+  //    DEBUT (primer Mundial con tantos), BTTS 48% torneo completo.
+  //  · Empates en grupos ~22% histórico.
+  //  · Formato 2026: 12 grupos de 4 + 8 mejores terceros → 3 de 4
+  //    avanzan; se esperan 8-14 "dead rubbers" en J3 (Yahoo Sports).
+  //  · Amistosos pre-torneo 5-7 jun (datos propios): ML favorito claro
+  //    6W-1L; Overs con favorito "administrando" fallaron (Argentina 2-0
+  //    Honduras, Colombia 2-0 Jordan, Greece 0-1 Italy).
+  const isWorldCup = sport.includes("foot") &&
+    (league.includes("world cup") || league.includes("mundial") || league.includes("copa del mundo")) &&
+    !league.includes("club");
+  if (isWorldCup) {
+    const WC_TIER_1 = new Set([ // top-10 FIFA junio 2026
+      "argentina","spain","españa","france","francia","england","inglaterra",
+      "portugal","brazil","brasil","morocco","marruecos","netherlands","holanda",
+      "países bajos","paises bajos","belgium","bélgica","belgica","germany","alemania",
+    ]);
+    const WC_TIER_4 = new Set([ // debutantes / fuera de top-40
+      "curacao","curazao","cape verde","cabo verde","jordan","jordania",
+      "uzbekistan","uzbekistán","haiti","haití","iraq","irak","dr congo",
+      "rd congo","congo dr","new zealand","nueva zelanda","qatar","catar",
+      "panama","panamá","south africa","sudáfrica","sudafrica","bosnia",
+      "bosnia-herzegovina","scotland","escocia","ghana",
+    ]);
+    const hWc = String(event.home_team || event.homeTeam || "").toLowerCase().trim();
+    const aWc = String(event.away_team || event.awayTeam || "").toLowerCase().trim();
+    const h1 = WC_TIER_1.has(hWc), a1 = WC_TIER_1.has(aWc);
+    const h4 = WC_TIER_4.has(hWc), a4 = WC_TIER_4.has(aWc);
+
+    // Jornada por fecha (calendario oficial 2026): J1 = 11-17 jun, J2 = 18-23 jun, J3 = 24-27 jun
+    const wcDate = new Date(event.event_date || event.eventDate || 0);
+    const wcDay = wcDate.getUTCMonth() === 5 ? wcDate.getUTCDate() : 0; // junio
+    const jornada = wcDay >= 24 && wcDay <= 27 ? 3 : wcDay >= 18 && wcDay <= 23 ? 2 : wcDay >= 11 && wcDay <= 17 ? 1 : 0;
+
+    lines.push(
+      "🏆 MUNDIAL 2026 — FASE DE GRUPOS. Datos duros: J1 histórica promedia 2.38 goles/partido (la más cerrada junto a J3 = 2.31); J2 es la goleadora (2.94). " +
+      "Qatar 2022 tuvo 4 empates 0-0 de debut. Empates ~22% en grupos. Equipos debutan cautelosos: nadie quiere perder su primer partido."
+    );
+    if (jornada === 1) {
+      lines.push(
+        "🏆 MUNDIAL J1 (11-17 jun) — DEBUT CAUTELOSO: Over 2.5 entre equipos de tier similar cap confidence MAX = 62. " +
+        "Los amistosos pre-torneo lo confirmaron: favoritos ganan 2-0 'administrando' sin goleada (Argentina 2-0 Honduras, Colombia 2-0 Jordan). " +
+        "Sorpresas J1 existen (~2 de 16 partidos en 2022: Saudi 2-1 Argentina, Japón 2-1 Alemania): NO subas ML de favorito arriba de 72 aunque el rival sea débil. " +
+        "El pick más estable en J1: ML o DC 1X del favorito claro (amistosos pre-torneo: ML favorito 6W-1L)."
+      );
+    }
+    if (jornada === 2) {
+      lines.push("🏆 MUNDIAL J2 (18-23 jun) — La jornada históricamente más goleadora (2.94 goles en 2018): equipos obligados a ganar tras debut flojo. Overs tienen su mejor ventana aquí si los stats de goleo lo respaldan.");
+    }
+    if (jornada === 3) {
+      lines.push(
+        "🏆 MUNDIAL J3 DEAD RUBBERS (24-27 jun) — PELIGRO MÁXIMO: con 3 de 4 avanzando por grupo (8 mejores terceros), se esperan 8-14 partidos SIN consecuencias. " +
+        "Rotaciones masivas, motivación asimétrica, el 1X2 se rompe. Cap confidence MAX = 60 en TODOS los mercados de J3 salvo que el partido tenga clasificación en juego CONFIRMADA para ambos. " +
+        "Si no hay nada en juego, PREFIERE NO PUBLICAR este evento."
+      );
+    }
+    if ((h1 && a4) || (a1 && h4)) {
+      const fav = h1 ? hWc : aWc, dog = h1 ? aWc : hWc;
+      lines.push(
+        `🏆 MUNDIAL MISMATCH T1 vs T4 — ${fav} (top-10 FIFA) vs ${dog} (debutante/tier 4). ` +
+        `ML del favorito es el pick estable, pero los hándicaps -2.5+ están inflados por el mercado (todos esperan goleada). ` +
+        `Over 2.5 SOLO si el favorito viene goleando en sus últimos 3 (tipo Belgium 5-0 Tunisia); si viene 'administrando' (2-0, 2-1), cap Over = 62.`
+      );
+    } else if (h1 && a1) {
+      lines.push("🏆 MUNDIAL T1 vs T1 — Choque de potencias en grupos: cerrado y táctico. PREFIERE Under 2.5 o DC del que esté en mejor forma. Confidence MAX = 65 en cualquier mercado.");
+    }
+
+    // Sedes con factor físico (altitud / calor sin techo)
+    lines.push(
+      "🏆 MUNDIAL SEDES — ALTITUD: Estadio Azteca CDMX ~2,240m y Guadalajara ~1,560m castigan a selecciones sin aclimatación (los campamentos base están a nivel del mar en USA): " +
+      "ritmo cae en 2ª mitad → favorece Under y al equipo aclimatado (México en Azteca). " +
+      "CALOR: partidos de mediodía/tarde SIN techo (Miami Hard Rock, Kansas City Arrowhead, Monterrey BBVA, Azteca 13:00) bajan el ritmo → lean Under; " +
+      "Dallas AT&T, Houston NRG y Atlanta tienen techo/AC: ahí el calor NO es factor. Si el analysis usa clima/altitud, cita la sede."
+    );
   }
 
   // Brasileirão Série A — rev 2026-06-01
@@ -1888,8 +1979,14 @@ async function claudeDecideMarket({ event = {}, gptMarkets = {}, publishedToday 
     "REGLA CUP SUDAMERICANA: en Copa Argentina / Copa Libertadores / Copa Sudamericana, Over 1.5 goles tiene 25% WR (1-3) últimos 7 días. Cap confidence MAX = 62 en este mercado-liga combo salvo que el razonamiento cite goals_for_avg de AMBOS equipos de team_stats con suma >= 2.8 (entonces MAX = 70). Sin esa cita: descarta Over 1.5 en cup sudamericana, prefiere ML o handicap.",
     // ── Amistosos TIER B (rev 2026-06-02) ─────────────────────────────
     "REGLA AMISTOSOS TIER B: si la liga es 'Int. Friendly Games' y NINGUNO de los equipos es selección top-25 FIFA (lista mental: Spain/France/England/Belgium/Netherlands/Portugal/Italy/Germany/Croatia/Switzerland/Denmark/Austria/Sweden/Czechia/Norway/Poland/Serbia/Argentina/Brazil/Uruguay/Colombia/Mexico/USA/Chile/Peru/Ecuador/Morocco/Senegal/Egypt/Tunisia/Nigeria/Cameroon/Cape Verde/Japan/South Korea/Iran/Australia/Saudi Arabia), cap confidence MAX = 63. Caso 2-jun: Haiti-NZ, Wales-Ghana, Bulgaria-Montenegro 0W-3L recientes.",
+    // ── Totales béisbol regla dura (rev 2026-06-11): O/U carreras 0W-7L semana 4-7 jun ──
+    "REGLA TOTALES BÉISBOL (rev 11-jun): los Over/Under de carreras en MLB/LMB fueron 0W-7L la semana del 4-7 junio (fallaron overs Y unders). Mercado Goles en béisbol SOLO si el razonamiento cita ERA de AMBOS abridores o era_bullpen de ambos equipos en team_stats. Stats de bateo solos NO bastan. Sin abridores: elige ML o Handicap (ML favorito claro fue 6W-1L esa semana).",
     "tipo refleja el equilibrio del portafolio. NO prometas ganancias.",
-  ].join(" ");
+    // El adendum dinámico por deporte/liga (Mundial 2026, IIHF tiers, CONMEBOL,
+    // amistosos, etc.) ahora también gobierna la decisión final del juez —
+    // antes solo lo veían los generadores GPT (asimetría corregida 2026-06-11).
+    buildSportContextAdendum(event),
+  ].filter(Boolean).join(" ");
 
   // Build performance context — try to surface the GPT-top market WR if relevant
   const topMarketKey = (() => {

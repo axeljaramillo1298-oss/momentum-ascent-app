@@ -121,6 +121,39 @@ const adendumCases = [
     must: [],
     mustNot: ["BRASILEIRÃO", "CONMEBOL", "LIBERTADORES"],
   },
+  // ── Mundial 2026 (rev 2026-06-11) ─────────────────────────────────
+  {
+    label: "México vs Sudáfrica WC J1 Azteca — adendum J1 + sedes",
+    build: () => buildSportContextAdendum({ sport: "football", league: "FIFA World Cup", home_team: "Mexico", away_team: "South Africa", event_date: "2026-06-11T19:00:00Z" }),
+    must: ["MUNDIAL J1", "DEBUT CAUTELOSO", "ALTITUD", "Azteca"],
+  },
+  {
+    label: "España vs Cabo Verde WC J1 — adendum mismatch T1 vs T4",
+    build: () => buildSportContextAdendum({ sport: "football", league: "FIFA World Cup 2026", home_team: "Spain", away_team: "Cape Verde", event_date: "2026-06-15T16:00:00Z" }),
+    must: ["MISMATCH T1 vs T4", "ML del favorito"],
+  },
+  {
+    label: "Inglaterra vs Croacia WC J1 — NO es mismatch T1vT4 (Croacia no es T4)",
+    build: () => buildSportContextAdendum({ sport: "football", league: "FIFA World Cup", home_team: "England", away_team: "Croatia", event_date: "2026-06-17T20:00:00Z" }),
+    must: ["MUNDIAL J1"],
+    mustNot: ["MISMATCH T1 vs T4"],
+  },
+  {
+    label: "Partido WC del 25-jun — adendum J3 dead rubbers cap 60",
+    build: () => buildSportContextAdendum({ sport: "football", league: "FIFA World Cup", home_team: "Qatar", away_team: "Bosnia", event_date: "2026-06-25T18:00:00Z" }),
+    must: ["DEAD RUBBERS", "MAX = 60"],
+  },
+  {
+    label: "Mundial de CLUBES no activa adendum WC selecciones",
+    build: () => buildSportContextAdendum({ sport: "football", league: "FIFA Club World Cup", home_team: "Real Madrid", away_team: "Boca Juniors" }),
+    must: [],
+    mustNot: ["MUNDIAL 2026", "DEAD RUBBERS"],
+  },
+  {
+    label: "MLB totales regla dura 11-jun presente en adendum béisbol",
+    build: () => buildSportContextAdendum({ sport: "baseball", league: "MLB", home_team: "Dodgers", away_team: "Angels" }),
+    must: ["TOTALES BÉISBOL", "0W-7L", "AMBOS abridores"],
+  },
 ];
 
 for (const c of adendumCases) {
