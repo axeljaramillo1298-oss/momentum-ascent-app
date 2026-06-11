@@ -594,16 +594,30 @@ textarea.field-input{min-height:80px;resize:vertical}
     document.getElementById('bank-metric-exposure').textContent = formatMoney(m.exp);
     document.getElementById('bank-metric-pnl').textContent = formatMoney(m.pnl);
     document.getElementById('bank-metric-stop').textContent = formatMoney(m.stopLoss);
-    document.getElementById('bank-metric-exposure-copy').textContent = `${(picks||[]).length} pick${(picks||[]).length!==1?'s':''} cargados · tope ${toPct(bankState.maxExposurePercent)}`;
+    const pendingCombosToday = Object.values(combos||{}).filter(c => c?.dateKey === selectedDateKey && !isResolved(c?.status)).length;
+    document.getElementById('bank-metric-exposure-copy').textContent = `${(picks||[]).length} pick${(picks||[]).length!==1?'s':''} cargados${pendingCombosToday ? ` · ${pendingCombosToday} combinada${pendingCombosToday!==1?'s':''} pendiente${pendingCombosToday!==1?'s':''}` : ''} · tope ${toPct(bankState.maxExposurePercent)}`;
     document.getElementById('bank-metric-stop-copy').textContent = `Stop-loss ${toPct(bankState.stopLossPercent)} · target ${formatMoney(m.target)}`;
-    // Stop-loss alert
+    // Stop-loss alert — considera la pérdida realizada Y el stake en juego.
+    // m.exp ya incluye el stake pendiente de picks individuales del día Y el stake
+    // de las combinadas pendientes del día (como unidad, no sus legs).
     const stopLossAmount = (bankState.totalBank || 0) * (bankState.stopLossPercent || 6) / 100;
     const stopLossEl = document.getElementById('stop-loss-alert');
     if (stopLossEl) {
       const pnlVal = m.pnl;
-      if (pnlVal < 0 && Math.abs(pnlVal) >= stopLossAmount) {
+      const lossSoFar = pnlVal < 0 ? Math.abs(pnlVal) : 0;
+      const atRisk = lossSoFar + Number(m.exp || 0);
+      if (lossSoFar > 0 && lossSoFar >= stopLossAmount) {
         stopLossEl.style.display = '';
-        stopLossEl.textContent = `⚠️ Stop-loss alcanzado: pérdida de ${formatMoney(Math.abs(pnlVal))} supera el límite de ${formatMoney(stopLossAmount)}`;
+        stopLossEl.style.background = 'rgba(255,107,107,.12)';
+        stopLossEl.style.borderColor = 'rgba(255,107,107,.4)';
+        stopLossEl.style.color = 'var(--red)';
+        stopLossEl.textContent = `⚠️ Stop-loss alcanzado: pérdida de ${formatMoney(lossSoFar)} supera el límite de ${formatMoney(stopLossAmount)}`;
+      } else if (Number(m.exp || 0) > 0 && atRisk >= stopLossAmount) {
+        stopLossEl.style.display = '';
+        stopLossEl.style.background = 'rgba(255,90,31,.10)';
+        stopLossEl.style.borderColor = 'rgba(255,90,31,.4)';
+        stopLossEl.style.color = 'var(--orange)';
+        stopLossEl.textContent = `⚠️ Riesgo de stop-loss: traes ${formatMoney(m.exp)} en juego entre picks y combinadas pendientes${lossSoFar > 0 ? ` y ya llevas ${formatMoney(lossSoFar)} de pérdida` : ''}. Si se pierde todo, superarías tu límite de ${formatMoney(stopLossAmount)}.`;
       } else {
         stopLossEl.style.display = 'none';
       }

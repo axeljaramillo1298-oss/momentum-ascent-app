@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Momentum Ascent &ndash; Picks Deportivos con IA</title>
+<meta name="description" content="Picks deportivos con IA y an&aacute;lisis estad&iacute;stico en tiempo real. Motor dual GPT + Claude, historial auditado y verificable, 12+ deportes. Free y Premium." />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Momentum Ascent — Picks Deportivos con IA" />
+<meta property="og:description" content="Picks deportivos con IA y an&aacute;lisis real. Historial auditado, 12+ deportes, actualizaci&oacute;n diaria." />
+<meta property="og:url" content="https://momentumascent.com/" />
+<meta property="og:locale" content="es_MX" />
+<meta name="twitter:card" content="summary" />
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/shaders/CopyShader.js"></script>
@@ -266,6 +273,45 @@ footer p{font-size:11px;color:rgba(240,237,232,.2);letter-spacing:.04em}
 @keyframes shimV11{0%{background-position:-200% center}100%{background-position:200% center}}
 @keyframes driftChip{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-10px) rotate(1deg)}}
 @keyframes driftChip2{0%,100%{transform:translateY(-6px) rotate(1deg)}50%{transform:translateY(5px) rotate(-1deg)}}
+
+/* ── RESPONSIVE (al final para ganar el cascade) ── */
+@media (max-width:880px){
+  nav{padding:0 18px}
+  .nav-links{gap:14px}
+  .nav-links a{font-size:11px}
+}
+@media (max-width:760px){
+  body{cursor:auto}
+  #cur,#cur-r{display:none}
+  .nav-links a{display:none}
+  .ticker{height:38px}
+  .t-item{padding:0 18px;font-size:11px}
+  .hero{min-height:auto;padding-bottom:24px;display:block}
+  .hero-content{padding:30px 16px 18px;max-width:none;width:100%}
+  .hero-h1{font-size:clamp(46px,14vw,72px);text-shadow:0 6px 32px rgba(16,12,11,.9)}
+  .hero-h1 .accent-text{text-shadow:none} /* text-shadow + background-clip:text transparente = texto negro */
+  #three-canvas{opacity:.55} /* los balones de esta página quedan al centro en portrait — atenuarlos para que los CTAs ghost se lean */
+  .hero-ctas{display:grid;grid-template-columns:1fr;gap:10px;position:relative;z-index:12}
+  .btn-primary,.btn-ghost{width:100%;justify-content:center}
+  .float-chip{display:none}
+  .picks-wrap{position:relative;right:auto;top:auto;transform:none;margin:18px auto 0;padding:0 16px;width:100%;animation:fadeUp .7s .25s both}
+  .picks-card{width:min(100%,360px);margin:0 auto;animation:none}
+  .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sec{padding:56px 16px}
+  .feat-grid{grid-template-columns:1fr}
+  .feat-card::after{animation:none;display:none}
+  .cta-btns{flex-wrap:wrap}
+  footer{padding:28px 16px;flex-wrap:wrap;gap:10px}
+}
+@media (max-width:480px){
+  .hero-h1{font-size:clamp(38px,13vw,58px)}
+  .stats{grid-template-columns:1fr}
+}
+@media (hover:none),(pointer:coarse){
+  body{cursor:auto}
+  #cur,#cur-r{display:none}
+  .nav-links a,.btn-nav,.btn-primary,.btn-ghost,.picks-btn{cursor:pointer}
+}
 </style>
 </head>
 <body>
@@ -277,11 +323,11 @@ footer p{font-size:11px;color:rgba(240,237,232,.2);letter-spacing:.04em}
 <nav>
   <div class="nav-logo"><span>Momentum</span> Ascent</div>
   <div class="nav-links">
-    <a href="#">Picks</a>
-    <a href="#">Estad&iacute;sticas</a>
-    <a href="#">Historial</a>
-    <a href="#">Planes</a>
-    <button class="btn-nav">&#9654; Entrar</button>
+    <a href="user-hoy.html">Picks</a>
+    <a href="trackrecord.html">Estad&iacute;sticas</a>
+    <a href="user-progreso.html">Historial</a>
+    <a href="planes.html">Planes</a>
+    <button class="btn-nav" onclick="location.href='registro.html#login'">&#9654; Entrar</button>
   </div>
 </nav>
 
@@ -327,9 +373,9 @@ footer p{font-size:11px;color:rgba(240,237,232,.2);letter-spacing:.04em}
     </h1>
     <p class="hero-sub">Eventos del d&iacute;a, datos estad&iacute;sticos y picks informativos generados por IA. Cuotas y contexto en tiempo real.</p>
     <div class="hero-ctas">
-      <button class="btn-primary">Ver picks de hoy</button>
-      <button class="btn-ghost">Crear cuenta</button>
-      <button class="btn-ghost" style="padding:15px 18px">Ver historial</button>
+      <button class="btn-primary" onclick="location.href='user-hoy.html'">Ver picks de hoy</button>
+      <button class="btn-ghost" onclick="location.href='registro.html'">Crear cuenta</button>
+      <button class="btn-ghost" style="padding:15px 18px" onclick="location.href='user-progreso.html'">Ver historial</button>
     </div>
     <p class="hero-disc">Contenido informativo. No garantiza ganancias. Apuesta con responsabilidad.</p>
   </div>
@@ -469,8 +515,8 @@ footer p{font-size:11px;color:rgba(240,237,232,.2);letter-spacing:.04em}
     <h2 class="cta-h2 reveal">DATOS QUE<br><em>IMPORTAN.</em></h2>
     <p class="cta-p reveal">Accede a los picks del d&iacute;a, an&aacute;lisis estad&iacute;stico y el historial completo de predicciones.</p>
     <div class="cta-btns reveal">
-      <button class="btn-primary" style="font-size:17px;padding:18px 44px">Ver picks de hoy</button>
-      <button class="btn-ghost" style="font-size:15px;padding:18px 30px">Ver planes</button>
+      <button class="btn-primary" style="font-size:17px;padding:18px 44px" onclick="location.href='user-hoy.html'">Ver picks de hoy</button>
+      <button class="btn-ghost" style="font-size:15px;padding:18px 30px" onclick="location.href='planes.html'">Ver planes</button>
     </div>
   </div>
 </section>
@@ -500,8 +546,8 @@ document.addEventListener('mousemove',e=>{
   requestAnimationFrame(animR);
 })();
 document.querySelectorAll('button,a,.feat-card,.s-item,.pick-row').forEach(el=>{
-  el.addEventListener('mouseenter',()=>{cur.style.width='20px';cur.style.height='20px';curR.style.width='56px';curR.style.height='56px';curR.style.borderColor='rgba(255,69,0,.9)'});
-  el.addEventListener('mouseleave',()=>{cur.style.width='10px';cur.style.height='10px';curR.style.width='36px';curR.style.height='36px';curR.style.borderColor='rgba(255,69,0,.5)'});
+  el.addEventListener('mouseenter',()=>{cur.style.width='20px';cur.style.height='20px';curR.style.width='56px';curR.style.height='56px';curR.style.borderColor='rgba(255,90,31,.9)'});
+  el.addEventListener('mouseleave',()=>{cur.style.width='10px';cur.style.height='10px';curR.style.width='36px';curR.style.height='36px';curR.style.borderColor='rgba(255,90,31,.5)'});
 });
 
 // ─── THREE.JS BALLS ──────────────────────────────────────
@@ -555,7 +601,7 @@ scene.add(rim);
 const amb = new THREE.AmbientLight(0x101015, 1.8);
 scene.add(amb);
 
-const pt1 = new THREE.PointLight(0xFF4500, 2.5, 30);
+const pt1 = new THREE.PointLight(0xFF5A1F, 2.5, 30);
 pt1.position.set(2, 1, 8);
 scene.add(pt1);
 
@@ -833,7 +879,7 @@ partGeo.setAttribute('position', new THREE.BufferAttribute(partPos, 3));
 partGeo.setAttribute('size', new THREE.BufferAttribute(partSizes, 1));
 
 const partMat = new THREE.PointsMaterial({
-  color: 0xFF4500, size: 0.06, sizeAttenuation: true,
+  color: 0xFF5A1F, size: 0.06, sizeAttenuation: true,
   transparent: true, opacity: 0.55,
   blending: THREE.AdditiveBlending, depthWrite: false
 });
@@ -985,7 +1031,7 @@ setInterval(()=>{
     if(el){
       el.style.transition='transform .2s,color .2s';
       el.style.transform='scale(1.35)';
-      el.style.color='#FF4500';
+      el.style.color='#FF5A1F';
       el.textContent=pn;
       setTimeout(()=>{el.style.transform='';el.style.color=''},280);
     }

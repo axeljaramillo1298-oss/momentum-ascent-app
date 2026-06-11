@@ -148,6 +148,8 @@ main{position:relative;z-index:2}
 .picks-empty-icon{font-size:36px;margin-bottom:16px;opacity:.3}
 .picks-empty-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;color:rgba(240,237,232,.3)}
 .picks-empty-s{font-size:13px;line-height:1.6}
+.picks-empty-cta{margin-top:18px;display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:8px 20px;border-radius:20px;border:1px solid var(--orange);background:transparent;color:var(--orange);cursor:pointer;transition:all .2s}
+.picks-empty-cta:hover{background:var(--orange);color:#1a0d06}
 .loading-state{display:flex;align-items:center;gap:12px;padding:40px 20px;color:var(--muted);font-size:13px}
 .loading-spinner{width:18px;height:18px;border:2px solid rgba(255,90,31,.2);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
 
@@ -707,12 +709,21 @@ function renderCards(picks){
   label.textContent = `${filtered.length} pick${filtered.length!==1?'s':''}`;
 
   if(!filtered.length){
+    const hasActiveFilter = activeFilter !== 'all';
     container.innerHTML = `
       <div class="picks-empty">
         <div class="picks-empty-icon">🎯</div>
         <div class="picks-empty-t">Sin picks disponibles</div>
-        <div class="picks-empty-s">No hay picks para el filtro seleccionado o el día de hoy.<br>Genera picks desde el admin panel.</div>
+        <div class="picks-empty-s">Los picks del día se publican cada mañana — vuelve pronto o ajusta tus filtros.</div>
+        ${hasActiveFilter ? '<button type="button" class="picks-empty-cta" id="picks-empty-clear">Quitar filtros</button>' : ''}
       </div>`;
+    const clearBtn = document.getElementById('picks-empty-clear');
+    if(clearBtn) clearBtn.addEventListener('click', ()=>{
+      activeFilter = 'all';
+      const bar = document.getElementById('filter-bar');
+      if(bar) bar.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('on', b.dataset.filter==='all'));
+      renderCards(allPicks);
+    });
     return;
   }
 

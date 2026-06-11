@@ -141,7 +141,9 @@ main{position:relative;z-index:2}
 /* HISTORY */
 .history-section{margin-bottom:32px}
 .history-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;font-size:18px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:16px}
-.history-empty{padding:32px;text-align:center;color:var(--muted);background:rgba(59,130,246,.03);border:1px solid rgba(59,130,246,.1);border-radius:var(--r-lg,20px)}
+.history-empty{padding:32px 20px;text-align:center;color:var(--muted);background:rgba(255,255,255,.02);border:1px dashed var(--border);border-radius:var(--r-lg,20px);font-size:13px;line-height:1.6}
+.history-empty-icon{font-size:32px;margin-bottom:10px;opacity:.55}
+.history-empty-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:.05em;color:rgba(240,237,232,.55);margin-bottom:6px}
 .hist-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:var(--r-lg,20px);padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:16px;cursor:default;transition:background .2s;box-shadow:var(--shadow-sm)}
 .hist-card:hover{background:rgba(255,255,255,.04)}
 .hist-legs-col{flex:1;min-width:0}
@@ -317,7 +319,11 @@ main{position:relative;z-index:2}
         <div class="history-section">
           <div class="history-title">Historial de Retos</div>
           <div id="history-list">
-            <div class="history-empty">Sin retos anteriores aún.</div>
+            <div class="history-empty">
+              <div class="history-empty-icon">🪜</div>
+              <div class="history-empty-t">Sin retos anteriores aún</div>
+              <div>Tu primera escalera te espera — arma un reto y empieza a subir peldaños.</div>
+            </div>
           </div>
         </div>
 
@@ -480,7 +486,7 @@ function renderActiveReto(reto){
 // ── Render history ───────────────────────────────────────────
 function renderHistory(retos){
   const container = document.getElementById('history-list');
-  if(!retos.length){ container.innerHTML = '<div class="history-empty">Sin retos anteriores aún.</div>'; return; }
+  if(!retos.length){ container.innerHTML = '<div class="history-empty"><div class="history-empty-icon">🪜</div><div class="history-empty-t">Sin retos anteriores aún</div><div>Tu primera escalera te espera — arma un reto y empieza a subir peldaños.</div></div>'; return; }
   container.innerHTML = retos.map(r => {
     const legs = r.legs || [];
     const preview = legs.map(l => l.pick || '?').join(' → ');

@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Planes | Momentum Ascent</title>
+  <meta name="description" content="Planes de Momentum Ascent: Free, AI Picks y Apex. Picks deportivos con IA dual GPT + Claude, control de bank y an&aacute;lisis completo. Desde $0 MXN." />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="app-shell.css" />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -169,6 +170,16 @@ main{position:relative;z-index:2}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* FAQ */
+.faq-section{margin-bottom:64px}
+.faq-item{border:1px solid var(--border);border-radius:14px;background:var(--surface,rgba(255,255,255,.022));margin-bottom:10px;overflow:hidden}
+.faq-item summary{list-style:none;cursor:pointer;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:700;font-size:14px;color:var(--text)}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{content:'+';font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;color:var(--orange);line-height:1;transition:transform .2s}
+.faq-item[open] summary::after{transform:rotate(45deg)}
+.faq-item[open] summary{border-bottom:1px solid var(--border)}
+.faq-body{padding:14px 18px 18px;font-size:13.5px;line-height:1.7;color:var(--muted)}
 
 @media(max-width:980px){
   .feature-grid,.plans-grid{grid-template-columns:1fr 1fr}
@@ -480,6 +491,34 @@ main{position:relative;z-index:2}
         </div>
       </div>
       <div class="disc-note">* Contenido informativo. La confianza es una estimación estadística, no garantía de resultado. Apuesta con responsabilidad.</div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="faq-section">
+      <div class="sec-hdr">
+        <div class="sec-title">Preguntas frecuentes</div>
+        <div class="sec-sub">Lo que más nos preguntan antes de suscribirse.</div>
+      </div>
+      <details class="faq-item">
+        <summary>¿Puedo cambiar de plan en cualquier momento?</summary>
+        <div class="faq-body">Sí. Puedes subir o bajar de plan cuando quieras — el cambio aplica desde tu siguiente ciclo de facturación. Escríbenos por WhatsApp y lo ajustamos el mismo día.</div>
+      </details>
+      <details class="faq-item">
+        <summary>¿Cómo recibo los picks cada día?</summary>
+        <div class="faq-body">Los picks se publican cada mañana directo en tu dashboard. Los Premium incluyen mercado, momio de referencia, confianza, riesgo y el análisis completo de la IA dual.</div>
+      </details>
+      <details class="faq-item">
+        <summary>¿El historial es real? ¿Puedo verificarlo?</summary>
+        <div class="faq-body">Sí — cada pick queda registrado ANTES del partido con su resultado verificable después. El historial completo es público en la sección Track Record, incluyendo los días malos.</div>
+      </details>
+      <details class="faq-item">
+        <summary>¿Garantizan ganancias?</summary>
+        <div class="faq-body">No, y desconfía de quien lo haga. Somos una plataforma informativa de análisis estadístico: te damos datos, contexto y criterio. La decisión y la gestión de tu bank siempre son tuyas.</div>
+      </details>
+      <details class="faq-item">
+        <summary>¿Cómo pago y cuándo se activa mi plan?</summary>
+        <div class="faq-body">Por transferencia bancaria con los datos de arriba, usando tu correo de registro como referencia. Tu plan se activa al confirmar el comprobante por WhatsApp — normalmente en menos de 1 hora.</div>
+      </details>
     </div>
 
   </div>

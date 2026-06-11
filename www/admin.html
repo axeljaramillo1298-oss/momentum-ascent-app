@@ -537,6 +537,41 @@ main{position:relative;z-index:2}
   .markets-table th,.markets-table td{padding:8px 8px;font-size:11px}
   .mkt-conf{font-size:15px}
 }
+/* PUB TOOLBAR — filtros de picks publicados */
+.pub-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 10px}
+.pub-toolbar-lbl{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.pub-filter-sel{background:var(--dark3,#15151b);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px 10px;font:600 11px 'Barlow',sans-serif;cursor:pointer}
+.pub-filter-sel:focus{outline:none;border-color:rgba(255,90,31,.4)}
+
+/* BULK BAR — marcado de resultados en lote */
+.bulk-bar{position:sticky;top:8px;z-index:50;display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:10px 14px;background:rgba(20,14,10,.92);border:1px solid rgba(255,90,31,.4);border-radius:6px;backdrop-filter:blur(8px)}
+.bulk-bar.open{display:flex}
+.bulk-count{font:700 11px 'Barlow',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
+.bulk-btn{font:700 10px 'Barlow',sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:7px 12px;border-radius:3px;border:1px solid;background:transparent;cursor:pointer;transition:all .15s}
+.bulk-btn.won{border-color:rgba(74,222,128,.35);color:var(--green)}
+.bulk-btn.won:hover{background:rgba(74,222,128,.12)}
+.bulk-btn.lost{border-color:rgba(248,113,113,.35);color:var(--red)}
+.bulk-btn.lost:hover{background:rgba(248,113,113,.12)}
+.bulk-btn.void{border-color:var(--border);color:var(--muted)}
+.bulk-btn.void:hover{background:rgba(255,255,255,.05)}
+.bulk-btn.clear{border-color:var(--border);color:var(--muted);margin-left:auto}
+.bulk-btn:disabled{opacity:.45;cursor:wait}
+.bulk-progress{font:700 11px 'Barlow',sans-serif;color:var(--yellow)}
+.bulk-chk-wrap{display:flex;align-items:center;margin-right:10px;cursor:pointer;flex-shrink:0}
+.bulk-chk{width:16px;height:16px;accent-color:var(--orange);cursor:pointer}
+
+/* SOP CHECKLIST MODAL */
+.sop-progress-wrap{height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;margin:6px 0 4px}
+.sop-progress-bar{height:100%;width:0%;background:var(--orange);border-radius:4px;transition:width .25s}
+.sop-progress-lbl{font:700 11px 'Barlow',sans-serif;letter-spacing:.08em;color:var(--muted);margin-bottom:14px}
+.sop-steps{display:flex;flex-direction:column;gap:4px;max-height:46vh;overflow-y:auto;overscroll-behavior:contain}
+.sop-step{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:4px;background:rgba(255,255,255,.02);cursor:pointer;transition:border-color .15s;font-size:12px;line-height:1.4}
+.sop-step:hover{border-color:rgba(255,90,31,.3)}
+.sop-step input{width:15px;height:15px;flex-shrink:0;margin-top:1px;accent-color:var(--green);cursor:pointer}
+.sop-step.done{opacity:.55}
+.sop-step.done .sop-step-txt{text-decoration:line-through}
+.sop-step-n{font:700 10px 'Barlow',sans-serif;color:var(--muted);flex-shrink:0;width:18px;margin-top:1px}
+
 @media(max-width:480px){
   .pipeline-grid{grid-template-columns:1fr}
   .event-card-head{flex-wrap:wrap;gap:10px}
@@ -562,6 +597,7 @@ main{position:relative;z-index:2}
   </div>
   <div class="nav-right">
     <span class="nav-user" id="nav-user-email">—</span>
+    <a class="nav-link" href="#" id="btn-sop" onclick="openSopModal();return false">📋 Checklist SOP</a>
     <a class="nav-link" href="user-hoy.html">Dashboard</a>
     <a class="nav-link" href="index.html">Inicio</a>
   </div>
@@ -693,7 +729,34 @@ main{position:relative;z-index:2}
           </tbody>
         </table>
       </div>
-      <div id="published-list" style="margin-top:18px">
+      <div class="pub-toolbar" id="pub-toolbar">
+        <span class="pub-toolbar-lbl">Filtros</span>
+        <select class="pub-filter-sel" id="pub-filter-league" onchange="setPubFilter('league', this.value)">
+          <option value="all">Liga: Todas</option>
+        </select>
+        <select class="pub-filter-sel" id="pub-filter-result" onchange="setPubFilter('result', this.value)">
+          <option value="all">Resultado: Todos</option>
+          <option value="pending">Pendiente</option>
+          <option value="won">Ganó</option>
+          <option value="lost">Perdió</option>
+          <option value="void">Void</option>
+        </select>
+        <select class="pub-filter-sel" id="pub-filter-tier" onchange="setPubFilter('tier', this.value)">
+          <option value="all">Tier: Todos</option>
+          <option value="free">Free</option>
+          <option value="premium">Premium</option>
+        </select>
+      </div>
+      <div class="bulk-bar" id="bulk-bar">
+        <span class="bulk-count" id="bulk-count">0 seleccionados</span>
+        <span style="font-size:11px;color:var(--muted)">— Marcar como:</span>
+        <button class="bulk-btn won" onclick="bulkMark('won')">✅ Ganó</button>
+        <button class="bulk-btn lost" onclick="bulkMark('lost')">❌ Perdió</button>
+        <button class="bulk-btn void" onclick="bulkMark('void')">➖ Void</button>
+        <span class="bulk-progress" id="bulk-progress"></span>
+        <button class="bulk-btn clear" onclick="bulkClearSelection()">Deseleccionar</button>
+      </div>
+      <div id="published-list" style="margin-top:12px">
         <div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Todavía no hay picks publicados para esta fecha.</div>
       </div>
     </section>
@@ -1602,15 +1665,40 @@ main{position:relative;z-index:2}
   }
 
   // ── MARK RESULT ───────────────────────────────────────────
+  // Estado de filtros y selección bulk de picks publicados
+  let pubFilters = { league:'all', result:'all', tier:'all' };
+  let bulkSelected = new Set();        // ids de picks pendientes seleccionados
+  let lastPublishedSource = [];        // última lista pasada a renderPublishedPicks
+
+  // Helper compartido: PUT del resultado (lo usan markResult y bulkMark)
+  async function putPickResult(pickId, result){
+    await fetchJson(`/api/picks/${pickId}/result`, {
+      method:'PUT', headers: apiHeaders(),
+      body: JSON.stringify({ result })
+    });
+  }
+
+  // Sincroniza el resultado en el estado local para que filtros/bulk/stats sean consistentes
+  function syncLocalPickResult(pickId, result){
+    const apply = ev => {
+      const p = ev?.latestPick;
+      if(p && Number(p.id) === Number(pickId)) p.result = result;
+    };
+    (events || []).forEach(apply);
+    if(lastPublishedSource !== events) (lastPublishedSource || []).forEach(apply);
+    bulkSelected.delete(Number(pickId));
+  }
+
   async function markResult(pickId, result, btn){
     const row = btn.parentNode;
     row.querySelectorAll('.btn-result').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     try {
-      await fetchJson(`/api/picks/${pickId}/result`, {
-        method:'PUT', headers: apiHeaders(),
-        body: JSON.stringify({ result })
-      });
+      await putPickResult(pickId, result);
+      syncLocalPickResult(pickId, result);
+      // el pick ya no está pendiente → quitar su checkbox de bulk
+      btn.closest('.event-card')?.querySelector('.bulk-chk-wrap')?.remove();
+      updateBulkBar();
       addLog(`Resultado marcado: ${result} (pick #${pickId})`, 'ok');
       // refresh daily stats table without full reload
       const published = Array.from(document.querySelectorAll('#published-list .event-card')).map(card => {
@@ -1683,25 +1771,134 @@ main{position:relative;z-index:2}
       </tr>`;
   }
 
+  // ── FILTROS + BULK de picks publicados ────────────────────
+  function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function pickResultOf(pick){ return String(pick?.result || '').toLowerCase(); }
+
+  function setPubFilter(key, value){
+    pubFilters[key] = value;
+    renderPublishedPicks(lastPublishedSource);
+  }
+
+  function toggleBulkSelect(chk){
+    const id = Number(chk.dataset.pickId || 0);
+    if(!id) return;
+    if(chk.checked) bulkSelected.add(id); else bulkSelected.delete(id);
+    updateBulkBar();
+  }
+
+  function updateBulkBar(){
+    const bar = document.getElementById('bulk-bar');
+    if(!bar) return;
+    const n = bulkSelected.size;
+    bar.classList.toggle('open', n > 0);
+    const cnt = document.getElementById('bulk-count');
+    if(cnt) cnt.textContent = `${n} seleccionado${n!==1?'s':''}`;
+  }
+
+  function bulkClearSelection(){
+    bulkSelected.clear();
+    document.querySelectorAll('#published-list .bulk-chk').forEach(c => { c.checked = false; });
+    const prog = document.getElementById('bulk-progress');
+    if(prog) prog.textContent = '';
+    updateBulkBar();
+  }
+
+  let bulkRunning = false;
+  async function bulkMark(result){
+    if(bulkRunning) return;
+    const ids = [...bulkSelected];
+    if(!ids.length) return;
+    bulkRunning = true;
+    const bar = document.getElementById('bulk-bar');
+    const prog = document.getElementById('bulk-progress');
+    bar?.querySelectorAll('.bulk-btn').forEach(b => b.disabled = true);
+    let ok = 0, fail = 0;
+    // Secuencial a propósito: no saturar la API
+    for(let i = 0; i < ids.length; i++){
+      if(prog) prog.textContent = `${i+1}/${ids.length}…`;
+      try {
+        await putPickResult(ids[i], result);
+        syncLocalPickResult(ids[i], result);
+        ok++;
+      } catch(err){
+        fail++;
+        addLog(`Bulk: error marcando pick #${ids[i]}: ${err.message}`, 'err');
+      }
+    }
+    bulkRunning = false;
+    bar?.querySelectorAll('.bulk-btn').forEach(b => b.disabled = false);
+    if(prog) prog.textContent = '';
+    bulkSelected.clear();
+    addLog(`Bulk: ${ok}/${ids.length} picks marcados como ${result}${fail ? ` · ${fail} con error` : ''}`, fail ? 'err' : 'ok');
+    setStatus(`Bulk: ${ok}/${ids.length} marcados como ${result}.`);
+    renderPublishedPicks(lastPublishedSource);
+    updateStats();
+  }
+
   function renderPublishedPicks(list){
+    lastPublishedSource = list || [];
     const container = document.getElementById('published-list');
     const label = document.getElementById('published-count-label');
     const published = (list || []).filter(ev => ev?.latestPick && String(ev.latestPick.status || '').toLowerCase() === 'published');
-    label.textContent = `${published.length} publicado${published.length!==1?'s':''}`;
     renderDailyStats(published);
+
+    // limpiar selección bulk de picks que ya no están pendientes/presentes
+    const pendingIds = new Set(published.filter(ev => !pickResultOf(ev.latestPick)).map(ev => Number(ev.latestPick.id || 0)));
+    [...bulkSelected].forEach(id => { if(!pendingIds.has(id)) bulkSelected.delete(id); });
+
+    // poblar select de ligas dinámicamente (preservando selección)
+    const leagueSel = document.getElementById('pub-filter-league');
+    if(leagueSel){
+      const leagues = [...new Set(published.map(ev => String(ev.league || ev.competition || '—')))].sort((a,b)=>a.localeCompare(b));
+      leagueSel.innerHTML = '<option value="all">Liga: Todas</option>' +
+        leagues.map(l => `<option value="${escAttr(l)}">${escAttr(l)}</option>`).join('');
+      if(leagues.includes(pubFilters.league)) leagueSel.value = pubFilters.league;
+      else { pubFilters.league = 'all'; leagueSel.value = 'all'; }
+    }
+
+    // filtrado client-side
+    const filtered = published.filter(ev => {
+      const pick = ev.latestPick || {};
+      if(pubFilters.league !== 'all' && String(ev.league || ev.competition || '—') !== pubFilters.league) return false;
+      const res = pickResultOf(pick);
+      if(pubFilters.result === 'pending' && res) return false;
+      if(['won','lost','void'].includes(pubFilters.result) && res !== pubFilters.result) return false;
+      const tier = String(pick.planTier || 'free') === 'premium' ? 'premium' : 'free';
+      if(pubFilters.tier !== 'all' && tier !== pubFilters.tier) return false;
+      return true;
+    });
+
+    const hasFilter = pubFilters.league !== 'all' || pubFilters.result !== 'all' || pubFilters.tier !== 'all';
+    label.textContent = hasFilter
+      ? `${filtered.length} de ${published.length} publicado${published.length!==1?'s':''}`
+      : `${published.length} publicado${published.length!==1?'s':''}`;
+
+    updateBulkBar();
+
     if(!published.length){
       container.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Todavía no hay picks publicados para esta fecha.</div>`;
       return;
     }
+    if(!filtered.length){
+      container.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Ningún pick coincide con los filtros seleccionados.</div>`;
+      return;
+    }
     container.innerHTML = '';
-    published
+    filtered
       .sort((a,b) => new Date(a.eventDate || a.event_date || a.date || 0) - new Date(b.eventDate || b.event_date || b.date || 0))
       .forEach(ev => {
         const pick = ev.latestPick || {};
+        const pid = Number(pick.id || 0);
+        const isPending = !pickResultOf(pick);
+        const chkHtml = (isPending && pid)
+          ? `<label class="bulk-chk-wrap" title="Seleccionar para marcado en bulk"><input type="checkbox" class="bulk-chk" data-pick-id="${pid}" ${bulkSelected.has(pid)?'checked':''} onchange="toggleBulkSelect(this)"></label>`
+          : '';
         const item = document.createElement('div');
         item.className = 'event-card';
         item.innerHTML = `
           <div class="event-card-head">
+            ${chkHtml}
             <div class="event-sport-icon">${sportIcon(ev.sport || 'default')}</div>
             <div class="event-info">
               <div class="event-match">${ev.home_team || ev.homeTeam || '?'} vs ${ev.away_team || ev.awayTeam || '?'}</div>
@@ -1933,6 +2130,79 @@ main{position:relative;z-index:2}
   document.getElementById('btn-gen-reto').addEventListener('click', openRetoModal);
   window.closeRetoModal = closeRetoModal;
   window.showRetoForm = showRetoForm;
+
+  // ── CHECKLIST SOP (flujo nocturno) ────────────────────────
+  // Estado en localStorage con clave por fecha; el modal vive al final del HTML,
+  // por eso todos los lookups de elementos son lazy (dentro de las funciones).
+  const SOP_STEPS = [
+    'Marcar resultados del día anterior',
+    'Seed de eventos del día (+ siguiente si es viernes)',
+    'Verificar team_stats frescos',
+    'Generar lote de candidatos',
+    'Revisar caps/abstenciones en candidatos',
+    'Seleccionar Free vs Premium',
+    'Publicar picks en app',
+    'Generar Reto Escalera (si aplica)',
+    'Imágenes + subir a imgbb',
+    'Programar FB vía Make.com',
+    'WhatsApp M1+M2',
+    'Agenda Telegram',
+    'Validar conteo picks app vs sembrados',
+    'Bitácora',
+  ];
+  function sopKey(){ return `ma_sop_checklist_${fmtDateLocal(new Date())}`; }
+  function sopLoad(){
+    try {
+      const arr = JSON.parse(localStorage.getItem(sopKey()) || '[]');
+      return Array.isArray(arr) ? arr : [];
+    } catch(_){ return []; }
+  }
+  function sopSave(arr){ localStorage.setItem(sopKey(), JSON.stringify(arr)); }
+  function renderSopModal(){
+    const listEl = document.getElementById('sop-steps');
+    if(!listEl) return;
+    const state = sopLoad();
+    const done = SOP_STEPS.filter((_,i) => state[i]).length;
+    const dateLbl = document.getElementById('sop-date-lbl');
+    if(dateLbl) dateLbl.textContent = fmtDateLocal(new Date());
+    const progLbl = document.getElementById('sop-progress-lbl');
+    if(progLbl) progLbl.textContent = `${done}/${SOP_STEPS.length} completados`;
+    const progBar = document.getElementById('sop-progress-bar');
+    if(progBar) progBar.style.width = `${Math.round(done / SOP_STEPS.length * 100)}%`;
+    listEl.innerHTML = SOP_STEPS.map((txt, i) => `
+      <label class="sop-step ${state[i] ? 'done' : ''}">
+        <input type="checkbox" ${state[i] ? 'checked' : ''} onchange="toggleSopStep(${i}, this.checked)">
+        <span class="sop-step-n">${i+1}.</span>
+        <span class="sop-step-txt">${txt}</span>
+      </label>`).join('');
+  }
+  function toggleSopStep(i, checked){
+    const state = sopLoad();
+    state[i] = !!checked;
+    sopSave(state);
+    renderSopModal();
+  }
+  function resetSopDay(){
+    if(!confirm('¿Reiniciar el checklist SOP de hoy? Se borran las palomitas del día.')) return;
+    localStorage.removeItem(sopKey());
+    renderSopModal();
+  }
+  function openSopModal(){
+    renderSopModal();
+    document.getElementById('sop-overlay')?.classList.add('open');
+  }
+  function closeSopModal(){
+    document.getElementById('sop-overlay')?.classList.remove('open');
+  }
+  window.openSopModal = openSopModal;
+  window.closeSopModal = closeSopModal;
+  window.toggleSopStep = toggleSopStep;
+  window.resetSopDay = resetSopDay;
+
+  window.setPubFilter = setPubFilter;
+  window.toggleBulkSelect = toggleBulkSelect;
+  window.bulkClearSelection = bulkClearSelection;
+  window.bulkMark = bulkMark;
 
   window.openPubModal = openPubModal;
   window.closePubModal = closePubModal;
@@ -3640,6 +3910,21 @@ main{position:relative;z-index:2}
     </div>
 
     <div id="sp-status" style="margin-top:14px;font-size:11.5px;color:var(--muted);line-height:1.5"></div>
+  </div>
+</div>
+
+<!-- SOP CHECKLIST MODAL (flujo nocturno) -->
+<div class="fr-overlay" id="sop-overlay" role="dialog" aria-modal="true" onclick="if(event.target===this)closeSopModal()">
+  <div class="fr-modal" style="max-width:520px">
+    <h3>📋 Checklist SOP — Flujo nocturno</h3>
+    <p class="fr-modal-sub">Rutina diaria de operación. El estado se guarda por fecha (<span id="sop-date-lbl">—</span>) en este navegador.</p>
+    <div class="sop-progress-wrap"><div class="sop-progress-bar" id="sop-progress-bar"></div></div>
+    <div class="sop-progress-lbl" id="sop-progress-lbl">0/14 completados</div>
+    <div class="sop-steps" id="sop-steps"></div>
+    <div class="fr-actions">
+      <button class="fr-skip" type="button" onclick="resetSopDay()" style="margin-right:auto;border-color:rgba(248,113,113,.35);color:var(--red)">Reiniciar día</button>
+      <button class="fr-save" type="button" onclick="closeSopModal()">Cerrar</button>
+    </div>
   </div>
 </div>
 

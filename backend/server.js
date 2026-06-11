@@ -331,7 +331,11 @@ const summarizeAnalysis = (text = "", maxLen = 220) => {
   if (clean.length <= maxLen) return clean;
   const firstSentence = clean.match(/^(.{1,220}?[.!?])(?:\s|$)/);
   if (firstSentence?.[1]) return firstSentence[1].trim();
-  return `${clean.slice(0, maxLen).trim()}...`;
+  // Cortar en límite de palabra, sin partir un número (ej. "ERA 2.4" o "8/10") a la mitad
+  let cut = clean.slice(0, maxLen);
+  const lastSpace = cut.lastIndexOf(" ");
+  if (lastSpace > maxLen * 0.6) cut = cut.slice(0, lastSpace);
+  return `${cut.trim()}...`;
 };
 const PICK_LOCKED_LABEL = "Solo Plan Premium. Activa All Picks o Apex para ver este pick.";
 const redactPickForViewer = (pick, planId = "free") => {
